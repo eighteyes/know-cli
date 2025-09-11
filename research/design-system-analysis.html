@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucid Bots Design System Analysis</title>
+    <style>
+        /* Design System CSS Using Actual Brand Colors */
+        :root {
+            /* Primary Brand Colors */
+            --lb-dark-bg: rgba(18, 18, 20, 1);
+            --lb-glass-bg: rgba(18, 18, 20, 0.80);
+            --lb-overlay-bg: rgba(0, 0, 0, 0.5);
+            --lb-panel-bg: rgba(0, 0, 0, 0.9);
+            
+            /* Interactive Colors */
+            --lb-white: #fff;
+            --lb-white-10: rgba(255, 255, 255, 0.1);
+            --lb-white-20: rgba(255, 255, 255, 0.2);
+            --lb-primary-blue: #0076FE;
+            --lb-secondary-blue: #33E2FF;
+            --lb-error-red: #FF0000;
+            
+            /* Typography */
+            --lb-font-stack: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            
+            /* Spacing Scale (4px base) */
+            --lb-space-1: 4px;
+            --lb-space-2: 8px;
+            --lb-space-3: 12px;
+            --lb-space-4: 16px;
+            --lb-space-5: 20px;
+            --lb-space-6: 24px;
+            --lb-space-8: 32px;
+            --lb-space-12: 48px;
+            --lb-space-16: 64px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--lb-font-stack);
+            background: linear-gradient(135deg, var(--lb-dark-bg) 0%, #1a1a1c 100%);
+            color: var(--lb-white);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--lb-space-6);
+        }
+
+        /* Navigation */
+        .nav {
+            position: sticky;
+            top: 0;
+            background: var(--lb-glass-bg);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--lb-white-20);
+            padding: var(--lb-space-4);
+            margin-bottom: var(--lb-space-8);
+            border-radius: var(--lb-space-2);
+            z-index: 100;
+        }
+
+        .nav ul {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--lb-space-6);
+            list-style: none;
+        }
+
+        .nav a {
+            color: var(--lb-white);
+            text-decoration: none;
+            font-weight: 500;
+            padding: var(--lb-space-2) var(--lb-space-4);
+            border-radius: var(--lb-space-1);
+            transition: all 0.3s ease;
+        }
+
+        .nav a:hover {
+            background: var(--lb-white-10);
+            transform: translateX(4px);
+        }
+
+        /* Typography System */
+        .header-xl {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: var(--lb-space-6);
+            background: linear-gradient(135deg, var(--lb-primary-blue), var(--lb-secondary-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-lg {
+            font-size: 2rem;
+            font-weight: 600;
+            margin: var(--lb-space-8) 0 var(--lb-space-4) 0;
+            border-bottom: 2px solid var(--lb-primary-blue);
+            padding-bottom: var(--lb-space-2);
+        }
+
+        .header-md {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: var(--lb-space-6) 0 var(--lb-space-3) 0;
+            color: var(--lb-secondary-blue);
+        }
+
+        .header-sm {
+            font-size: 1.125rem;
+            font-weight: 500;
+            margin: var(--lb-space-4) 0 var(--lb-space-2) 0;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Component Cards */
+        .component-card {
+            background: var(--lb-panel-bg);
+            border: 1px solid var(--lb-white-20);
+            border-radius: var(--lb-space-4);
+            padding: var(--lb-space-6);
+            margin-bottom: var(--lb-space-6);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--lb-space-6);
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--lb-space-4);
+        }
+
+        /* Color Swatches */
+        .color-swatch {
+            display: flex;
+            align-items: center;
+            gap: var(--lb-space-3);
+            padding: var(--lb-space-3);
+            border-radius: var(--lb-space-2);
+            background: var(--lb-white-10);
+            margin-bottom: var(--lb-space-2);
+        }
+
+        .color-box {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--lb-space-2);
+            border: 1px solid var(--lb-white-20);
+            flex-shrink: 0;
+        }
+
+        .color-info {
+            flex: 1;
+        }
+
+        .color-name {
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .color-value {
+            font-family: 'Monaco', monospace;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Component Examples */
+        .component-example {
+            background: var(--lb-dark-bg);
+            border: 1px solid var(--lb-white-20);
+            border-radius: var(--lb-space-2);
+            padding: var(--lb-space-4);
+            margin: var(--lb-space-4) 0;
+        }
+
+        /* Start/Stop Button Example */
+        .start-stop-button {
+            width: 108px;
+            height: 50px;
+            border: 2px solid var(--lb-white-20);
+            border-radius: var(--lb-space-2);
+            padding: 2px;
+            background: transparent;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+
+        .start-stop-inner {
+            width: 100%;
+            height: 100%;
+            background: var(--lb-white-10);
+            border: 1px solid var(--lb-white);
+            border-radius: var(--lb-space-2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--lb-space-2);
+            font-weight: 600;
+            color: var(--lb-white);
+        }
+
+        .start-stop-button.stop .start-stop-inner {
+            border-color: var(--lb-error-red);
+            color: var(--lb-error-red);
+        }
+
+        .start-stop-button:active {
+            opacity: 0.7;
+        }
+
+        /* Water Indicator Example */
+        .water-indicator {
+            width: 50px;
+            height: 240px;
+            border: 1.5px solid rgba(156, 163, 175, 1);
+            border-radius: 16px 0 0 16px;
+            padding: 16px 8px;
+            position: relative;
+            background: var(--lb-dark-bg);
+        }
+
+        .water-fill {
+            width: 40px;
+            height: 60%;
+            background: linear-gradient(to top, var(--lb-primary-blue), var(--lb-secondary-blue));
+            border-radius: 0 0 12px 12px;
+            position: absolute;
+            bottom: 16px;
+            left: 8px;
+        }
+
+        /* Stats Display */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--lb-space-4);
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: var(--lb-space-3);
+            border: 1px solid var(--lb-white-20);
+            border-radius: var(--lb-space-2);
+            background: var(--lb-white-10);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--lb-secondary-blue);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: var(--lb-space-1);
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--lb-white-20);
+            border-radius: var(--lb-space-2);
+            padding: var(--lb-space-4);
+            margin: var(--lb-space-4) 0;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+
+        /* Brand Voice Examples */
+        .voice-example {
+            background: var(--lb-white-10);
+            border-left: 4px solid var(--lb-primary-blue);
+            padding: var(--lb-space-4);
+            margin: var(--lb-space-3) 0;
+            border-radius: 0 var(--lb-space-2) var(--lb-space-2) 0;
+        }
+
+        .voice-do {
+            border-left-color: var(--lb-secondary-blue);
+        }
+
+        .voice-dont {
+            border-left-color: var(--lb-error-red);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: var(--lb-space-4);
+            }
+            
+            .nav ul {
+                flex-direction: column;
+                gap: var(--lb-space-2);
+            }
+            
+            .header-xl {
+                font-size: 2rem;
+            }
+            
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#colors">Colors</a></li>
+            <li><a href="#typography">Typography</a></li>
+            <li><a href="#spacing">Spacing</a></li>
+            <li><a href="#components">Components</a></li>
+            <li><a href="#brand">Brand</a></li>
+            <li><a href="#technical">Technical</a></li>
+            <li><a href="#usage">Usage</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1 class="header-xl">Lucid Bots Design System</h1>
+            <p style="font-size: 1.125rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 2rem;">
+                Comprehensive design system analysis and documentation for "Robots That Work. Literally."
+            </p>
+        </header>
+
+        <section id="overview" class="component-card">
+            <h2 class="header-lg">Executive Summary</h2>
+            <div class="grid-2">
+                <div>
+                    <h3 class="header-sm">Design Philosophy</h3>
+                    <p>Practical innovation in commercial robotic cleaning solutions. The design emphasizes reliability, technical competence, and real-world results over theoretical possibilities.</p>
+                    
+                    <h4 class="header-sm">Core Principles</h4>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li><strong>Pragmatic Innovation:</strong> "Just works" functionality</li>
+                        <li><strong>Technical Transparency:</strong> Real-time data visibility</li>
+                        <li><strong>Professional Reliability:</strong> Clean, structured interfaces</li>
+                        <li><strong>Safety-First Approach:</strong> Clear visual hierarchy for critical actions</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="header-sm">Brand Promise</h3>
+                    <div class="voice-example">
+                        <strong>"Robots That Work. Literally."</strong><br>
+                        Delivering automated cleaning solutions that operate reliably in commercial environments without requiring specialized expertise to manage.
+                    </div>
+                    
+                    <h4 class="header-sm">Target Users</h4>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li>Commercial cleaning operations</li>
+                        <li>Technical operators managing robotic systems</li>
+                        <li>Business decision-makers evaluating ROI</li>
+                        <li>Maintenance teams requiring system monitoring</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="colors" class="component-card">
+            <h2 class="header-lg">Color System</h2>
+            <p>Dual color palette system supporting both website and mobile application contexts.</p>
+
+            <div class="grid-2">
+                <div>
+                    <h3 class="header-md">Website Color Palette</h3>
+                    <div class="color-swatch">
+                        <div class="color-box" style="background: rgba(18, 18, 20, 1);"></div>
+                        <div class="color-info">
+                            <div class="color-name">Primary Dark Background</div>
+                            <div class="color-value">rgba(18, 18, 20, 1)</div>
+                        </div>
+                    </div>
+                    <div class="color-swatch">
+                        <div class="color-box" style="background: rgba(18, 18, 20, 0.80);"></div>
+                        <div class="color-info">
+                            <div class="color-name">Glass/Overlay Background</div>
+                            <div class="color-value">rgba(18, 18, 20, 0.80)</div>
+                        </div>
+                    </div>
+                    <div class="color-swatch">
+                        <div class="color-box" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);"></div>
+                        <div class="color-info">
+                            <div class="color-name">Seasalt/Light Accent</div>
+                            <div class="color-value">Light neutral for contrast</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="header-md">Mobile App Color Palette</h3>
+                    <div class="color-swatch">
+                        <div class="color-box" style="background: #0076FE;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Primary Blue</div>
+                            <div class="color-value">#0076FE</div>
+                        </div>
+                    </div>
+                    <div class="color-swatch">
+                        <div class="color-box" style="background: #33E2FF;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Secondary Blue</div>
+                            <div class="color-value">#33E2FF</div>
+                        </div>
+                    </div>
+                    <div class="color-swatch">
+                        <div class="color-box" style="background: #FF0000;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Error/Stop State</div>
+                            <div class="color-value">#FF0000</div>
+                        </div>
+                    </div>
+                    <div class="color-swatch">
+                        <div class="color-box" style="background: #fff;"></div>
+                        <div class="color-info">
+                            <div class="color-name">White Base</div>
+                            <div class="color-value">#fff</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="header-md">Interactive State Colors</h3>
+            <div class="grid-3">
+                <div class="color-swatch">
+                    <div class="color-box" style="background: rgba(255, 255, 255, 0.1);"></div>
+                    <div class="color-info">
+                        <div class="color-name">White 10%</div>
+                        <div class="color-value">Background tints</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: rgba(255, 255, 255, 0.2);"></div>
+                    <div class="color-info">
+                        <div class="color-name">White 20%</div>
+                        <div class="color-value">Subtle borders</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: rgba(0, 0, 0, 0.5);"></div>
+                    <div class="color-info">
+                        <div class="color-name">Black 50%</div>
+                        <div class="color-value">Modal overlays</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="typography" class="component-card">
+            <h2 class="header-lg">Typography System</h2>
+            
+            <div class="grid-2">
+                <div>
+                    <h3 class="header-md">Font Stack</h3>
+                    <div class="code-block">font-family: -apple-system, BlinkMacSystemFont, 
+'Segoe UI', Roboto, sans-serif;</div>
+                    
+                    <h3 class="header-md">Font Scale</h3>
+                    <div style="margin: 1rem 0;">
+                        <div style="font-size: 3rem; font-weight: 700; line-height: 1.2;">Extra Large (3rem/48px)</div>
+                        <div style="font-size: 2rem; font-weight: 600; line-height: 1.3;">Large (2rem/32px)</div>
+                        <div style="font-size: 1.5rem; font-weight: 600; line-height: 1.4;">Medium (1.5rem/24px)</div>
+                        <div style="font-size: 1.125rem; font-weight: 500; line-height: 1.5;">Small (1.125rem/18px)</div>
+                        <div style="font-size: 1rem; font-weight: 400; line-height: 1.6;">Base (1rem/16px)</div>
+                        <div style="font-size: 0.875rem; font-weight: 400; line-height: 1.6;">Small (0.875rem/14px)</div>
+                        <div style="font-size: 0.75rem; font-weight: 400; line-height: 1.6;">Extra Small (0.75rem/12px)</div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="header-md">Font Weights</h3>
+                    <div style="margin: 1rem 0;">
+                        <div style="font-weight: 400;">Normal (400) - Body text</div>
+                        <div style="font-weight: 500;">Medium (500) - Emphasized text</div>
+                        <div style="font-weight: 600;">Semi-bold (600) - Button labels</div>
+                        <div style="font-weight: 700;">Bold (700) - Section headers</div>
+                    </div>
+                    
+                    <h3 class="header-md">Usage Guidelines</h3>
+                    <ul style="margin-left: 1.5rem;">
+                        <li><strong>Headers:</strong> Use bold weights with sufficient size contrast</li>
+                        <li><strong>Body text:</strong> Minimum 14px for readability</li>
+                        <li><strong>Interface text:</strong> Medium weight for important controls</li>
+                        <li><strong>Data display:</strong> Monospace for numeric values</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="spacing" class="component-card">
+            <h2 class="header-lg">Spacing & Layout System</h2>
+            
+            <div class="grid-2">
+                <div>
+                    <h3 class="header-md">Base Spacing Scale</h3>
+                    <p>4px base unit following Tailwind CSS standards:</p>
+                    <div class="code-block">/* Spacing Variables */
+--space-1: 4px    /* Fine adjustments */
+--space-2: 8px    /* Small gaps */
+--space-3: 12px   /* Text spacing */
+--space-4: 16px   /* Component spacing */
+--space-5: 20px   /* Section spacing */
+--space-6: 24px   /* Large components */
+--space-8: 32px   /* Major sections */
+--space-12: 48px  /* Layout sections */
+--space-16: 64px  /* Page-level spacing */</div>
+                </div>
+                
+                <div>
+                    <h3 class="header-md">Layout Patterns</h3>
+                    <ul style="margin-left: 1.5rem;">
+                        <li><strong>Card-based layouts:</strong> Modular content organization</li>
+                        <li><strong>Overlay systems:</strong> Additional information and controls</li>
+                        <li><strong>Progressive disclosure:</strong> Manage information complexity</li>
+                        <li><strong>Responsive sizing:</strong> Cross-platform compatibility</li>
+                    </ul>
+                    
+                    <h3 class="header-md">Responsive Breakpoints</h3>
+                    <div class="code-block">/* Breakpoints */
+Mobile: 479px and below
+Mobile Landscape: 480px - 767px
+Tablet: 768px - 991px
+Desktop: 992px and above</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="components" class="component-card">
+            <h2 class="header-lg">Component Library</h2>
+            
+            <div class="grid-2">
+                <div>
+                    <h3 class="header-md">Start/Stop Button</h3>
+                    <div class="component-example">
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <button class="start-stop-button">
+                                <div class="start-stop-inner">
+                                    <span>▶</span>
+                                    <span>START</span>
+                                </div>
+                            </button>
+                            <button class="start-stop-button stop">
+                                <div class="start-stop-inner">
+                                    <span>⏹</span>
+                                    <span>STOP</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="code-block">/* Button Specifications */
+Container: 108px × 50px
+Border: 2px rgba(255,255,255,0.2)
+Inner: 98px × 42px
+Background: rgba(255,255,255,0.1)
+Border radius: 8px
+Active opacity: 0.7</div>
+                </div>
+
+                <div>
+                    <h3 class="header-md">Water Level Indicator</h3>
+                    <div class="component-example">
+                        <div style="display: flex; justify-content: center;">
+                            <div class="water-indicator">
+                                <div class="water-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="code-block">/* Water Indicator Specs */
+Container: 240px × 50px
+Fill: Linear gradient #0076FE to #33E2FF
+Border radius: 16px (left side only)
+Tick marks: 25 total (major/minor)
+Border: 1.5px gray</div>
+                </div>
+            </div>
+
+            <h3 class="header-md">Data Display Components</h3>
+            <div class="component-example">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">94%</div>
+                        <div class="stat-label">Battery Level</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">2.4k</div>
+                        <div class="stat-label">Sq Ft Cleaned</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">45min</div>
+                        <div class="stat-label">Runtime</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">Online</div>
+                        <div class="stat-label">Status</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="brand" class="component-card">
+            <h2 class="header-lg">Brand Identity & Voice</h2>
+            
+            <div class="grid-2">
+                <div>
+                    <h3 class="header-md">Brand Personality</h3>
+                    <ul style="margin-left: 1.5rem;">
+                        <li><strong>Practical:</strong> Solutions-focused approach</li>
+                        <li><strong>Reliable:</strong> Consistent performance users can depend on</li>
+                        <li><strong>Professional:</strong> Commercial-grade quality</li>
+                        <li><strong>Innovative:</strong> Technology-forward without intimidating</li>
+                    </ul>
+                    
+                    <h3 class="header-md">Voice Characteristics</h3>
+                    <div class="voice-example voice-do">
+                        <strong>DO:</strong> "Our robots handle the cleaning so your team can focus on what matters most"
+                    </div>
+                    <div class="voice-example voice-dont">
+                        <strong>DON'T:</strong> "Revolutionary AI that will transform everything forever"
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="header-md">Messaging Framework</h3>
+                    <h4 class="header-sm">For Operations Managers:</h4>
+                    <p>Focus on efficiency gains and operational reliability. Key messages: consistent performance, reduced labor costs, improved cleaning quality.</p>
+                    
+                    <h4 class="header-sm">For Technical Staff:</h4>
+                    <p>Focus on system integration and monitoring capabilities. Key messages: real-time data access, remote monitoring, predictable maintenance.</p>
+                    
+                    <h4 class="header-sm">For Executives:</h4>
+                    <p>Focus on ROI and strategic advantage. Key messages: competitive advantage, scalable solutions, future-ready investment.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="technical" class="component-card">
+            <h2 class="header-lg">Technical Specifications</h2>
+            
+            <div class="grid-2">
+                <div>
+                    <h3 class="header-md">Animation & Interactions</h3>
+                    <div class="code-block">/* Website Animations */
+Navigation hover: 0.4s ease-in-out
+Marquee scroll: 70s linear infinite
+Button hover: 4px horizontal translation
+Dropdown rotation: 180 degrees
+
+/* Mobile App Interactions */
+Button press: activeOpacity 0.7
+Data updates: 1-second intervals
+Modal transitions: Standard platform animations</div>
+                    
+                    <h3 class="header-md">Effects & Filters</h3>
+                    <div class="code-block">/* Backdrop Effects */
+Blur: 15px for glass morphism
+Box shadows: Subtle elevation
+Focus states: Clear visual feedback</div>
+                </div>
+                
+                <div>
+                    <h3 class="header-md">Accessibility</h3>
+                    <ul style="margin-left: 1.5rem;">
+                        <li><strong>Color Contrast:</strong> WCAG AA compliance maintained</li>
+                        <li><strong>Touch Targets:</strong> Minimum 44px for mobile interfaces</li>
+                        <li><strong>Typography:</strong> Minimum 14px font sizes</li>
+                        <li><strong>Focus States:</strong> Clear visual feedback</li>
+                        <li><strong>Motion:</strong> Respects prefers-reduced-motion</li>
+                    </ul>
+                    
+                    <h3 class="header-md">Implementation Standards</h3>
+                    <ul style="margin-left: 1.5rem;">
+                        <li>CSS Flexbox and Grid for layouts</li>
+                        <li>CSS custom properties for design tokens</li>
+                        <li>Mobile-first responsive approach</li>
+                        <li>Progressive enhancement principles</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="usage" class="component-card">
+            <h2 class="header-lg">Usage Guidelines & Examples</h2>
+            
+            <div class="grid-2">
+                <div>
+                    <h3 class="header-md">Design Principles in Practice</h3>
+                    <div class="voice-example">
+                        <strong>Technical Transparency:</strong><br>
+                        Real-time data visualization builds operator confidence. Always show system status clearly through visual indicators.
+                    </div>
+                    <div class="voice-example">
+                        <strong>Safety-First Approach:</strong><br>
+                        Critical actions (START/STOP) use high-contrast visual states and receive highest visual priority in interfaces.
+                    </div>
+                    <div class="voice-example">
+                        <strong>Professional Reliability:</strong><br>
+                        Clean, structured layouts communicate competence. Use generous whitespace and consistent spacing.
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="header-md">Implementation Checklist</h3>
+                    <ul style="margin-left: 1.5rem;">
+                        <li>✓ Use established color palette consistently</li>
+                        <li>✓ Maintain 4px base spacing rhythm</li>
+                        <li>✓ Ensure minimum 44px touch targets</li>
+                        <li>✓ Test critical actions with high contrast</li>
+                        <li>✓ Implement glass morphism with 15px blur</li>
+                        <li>✓ Use appropriate font weights for hierarchy</li>
+                        <li>✓ Include loading and error states</li>
+                        <li>✓ Test across responsive breakpoints</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3 class="header-md">Success Metrics</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value">Fast</div>
+                    <div class="stat-label">Development Velocity</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">High</div>
+                    <div class="stat-label">Design Consistency</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">Clear</div>
+                    <div class="stat-label">User Task Completion</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">Low</div>
+                    <div class="stat-label">System Error Rate</div>
+                </div>
+            </div>
+        </section>
+
+        <footer style="text-align: center; margin-top: 4rem; padding: 2rem; border-top: 1px solid rgba(255,255,255,0.2);">
+            <p style="color: rgba(255,255,255,0.6);">
+                Lucid Bots Design System Analysis • Generated from comprehensive website and codebase research<br>
+                "Robots That Work. Literally." - Design System Documentation v1.0
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

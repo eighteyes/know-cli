@@ -1,0 +1,748 @@
+{
+  "system": {
+    "name": "Lucid Commander",
+    "abbreviation": "LC",
+    "description": "Robust robot management and control interface for commercial robotics operations",
+    "tagline": "Robots That Work. Literally.",
+    "brand_promise": "Delivering automated cleaning solutions that operate reliably in commercial environments without requiring specialized expertise to manage",
+    "current_deployment": {
+      "window_washing_drones": 1000,
+      "painting_drones": "in_development",
+      "pressure_washing_rover": "in_development"
+    },
+    "systems_in_progress": [
+      "data_pipelines",
+      "simple_dashboard", 
+      "remote_control_mobile_app"
+    ]
+  },
+  "version_roadmap": {
+    "v1_monorepo_consolidation": {
+      "objective": "Integrate existing discrete systems into unified platform",
+      "priority": "P0",
+      "features": [
+        "consolidate_data_pipelines_dashboard_mobile_app",
+        "unified_authentication_across_7_user_types",
+        "enhanced_dashboard_with_data_pipeline_integration",
+        "mobile_app_integration_with_shared_backend",
+        "preserve_existing_ai_capabilities",
+        "maintain_ros_integration_and_command_pipeline"
+      ],
+      "ai_integration": {
+        "preserve_edge_based_health_analysis": true,
+        "maintain_basic_predictive_maintenance": true,
+        "integrate_click_and_clean_autonomous_pathfinding": true,
+        "foundation_for_advanced_ai_v2_plus": true
+      },
+      "success_criteria": [
+        "all_discrete_systems_consolidated",
+        "single_authentication_system",
+        "current_1000_device_capacity_maintained",
+        "all_7_user_types_migrated",
+        "performance_specs_met_during_consolidation",
+        "ros_integration_ai_capabilities_preserved"
+      ]
+    },
+    "v2_ai_enhanced_features": {
+      "objective": "Advanced AI capabilities and sophisticated analytics",
+      "priority": "P0",
+      "features": [
+        "ai_powered_fleet_analytics_multi_tenant_reporting",
+        "advanced_predictive_maintenance_machine_learning",
+        "natural_language_interface_95_percent_accuracy",
+        "ai_enhanced_fleet_coordination_autonomous_operations",
+        "flight_analytics_telemetry_streaming",
+        "company_segmented_data_access"
+      ],
+      "built_on": "v1_unified_platform_foundation"
+    },
+    "v3_expert_teleoperation": {
+      "objective": "AI-assisted specialized interfaces for skilled teleoperators",
+      "priority": "P0",
+      "features": [
+        "ai_assisted_1_to_1_human_robot_control",
+        "advanced_telemetry_overlay_ai_anomaly_detection",
+        "natural_language_teleoperation_commands",
+        "ai_powered_assistance_real_time_suggestions",
+        "emergency_intervention_intelligent_alerts"
+      ],
+      "latency_requirement": "<200ms",
+      "built_on": "v1_v2_mature_unified_platform"
+    },
+    "v4_fleet_teleoperations": {
+      "objective": "AI-powered multi-robot coordination for 100+ robots",
+      "priority": "P0",
+      "features": [
+        "ai_powered_multi_robot_coordination",
+        "zone_based_management_autonomous_optimization",
+        "enterprise_grade_fleet_analytics",
+        "advanced_fleet_intelligence_conflict_resolution",
+        "natural_language_fleet_wide_commands"
+      ],
+      "scale": "disney_level_100_plus_robots",
+      "built_on": "v1_v2_v3_mature_platform"
+    }
+  },
+  "stakeholders": {
+    "user_types": {
+      "owners": {
+        "description": "Own one or more robots, employ and manage Operators",
+        "capabilities": [
+          "assign_specific_robots_to_operators",
+          "fleet_overview",
+          "business_reports",
+          "assigned_device_diagnostics",
+          "ai_enhanced_dashboard_insights",
+          "progressive_reveal_working_broken_status"
+        ],
+        "access_scope": "owned_devices_only",
+        "ai_features": {
+          "v1": ["basic_ai_insights_preservation"],
+          "v2": ["natural_language_commands", "ai_powered_analytics", "predictive_maintenance_alerts"],
+          "v3": ["advanced_teleoperation_access"],
+          "v4": ["fleet_coordination_oversight"]
+        }
+      },
+      "operators": {
+        "description": "Employed by Owners, operate robots assigned to them",
+        "capabilities": [
+          "control_assigned_robots",
+          "mission_reports",
+          "click_and_clean_mission_planning",
+          "voice_command_field_operations"
+        ],
+        "access_scope": "assigned_robots_only",
+        "ai_features": {
+          "v1": ["basic_autonomous_pathfinding"],
+          "v2": ["natural_language_voice_commands", "ai_mission_optimization"],
+          "v3": ["ai_assisted_operations"],
+          "v4": ["fleet_coordination_participation"]
+        }
+      },
+      "teleoperators": {
+        "description": "Skilled remote pilots for complex operations, 1:1 human-to-robot control",
+        "capabilities": [
+          "advanced_teleoperation_controls",
+          "real_time_telemetry",
+          "ai_assisted_complex_operations"
+        ],
+        "access_scope": "as_assigned",
+        "ai_features": {
+          "v1": ["basic_teleoperation_foundation"],
+          "v2": ["enhanced_telemetry_ai_insights"],
+          "v3": ["ai_assisted_expert_control", "natural_language_commands", "predictive_assistance"],
+          "v4": ["multi_robot_expert_coordination"]
+        }
+      },
+      "fleet_teleoperators": {
+        "description": "Oversee multiple autonomous systems simultaneously",
+        "capabilities": [
+          "fleet_wide_map_interface",
+          "zone_management", 
+          "autonomous_mission_coordination",
+          "ai_powered_multi_robot_management"
+        ],
+        "access_scope": "fleet_wide",
+        "ai_features": {
+          "v1": ["basic_fleet_coordination"],
+          "v2": ["ai_enhanced_fleet_analytics", "autonomous_operations_oversight"],
+          "v3": ["advanced_multi_robot_coordination"],
+          "v4": ["disney_scale_fleet_management", "enterprise_ai_coordination"]
+        }
+      },
+      "customer_service": {
+        "description": "Lucid Bots internal support team",
+        "organization": "lucid_bots",
+        "capabilities": [
+          "all_device_diagnostics",
+          "maintenance_systems",
+          "ssh_access_ros_bag_analysis",
+          "ai_enhanced_diagnostic_access",
+          "predictive_maintenance_analysis"
+        ],
+        "restrictions": ["no_control_capabilities"],
+        "access_scope": "all_devices",
+        "ai_features": {
+          "v1": ["basic_diagnostic_ai_preservation"],
+          "v2": ["ai_enhanced_troubleshooting", "automated_solution_suggestions"],
+          "v3": ["advanced_ai_diagnostic_tools"],
+          "v4": ["enterprise_diagnostic_intelligence"]
+        }
+      },
+      "operations_managers": {
+        "description": "Lucid Bots fleet operations oversight",
+        "organization": "lucid_bots", 
+        "capabilities": [
+          "all_systems",
+          "fleet_analytics",
+          "operational_intelligence",
+          "ai_powered_fleet_optimization"
+        ],
+        "access_scope": "all_systems",
+        "ai_features": {
+          "v1": ["basic_operational_intelligence"],
+          "v2": ["ai_powered_fleet_analytics", "advanced_coordination"],
+          "v3": ["expert_teleoperation_oversight"],
+          "v4": ["enterprise_scale_ai_operations"]
+        }
+      },
+      "executives": {
+        "description": "Strategic oversight and business intelligence",
+        "types": ["lucid_bots_executives", "customer_executives"],
+        "capabilities": [
+          "executive_dashboards",
+          "company_segmented_data",
+          "strategic_reports",
+          "ai_powered_business_intelligence"
+        ],
+        "access_scope": {
+          "lucid_bots_executives": "all_companies",
+          "customer_executives": "their_company_only"
+        },
+        "ai_features": {
+          "v1": ["basic_business_intelligence"],
+          "v2": ["ai_powered_multi_tenant_reporting", "advanced_analytics", "predictive_insights"],
+          "v3": ["strategic_teleoperation_insights"],
+          "v4": ["enterprise_scale_business_intelligence"]
+        }
+      }
+    },
+    "permission_matrix": {
+      "robot_assignment": "owners → operators",
+      "control_access": ["operators (assigned robots)", "teleoperators (as assigned)"],
+      "diagnostics_access": ["lb_staff (all devices)", "owners (owned devices)"],
+      "fleet_operations": ["fleet_teleoperators", "operations_managers"],
+      "executive_data": ["lb_execs (all companies)", "customer_execs (their company)"],
+      "ai_feature_access": {
+        "natural_language_commands": "all_user_types_v2_plus",
+        "predictive_maintenance": "owners_lb_staff_operations_managers",
+        "advanced_ai_teleoperation": "teleoperators_v3_plus",
+        "fleet_ai_coordination": "fleet_teleoperators_v4_plus"
+      }
+    }
+  },
+  "platform_architecture": {
+    "web": {
+      "description": "Primary Interface - Full Feature Set",
+      "features": [
+        "mission_control_and_reports",
+        "fleet_management_dashboard", 
+        "advanced_device_diagnostics",
+        "teleoperation_interface",
+        "fleet_coordination",
+        "user_permission_management",
+        "business_intelligence_analytics",
+        "ai_powered_natural_language_interface",
+        "ros_integration_ssh_access"
+      ]
+    },
+    "mobile": {
+      "description": "Field Operations - Essential Features",
+      "features": [
+        "robot_control_local_operations",
+        "mission_status_light_reports",
+        "device_health_monitoring", 
+        "emergency_teleoperation",
+        "push_notifications_alerts",
+        "voice_command_integration",
+        "progressive_web_app_capabilities"
+      ],
+      "offline_capabilities": {
+        "duration": "30_minutes_battery_life",
+        "essential_functions": ["arm_disarm", "move", "clean"],
+        "local_ai": ["edge_based_pathfinding", "basic_health_analysis"]
+      }
+    },
+    "cloud": {
+      "provider": "AWS",
+      "description": "Data & Communication Backbone",
+      "components": {
+        "ingestion": ["iot_core", "s3_bucket_upload"],
+        "command_pipeline": "iot_core → ros_edge_devices", 
+        "data_processing": ["kinesis", "glue", "s3", "postgresql"],
+        "apis": "rest_endpoints_for_all_client_interactions",
+        "real_time": "websocket_connections_for_teleoperation",
+        "ai_processing": "edge_computing_cloud_ml_integration",
+        "multi_tenant": "postgresql_company_data_segregation"
+      }
+    },
+    "edge_computing": {
+      "description": "On-device AI and autonomous capabilities",
+      "capabilities": [
+        "autonomous_pathfinding_execution",
+        "component_health_analysis",
+        "local_ai_processing",
+        "ros_integration_command_execution",
+        "offline_operation_30_minutes",
+        "telemetry_data_buffering"
+      ],
+      "constraints": {
+        "battery_life": "30_minutes_without_cloud",
+        "processing_power": "limited_edge_computing",
+        "storage": "limited_local_telemetry_buffering",
+        "connectivity": "cellular_wifi_dependency_advanced_features"
+      }
+    }
+  },
+  "core_features": {
+    "robot_control": {
+      "local_control": {
+        "type": "edge_based",
+        "capabilities": [
+          "arm_disarm_sequences",
+          "rover_navigation: forward/back/left/right",
+          "drone_movement: up/down/left/right/yaw_left/yaw_right",
+          "pressure_system_activation",
+          "auto_manual_mode_switching",
+          "speed_control_interface",
+          "emergency_stop_protocols"
+        ]
+      },
+      "teleoperation": {
+        "type": "cloud_based",
+        "latency_requirement": "<200ms",
+        "version": "V3",
+        "capabilities": [
+          "real_time_robot_control_over_internet",
+          "live_camera_feed_streaming",
+          "telemetry_data_overlay",
+          "emergency_intervention",
+          "1_to_1_human_robot_operation",
+          "ai_assisted_control_v3",
+          "natural_language_commands_v3"
+        ]
+      },
+      "fleet_teleoperation": {
+        "type": "autonomous_oversight",
+        "version": "V4", 
+        "capabilities": [
+          "multi_robot_coordination_interface",
+          "zone_assignment_and_management",
+          "autonomous_mission_scheduling",
+          "real_time_fleet_status_monitoring",
+          "waypoint_based_cleaning_coordination",
+          "ai_powered_fleet_intelligence_v4",
+          "disney_scale_100_plus_robots_v4"
+        ]
+      }
+    },
+    "mission_management": {
+      "planning": {
+        "click_and_clean": "operators click waypoints on LIDAR map",
+        "pathfinding": "autonomous pathfinding executed on edge device",
+        "scheduling": "mission scheduling and queuing",
+        "optimization": "coverage area definition and optimization",
+        "ai_enhancement": {
+          "v2": ["ai_powered_mission_optimization", "environmental_adaptation"],
+          "v3": ["ai_assisted_complex_mission_planning"],
+          "v4": ["autonomous_multi_robot_mission_coordination"]
+        }
+      },
+      "monitoring": {
+        "progress_tracking": "live mission progress (5-10s freshness)",
+        "performance_metrics": "per mission analytics",
+        "environmental_monitoring": "environmental condition tracking",
+        "completion_verification": "mission completion verification",
+        "ai_enhancement": {
+          "v2": ["ai_powered_anomaly_detection", "predictive_mission_insights"],
+          "v3": ["real_time_ai_mission_assistance"],
+          "v4": ["fleet_wide_ai_mission_intelligence"]
+        }
+      }
+    },
+    "fleet_management": {
+      "device_overview": [
+        "real_time_fleet_status_map",
+        "device_health_indicators: battery/connectivity/operational_status",
+        "active_mission_assignments", 
+        "maintenance_alert_prioritization",
+        "ai_powered_health_analysis_v2",
+        "predictive_maintenance_alerts_v2"
+      ],
+      "assignment_management": [
+        "owner_to_operator_robot_assignments",
+        "zone_based_fleet_coordination",
+        "resource_allocation_optimization",
+        "operational_scheduling",
+        "ai_powered_resource_optimization_v2",
+        "autonomous_assignment_suggestions_v4"
+      ]
+    },
+    "device_diagnostics": {
+      "individual_analysis": [
+        "mission_history_and_performance_analytics",
+        "component_health_monitoring_predictive_maintenance",
+        "serial_numbers_model_specs_flight_counters",
+        "telemetry_data_analysis_visualization",
+        "ssh_access_lb_staff_only",
+        "ros_bag_analysis_capabilities",
+        "ai_enhanced_diagnostic_insights_v2",
+        "automated_troubleshooting_suggestions_v2"
+      ],
+      "maintenance_intelligence": [
+        "predictive_maintenance_alerts_edge_ai",
+        "component_lifecycle_tracking",
+        "usage_pattern_analysis", 
+        "automated_maintenance_scheduling_recommendations",
+        "machine_learning_degradation_patterns_v2",
+        "24_48_hour_failure_prediction_v2",
+        "50_percent_downtime_reduction_target_v2"
+      ]
+    },
+    "natural_language_interface": {
+      "version": "V2_plus",
+      "capabilities": [
+        "text_to_command_processing_all_interfaces",
+        "voice_command_integration_hands_free",
+        "contextual_command_interpretation",
+        "multi_language_support_international",
+        "user_intent_recognition_scenarios",
+        "ai_learning_command_patterns"
+      ],
+      "performance_requirements": {
+        "accuracy": ">95_percent_command_interpretation",
+        "response_time": "<2s_ai_processing",
+        "field_operation": "hands_free_voice_control",
+        "cross_platform": "mobile_desktop_consistency"
+      }
+    }
+  },
+  "reporting_analytics": {
+    "business_intelligence": {
+      "target_users": ["owners", "executives"],
+      "operational_metrics": [
+        "flight_time_and_distance_analytics",
+        "mission_completion_rates",
+        "fleet_utilization_statistics",
+        "active_vehicle_counts_deployment_efficiency"
+      ],
+      "performance_analytics": [
+        "average_mission_duration_coverage",
+        "fleet_productivity_trends",
+        "device_performance_comparisons",
+        "historical_trending_year_month_date"
+      ],
+      "multi_tenant_reporting": [
+        "company_segmented_data_executive_access",
+        "owner_specific_fleet_performance",
+        "operator_productivity_metrics",
+        "cost_per_operation_analysis"
+      ],
+      "ai_enhancement": {
+        "v2": [
+          "ai_powered_predictive_analytics",
+          "automated_insights_generation",
+          "usage_optimization_recommendations",
+          "advanced_flight_analytics",
+          "multi_tenant_ai_reporting"
+        ]
+      }
+    },
+    "operational_intelligence": {
+      "real_time_telemetry": {
+        "freshness": "5-10s outside teleoperation",
+        "data_points": [
+          "live_position_altitude_battery_status",
+          "environmental_data_weather_gps_quality_signal_strength",
+          "mission_progress_waypoint_completion",
+          "system_performance_metrics"
+        ]
+      },
+      "advanced_analytics": [
+        "flight_path_optimization_insights",
+        "operator_performance_analytics", 
+        "weather_impact_correlation",
+        "efficiency_trend_analysis"
+      ],
+      "flight_analytics": {
+        "real_time_operations": {
+          "latency": "<200ms_for_teleoperation",
+          "capabilities": [
+            "live_flight_streaming_full_telemetry_overlay",
+            "performance_metrics_speed_acceleration_power",
+            "environmental_integration_weather_signal_strength",
+            "ai_anomaly_detection_alerting_v2"
+          ]
+        },
+        "historical_analysis": [
+          "detailed_flight_path_reconstruction",
+          "component_performance_trending",
+          "regulatory_compliance_verification",
+          "audit_trail_maintenance_reporting"
+        ]
+      }
+    }
+  },
+  "advanced_features": {
+    "ai_powered": {
+      "natural_language_interface": [
+        "text_to_command_processing_all_interfaces",
+        "voice_command_integration_hands_free",
+        "contextual_command_interpretation"
+      ],
+      "predictive_maintenance": [
+        "edge_based_component_health_analysis",
+        "maintenance_alert_generation_prioritization",
+        "usage_correlation_component_degradation", 
+        "automated_replacement_scheduling_recommendations"
+      ],
+      "autonomous_operations": [
+        "waypoint_based_mission_planning",
+        "dynamic_obstacle_avoidance_rerouting",
+        "fleet_coordination_conflict_resolution",
+        "environmental_adaptation_algorithms"
+      ]
+    },
+    "flight_analytics": {
+      "real_time_operations": {
+        "latency": "<200ms for teleoperation",
+        "capabilities": [
+          "live_flight_streaming_full_telemetry_overlay",
+          "performance_metrics_speed_acceleration_power",
+          "environmental_integration_weather_signal_strength",
+          "anomaly_detection_alerting"
+        ]
+      },
+      "historical_analysis": [
+        "detailed_flight_path_reconstruction",
+        "component_performance_trending",
+        "regulatory_compliance_verification",
+        "audit_trail_maintenance_reporting"
+      ]
+    }
+  },
+  "technical_requirements": {
+    "performance": {
+      "real_time": {
+        "teleoperation": "<200ms command latency",
+        "near_real_time": "5-10s data freshness (general operations)",
+        "dashboard_updates": "30s refresh cycles",
+        "emergency_alerts": "<5s propagation time",
+        "ai_processing": "<2s natural language response time"
+      },
+      "scalability": {
+        "current_devices": 1000,
+        "target_devices": "10,000+",
+        "concurrent_users": "100+ simultaneous operators",
+        "data_throughput": "real-time telemetry from full fleet",
+        "ai_scalability": "natural_language_predictive_maintenance_autonomous_operations_enterprise_scale"
+      },
+      "reliability": {
+        "uptime": "99.9%",
+        "degradation": "graceful during connectivity loss",
+        "offline_operation": "mobile capabilities",
+        "recovery": "automatic failover and recovery"
+      }
+    },
+    "integration_requirements": {
+      "aws_cloud_infrastructure": [
+        "iot_core_s3_data_pipelines_integration",
+        "websocket_real_time_teleoperation_200ms",
+        "postgresql_multi_tenant_business_intelligence",
+        "kinesis_glue_ai_analytics_processing",
+        "command_pipeline_iot_core_ros_edge",
+        "edge_computing_ai_health_analysis_integration"
+      ],
+      "mobile_platform": [
+        "progressive_web_app_native_performance",
+        "offline_essential_functions_30min_battery",
+        "push_notification_emergency_escalation",
+        "voice_command_field_operations",
+        "emergency_teleoperation_mobile_devices"
+      ],
+      "ros_integration": [
+        "command_pipeline_iot_core_ros_edge",
+        "ros_bag_analysis_lb_staff_access",
+        "ssh_device_access_technical_diagnosis",
+        "backwards_compatibility_existing_systems",
+        "edge_autonomous_pathfinding_integration"
+      ]
+    }
+  },
+  "design_system": {
+    "brand": {
+      "tagline": "Robots That Work. Literally.",
+      "promise": "Delivering automated cleaning solutions that operate reliably in commercial environments without requiring specialized expertise to manage",
+      "interface_principles": [
+        "professional_action_oriented_design",
+        "clear_status_communication_no_jargon",
+        "direct_feedback_next_step_guidance", 
+        "reliability_focused_visual_hierarchy"
+      ]
+    },
+    "colors": {
+      "primary": {
+        "background_dark": "rgba(18, 18, 20, 1)",
+        "glass_overlay": "rgba(18, 18, 20, 0.80)",
+        "backdrop_blur": "15px"
+      },
+      "interactive": {
+        "white_base": "#fff",
+        "white_transparent": "rgba(255, 255, 255, 0.1)",
+        "white_border": "rgba(255, 255, 255, 0.2)"
+      },
+      "status": {
+        "error_stop": "#FF0000",
+        "primary_blue": "#0076FE", 
+        "secondary_blue": "#33E2FF"
+      },
+      "neutral": {
+        "black_overlay": "rgba(0, 0, 0, 0.5)",
+        "glass_background": "rgba(0, 0, 0, 0.9)"
+      }
+    },
+    "typography": {
+      "font_stack": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      "sizes": {
+        "small": "12px",
+        "medium": "14px", 
+        "base": "16px",
+        "large": "20px"
+      },
+      "weights": {
+        "normal": 400,
+        "medium": 500,
+        "semibold": 600,
+        "bold": 700
+      }
+    },
+    "spacing": {
+      "micro": ["2px", "4px", "8px", "12px", "16px"],
+      "component": ["20px", "24px", "32px"],
+      "layout": ["48px", "64px", "80px"]
+    },
+    "implementation": [
+      "responsive_design_mobile_first",
+      "progressive_web_app_capabilities",
+      "real_time_websocket_architecture",
+      "component_based_design_system",
+      "accessibility_compliance_WCAG_2_1_AA"
+    ]
+  },
+  "constraints_and_risks": {
+    "critical_validation_requirements": [
+      "v1_architecture_supports_v2_v4_ai_features_without_rebuild",
+      "existing_system_integration_ai_capabilities_preservation",
+      "unified_platform_1000_device_operational_load_ai_processing",
+      "all_7_user_types_single_platform_natural_language",
+      "data_model_consolidation_flight_analytics_preservation",
+      "ai_infrastructure_aws_edge_computing_integration",
+      "ros_integration_command_pipeline_consolidation_preservation"
+    ],
+    "high_risk_integration_constraints": [
+      "data_model_consolidation_flight_analytics_data_loss",
+      "authentication_migration_single_sign_on_7_user_types",
+      "api_compatibility_mobile_ros_integration",
+      "ai_infrastructure_edge_aws_processing_integration",
+      "real_time_performance_200ms_teleoperation_consolidation"
+    ],
+    "performance_requirements_constraints": [
+      "teleoperation_200ms_latency_95_percent_cases",
+      "real_time_updates_5_10s_data_freshness",
+      "emergency_response_5s_alert_propagation",
+      "system_uptime_99_9_percent_availability",
+      "ai_processing_2s_natural_language_response",
+      "edge_computing_autonomous_pathfinding_performance"
+    ],
+    "scalability_constraints": [
+      "current_scale_1000_devices_ai_processing",
+      "target_growth_10000_plus_device_architecture",
+      "concurrent_users_100_plus_operators",
+      "data_throughput_real_time_telemetry_ai_analysis",
+      "multi_tenant_company_segmented_data_scale"
+    ]
+  },
+  "version_exclusions_and_scope": {
+    "v1_inclusions": [
+      "all_discrete_system_functionality_consolidated",
+      "enhanced_dashboard_data_pipeline_integration",
+      "mobile_app_integration_shared_authentication",
+      "basic_ai_capabilities_preserved_edge_health_analysis",
+      "all_7_user_types_appropriate_access",
+      "ros_integration_ssh_access_maintained"
+    ],
+    "v1_exclusions_moved_to_v2_plus": [
+      "advanced_ai_features_natural_language_complex_ml",
+      "advanced_fleet_coordination_ai_autonomous_operations",
+      "expert_teleoperation_ai_assisted_interfaces",
+      "multi_tenant_analytics_company_segmented_advanced",
+      "advanced_performance_optimization_beyond_current_specs"
+    ],
+    "out_of_scope_all_versions": [
+      "robotic_edge_software_development",
+      "third_party_system_integrations_crm_erp",
+      "complete_historical_data_migration",
+      "microservices_architecture_v1",
+      "external_api_integrations_beyond_aws"
+    ]
+  },
+  "user_stories_comprehensive": {
+    "v1_system_consolidation": {
+      "owners": [
+        "unified_platform_access_all_robot_management",
+        "ai_enhanced_dashboard_flight_analytics_predictive_insights",
+        "mobile_app_integration_voice_command_capabilities",
+        "single_authentication_multiple_system_credentials"
+      ],
+      "operators": [
+        "integrated_workflow_discrete_systems_switching",
+        "ai_powered_data_pipeline_flight_analytics",
+        "unified_authentication_platform_components",
+        "voice_command_hands_free_field_operations"
+      ],
+      "lb_staff": [
+        "ai_enhanced_diagnostic_access_ros_integration",
+        "ssh_access_ros_bag_analysis_capabilities",
+        "predictive_maintenance_automated_solution_suggestions",
+        "multi_tenant_diagnostic_access_operational_control"
+      ]
+    },
+    "v2_plus_ai_enhancement": {
+      "advanced_analytics": [
+        "ai_powered_fleet_analytics_multi_tenant_reporting",
+        "predictive_analytics_maintenance_optimization",
+        "flight_path_reconstruction_compliance_reporting",
+        "customizable_dashboards_ai_insights"
+      ],
+      "ai_enhanced_coordination": [
+        "ai_powered_mission_scheduling_resource_optimization",
+        "multi_robot_coordination_autonomous_operations",
+        "dynamic_task_allocation_ai_analysis",
+        "natural_language_fleet_coordination_commands"
+      ],
+      "expert_teleoperation": [
+        "ai_assisted_specialized_interfaces_complex_operations",
+        "real_time_control_ai_powered_assistance",
+        "natural_language_voice_text_commands",
+        "emergency_intervention_intelligent_alerts"
+      ],
+      "fleet_coordination": [
+        "ai_powered_coordination_100_plus_robots",
+        "zone_based_assignment_autonomous_optimization",
+        "enterprise_grade_monitoring_ai_anomaly_detection",
+        "natural_language_fleet_wide_command_interface"
+      ]
+    }
+  },
+  "out_of_scope": [
+    "robotic_edge_software",
+    "drone_information_outside_missions"
+  ],
+  "customer_service_needs": {
+    "current_process": [
+      "photo_of_controller_robot_crash",
+      "rca_channel_slack_checklist",
+      "links_to_flight_logs",
+      "message_on_controller", 
+      "device_parameter_changes",
+      "hardware_issue_diagnosis"
+    ],
+    "requirements": [
+      "real_time_see_customer_view",
+      "proactive_flight_information",
+      "predictive_maintenance_alerts",
+      "incident_discovery_automation",
+      "persistent_messaging_system"
+    ]
+  }
+}

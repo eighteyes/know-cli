@@ -1,0 +1,112 @@
+#!/bin/bash
+
+# know - CLI tool for generating implementation specifications from knowledge map
+# Usage: know <subcommand> [args...]
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+KNOWLEDGE_MAP="${SCRIPT_DIR}/knowledge-map-cmd.json"
+LIB_DIR="${SCRIPT_DIR}/know-lib"
+
+# Colors for output
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly BLUE='\033[0;34m'
+readonly NC='\033[0m' # No Color
+
+# Error handling
+error() {
+    echo -e "${RED}Error: $1${NC}" >&2
+    exit 1
+}
+
+info() {
+    echo -e "${BLUE}Info: $1${NC}" >&2
+}
+
+success() {
+    echo -e "${GREEN}$1${NC}" >&2
+}
+
+# Check dependencies
+check_deps() {
+    command -v jq >/dev/null 2>&1 || error "jq is required but not installed"
+    [[ -f "$KNOWLEDGE_MAP" ]] || error "Knowledge map not found at $KNOWLEDGE_MAP"
+}
+
+# Show usage
+usage() {
+    cat << EOF
+know - Generate implementation specifications from knowledge map
+
+Usage:
+    know spec <entity_type> <entity_id>     Generate implementation specification
+    know deps <entity_id>                   Show dependency chain  
+    know impact <entity_id>                 Analyze change impact
+    know validate <entity_id>               Validate entity completeness
+    know list [entity_type]                 List entities
+    know --help                             Show this help
+
+Examples:
+    know spec screen fleet-dashboard        Generate screen implementation spec
+    know spec component robot-controls     Generate component specification  
+    know spec feature real-time-telemetry  Generate feature implementation
+    know deps user:owner                    Show what owner depends on
+    know impact model:robot-fleet           Show what would be affected by changes
+    know list screens                       List all screens
+    know validate feature:analytics         Check if feature is complete
+
+Entity Types: users, screens, components, features, functionality, requirements, schema, ui_components, platforms
+EOF
+}
+
+# Load library functions
+load_lib() {
+    local lib_file="$LIB_DIR/$1.sh"
+    [[ -f "$lib_file" ]] && source "$lib_file" || error "Library $1 not found"
+}
+
+# Main command dispatcher
+main() {
+    check_deps
+    
+    [[ $# -eq 0 ]] && { usage; exit 1; }
+    
+    case "${1:-}" in
+        spec)
+            [[ $# -ge 3 ]] || error "Usage: know spec <entity_type> <entity_id>"
+            load_lib "entity-resolver"
+            load_lib "template-engine" 
+            generate_spec "$2" "$3"
+            ;;
+        deps)
+            [[ $# -ge 2 ]] || error "Usage: know deps <entity_id>"
+            load_lib "dependency-analyzer"
+            show_dependencies "$2"
+            ;;
+        impact)
+            [[ $# -ge 2 ]] || error "Usage: know impact <entity_id>"
+            load_lib "dependency-analyzer"
+            show_impact "$2"
+            ;;
+        validate)
+            [[ $# -ge 2 ]] || error "Usage: know validate <entity_id>"
+            load_lib "validators"
+            validate_entity "$2"
+            ;;
+        list)
+            load_lib "entity-resolver"
+            list_entities "${2:-}"
+            ;;
+        --help|-h|help)
+            usage
+            ;;
+        *)
+            error "Unknown command: $1. Use 'know --help' for usage."
+            ;;
+    esac
+}
+
+main "$@"

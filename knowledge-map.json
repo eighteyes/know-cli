@@ -1,0 +1,397 @@
+{
+  "system": {
+    "name": "Lucid Commander",
+    "abbreviation": "LC",
+    "description": "Robust robot management and control interface for commercial robotics operations",
+    "tagline": "Robots That Work. Literally.",
+    "brand_promise": "Delivering automated cleaning solutions that operate reliably in commercial environments without requiring specialized expertise to manage",
+    "current_deployment": {
+      "window_washing_drones": 1000,
+      "painting_drones": "in_development",
+      "pressure_washing_rover": "in_development"
+    },
+    "systems_in_progress": [
+      "data_pipelines",
+      "simple_dashboard", 
+      "remote_control_mobile_app"
+    ]
+  },
+  "stakeholders": {
+    "user_types": {
+      "owners": {
+        "description": "Own one or more robots, employ and manage Operators",
+        "capabilities": [
+          "assign_specific_robots_to_operators",
+          "fleet_overview",
+          "business_reports",
+          "assigned_device_diagnostics"
+        ],
+        "access_scope": "owned_devices_only"
+      },
+      "operators": {
+        "description": "Employed by Owners, operate robots assigned to them",
+        "capabilities": [
+          "control_assigned_robots",
+          "mission_reports"
+        ],
+        "access_scope": "assigned_robots_only"
+      },
+      "teleoperators": {
+        "description": "Skilled remote pilots for complex operations, 1:1 human-to-robot control",
+        "capabilities": [
+          "advanced_teleoperation_controls",
+          "real_time_telemetry"
+        ],
+        "access_scope": "as_assigned"
+      },
+      "fleet_teleoperators": {
+        "description": "Oversee multiple autonomous systems simultaneously",
+        "capabilities": [
+          "fleet_wide_map_interface",
+          "zone_management", 
+          "autonomous_mission_coordination"
+        ],
+        "access_scope": "fleet_wide"
+      },
+      "customer_service": {
+        "description": "Lucid Bots internal support team",
+        "organization": "lucid_bots",
+        "capabilities": [
+          "all_device_diagnostics",
+          "maintenance_systems"
+        ],
+        "restrictions": ["no_control_capabilities"],
+        "access_scope": "all_devices"
+      },
+      "operations_managers": {
+        "description": "Lucid Bots fleet operations oversight",
+        "organization": "lucid_bots", 
+        "capabilities": [
+          "all_systems",
+          "fleet_analytics",
+          "operational_intelligence"
+        ],
+        "access_scope": "all_systems"
+      },
+      "executives": {
+        "description": "Strategic oversight and business intelligence",
+        "types": ["lucid_bots_executives", "customer_executives"],
+        "capabilities": [
+          "executive_dashboards",
+          "company_segmented_data",
+          "strategic_reports"
+        ],
+        "access_scope": {
+          "lucid_bots_executives": "all_companies",
+          "customer_executives": "their_company_only"
+        }
+      }
+    },
+    "permission_matrix": {
+      "robot_assignment": "owners → operators",
+      "control_access": ["operators (assigned robots)", "teleoperators (as assigned)"],
+      "diagnostics_access": ["lb_staff (all devices)", "owners (owned devices)"],
+      "fleet_operations": ["fleet_teleoperators", "operations_managers"],
+      "executive_data": ["lb_execs (all companies)", "customer_execs (their company)"]
+    }
+  },
+  "platform_architecture": {
+    "web": {
+      "description": "Primary Interface - Full Feature Set",
+      "features": [
+        "mission_control_and_reports",
+        "fleet_management_dashboard", 
+        "advanced_device_diagnostics",
+        "teleoperation_interface",
+        "fleet_coordination",
+        "user_permission_management",
+        "business_intelligence_analytics"
+      ]
+    },
+    "mobile": {
+      "description": "Field Operations - Essential Features",
+      "features": [
+        "robot_control_local_operations",
+        "mission_status_light_reports",
+        "device_health_monitoring", 
+        "emergency_teleoperation",
+        "push_notifications_alerts"
+      ]
+    },
+    "cloud": {
+      "provider": "AWS",
+      "description": "Data & Communication Backbone",
+      "components": {
+        "ingestion": ["iot_core", "s3_bucket_upload"],
+        "command_pipeline": "iot_core → ros_edge_devices", 
+        "data_processing": ["kinesis", "glue", "s3", "postgresql"],
+        "apis": "rest_endpoints_for_all_client_interactions",
+        "real_time": "websocket_connections_for_teleoperation"
+      }
+    }
+  },
+  "core_features": {
+    "robot_control": {
+      "local_control": {
+        "type": "edge_based",
+        "capabilities": [
+          "arm_disarm_sequences",
+          "rover_navigation: forward/back/left/right",
+          "drone_movement: up/down/left/right/yaw_left/yaw_right",
+          "pressure_system_activation",
+          "auto_manual_mode_switching",
+          "speed_control_interface",
+          "emergency_stop_protocols"
+        ]
+      },
+      "teleoperation": {
+        "type": "cloud_based",
+        "latency_requirement": "<200ms",
+        "version": "V2",
+        "capabilities": [
+          "real_time_robot_control_over_internet",
+          "live_camera_feed_streaming",
+          "telemetry_data_overlay",
+          "emergency_intervention",
+          "1_to_1_human_robot_operation"
+        ]
+      },
+      "fleet_teleoperation": {
+        "type": "autonomous_oversight",
+        "version": "V2", 
+        "capabilities": [
+          "multi_robot_coordination_interface",
+          "zone_assignment_and_management",
+          "autonomous_mission_scheduling",
+          "real_time_fleet_status_monitoring",
+          "waypoint_based_cleaning_coordination"
+        ]
+      }
+    },
+    "mission_management": {
+      "planning": {
+        "click_and_clean": "operators click waypoints on LIDAR map",
+        "pathfinding": "autonomous pathfinding executed on edge device",
+        "scheduling": "mission scheduling and queuing",
+        "optimization": "coverage area definition and optimization"
+      },
+      "monitoring": {
+        "progress_tracking": "live mission progress (5-10s freshness)",
+        "performance_metrics": "per mission analytics",
+        "environmental_monitoring": "environmental condition tracking",
+        "completion_verification": "mission completion verification"
+      }
+    },
+    "fleet_management": {
+      "device_overview": [
+        "real_time_fleet_status_map",
+        "device_health_indicators: battery/connectivity/operational_status",
+        "active_mission_assignments", 
+        "maintenance_alert_prioritization"
+      ],
+      "assignment_management": [
+        "owner_to_operator_robot_assignments",
+        "zone_based_fleet_coordination",
+        "resource_allocation_optimization",
+        "operational_scheduling"
+      ]
+    },
+    "device_diagnostics": {
+      "individual_analysis": [
+        "mission_history_and_performance_analytics",
+        "component_health_monitoring_predictive_maintenance",
+        "serial_numbers_model_specs_flight_counters",
+        "telemetry_data_analysis_visualization",
+        "ssh_access_lb_staff_only",
+        "ros_bag_analysis_capabilities"
+      ],
+      "maintenance_intelligence": [
+        "predictive_maintenance_alerts_edge_ai",
+        "component_lifecycle_tracking",
+        "usage_pattern_analysis", 
+        "automated_maintenance_scheduling_recommendations"
+      ]
+    }
+  },
+  "reporting_analytics": {
+    "business_intelligence": {
+      "target_users": ["owners", "executives"],
+      "operational_metrics": [
+        "flight_time_and_distance_analytics",
+        "mission_completion_rates",
+        "fleet_utilization_statistics",
+        "active_vehicle_counts_deployment_efficiency"
+      ],
+      "performance_analytics": [
+        "average_mission_duration_coverage",
+        "fleet_productivity_trends",
+        "device_performance_comparisons",
+        "historical_trending_year_month_date"
+      ],
+      "multi_tenant_reporting": [
+        "company_segmented_data_executive_access",
+        "owner_specific_fleet_performance",
+        "operator_productivity_metrics",
+        "cost_per_operation_analysis"
+      ]
+    },
+    "operational_intelligence": {
+      "real_time_telemetry": {
+        "freshness": "5-10s outside teleoperation",
+        "data_points": [
+          "live_position_altitude_battery_status",
+          "environmental_data_weather_gps_quality_signal_strength",
+          "mission_progress_waypoint_completion",
+          "system_performance_metrics"
+        ]
+      },
+      "advanced_analytics": [
+        "flight_path_optimization_insights",
+        "operator_performance_analytics", 
+        "weather_impact_correlation",
+        "efficiency_trend_analysis"
+      ]
+    }
+  },
+  "advanced_features": {
+    "ai_powered": {
+      "natural_language_interface": [
+        "text_to_command_processing_all_interfaces",
+        "voice_command_integration_hands_free",
+        "contextual_command_interpretation"
+      ],
+      "predictive_maintenance": [
+        "edge_based_component_health_analysis",
+        "maintenance_alert_generation_prioritization",
+        "usage_correlation_component_degradation", 
+        "automated_replacement_scheduling_recommendations"
+      ],
+      "autonomous_operations": [
+        "waypoint_based_mission_planning",
+        "dynamic_obstacle_avoidance_rerouting",
+        "fleet_coordination_conflict_resolution",
+        "environmental_adaptation_algorithms"
+      ]
+    },
+    "flight_analytics": {
+      "real_time_operations": {
+        "latency": "<200ms for teleoperation",
+        "capabilities": [
+          "live_flight_streaming_full_telemetry_overlay",
+          "performance_metrics_speed_acceleration_power",
+          "environmental_integration_weather_signal_strength",
+          "anomaly_detection_alerting"
+        ]
+      },
+      "historical_analysis": [
+        "detailed_flight_path_reconstruction",
+        "component_performance_trending",
+        "regulatory_compliance_verification",
+        "audit_trail_maintenance_reporting"
+      ]
+    }
+  },
+  "technical_requirements": {
+    "performance": {
+      "real_time": {
+        "teleoperation": "<200ms command latency",
+        "near_real_time": "5-10s data freshness (general operations)",
+        "dashboard_updates": "30s refresh cycles",
+        "emergency_alerts": "<5s propagation time"
+      },
+      "scalability": {
+        "current_devices": 1000,
+        "target_devices": "10,000+",
+        "concurrent_users": "100+ simultaneous operators",
+        "data_throughput": "real-time telemetry from full fleet"
+      },
+      "reliability": {
+        "uptime": "99.9%",
+        "degradation": "graceful during connectivity loss",
+        "offline_operation": "mobile capabilities",
+        "recovery": "automatic failover and recovery"
+      }
+    }
+  },
+  "design_system": {
+    "brand": {
+      "tagline": "Robots That Work. Literally.",
+      "promise": "Delivering automated cleaning solutions that operate reliably in commercial environments without requiring specialized expertise to manage",
+      "interface_principles": [
+        "professional_action_oriented_design",
+        "clear_status_communication_no_jargon",
+        "direct_feedback_next_step_guidance", 
+        "reliability_focused_visual_hierarchy"
+      ]
+    },
+    "colors": {
+      "primary": {
+        "background_dark": "rgba(18, 18, 20, 1)",
+        "glass_overlay": "rgba(18, 18, 20, 0.80)",
+        "backdrop_blur": "15px"
+      },
+      "interactive": {
+        "white_base": "#fff",
+        "white_transparent": "rgba(255, 255, 255, 0.1)",
+        "white_border": "rgba(255, 255, 255, 0.2)"
+      },
+      "status": {
+        "error_stop": "#FF0000",
+        "primary_blue": "#0076FE", 
+        "secondary_blue": "#33E2FF"
+      },
+      "neutral": {
+        "black_overlay": "rgba(0, 0, 0, 0.5)",
+        "glass_background": "rgba(0, 0, 0, 0.9)"
+      }
+    },
+    "typography": {
+      "font_stack": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      "sizes": {
+        "small": "12px",
+        "medium": "14px", 
+        "base": "16px",
+        "large": "20px"
+      },
+      "weights": {
+        "normal": 400,
+        "medium": 500,
+        "semibold": 600,
+        "bold": 700
+      }
+    },
+    "spacing": {
+      "micro": ["2px", "4px", "8px", "12px", "16px"],
+      "component": ["20px", "24px", "32px"],
+      "layout": ["48px", "64px", "80px"]
+    },
+    "implementation": [
+      "responsive_design_mobile_first",
+      "progressive_web_app_capabilities",
+      "real_time_websocket_architecture",
+      "component_based_design_system",
+      "accessibility_compliance_WCAG_2_1_AA"
+    ]
+  },
+  "out_of_scope": [
+    "robotic_edge_software",
+    "drone_information_outside_missions"
+  ],
+  "customer_service_needs": {
+    "current_process": [
+      "photo_of_controller_robot_crash",
+      "rca_channel_slack_checklist",
+      "links_to_flight_logs",
+      "message_on_controller", 
+      "device_parameter_changes",
+      "hardware_issue_diagnosis"
+    ],
+    "requirements": [
+      "real_time_see_customer_view",
+      "proactive_flight_information",
+      "predictive_maintenance_alerts",
+      "incident_discovery_automation",
+      "persistent_messaging_system"
+    ]
+  }
+}
