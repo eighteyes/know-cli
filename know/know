@@ -1,0 +1,525 @@
+#!/bin/bash
+
+# know - Generate implementation specifications from knowledge map
+# Zero LLM dependency, pure shell + jq implementation
+
+set -euo pipefail
+
+# Directories
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+KNOWLEDGE_MAP="${KNOWLEDGE_MAP:-${SCRIPT_DIR}/../knowledge-map-cmd.json}"
+LIB_DIR="${SCRIPT_DIR}/lib"
+TEMPLATE_DIR="${SCRIPT_DIR}/templates"
+GENERATOR_DIR="${SCRIPT_DIR}/generators"
+
+# Colors for output
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly BLUE='\033[0;34m'
+readonly NC='\033[0m'
+
+# Error handling
+error() {
+    echo -e "${RED}Error: $1${NC}" >&2
+    exit 1
+}
+
+info() {
+    echo -e "${BLUE}$1${NC}" >&2
+}
+
+success() {
+    echo -e "${GREEN}$1${NC}" >&2
+}
+
+# Check dependencies
+check_deps() {
+    command -v jq >/dev/null 2>&1 || error "jq is required but not installed"
+    [[ -f "$KNOWLEDGE_MAP" ]] || error "Knowledge map not found at $KNOWLEDGE_MAP"
+}
+
+# Load library functions
+source "$LIB_DIR/utils.sh"
+source "$LIB_DIR/resolve.sh"
+source "$LIB_DIR/backend.sh"
+source "$LIB_DIR/render.sh"
+source "$LIB_DIR/autocomplete.sh"
+source "$LIB_DIR/validate-simple.sh"
+source "$LIB_DIR/validation-comprehensive.sh"
+source "$LIB_DIR/workflows.sh"
+
+# Show usage
+usage() {
+    cat << EOF
+know - Generate implementation specifications from knowledge map
+
+ENTITY SPECIFICATIONS:
+    know feature <entity_id>              Feature spec with acceptance criteria
+    know component <entity_id>            Component implementation spec
+    know screen <entity_id>               Screen/UI specification with design system  
+    know functionality <entity_id>        Technical functionality spec
+    know requirement <entity_id>          Requirement with acceptance criteria
+    know api <entity_id>                  API specification from schema
+
+ANALYSIS COMMANDS:
+    know deps <entity_ref>                Dependency analysis
+    know impact <entity_ref>              Impact analysis of changes
+    know order                            Optimal implementation order
+    know validate                         Reference integrity checking
+
+DISCOVERY COMMANDS:
+    know list [entity_type]               List entities with autocomplete data
+    know search <term> [entity_type]     Fuzzy search entities
+    know preview <type> <entity_id>      Preview spec sections before generation
+    know check <type> <entity_id>        Validate completeness before generation
+
+WORKFLOW COMMANDS (PM/Dev):
+    know validate <entity_ref> [--comprehensive] [--min-score N]   Enhanced validation
+    know completeness [entity_type]      Show completeness scores for entities
+    know gaps <entity_ref>               Show gaps and recommendations
+    know ready-check <entity_ref>        Implementation readiness assessment
+    know blockers                        Show entities blocking implementation
+    know todo                           Show next actions needed
+
+INTERACTIVE WORKFLOWS:
+    know create-feature                  Interactive feature creation with dependencies
+    know complete <entity_ref>           Interactive gap completion workflow
+    know implementation-chain <entity_ref>  Create full implementation chain
+    know priorities                      Show implementation priorities based on completeness
+
+PACKAGE GENERATION:
+    know package <entity_id>              Complete implementation package
+    know test <entity_ref>                Test scenarios from acceptance criteria
+
+OPTIONS:
+    --format <md|json|yaml>               Output format (default: md)
+    --output <file>                       Output to file instead of stdout
+    --map <file>                          Path to knowledge map JSON file
+    --ai                                  Generate Claude-optimized specification with implementation context
+    --help                                Show this help
+
+EXAMPLES:
+    know feature real-time-telemetry      Generate feature specification
+    know component fleet-status-map       Generate component spec
+    know screen fleet-dashboard           Generate screen specification
+    know deps feature:real-time-telemetry Show dependency chain
+    know impact model:robot-fleet         Show what would be affected
+    know package teleoperation-interface  Complete implementation package
+    know --map project.json feature auth  Use custom knowledge map
+    know --ai feature checkout --output spec.md  Generate AI-optimized spec
+
+INTERACTIVE WORKFLOW EXAMPLES:
+    know create-feature                    Start guided feature creation process
+    know gaps feature:user-auth            Show what's missing from feature
+    know complete feature:user-auth        Fix gaps interactively  
+    know priorities                        See what's ready to implement
+    know implementation-chain feature:checkout  Build full implementation plan
+
+ENTITY REFERENCE FORMAT:
+    <type>:<id>                           Full entity reference
+    <id>                                  Auto-detect type if unique
+
+CONFIGURATION:
+    KNOWLEDGE_MAP environment variable    Default knowledge map file path
+
+EOF
+}
+
+# Parse global options
+OUTPUT_FORMAT="md"
+OUTPUT_FILE=""
+AI_MODE=false
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --format)
+            OUTPUT_FORMAT="$2"
+            shift 2
+            ;;
+        --output)
+            OUTPUT_FILE="$2"
+            shift 2
+            ;;
+        --map)
+            KNOWLEDGE_MAP="$2"
+            shift 2
+            ;;
+        --ai)
+            AI_MODE=true
+            shift
+            ;;
+        --help|-h)
+            usage
+            exit 0
+            ;;
+        -*)
+            error "Unknown option: $1"
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+# Main command dispatcher
+main() {
+    check_deps
+    
+    [[ $# -eq 0 ]] && { usage; exit 1; }
+    
+    local command="$1"
+    shift
+    
+    case "$command" in
+        feature|component|screen|functionality|requirement|api)
+            [[ $# -ge 1 ]] || error "Usage: know $command <entity_id>"
+            local entity_ref=$(resolve_entity_reference "$1" "$command")
+            
+            # Phase 1: Check completeness threshold
+            local completeness_score
+            completeness_score=$(get_completeness_score "$entity_ref")
+            
+            if [[ $completeness_score -lt 70 ]]; then
+                error "Cannot generate specification - entity completeness too low ($completeness_score%)
+                
+❌ Minimum completeness required: 70%
+📊 Current completeness: $completeness_score%
+📈 Need: $(( 70 - completeness_score ))% more completeness
+
+🔧 Fix gaps first:
+  know gaps $entity_ref
+  know validate $entity_ref --comprehensive
+  
+Then retry specification generation."
+            fi
+            
+            info "✅ Completeness check passed ($completeness_score%)"
+            
+            echo
+            # Phase 2: Generate specification
+            if [[ "$AI_MODE" == "true" ]]; then
+                generate_ai_spec "$command" "$entity_ref" "$OUTPUT_FORMAT" "$OUTPUT_FILE"
+            else
+                generate_spec "$command" "$entity_ref" "$OUTPUT_FORMAT" "$OUTPUT_FILE"
+            fi
+            ;;
+        deps)
+            [[ $# -ge 1 ]] || error "Usage: know deps <entity_ref>"
+            local entity_ref=$(resolve_entity_reference "$1")
+            show_dependencies "$entity_ref"
+            ;;
+        impact)
+            [[ $# -ge 1 ]] || error "Usage: know impact <entity_ref>"
+            local entity_ref=$(resolve_entity_reference "$1")
+            show_impact_analysis "$entity_ref"
+            ;;
+        order)
+            show_implementation_order
+            ;;
+        validate)
+            if [[ $# -ge 1 && "$1" != --* ]]; then
+                # Enhanced entity validation
+                local entity_ref=$(resolve_entity_reference "$1")
+                local min_score=70
+                local comprehensive=false
+                
+                # Parse additional options
+                shift
+                while [[ $# -gt 0 ]]; do
+                    case $1 in
+                        --comprehensive)
+                            comprehensive=true
+                            shift
+                            ;;
+                        --min-score)
+                            min_score="$2"
+                            shift 2
+                            ;;
+                        *)
+                            shift
+                            ;;
+                    esac
+                done
+                
+                if [[ "$comprehensive" == "true" ]]; then
+                    validate_entity_comprehensive "$entity_ref" "$min_score"
+                else
+                    validate_entity_completeness "$entity_ref" "basic"
+                fi
+            else
+                # Original graph validation
+                validate_knowledge_map
+            fi
+            ;;
+        cycles)
+            detect_cycles
+            ;;
+        path)
+            [[ $# -ge 2 ]] || error "Usage: know path <from_entity> <to_entity>"
+            local from_entity=$(resolve_entity_reference "$1")
+            local to_entity=$(resolve_entity_reference "$2")
+            find_entity_path "$from_entity" "$to_entity"
+            ;;
+        package)
+            [[ $# -ge 1 ]] || error "Usage: know package <entity_id>"
+            local entity_ref=$(resolve_entity_reference "$1")
+            generate_package "$entity_ref" "$OUTPUT_FORMAT" "$OUTPUT_FILE"
+            ;;
+        test)
+            [[ $# -ge 1 ]] || error "Usage: know test <entity_ref>"
+            local entity_ref=$(resolve_entity_reference "$1")
+            generate_test_scenarios "$entity_ref" "$OUTPUT_FORMAT" "$OUTPUT_FILE"
+            ;;
+        list)
+            list_entities "${1:-}"
+            ;;
+        search)
+            [[ $# -ge 1 ]] || error "Usage: know search <term> [entity_type]" 
+            search_entities "$1" "${2:-}"
+            ;;
+        preview)
+            [[ $# -ge 2 ]] || error "Usage: know preview <type> <entity_id>"
+            local entity_ref=$(resolve_entity_reference "$2" "$1")
+            preview_generation "$1" "$entity_ref"
+            ;;
+        check)
+            [[ $# -ge 2 ]] || error "Usage: know check <type> <entity_id>"
+            local entity_ref=$(resolve_entity_reference "$2" "$1")
+            validate_entity_completeness "$entity_ref" "$1"
+            ;;
+        completeness)
+            if [[ $# -ge 1 ]]; then
+                if [[ "$OUTPUT_FORMAT" == "json" ]]; then
+                    analyze_completeness_batch_json "$1"
+                else
+                    analyze_completeness_batch "$1"
+                fi
+            else
+                if [[ "$OUTPUT_FORMAT" == "json" ]]; then
+                    # Combined JSON output for all entity types
+                    {
+                        echo '{'
+                        echo '  "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",'
+                        echo '  "overall_summary": {'
+                        for entity_type in features components screens; do
+                            echo "    \"$entity_type\": $(analyze_completeness_batch_json "$entity_type"),"
+                        done | sed '$ s/,$//'
+                        echo '  }'
+                        echo '}'
+                    } | jq .
+                else
+                    echo "📊 Overall Completeness Summary"
+                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                    for entity_type in features components screens; do
+                        echo
+                        analyze_completeness_batch "$entity_type"
+                    done
+                fi
+            fi
+            ;;
+        gaps)
+            [[ $# -ge 1 ]] || error "Usage: know gaps <entity_ref>"
+            local entity_ref=$(resolve_entity_reference "$1")
+            validate_entity_comprehensive "$entity_ref" 70 | grep -A 50 "IDENTIFIED GAPS\|RECOMMENDED ACTIONS"
+            ;;
+        ready-check)
+            [[ $# -ge 1 ]] || error "Usage: know ready-check <entity_ref>"
+            local entity_ref=$(resolve_entity_reference "$1")
+            echo "🎯 Implementation Readiness Check: $entity_ref"
+            echo
+            if validate_entity_comprehensive "$entity_ref" 70 >/dev/null 2>&1; then
+                echo "✅ READY FOR IMPLEMENTATION"
+                echo "💡 Proceed with: know spec $entity_ref --complete"
+            else
+                echo "❌ NOT READY FOR IMPLEMENTATION"
+                echo "📋 Run: know gaps $entity_ref"
+            fi
+            ;;
+        blockers)
+            if [[ "$OUTPUT_FORMAT" == "json" ]]; then
+                # JSON output for blockers
+                local all_blockers=()
+                
+                for entity_type in features components screens; do
+                    local entities
+                    entities=$("$MOD_GRAPH" list "$entity_type" | grep "  " | cut -d' ' -f3 | cut -d'-' -f1 | head -10)
+                    
+                    while IFS= read -r entity_id; do
+                        [[ -z "$entity_id" ]] && continue
+                        
+                        local score
+                        score=$(get_completeness_score "${entity_type%s}:$entity_id")
+                        
+                        if [[ $score -lt 70 ]]; then
+                            local blocker_level="needs_work"
+                            local blocker_description="Needs additional work"
+                            
+                            if [[ $score -lt 50 ]]; then
+                                blocker_level="critical" 
+                                blocker_description="Critical blocker - significant work required"
+                            fi
+                            
+                            local blocker_data
+                            blocker_data=$(jq -n \
+                                --arg id "$entity_id" \
+                                --arg type "${entity_type%s}" \
+                                --arg entity_ref "${entity_type%s}:$entity_id" \
+                                --argjson score "$score" \
+                                --arg level "$blocker_level" \
+                                --arg description "$blocker_description" \
+                                '{
+                                    id: $id,
+                                    type: $type,
+                                    entity_ref: $entity_ref,
+                                    completeness_score: $score,
+                                    blocker_level: $level,
+                                    description: $description
+                                }')
+                            all_blockers+=("$blocker_data")
+                        fi
+                    done <<< "$entities"
+                done
+                
+                # Output JSON
+                printf '%s\n' "${all_blockers[@]}" | jq -s \
+                    '{
+                        timestamp: now,
+                        analysis_type: "implementation_blockers",
+                        blockers: .,
+                        summary: {
+                            total_blockers: length,
+                            critical: [.[] | select(.blocker_level == "critical")] | length,
+                            needs_work: [.[] | select(.blocker_level == "needs_work")] | length
+                        },
+                        recommendations: [
+                            "Address critical blockers first (< 50% completeness)",
+                            "Use: know gaps <entity_ref> to see specific missing items",
+                            "Use: know complete <entity_ref> for interactive gap fixing"
+                        ]
+                    }'
+            else
+                echo "🚧 Implementation Blockers Analysis"
+                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                echo "Finding entities with low completeness scores..."
+                echo
+                for entity_type in features components screens; do
+                    echo "📋 $entity_type blockers:"
+                    analyze_completeness_batch "$entity_type" | grep "🔴\|🟡" | head -5
+                    echo
+                done
+            fi
+            ;;
+        todo)
+            echo "📝 Next Actions Needed"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "🔍 Finding entities that need attention..."
+            echo
+            # Find entities with missing critical components
+            local incomplete_features
+            incomplete_features=$("$MOD_GRAPH" list features 2>/dev/null | grep "  " | head -5)
+            if [[ -n "$incomplete_features" ]]; then
+                echo "🎯 High Priority (Features needing work):"
+                while IFS= read -r line; do
+                    if [[ -n "$line" ]]; then
+                        local feature_id=$(echo "$line" | awk '{print $1}')
+                        local score=$(get_completeness_score "feature:$feature_id")
+                        if [[ $score -lt 70 ]]; then
+                            echo "  • feature:$feature_id ($score%) - Run: know gaps feature:$feature_id"
+                        fi
+                    fi
+                done <<< "$incomplete_features"
+            fi
+            ;;
+        completion)
+            generate_completion
+            ;;
+        create-feature)
+            create_feature_interactive
+            ;;
+        complete)
+            [[ $# -ge 1 ]] || error "Usage: know complete <entity_ref>"
+            local entity_ref=$(resolve_entity_reference "$1")
+            complete_entity_interactive "$entity_ref"
+            ;;
+        implementation-chain)
+            [[ $# -ge 1 ]] || error "Usage: know implementation-chain <entity_ref>"
+            local entity_ref=$(resolve_entity_reference "$1")
+            create_implementation_chain "$entity_ref"
+            ;;
+        priorities)
+            show_implementation_priorities "$OUTPUT_FORMAT"
+            ;;
+        *)
+            error "Unknown command: $command. Use 'know --help' for usage."
+            ;;
+    esac
+}
+
+# Generate specification based on entity type
+generate_spec() {
+    local spec_type="$1"
+    local entity_ref="$2"
+    local format="$3"
+    local output_file="$4"
+    
+    # Use our simple working generators for features and screens, fall back to original for others
+    if [[ "$spec_type" == "feature" ]]; then
+        local generator="$GENERATOR_DIR/simple-feature-spec.sh"
+    elif [[ "$spec_type" == "screen" ]]; then
+        local generator="$GENERATOR_DIR/simple-screen-spec.sh"
+    else
+        local generator="$GENERATOR_DIR/${spec_type}-spec.sh"
+    fi
+    
+    if [[ -f "$generator" ]]; then
+        info "Generating $spec_type specification for $entity_ref"
+        
+        # Export necessary environment variables for generator
+        export KNOWLEDGE_MAP TEMPLATE_DIR LIB_DIR AI_MODE
+        export MOD_GRAPH JSON_GRAPH_QUERY
+        
+        local result
+        result=$(bash "$generator" "$entity_ref" "$format")
+        
+        if [[ -n "$output_file" ]]; then
+            echo "$result" > "$output_file"
+            success "Specification written to $output_file"
+        else
+            echo "$result"
+        fi
+    else
+        error "No generator found for $spec_type (expected: $generator)"
+    fi
+}
+
+# Generate AI-optimized specification
+generate_ai_spec() {
+    local spec_type="$1"
+    local entity_ref="$2"
+    local format="$3"
+    local output_file="$4"
+    
+    local generator="$GENERATOR_DIR/${spec_type}-spec.sh"
+    
+    if [[ -f "$generator" ]]; then
+        info "Generating AI-optimized $spec_type specification for $entity_ref"
+        
+        # Export necessary environment variables for generator
+        export KNOWLEDGE_MAP TEMPLATE_DIR LIB_DIR AI_MODE
+        
+        local result
+        result=$(bash "$generator" "$entity_ref" "$format")
+        
+        if [[ -n "$output_file" ]]; then
+            echo "$result" > "$output_file"
+            success "AI specification written to $output_file"
+        else
+            echo "$result"
+        fi
+    else
+        error "No generator found for $spec_type (expected: $generator)"
+    fi
+}
+
+main "$@"

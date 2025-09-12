@@ -4,86 +4,120 @@
 
 Instead of hierarchical nesting, treat JSON as a flat graph with explicit relationship modeling. This gives us graph database power with universal JSON tooling compatibility.
 
-## Schema Design
 
-### Node-Edge Pattern
-```json
-{
-  "nodes": {
-    "screen:fleet-dashboard": { "type": "screen", "name": "Fleet Management Dashboard", ... },
-    "component:fleet-status-map": { "type": "component", "name": "Fleet Status Map", ... },
-    "feature:real-time-telemetry": { "type": "feature", "name": "Real-Time Telemetry", ... }
-  },
-  "edges": [
-    {"from": "screen:fleet-dashboard", "to": "component:fleet-status-map", "type": "contains"},
-    {"from": "component:fleet-status-map", "to": "feature:real-time-telemetry", "type": "implements"},
-    {"from": "feature:real-time-telemetry", "to": "model:robot-fleet", "type": "uses"}
-  ]
-}
+## Typical Abstraction Hierarchy (Broad → Granular):
+
+### 1. **Project/Business Level** (Broadest)
+- Strategic objectives and evolution phases
+- Release milestones and roadmap  
+- Business requirements and constraints
+
+### 2. **Platform/Infrastructure Level**
+- Deployment platforms (web, mobile, cloud, etc.)
+- External dependencies and third-party services
+- Infrastructure components and environments
+
+### 3. **User/Stakeholder Level**
+- User roles, personas, and access patterns
+- Business stakeholders and their needs
+- Cross-cutting requirements and constraints
+
+### 4. **Interface/Experience Level** 
+- User interfaces and customer touchpoints
+- Workflows and user journeys
+- Integration points and APIs
+
+### 5. **Feature/Capability Level**
+- Business features and domain capabilities
+- Functional requirements and use cases
+- Cross-cutting concerns and services
+
+### 6. **Component/Module Level**
+- Implementation components and modules
+- Business logic and domain services
+- Integration adapters and controllers
+
+### 7. **UI/Presentation Level**
+- Shared design systems and patterns
+- Reusable UI components and widgets
+- Visual themes and interaction patterns
+
+### 8. **Data/Schema Level**
+- Domain models and business entities
+- Data relationships and constraints
+- Integration schemas and contracts
+
+### 9. **Implementation Level** (Most Granular)
+- Technical configurations and settings
+- Library versions and framework choices
+- API endpoints and communication protocols
+- Deployment and runtime specifications
+
+## Typical Dependency Flow:
+```
+Project → Platform → User → Interface → Feature → Component → UI → Implementation
+    ↓                              ↓                     ↓
+Requirements ──────────────→ Functionality ───→ Data Models
 ```
 
-### Adjacency List Pattern  
-```json
-{
-  "entities": { /* all entities */ },
-  "graph": {
-    "screen:fleet-dashboard": {
-      "contains": ["component:fleet-status-map", "component:operational-metrics"],
-      "implements": ["feature:real-time-telemetry"],
-      "serves": ["user:owner", "user:fleet-teleoperator"]
-    },
-    "component:fleet-status-map": {
-      "contained_by": ["screen:fleet-dashboard"],
-      "implements": ["feature:real-time-telemetry"],
-      "displays": ["model:robot-fleet"], 
-      "uses": ["model:telemetry-stream"]
-    }
-  }
-}
-```
 
-### Matrix Pattern
-```json
-{
-  "entities": { /* all entities */ },
-  "adjacency_matrix": {
-    "contains": {
-      "screen:fleet-dashboard": ["component:fleet-status-map", "component:operational-metrics"],
-      "screen:mission-control": ["component:waypoint-map"]
-    },
-    "implements": {
-      "component:fleet-status-map": ["feature:real-time-telemetry"],
-      "component:waypoint-map": ["feature:mission-automation"]
-    },
-    "uses": {
-      "feature:real-time-telemetry": ["model:robot-fleet", "model:telemetry-stream"]
-    }
-  }
-}
-```
 
-## Recommended Hybrid Approach
+## Schema Design Patterns
 
 ### Core Design Principles (Refined)
 
 **🎯 Single Source of Truth**: All relationships stored ONLY in graph section  
 **🧹 Clean Entity Separation**: Entities contain only static metadata  
 **🔄 Versioned Evolution**: Features evolve through versions, not duplicates  
-**❌ Zero Redundancy**: No capabilities/permissions arrays in entities
+**❌ Zero Redundancy**: No capabilities/permissions arrays in entities  
+**🔗 Pure Dependency Model**: Universal relationship semantic:
+- Single `depends_on` array per entity (no outbound/inbound nesting)
+- Everything is fundamentally a dependency relationship
+- 50% smaller JSON (eliminates bidirectional redundancy)  
+- Simpler queries (flat array vs nested objects)
 
 ```json
 {
   "meta": { /* project metadata */ },
-  "content_library": { /* deduplicated content */ },
+  "references": {
+    "descriptions": { /* shared content references */ },
+    "technical_architecture": { /* infrastructure configs */ },
+    "endpoints": { /* API specifications */ },
+    "libraries": { /* dependency versions */ },
+    "protocols": { /* communication specs */ },
+    "ui": { /* design system colors, typography, spacing */ },
+    "component_implementations": {
+      "admin-dashboard-table": {
+        "base_component": "ui_components.data-table",
+        "context": "admin_interface",
+        "specialized_for": ["screen:admin-panel", "user:admin"],
+        "data_source": "user_analytics_api",
+        "styling": "admin_theme"
+      }
+    }
+  },
   
   "entities": {
     "users": { 
-      "owner": {
-        "id": "owner",
+      "admin": {
+        "id": "admin",
         "type": "user", 
-        "name": "Owner",
-        "description_ref": "user-management-desc"
+        "name": "Administrator",
+        "description": "System administrator with full access"
         // NO capabilities, permissions, or features arrays!
+      }
+    },
+    "components": {
+      "admin-dashboard-table": {
+        "id": "admin-dashboard-table",
+        "type": "component",
+        "base_component": "data-table",
+        "specialized_for": ["screen:admin-panel", "user:admin"],
+        "acceptance_criteria": {
+          "functional": ["displays_user_data_accurately", "sorting_filtering_working"],
+          "performance": ["loads_under_2_seconds", "handles_1000_rows"],
+          "integration": ["connects_to_user_api", "respects_admin_permissions"]
+        }
       }
     },
     "features": { 
@@ -95,301 +129,130 @@ Instead of hierarchical nesting, treat JSON as a flat graph with explicit relati
         "evolution": {
           "v1": {
             "status": "implemented",
-            "description_ref": "advanced-analytics-desc",
-            "capabilities": ["flight-path-optimization", "performance-correlation"],
+            "description_ref": "basic-analytics-desc",
+            "capabilities": ["reporting", "data-visualization"],
             "priority": "P1"
           },
           "v2": {
             "status": "planned", 
-            "description_ref": "ai-powered-analytics-desc",
-            "capabilities": ["predictive-analytics", "automated-insights"],
+            "description_ref": "advanced-analytics-desc",
+            "capabilities": ["predictive-analytics", "real-time-dashboards"],
             "priority": "P0",
-            "roadmap_milestone": "v2_ai_enhanced_features"
+            "roadmap_milestone": "v2_enhanced_features"
           }
         }
       }
     },
-    "schema": { /* typed data model definitions */ }
+    "schema": { /* domain model definitions */ }
   },
 
   "graph": {
-    "user:owner": {
-      "outbound": {
-        "accesses": ["screen:fleet-dashboard", "screen:business-intelligence"],
-        "manages": ["user:operator"],
-        "assigns": ["model:robot-fleet"],
-        "uses": ["feature:analytics", "feature:predictive-maintenance"]
-      },
-      "inbound": {
-        "served_by": ["platform:web-platform", "platform:mobile-platform"]
-      }
+    "user:admin": {
+      "depends_on": [
+        "screen:admin-panel", 
+        "feature:analytics", 
+        "feature:user-management",
+        "platform:web-app"
+      ]
+    },
+    "component:admin-dashboard-table": {
+      "depends_on": [
+        "ui_component:data-table",
+        "feature:analytics",
+        "model:user-data"
+      ]
     }
   },
 
   "project": {
     "roadmap": { /* implementation milestones */ },
-    "strategic": { /* V1→V4 evolution plan */ },
+    "strategic": { /* evolution plan */ },
     "risks": { /* constraints and validation */ }
+  }
+}
+```
+
+## Key Architectural Patterns from Implementation
+
+### Component Specialization Pattern
+Handle variations of shared components for different users/contexts. This solves the problem of UI components being too general - a fleet data-table for an owner has very different needs than one for an operator:
+
+```json
+"components": {
+  "owner-fleet-table": {
+    "id": "owner-fleet-table",
+    "type": "component",
+    "base_component": "fleet-status-map",
+    "specialized_for": ["screen:business-intelligence", "user:owner", "user:executive"],
+    "functionality": [
+      "fleet-utilization-metrics",
+      "revenue-per-robot", 
+      "operational-costs",
+      "roi-analysis",
+      "export-financials"
+    ]
   },
-
+  "operator-fleet-table": {
+    "id": "operator-fleet-table", 
+    "type": "component",
+    "base_component": "fleet-status-map",
+    "specialized_for": ["screen:fleet-dashboard", "user:operator", "user:fleet-teleoperator"],
+    "functionality": [
+      "real-time-robot-status",
+      "mission-assignments",
+      "battery-monitoring", 
+      "emergency-controls",
+      "quick-actions"
+    ]
+  }
 }
 ```
 
-## Query Implementation with jq
+**Key Benefits:**
+- **Clear Inheritance**: `base_component` shows foundational component
+- **Focused Functionality**: Each variant has specific capabilities for its context  
+- **Explicit Relationships**: Dependencies show exactly which users, screens, and features each variant serves
+- **Graph Queryable**: You can trace dependencies to understand component relationships
 
-### Basic Graph Traversal (Zero Redundancy)
-```bash
-# Query user capabilities via graph (NOT entities.users.owner.capabilities)
-jq '.graph."user:owner".outbound.accesses[]' knowledge-map.json
-
-# Find platform features via graph (NOT entities.platforms.features)  
-jq '.graph."platform:web-platform".outbound.implements[]' knowledge-map.json
-
-# Find all screens that contain fleet-status-map component
-jq -r '.graph | to_entries[] | select(.value.outbound.contains[]? == "component:fleet-status-map") | .key' knowledge-map.json
-
-# Get versioned feature capabilities
-jq '.entities.features.analytics.evolution.v2.capabilities[]' knowledge-map.json
-```
-
-### Multi-Hop Traversal
-```bash
-# Find all models used by fleet dashboard (screen -> component -> feature -> model)
-jq -r '
-  .graph."screen:fleet-dashboard".outbound.contains[] as $comp |
-  .graph[$comp].outbound.implements[]? as $feat |
-  .graph[$feat].outbound.processes[]? | 
-  select(startswith("model:"))
-' knowledge-map.json
-
-# Find features planned for V2 roadmap milestone
-jq -r '
-  .entities.features | to_entries[] | 
-  select(.value.evolution.v2.roadmap_milestone == "v2_ai_enhanced_features") | 
-  .key
-' knowledge-map.json
-```
-
-### Dependency Analysis
-```bash
-# Find dependency chain for a feature
-jq -r '
-  def find_deps($entity):
-    (.graph[$entity].outbound.depends_on[]? // empty) as $dep |
-    $dep, find_deps($dep);
-  
-  find_deps("feature:real-time-telemetry")
-' knowledge-map.json
-```
-
-### User Access Analysis
-```bash
-# Find all entities accessible by owner (computed on-demand)
-jq -r '
-  .graph."user:owner".outbound.accesses[]?
-' knowledge-map.json
-
-# Find all entities that serve owner  
-jq -r '
-  .graph | to_entries[] |
-  select(.value.outbound.serves[]? == "user:owner") |
-  .key
-' knowledge-map.json
-```
-
-## Benefits Achieved
-
-### ✅ Graph Database Power
-- **Multi-hop traversal**: Navigate relationships across any depth
-- **Bidirectional queries**: Find both dependencies and dependents
-- **Pattern matching**: Complex graph patterns with jq
-- **Path finding**: Trace connections between any entities
-
-### ✅ Universal Tooling 
-- **Standard JSON**: Works with any JSON parser
-- **jq queries**: Powerful query language built for JSON
-- **IDE support**: Syntax highlighting, validation, completion
-- **Git friendly**: Readable diffs, merge conflicts manageable
-
-### ✅ Performance Optimizations
-- **Pre-computed views**: Common queries cached as JSON
-- **Indexes**: Fast lookups by type, relationship, attribute  
-- **Adjacency lists**: O(1) relationship access
-- **Flat structure**: No deep nesting performance penalties
-
-### ✅ Flexibility
-- **Schema evolution**: Add new relationship types easily
-- **View generation**: Create any organizational perspective
-- **Partial loading**: Load only needed entity types
-- **Streaming**: Process large graphs incrementally
-
-## Advanced Query Patterns
-
-### Dependency Graph Generation
-```bash
-# Generate mermaid dependency diagram
-jq -r '
-  .graph | to_entries[] | 
-  .key as $from | 
-  .value.outbound.depends_on[]? as $to |
-  "  \($from) --> \($to)"
-' knowledge-map.json | sed 's/^//' > dependencies.mermaid
-```
-
-### Circular Dependency Detection
-```bash
-# Find circular dependencies
-jq -r '
-  def has_cycle($start; $current; $visited):
-    if $visited | has($current) then
-      if $current == $start then true else false end
-    else
-      (.graph[$current].outbound.depends_on[]? // empty) as $next |
-      has_cycle($start; $next; $visited + {($current): true})
-    end;
-  
-  .graph | keys[] as $entity |
-  select(has_cycle($entity; $entity; {})) |
-  $entity
-' knowledge-map.json
-```
-
-### Impact Analysis
-```bash
-# Find all entities affected by changing a model
-jq -r '
-  def find_impact($entity):
-    (.graph | to_entries[] | 
-     select(.value.outbound | has("uses") and (.uses[] == $entity)) | .key) as $user |
-    $user, find_impact($user);
-  
-  find_impact("model:robot-fleet") | unique
-' knowledge-map.json
-```
-
-## CLI Integration
-
-The beauty is our existing CLI just needs query updates:
-
-```bash
-# Get entity with full relationship context
-km get screen dashboard --with-relationships | jq '
-  . as $result |
-  .related_entities = {
-    components: [.entity.graph.outbound.contains[]?],
-    features: [.entity.graph.outbound.implements[]?],
-    users: [.entity.graph.inbound.accessed_by[]?]
-  }
-'
-```
-
-## Memory and Performance
-
-### Space Efficiency
-- **Relationship storage**: ~2x overhead vs hierarchical nesting
-- **Index storage**: ~10% overhead for major indexes  
-- **View caching**: Optional, only for frequently accessed views
-- **Total overhead**: ~25% vs pure hierarchical, 90% less than graph DB
-
-### Query Performance
-- **Simple queries**: O(1) with indexes
-- **Multi-hop**: O(depth × avg_degree) 
-- **Pattern matching**: O(entities × pattern_complexity)
-- **View access**: O(1) for pre-computed views
-
-## Comparison: JSON Graph vs Traditional Graph DB
-
-| Feature | JSON Graph | Graph DB | Winner |
-|---------|------------|----------|---------|
-| Query Power | 85% | 100% | Graph DB |
-| Tooling Compatibility | 100% | 30% | **JSON Graph** |  
-| Learning Curve | Low | High | **JSON Graph** |
-| Performance | Good | Excellent | Graph DB |
-| Schema Flexibility | High | Very High | Tie |
-| Git Integration | Excellent | Poor | **JSON Graph** |
-| Backup/Restore | Trivial | Complex | **JSON Graph** |
-| Development Speed | Fast | Slow | **JSON Graph** |
-
-## Lessons Learned: Eliminating Redundancy
-
-### ❌ Original Problem: Dual Relationship Storage
+### Implementation Configuration Pattern
+Separate component logic from implementation details:
 ```json
-// REDUNDANT: Same info in two places (BEFORE our cleanup)
-"entities": {
-  "users": {
-    "owner": {
-      "id": "owner",
-      "type": "user",
-      "name": "Owner", 
-      "description_ref": "user-management-desc",
-      "ai_features": {                                         // ← Redundant!
-        "v2": ["natural_language_commands", "ai_powered_analytics"]
-      }
-    }
-  }
-},
-"graph": {
-  "user:owner": {
-    "outbound": {
-      "assigns": ["model:robot-fleet"],                        // ← Same info
-      "accesses": ["screen:fleet-dashboard", "screen:parts-store"] // ← Same info  
+"references": {
+  "component_implementations": {
+    "admin-dashboard-table": {
+      "base_component": "ui_components.data-table",
+      "data_source": "admin_analytics_api",
+      "columns": ["id", "email", "role", "last_login"],
+      "styling": "admin_theme"
     }
   }
 }
 ```
 
-### ✅ Solution: Single Source of Truth
+### Acceptance Criteria Pattern
+Structure validation requirements consistently:
 ```json
-// CLEAN: Relationships only in graph section
-"entities": {
-  "users": {
-    "owner": {
-      "id": "owner",
-      "type": "user", 
-      "name": "Owner",
-      "description_ref": "user-management-desc"
-      // NO ai_features, capabilities, or permissions arrays!
-    }
-  }
-},
-"graph": {
-  "user:owner": {
-    "outbound": {
-      "assigns": ["model:robot-fleet"],      // ← Single source of truth
-      "accesses": ["screen:fleet-dashboard", "screen:business-intelligence", "screen:device-diagnostics", "screen:parts-store"] // ← Query this for capabilities
-    }
-  }
+"acceptance_criteria": {
+  "functional": ["feature_works_correctly", "user_can_complete_task"],
+  "performance": ["loads_under_2_seconds", "handles_expected_load"],
+  "integration": ["connects_to_dependencies", "respects_permissions"],
+  "reliability": ["graceful_error_handling", "data_integrity"],
+  "safety": ["fail_safe_mechanisms", "emergency_controls"]
 }
 ```
 
-### 🔄 Versioned Features vs Duplicates
+### References Architecture Pattern
+Organize shared configurations and technical details:
 ```json
-// BEFORE: Duplicate features
-"advanced-analytics": {...},
-"ai-powered-analytics": {...}  // ← Same concept, AI version
-
-// AFTER: Versioned evolution  
-"analytics": {
-  "current_version": "v1",
-  "evolution": {
-    "v1": {"status": "implemented", "capabilities": ["basic-analytics"]},
-    "v2": {"status": "planned", "capabilities": ["ai-analytics"], "roadmap_milestone": "v2_ai_enhanced_features"}
-  }
+"references": {
+  "descriptions": { /* shared content */ },
+  "technical_architecture": { /* infrastructure */ },
+  "endpoints": { /* API specs */ },
+  "libraries": { /* versions */ },
+  "protocols": { /* communication */ },
+  "ui": { /* design system */ },
+  "component_implementations": { /* configs */ }
 }
 ```
 
-## Conclusion
-
-**Yes, we can achieve 85% of graph database benefits with JSON-only**, while gaining:
-
-- **Universal tooling support** (every language, every IDE)
-- **Zero infrastructure complexity** (it's just a file)
-- **Perfect Git integration** (readable diffs, easy merging)
-- **Single source of truth** (no redundancy between entities/graph)
-- **Versioned evolution** (features evolve rather than duplicate)
-- **Instant comprehensibility** (any developer can read it)
-- **Maximum portability** (runs anywhere JSON works)
-
-The 15% we lose (advanced graph algorithms, optimal query performance) is acceptable for most use cases, especially when weighed against the operational simplicity gains and eliminated redundancy.
-
-For Lucid Commander, this approach provides the perfect balance of graph database power with practical engineering constraints and clean architecture.
+These patterns enable clean separation between conceptual entities (WHAT) and implementation details (HOW) while maintaining clear dependency relationships.

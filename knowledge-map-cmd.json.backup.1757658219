@@ -1201,8 +1201,7 @@
             "telemetry_stream_model_integration",
             "platform_compatibility_maintained"
           ]
-        },
-        "status": "in_progress"
+        }
       },
       "predictive-maintenance": {
         "id": "predictive-maintenance",

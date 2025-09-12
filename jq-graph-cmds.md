@@ -1,318 +1,270 @@
-# JQ Graph Query Commands
+# JQ Graph Query Commands - JSON Graph Database
 
-Comprehensive collection of jq commands for parsing and analyzing the knowledge graph.
+Comprehensive collection of jq commands for parsing and analyzing the JSON graph database structure.
 
 ## Basic Entity Queries
 
 ### Get all entities of a specific type
 ```bash
-jq '.entities.screens' knowledge-map.json
-jq '.entities.features' knowledge-map.json
-jq '.entities.models' knowledge-map.json
+jq '.entities.screens' knowledge-map-cmd.json
+jq '.entities.features' knowledge-map-cmd.json
+jq '.entities.users' knowledge-map-cmd.json
+jq '.entities.platforms' knowledge-map-cmd.json
+jq '.entities.ui_components' knowledge-map-cmd.json
 ```
 
 ### Extract specific entity by ID
 ```bash
-jq '.entities.screens."fleet-dashboard"' knowledge-map.json
-jq '.entities.features."real-time-telemetry"' knowledge-map.json
+jq '.entities.screens."fleet-dashboard"' knowledge-map-cmd.json
+jq '.entities.features."real-time-telemetry"' knowledge-map-cmd.json
 ```
 
 ### List all entity IDs by type
 ```bash
-jq '.entities.screens | keys[]' knowledge-map.json
-jq '.entities.features | keys[]' knowledge-map.json
+jq '.entities.screens | keys[]' knowledge-map-cmd.json
+jq '.entities.features | keys[]' knowledge-map-cmd.json
 ```
 
-## Graph Relationship Queries
+## JSON Graph Database Queries
 
-### Find outbound relationships from an entity
+### Find what an entity depends on
 ```bash
-jq '.graph."user:owner".outbound' knowledge-map.json
-jq '.graph."screen:fleet-dashboard".outbound.contains[]' knowledge-map.json
+jq '.graph."user:owner".depends_on[]' knowledge-map-cmd.json
+jq '.graph."screen:fleet-dashboard".depends_on[]' knowledge-map-cmd.json
 ```
 
-### Find inbound relationships to an entity
+### Find what depends on an entity (reverse lookup)
 ```bash
-jq '.graph."platform:aws-infrastructure".inbound' knowledge-map.json
-jq '.graph."feature:real-time-telemetry".inbound.used_by[]' knowledge-map.json
+# Who depends on web-platform?
+jq -r '.graph | to_entries[] | select(.value.depends_on[]? == "platform:web-platform") | .key' knowledge-map-cmd.json
+
+# What depends on real-time-telemetry feature?
+jq -r '.graph | to_entries[] | select(.value.depends_on[]? == "feature:real-time-telemetry") | .key' knowledge-map-cmd.json
+
+# What screens depend on status indicators?
+jq -r '.graph | to_entries[] | select(.value.depends_on[]? == "ui_component:status-indicators") | .key' knowledge-map-cmd.json
 ```
 
-### Trace specific relationship types
+### Entity dependency counts
 ```bash
-# What does the owner access?
-jq '.graph."user:owner".outbound.accesses[]' knowledge-map.json
+# Entities with most dependencies (most complex)
+jq '.graph | to_entries | map({entity: .key, dep_count: (.value.depends_on | length)}) | sort_by(.dep_count) | reverse' knowledge-map-cmd.json
 
-# What features implement real-time telemetry?
-jq '.graph."feature:real-time-telemetry".inbound.implemented_by[]' knowledge-map.json
+# Most depended-upon entities (most critical)
+jq '.graph | to_entries[] | .value.depends_on[]' knowledge-map-cmd.json | sort | uniq -c | sort -nr
 
-# What components are contained by screens?
-jq '.graph | to_entries[] | select(.value.outbound.contains?) | {entity: .key, contains: .value.outbound.contains}' knowledge-map.json
+# User access analysis
+jq '.graph | to_entries[] | select(.key | startswith("user:")) | {user: .key, access_count: (.value.depends_on | length)}' knowledge-map-cmd.json
 ```
 
-## Index-Based Queries
+## Multi-Hop Dependency Analysis
 
-### Query by priority
+### Find dependency chains
 ```bash
-jq '.indexes.by_priority.P0[]' knowledge-map.json
-jq '.indexes.by_priority.P1[]' knowledge-map.json
+# Recursive dependency lookup
+jq -r '
+def find_deps($entity):
+  (.graph[$entity].depends_on[]? // empty) as $dep |
+  $dep, find_deps($dep);
+
+find_deps("feature:real-time-telemetry")
+' knowledge-map-cmd.json
 ```
 
-### Query by type with counts
+### Trace all paths to a dependency
 ```bash
-jq '.indexes.by_type | to_entries[] | {type: .key, count: (.value | length), entities: .value}' knowledge-map.json
+# Find all paths that lead to AWS infrastructure
+jq -r '
+def find_paths_to($target; $current; $visited):
+  if ($visited | has($current)) then empty
+  elif $current == $target then [$current]
+  else
+    (.graph[$current].depends_on[]? // empty) as $dep |
+    [$current] + find_paths_to($target; $dep; $visited + {($current): true})
+  end;
+
+.graph | keys[] as $entity |
+find_paths_to("platform:aws-infrastructure"; $entity; {})
+' knowledge-map-cmd.json
 ```
 
-### Query by user access
+## Impact Analysis Queries
+
+### Find all dependents of an entity
 ```bash
-jq '.indexes.by_user_access.owner[]' knowledge-map.json
-jq '.indexes.by_user_access | to_entries[] | {user: .key, accessible_screens: .value}' knowledge-map.json
+# What would be impacted if AWS infrastructure failed?
+jq -r '
+def find_dependents($target):
+  (.graph | to_entries[] | select(.value.depends_on[]? == $target) | .key) as $dependent |
+  $dependent, find_dependents($dependent);
+
+find_dependents("platform:aws-infrastructure") | unique
+' knowledge-map-cmd.json
 ```
 
-## Project Management Queries
-
-### Feature status analysis
+### Circular dependency detection
 ```bash
-# All blocked features
-jq '.project.roadmap | to_entries[] | select(.value.blockers | length > 0) | {feature: .key, blockers: .value.blockers}' knowledge-map.json
+# Find circular dependencies
+jq -r '
+def has_cycle($start; $current; $visited):
+  if ($visited | has($current)) then
+    if $current == $start then true else false end
+  else
+    (.graph[$current].depends_on[]? // empty) as $next |
+    has_cycle($start; $next; $visited + {($current): true})
+  end;
 
-# Features by status
-jq '.project.roadmap | to_entries[] | {feature: .key, status: .value.status, priority: .value.priority}' knowledge-map.json
-
-# P0 features that are not completed
-jq '.project.roadmap | to_entries[] | select(.value.priority == "P0" and .value.status != "completed") | {feature: .key, status: .value.status}' knowledge-map.json
+.graph | keys[] as $entity |
+select(has_cycle($entity; $entity; {})) |
+$entity
+' knowledge-map-cmd.json
 ```
 
-### Dependency analysis
+## Type-Based Dependency Analysis
+
+### Dependencies by entity type
 ```bash
-# Technical dependencies
-jq '.project.dependencies.technical' knowledge-map.json
+# What do users depend on?
+jq -r '.graph | to_entries[] | select(.key | startswith("user:")) | {user: .key, depends_on: .value.depends_on}' knowledge-map-cmd.json
 
-# Find features with no dependencies (can start immediately)
-jq '.project.roadmap | keys[] as $f | select([.project.dependencies.technical[$f]?, .project.roadmap[$f].dependencies[]?] | length == 0) | $f' knowledge-map.json
+# What do screens depend on?
+jq -r '.graph | to_entries[] | select(.key | startswith("screen:")) | {screen: .key, depends_on: .value.depends_on}' knowledge-map-cmd.json
 
-# Features blocked by other features
-jq '.project.dependencies.technical | to_entries[] | {feature: .key, depends_on: .value}' knowledge-map.json
+# What do features depend on?
+jq -r '.graph | to_entries[] | select(.key | startswith("feature:")) | {feature: .key, depends_on: .value.depends_on}' knowledge-map-cmd.json
+
+# What do platforms depend on?
+jq -r '.graph | to_entries[] | select(.key | startswith("platform:")) | {platform: .key, depends_on: .value.depends_on}' knowledge-map-cmd.json
 ```
 
-## Content Library Queries
-
-### Search descriptions
+### Cross-type dependency patterns
 ```bash
-jq '.content_library | to_entries[] | select(.value | test("real-time"; "i")) | {ref: .key, description: .value}' knowledge-map.json
-```
+# Which users depend on which screens?
+jq -r '.graph | to_entries[] | select(.key | startswith("user:")) | 
+{user: .key, screens: [.value.depends_on[] | select(startswith("screen:"))]}' knowledge-map-cmd.json
 
-### Find unused content references
-```bash
-# Get all description_ref values
-jq '[.entities[][] | select(type == "object" and has("description_ref")) | .description_ref] | unique' knowledge-map.json
+# Which screens depend on which features?
+jq -r '.graph | to_entries[] | select(.key | startswith("screen:")) |
+{screen: .key, features: [.value.depends_on[] | select(startswith("feature:"))]}' knowledge-map-cmd.json
 
-# Compare with content_library keys
-jq '.content_library | keys' knowledge-map.json
-```
-
-## Advanced Graph Traversal
-
-### Multi-hop relationship traversal
-```bash
-# Find all entities that depend on AWS infrastructure (2-hop)
-jq '.graph."platform:aws-infrastructure".inbound.powered_by[] as $entity | .graph[$entity].inbound | to_entries[] | {relationship: .key, dependents: .value}' knowledge-map.json
-
-# Find dependency chains for a feature
-jq '
-def deps(entity):
-  .project.roadmap[entity].dependencies[]? as $dep |
-  {entity: entity, depends_on: $dep} +
-  if (.project.roadmap[$dep]) then deps($dep) else empty end;
-
-deps("feature:parts-ordering-system")
-' knowledge-map.json
-```
-
-### Impact analysis
-```bash
-# What would be affected if a platform went down?
-jq '.graph."platform:aws-infrastructure".inbound | to_entries[] | {relationship: .key, impacted: .value}' knowledge-map.json
-
-# Recursive impact analysis
-jq '
-def impacts(entity):
-  (.graph[entity].inbound // {}) | to_entries[] | .value[] as $dependent |
-  {impacted: $dependent, via: .key} +
-  impacts($dependent);
-
-impacts("platform:aws-infrastructure")
-' knowledge-map.json
+# Which features depend on which platforms?
+jq -r '.graph | to_entries[] | select(.key | startswith("feature:")) |
+{feature: .key, platforms: [.value.depends_on[] | select(startswith("platform:"))]}' knowledge-map-cmd.json
 ```
 
 ## Validation Queries
 
-### Check for broken references
+### Find missing dependencies
 ```bash
-# Find entity references that don't exist
-jq '
-(.entities | keys) as $valid_ids |
-.graph | to_entries[] |
-(.value.outbound // {}) | to_entries[] |
-.value[] | select(. as $ref | $valid_ids | index($ref) | not)
-' knowledge-map.json
+# Entity references that don't exist
+jq -r '
+(.graph | keys) as $valid_entities |
+.graph | to_entries[] | .value.depends_on[]? |
+select(. as $ref | $valid_entities | index($ref) | not)
+' knowledge-map-cmd.json
 ```
 
-### Bidirectional consistency check
+### Orphaned entities
 ```bash
-# Check if outbound relationships have matching inbound
-jq '
-.graph | to_entries[] | .key as $entity |
-(.value.outbound // {}) | to_entries[] | .key as $rel_type |
-.value[] as $target |
-{
-  entity: $entity,
-  target: $target, 
-  relationship: $rel_type,
-  has_reverse: ((.graph[$target].inbound // {}) | has($rel_type))
-}
-' knowledge-map.json
+# Entities that nothing depends on
+jq -r '
+(.graph | [.[] | .depends_on[]?]) as $referenced |
+.graph | keys[] |
+select(. as $entity | $referenced | index($entity) | not)
+' knowledge-map-cmd.json
 ```
 
-## Duplicity Detection Queries
-
-### Find duplicate entity names
+### Self-dependencies
 ```bash
-# Detect entities with identical names across types
-jq '
-[.entities[][] | select(type == "object" and has("name")) | {id: .id, name: .name, type: .type}] |
-group_by(.name) |
-map(select(length > 1)) |
-map({name: .[0].name, duplicates: [.[].id], types: [.[].type]})
-' knowledge-map.json
-```
-
-### Find duplicate descriptions in content library
-```bash
-# Detect identical descriptions (potential content duplication)
-jq '
-.content_library | to_entries |
-group_by(.value) |
-map(select(length > 1)) |
-map({description: .[0].value, duplicate_refs: [.[].key]})
-' knowledge-map.json
-```
-
-### Find redundant relationships
-```bash
-# Detect duplicate relationship entries
-jq '
-.graph | to_entries[] |
-.key as $entity |
-(.value.outbound // {}) | to_entries[] |
-.key as $rel_type |
-.value | group_by(.) | 
-map(select(length > 1)) |
-map({entity: $entity, relationship: $rel_type, target: .[0], count: length})
-' knowledge-map.json
-```
-
-### Find similar entity descriptions
-```bash
-# Find entities with very similar description references (potential consolidation opportunities)
-jq '
-[.entities[][] | select(type == "object" and has("description_ref")) | 
-{id: .id, desc_ref: .description_ref, desc_text: .content_library[.description_ref]}] |
-group_by(.desc_text) |
-map(select(length > 1)) |
-map({description: .[0].desc_text, entities: [.[].id]})
-' knowledge-map.json
-```
-
-### Find duplicate feature requirements
-```bash
-# Detect features with identical requirements (potential consolidation)
-jq '
-.entities.features | to_entries |
-map({feature: .key, requirements: (.value.requirements // [])}) |
-group_by(.requirements) |
-map(select(length > 1 and .[0].requirements | length > 0)) |
-map({requirements: .[0].requirements, features: [.[].feature]})
-' knowledge-map.json
-```
-
-### Find duplicate model attributes
-```bash
-# Detect models with identical attribute sets
-jq '
-.entities.schema // {} | to_entries |
-map({model: .key, attributes: (.value.attributes | keys)}) |
-group_by(.attributes) |
-map(select(length > 1)) |
-map({attributes: .[0].attributes, models: [.[].model]})
-' knowledge-map.json
-```
-
-### Comprehensive duplicity report
-```bash
-# Generate complete duplicity analysis report
-jq '
-{
-  duplicate_names: (
-    [.entities[][] | select(type == "object" and has("name")) | {id: .id, name: .name}] |
-    group_by(.name) | map(select(length > 1)) |
-    map({name: .[0].name, count: length, entities: [.[].id]})
-  ),
-  duplicate_descriptions: (
-    .content_library | to_entries |
-    group_by(.value) | map(select(length > 1)) |
-    map({description: .[0].value, count: length, refs: [.[].key]})
-  ),
-  redundant_relationships: (
-    [.graph | to_entries[] | .key as $entity |
-     (.value.outbound // {}) | to_entries[] | .key as $rel |
-     .value[] as $target | {entity: $entity, rel: $rel, target: $target}] |
-    group_by([.entity, .rel, .target]) |
-    map(select(length > 1)) |
-    map({relationship: .[0], count: length})
-  ),
-  summary: {
-    total_entities: [.entities[][]] | length,
-    total_descriptions: .content_library | keys | length,
-    total_relationships: [.graph | .[] | .outbound // {} | .[]] | length
-  }
-}
-' knowledge-map.json
+# Entities that depend on themselves
+jq -r '.graph | to_entries[] | select(.value.depends_on[]? == .key) | .key' knowledge-map-cmd.json
 ```
 
 ## Reporting Queries
 
-### Generate entity summary
+### Dependency summary report
 ```bash
 jq '{
-  total_entities: (.entities | [.[][]] | length),
-  by_type: (.entities | to_entries | map({type: .key, count: (.value | length)})),
-  total_relationships: (.graph | [.[][].outbound // {} | .[]] | length),
-  features_by_status: (.project.roadmap | group_by(.status) | map({status: .[0].status, count: length}))
-}' knowledge-map.json
+  total_entities: (.graph | keys | length),
+  total_dependencies: (.graph | [.[] | .depends_on[]?] | length),
+  entities_by_dependency_count: (.graph | to_entries | 
+    map({entity: .key, dep_count: (.value.depends_on | length)}) | 
+    group_by(.dep_count) | 
+    map({dependency_count: .[0].dep_count, entity_count: length})),
+  most_critical_dependencies: (
+    [.graph | .[] | .depends_on[]?] |
+    group_by(.) | map({entity: .[0], dependent_count: length}) |
+    sort_by(.dependent_count) | reverse | .[0:10]
+  )
+}' knowledge-map-cmd.json
 ```
 
-### Critical path analysis
+### Complexity analysis
 ```bash
-# Features with the most dependencies
-jq '.project.roadmap | to_entries | map({feature: .key, dep_count: (.value.dependencies | length)}) | sort_by(.dep_count) | reverse' knowledge-map.json
-
-# Most connected entities in graph
+# Entities with highest complexity (most dependencies)
 jq '.graph | to_entries | map({
-  entity: .key, 
-  connections: ((.value.outbound // {}) | [.[]] | length) + ((.value.inbound // {}) | [.[]] | length)
-}) | sort_by(.connections) | reverse | .[0:5]' knowledge-map.json
+  entity: .key,
+  complexity: (.value.depends_on | length),
+  dependencies: .value.depends_on
+}) | sort_by(.complexity) | reverse | .[0:5]' knowledge-map-cmd.json
+
+# System bottlenecks (most depended upon)
+jq '[.graph | .[] | .depends_on[]?] | 
+group_by(.) | map({dependency: .[0], usage_count: length}) |
+sort_by(.usage_count) | reverse | .[0:5]' knowledge-map-cmd.json
 ```
 
-## Meta Queries
+## Advanced Analysis
 
-### Schema analysis
+### Dependency layers
 ```bash
-# All relationship types used
-jq '[.graph | .[] | (.outbound // {}, .inbound // {}) | keys[]] | unique' knowledge-map.json
+# Group entities by dependency depth
+jq -r '
+def depth($entity; $visited):
+  if ($visited | has($entity)) then 0
+  else
+    [(.graph[$entity].depends_on[]? // empty) | depth(.; $visited + {($entity): true})] |
+    if length == 0 then 0 else (max + 1) end
+  end;
 
-# Entity type distribution
-jq '.entities | to_entries | map({type: .key, entities: (.value | length)})' knowledge-map.json
+.graph | to_entries | map({entity: .key, depth: depth(.key; {})}) |
+group_by(.depth) | map({layer: .[0].depth, entities: [.[].entity]})
+' knowledge-map-cmd.json
+```
 
-# Content library usage
-jq '[.entities[][] | select(type == "object" and has("description_ref")) | .description_ref] | group_by(.) | map({ref: .[0], usage_count: length}) | sort_by(.usage_count) | reverse' knowledge-map.json
+### Dependency strength analysis
+```bash
+# Calculate dependency strength (how many entities depend on each entity)
+jq '[.graph | .[] | .depends_on[]?] |
+group_by(.) | map({
+  entity: .[0], 
+  strength: length,
+  critical: (if length > 5 then true else false end)
+}) | sort_by(.strength) | reverse' knowledge-map-cmd.json
+
+## Content Reference Queries
+
+### Access shared content references
+```bash
+# List all content references
+jq '.references.descriptions | keys[]' knowledge-map-cmd.json
+
+# Get specific description reference
+jq '.references.descriptions."real-time-telemetry-desc"' knowledge-map-cmd.json
+
+# Find entities using a specific reference
+jq -r '.entities | to_entries[] | .value | to_entries[] | select(.value.description_ref? == "real-time-telemetry-desc") | .key' knowledge-map-cmd.json
+```
+
+### Component implementation queries
+```bash
+# List all component implementations
+jq '.references.component_implementations | keys[]' knowledge-map-cmd.json
+
+# Get specific component configuration
+jq '.references.component_implementations."status-indicators"' knowledge-map-cmd.json
+
+# Find components with specializations
+jq '.references.component_implementations | to_entries[] | select(.value.specialized_for?) | {component: .key, specializations: .value.specialized_for}' knowledge-map-cmd.json
+```
 ```

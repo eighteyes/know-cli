@@ -682,8 +682,7 @@
         "type": "screen",
         "name": "Fleet Management Dashboard",
         "description_ref": "fleet-dashboard-desc",
-        "priority": "P0",
-        "description": "Central command dashboard for fleet operators to monitor robot status, assign missions, track performance metrics, and respond to maintenance alerts in real-time."
+        "priority": "P0"
       },
       "mission-control": {
         "id": "mission-control",
@@ -1201,8 +1200,7 @@
             "telemetry_stream_model_integration",
             "platform_compatibility_maintained"
           ]
-        },
-        "status": "in_progress"
+        }
       },
       "predictive-maintenance": {
         "id": "predictive-maintenance",

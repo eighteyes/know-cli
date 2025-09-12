@@ -1,0 +1,98 @@
+openapi: 3.0.0
+info:
+  title: {{entity.name}} API
+  description: {{entity.resolved_description}}
+  version: 1.0.0
+
+servers:
+  - url: {{references.technical_architecture.api_gateway}}
+
+paths:
+  /{{entity.id}}:
+    get:
+      summary: List all {{entity.name}} items
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/{{entity.name}}'
+    post:
+      summary: Create new {{entity.name}}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/{{entity.name}}'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/{{entity.name}}'
+
+  /{{entity.id}}/{id}:
+    get:
+      summary: Get {{entity.name}} by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/{{entity.name}}'
+    put:
+      summary: Update {{entity.name}}
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/{{entity.name}}'
+      responses:
+        '200':
+          description: Updated
+    delete:
+      summary: Delete {{entity.name}}
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+
+components:
+  schemas:
+    {{entity.name}}:
+      type: object
+      properties:
+{{#each entity.attributes}}
+        {{@key}}:
+          type: {{this}}
+{{/each}}
+
+  securitySchemes:
+    {{references.protocols.authentication}}:
+      type: http
+      scheme: bearer
+
+security:
+  - {{references.protocols.authentication}}: []
