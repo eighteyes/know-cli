@@ -427,7 +427,7 @@ resolve_circular_dependencies() {
             "component") echo "7" ;;
             "ui_component") echo "8" ;;
             "model") echo "8" ;;          # Data models - support components and UI
-            "user_action") echo "8" ;;    # User actions - implementation level
+            "action") echo "8" ;;         # Actions - implementation level
             *) echo "999" ;;              # Unknown types get lowest priority
         esac
     }
@@ -517,7 +517,7 @@ resolve_circular_dependencies() {
     echo -e "  ${BOLD}5.${NC} screen (user interfaces)"
     echo -e "  ${BOLD}6.${NC} feature, functionality (business logic)"
     echo -e "  ${BOLD}7.${NC} component (implementation modules)"
-    echo -e "  ${BOLD}8.${NC} ui_component, model, user_action (supporting elements)"
+    echo -e "  ${BOLD}8.${NC} ui_component, model, action (supporting elements)"
 }
 
 # Main command dispatcher

@@ -55,9 +55,9 @@ Instead of hierarchical nesting, treat JSON as a flat graph with explicit relati
 
 ## Typical Dependency Flow:
 ```
-Project → Platform → User → Interface → Feature → Component → UI → Implementation
-    ↓                              ↓                     ↓
-Requirements ──────────────→ Functionality ───→ Data Models
+HOW: Project → Platform → Requirements → Interface → Feature -> Component → UI → Data Models 
+WHAT: Project ->  User ──────→ Functionality ────────→ Action
+Integration: User -> Requirements, Functionality -> Features, Action -> Component
 ```
 
 

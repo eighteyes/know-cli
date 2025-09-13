@@ -77,8 +77,8 @@ if [[ ! -f "$RULES_FILE" ]]; then
 {
   "layered_architecture": {
     "enabled": true,
-    "layers": ["ui", "service", "domain", "data", "infrastructure"],
-    "description": "UI -> Service -> Domain -> Data/Infrastructure only"
+    "layers": ["project", "platform", "requirements", "interface", "feature", "action", "component", "ui", "data_models"],
+    "description": "Project → Platform → Requirements → Interface → Feature → Action → Component → UI → Data Models"
   },
   "max_dependencies": {
     "enabled": true,

@@ -20,26 +20,24 @@ get_inbound_relationships() {
     ' "$KNOWLEDGE_MAP"
 }
 
-# Get dependencies (requires, uses, depends_on relationships)
+# Get dependencies (from graph section)
 get_dependencies() {
     local entity_ref="$1"
-    
+
+    # Check if dependencies exist in the graph section
     jq -r --arg entity "$entity_ref" '
-        .graph[$entity].outbound | to_entries[] |
-        select(.key | test("requires|uses|depends_on")) |
-        .value[]
+        .graph[$entity].depends_on[]? // empty
     ' "$KNOWLEDGE_MAP" 2>/dev/null || true
 }
 
 # Get dependents (entities that depend on this one)
 get_dependents() {
     local entity_ref="$1"
-    
+
+    # Find all entities that have this entity in their depends_on array
     jq -r --arg entity "$entity_ref" '
         .graph | to_entries[] |
-        select(.value.outbound | to_entries[] | 
-               select(.key | test("requires|uses|depends_on")) |
-               .value[] == $entity) |
+        select(.value.depends_on[]? == $entity) |
         .key
     ' "$KNOWLEDGE_MAP" 2>/dev/null || true
 }

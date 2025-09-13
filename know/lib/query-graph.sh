@@ -5,6 +5,15 @@ set -e
 
 GRAPH_FILE="spec-graph.json"
 
+# Convert singular entity type to plural for lookup
+get_plural_type() {
+    local entity_type="$1"
+    case "$entity_type" in
+        "functionality") echo "functionality" ;;
+        *) echo "${entity_type}s" ;;
+    esac
+}
+
 show_help() {
     echo "JSON Graph Query Tool"
     echo ""
@@ -49,8 +58,10 @@ traverse() {
                 # Parse target type:id format
                 target_type=$(echo "$target" | cut -d':' -f1)
                 target_id=$(echo "$target" | cut -d':' -f2)
-                name=$(jq -r --arg type "$target_type" --arg id "$target_id" '.entities[$type][$id].name // "Unknown"' "$GRAPH_FILE")
-                type=$(jq -r --arg type "$target_type" --arg id "$target_id" '.entities[$type][$id].type // "unknown"' "$GRAPH_FILE")
+                # Convert singular to plural for entity lookup
+                plural_type=$(get_plural_type "$target_type")
+                name=$(jq -r --arg type "$plural_type" --arg id "$target_id" '.entities[$type][$id].name // "Unknown"' "$GRAPH_FILE")
+                type=$(jq -r --arg type "$plural_type" --arg id "$target_id" '.entities[$type][$id].type // "unknown"' "$GRAPH_FILE")
                 echo "  → $target ($type: $name)"
             fi
         done
@@ -75,8 +86,10 @@ reverse() {
                 # Parse source type:id format
                 source_type=$(echo "$source" | cut -d':' -f1)
                 source_id=$(echo "$source" | cut -d':' -f2)
-                name=$(jq -r --arg type "$source_type" --arg id "$source_id" '.entities[$type][$id].name // "Unknown"' "$GRAPH_FILE")
-                type=$(jq -r --arg type "$source_type" --arg id "$source_id" '.entities[$type][$id].type // "unknown"' "$GRAPH_FILE")
+                # Convert singular to plural for entity lookup
+                plural_type=$(get_plural_type "$source_type")
+                name=$(jq -r --arg type "$plural_type" --arg id "$source_id" '.entities[$type][$id].name // "Unknown"' "$GRAPH_FILE")
+                type=$(jq -r --arg type "$plural_type" --arg id "$source_id" '.entities[$type][$id].type // "unknown"' "$GRAPH_FILE")
                 echo "  ← $source ($type: $name)"
             fi
         done
@@ -159,8 +172,10 @@ show_dependencies() {
         # Display current entity
         local dep_type=$(echo "$current_entity" | cut -d':' -f1)
         local dep_id=$(echo "$current_entity" | cut -d':' -f2)
-        local name=$(jq -r --arg type "$dep_type" --arg id "$dep_id" '.entities[$type][$id].name // "Unknown"' "$GRAPH_FILE" 2>/dev/null || echo "Unknown")
-        local type=$(jq -r --arg type "$dep_type" --arg id "$dep_id" '.entities[$type][$id].type // "unknown"' "$GRAPH_FILE" 2>/dev/null || echo "unknown")
+        # Convert singular to plural for entity lookup
+        local plural_type=$(get_plural_type "$dep_type")
+        local name=$(jq -r --arg type "$plural_type" --arg id "$dep_id" '.entities[$type][$id].name // "Unknown"' "$GRAPH_FILE" 2>/dev/null || echo "Unknown")
+        local type=$(jq -r --arg type "$plural_type" --arg id "$dep_id" '.entities[$type][$id].type // "unknown"' "$GRAPH_FILE" 2>/dev/null || echo "unknown")
         
         if [[ $current_depth -eq 0 ]]; then
             echo "  🎯 $current_entity ($type: $name) [ROOT]"
@@ -225,8 +240,10 @@ show_impact() {
                     # Display this dependent
                     local dep_type=$(echo "$dependent" | cut -d':' -f1)
                     local dep_id=$(echo "$dependent" | cut -d':' -f2)
-                    local name=$(jq -r --arg type "$dep_type" --arg id "$dep_id" '.entities[$type][$id].name // "Unknown"' "$GRAPH_FILE" 2>/dev/null || echo "Unknown")
-                    local type=$(jq -r --arg type "$dep_type" --arg id "$dep_id" '.entities[$type][$id].type // "unknown"' "$GRAPH_FILE" 2>/dev/null || echo "unknown")
+                    # Convert singular to plural for entity lookup
+                    local plural_type=$(get_plural_type "$dep_type")
+                    local name=$(jq -r --arg type "$plural_type" --arg id "$dep_id" '.entities[$type][$id].name // "Unknown"' "$GRAPH_FILE" 2>/dev/null || echo "Unknown")
+                    local type=$(jq -r --arg type "$plural_type" --arg id "$dep_id" '.entities[$type][$id].type // "unknown"' "$GRAPH_FILE" 2>/dev/null || echo "unknown")
                     
                     local indent=""
                     for ((i=0; i<current_depth; i++)); do
@@ -260,8 +277,10 @@ show_user_access() {
             # Parse accessible type:id format
             accessible_type=$(echo "$accessible" | cut -d':' -f1)
             accessible_id=$(echo "$accessible" | cut -d':' -f2)
-            name=$(jq -r --arg type "$accessible_type" --arg id "$accessible_id" '.entities[$type][$id].name // "Unknown"' "$GRAPH_FILE")
-            type=$(jq -r --arg type "$accessible_type" --arg id "$accessible_id" '.entities[$type][$id].type // "unknown"' "$GRAPH_FILE")
+            # Convert singular to plural for entity lookup
+            plural_type=$(get_plural_type "$accessible_type")
+            name=$(jq -r --arg type "$plural_type" --arg id "$accessible_id" '.entities[$type][$id].name // "Unknown"' "$GRAPH_FILE")
+            type=$(jq -r --arg type "$plural_type" --arg id "$accessible_id" '.entities[$type][$id].type // "unknown"' "$GRAPH_FILE")
             echo "  ✅ $accessible ($type: $name)"
         fi
     done
@@ -304,7 +323,9 @@ detect_cycles() {
 
 scan_all_cycles() {
     echo "🔍 Comprehensive scan: Testing ALL entities for cycles and hierarchy violations..."
-    echo "📏 Canonical hierarchy: Project → Platform → Requirements → User → Screen → Feature/Functionality → Component → UI/Model/Action"
+    echo "📏 HOW: Project → Platform → Requirements → Interface → Feature → Action → Component → UI → Data Models"
+    echo "📏 WHAT: Project → User → Functionality → Implementation"
+    echo "🔗 Integration: User → Requirements, Functionality → Features, Implementation → Action/Component"
     echo ""
     
     local total_entities=0
@@ -320,11 +341,18 @@ scan_all_cycles() {
             "project") echo "1" ;;
             "platform") echo "2" ;;
             "requirement") echo "3" ;;
-            "user") echo "4" ;;
-            "screen") echo "5" ;;
-            "feature"|"functionality") echo "6" ;;
+            "user") echo "35" ;;          # 3.5 - Parallel to requirements, feeds into interface
+            "screen") echo "4" ;;         # Interface layer
+            "interface") echo "4" ;;      # Interface layer (same as screen)
+            "functionality") echo "45" ;; # 4.5 - Between interface and features
+            "feature") echo "5" ;;
+            "action") echo "6" ;;         # Actions come after features
             "component") echo "7" ;;
-            "ui_component"|"model"|"user_action") echo "8" ;;
+            "ui_component") echo "8" ;;
+            "ui") echo "8" ;;             # Same as ui_component
+            "model") echo "9" ;;          # Data models at the bottom
+            "data_model") echo "9" ;;     # Same as model
+            "implementation") echo "75" ;; # 7.5 - Between component and UI
             *) echo "999" ;;
         esac
     }

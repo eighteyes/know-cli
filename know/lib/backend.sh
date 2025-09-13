@@ -240,6 +240,7 @@ preview_generation() {
     echo "💡 Run without 'preview' to generate the actual specification"
 }
 
+
 # Check entity completeness for generation
 validate_entity_completeness() {
     local entity_ref="$1"

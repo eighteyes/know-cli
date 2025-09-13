@@ -16,6 +16,7 @@ BLUE='\033[0;34m'
 PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 BOLD='\033[1m'
+DIM='\033[2m'
 NC='\033[0m'
 
 check_file() {
@@ -84,14 +85,79 @@ list_entities() {
             return 1
         }
     else
-        echo -e "${CYAN}📋 All Entities:${NC}"
-        for entity_type in $(get_entity_types); do
-            local count=$(jq -r ".entities.$entity_type | length" "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "0")
+        echo -e "${CYAN}📋 Knowledge Graph Entities${NC}"
+        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo
+
+        # WHAT: Business/Functional perspective (Project → User → Functionality → Actions)
+        echo -e "${GREEN}🎯 WHAT (Business Perspective)${NC}"
+        echo -e "${GREEN}═══════════════════════════════${NC}"
+        echo -e "${CYAN}Flow: Project → User → Functionality → Actions${NC}"
+        echo -e "${DIM}Integration: User→Requirements, Functionality→Features, Actions→Components${NC}"
+        echo
+
+        # Users define WHO uses the system
+        local count=$(jq -r ".entities.users | length" "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "0")
+        if [[ "$count" -gt 0 ]]; then
+            echo -e "${YELLOW}├─ users ($count entities) - WHO uses the system${NC}"
+            jq -r ".entities.users | to_entries[] | \"│  • \(.key) - \(.value.name // \"No name\")\"" "$KNOWLEDGE_MAP_FILE"
+        fi
+
+        # Functionality defines WHAT the system does
+        count=$(jq -r ".entities.functionality | length" "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "0")
+        if [[ "$count" -gt 0 ]]; then
+            echo -e "${YELLOW}├─ functionality ($count entities) - WHAT the system does${NC}"
+            jq -r ".entities.functionality | to_entries[] | \"│  • \(.key) - \(.value.name // \"No name\")\"" "$KNOWLEDGE_MAP_FILE"
+        fi
+
+        # Actions - User interactions that implement the functionality
+        count=$(jq -r ".entities.actions | length" "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "0")
+        if [[ "$count" -gt 0 ]]; then
+            echo -e "${YELLOW}├─ actions ($count entities) - Actions users take${NC}"
+            jq -r ".entities.actions | to_entries[] | \"│  • \(.key) - \(.value.name // \"No name\")\"" "$KNOWLEDGE_MAP_FILE"
+        fi
+
+        echo
+        # HOW: Technical/Implementation perspective (Platform → Requirements → Interface → Feature → Action → Component → UI → Data)
+        echo -e "${GREEN}🔧 HOW (Technical Infrastructure)${NC}"
+        echo -e "${GREEN}═════════════════════════════════${NC}"
+        echo -e "${CYAN}Flow: Platform → Requirements → Interface → Feature → Action → Component → UI → Data${NC}"
+        echo
+
+        # Define HOW entity types in dependency order (actions are in WHAT)
+        local how_types=("platforms" "requirements" "screens" "features" "components" "ui_components" "schema")
+        local how_descriptions=("Infrastructure foundation" "System constraints" "User interfaces" "System capabilities" "Technical components" "UI building blocks" "Data structures")
+
+        local i=0
+        for entity_type in "${how_types[@]}"; do
+            count=$(jq -r ".entities.$entity_type | length" "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "0")
             if [[ "$count" -gt 0 ]]; then
-                echo -e "${YELLOW}$entity_type ($count):${NC}"
-                jq -r ".entities.$entity_type | to_entries[] | \"  \(.key) - \(.value.name // \"No name\")\"" "$KNOWLEDGE_MAP_FILE"
+                echo -e "${YELLOW}├─ $entity_type ($count entities) - ${how_descriptions[$i]}${NC}"
+                jq -r ".entities.$entity_type | to_entries[] | \"│  • \(.key) - \(.value.name // \"No name\")\"" "$KNOWLEDGE_MAP_FILE"
             fi
+            i=$((i + 1))
         done
+
+        echo
+        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+        # Summary statistics with WHAT vs HOW breakdown
+        local what_count=$(($(jq -r '.entities.users | length' "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "0") + \
+                           $(jq -r '.entities.functionality | length' "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "0") + \
+                           $(jq -r '.entities.actions | length' "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "0")))
+
+        local how_count=0
+        for entity_type in "${how_types[@]}"; do
+            how_count=$((how_count + $(jq -r ".entities.$entity_type | length" "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "0")))
+        done
+
+        local total_entities=$(jq -r '[.entities | to_entries[] | .value | length] | add' "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "0")
+        local total_connections=$(jq -r '.connections | length' "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "0")
+
+        echo -e "${CYAN}📊 Summary:${NC}"
+        echo -e "${CYAN}   Total: $total_entities entities, $total_connections connections${NC}"
+        echo -e "${CYAN}   WHAT: $what_count entities (business perspective)${NC}"
+        echo -e "${CYAN}   HOW: $how_count entities (technical implementation)${NC}"
     fi
 }
 
@@ -412,8 +478,9 @@ search_entities() {
 
 resolve_circular_dependencies() {
     echo -e "${CYAN}🔄 Resolving circular dependencies using canonical flow...${NC}"
-    echo -e "${YELLOW}Canonical Flow: Project → Platform → User → Interface → Feature → Component → UI → Implementation${NC}"
-    echo -e "${YELLOW}Side chains: Requirements → Functionality → Data Models${NC}"
+    echo -e "${YELLOW}HOW: Project → Platform → Requirements → Interface → Feature → Action → Component → UI → Data Models${NC}"
+    echo -e "${YELLOW}WHAT: Project → User → Functionality → Implementation${NC}"
+    echo -e "${YELLOW}Integration: User → Requirements, Functionality → Features, Implementation → Action/Component${NC}"
     echo
     
     # Define the canonical dependency hierarchy using a function (lower number = higher in hierarchy, can't depend on higher numbers)
@@ -423,14 +490,18 @@ resolve_circular_dependencies() {
             "project") echo "1" ;;
             "platform") echo "2" ;;
             "requirement") echo "3" ;;
-            "user") echo "4" ;;
-            "screen") echo "5" ;;
-            "feature") echo "6" ;;
-            "functionality") echo "6" ;;  # Same level as features - can interconnect
+            "user") echo "35" ;;          # 3.5 - Parallel to requirements, feeds into interface
+            "screen") echo "4" ;;         # Interface layer
+            "interface") echo "4" ;;      # Interface layer (same as screen)
+            "functionality") echo "45" ;; # 4.5 - Between interface and features
+            "feature") echo "5" ;;
+            "action") echo "6" ;;         # Actions come after features
             "component") echo "7" ;;
             "ui_component") echo "8" ;;
-            "model") echo "8" ;;          # Data models - support components and UI
-            "user_action") echo "8" ;;    # User actions - implementation level
+            "ui") echo "8" ;;             # Same as ui_component
+            "model") echo "9" ;;          # Data models at the bottom
+            "data_model") echo "9" ;;     # Same as model
+            "implementation") echo "75" ;; # 7.5 - Between component and UI
             *) echo "999" ;;              # Unknown types get lowest priority
         esac
     }
@@ -513,14 +584,24 @@ resolve_circular_dependencies() {
     
     echo
     echo -e "${CYAN}📋 Canonical Dependency Hierarchy:${NC}"
+    echo -e "${PURPLE}HOW (Technical Flow):${NC}"
     echo -e "  ${BOLD}1.${NC} project (infrastructure foundation)"
     echo -e "  ${BOLD}2.${NC} platform (AWS, deployment infrastructure)"
     echo -e "  ${BOLD}3.${NC} requirement (system constraints and needs)"
-    echo -e "  ${BOLD}4.${NC} user (roles and access patterns)"
-    echo -e "  ${BOLD}5.${NC} screen (user interfaces)"
-    echo -e "  ${BOLD}6.${NC} feature, functionality (business logic)"
+    echo -e "  ${BOLD}4.${NC} interface/screen (user interfaces)"
+    echo -e "  ${BOLD}5.${NC} feature (business capabilities)"
+    echo -e "  ${BOLD}6.${NC} action (behavioral layer)"
     echo -e "  ${BOLD}7.${NC} component (implementation modules)"
-    echo -e "  ${BOLD}8.${NC} ui_component, model, user_action (supporting elements)"
+    echo -e "  ${BOLD}8.${NC} ui/ui_component (UI elements)"
+    echo -e "  ${BOLD}9.${NC} model/data_model (data structures)"
+    echo
+    echo -e "${PURPLE}WHAT (Business Flow):${NC}"
+    echo -e "  project → user → functionality → implementation"
+    echo
+    echo -e "${PURPLE}Integration Points:${NC}"
+    echo -e "  user → requirements"
+    echo -e "  functionality → features"
+    echo -e "  implementation → action/component"
 }
 
 # Parse file option

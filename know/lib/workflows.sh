@@ -348,7 +348,7 @@ show_implementation_priorities_json() {
     # Collect entities by priority level
     for entity_type in features components screens; do
         local entities
-        entities=$("$MOD_GRAPH" list "$entity_type" | grep "  " | cut -d' ' -f3 | cut -d'-' -f1 | head -5)
+        entities=$("$MOD_GRAPH" list "$entity_type" | grep "  " | awk '{print $1}' | head -5)
         
         while IFS= read -r entity_id; do
             [[ -z "$entity_id" ]] && continue

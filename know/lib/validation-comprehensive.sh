@@ -387,7 +387,7 @@ analyze_completeness_batch() {
     esac
     
     local entities
-    entities=$("$MOD_GRAPH" list "$entity_type" | grep "  " | cut -d' ' -f3 | cut -d'-' -f1)
+    entities=$("$MOD_GRAPH" list "$entity_type" | grep "  " | awk '{print $1}')
     
     local total_entities=0
     local ready_entities=0
@@ -494,7 +494,7 @@ analyze_completeness_batch_json() {
     esac
     
     local entities
-    entities=$("$MOD_GRAPH" list "$entity_type" | grep "  " | cut -d' ' -f3 | cut -d'-' -f1)
+    entities=$("$MOD_GRAPH" list "$entity_type" | grep "  " | awk '{print $1}')
     
     local results=()
     

@@ -67,7 +67,7 @@ list_entities() {
 # Normalize entity type (singular to plural)
 normalize_entity_type() {
     local input_type="$1"
-    
+
     case "$input_type" in
         user) echo "users" ;;
         screen) echo "screens" ;;
@@ -77,6 +77,7 @@ normalize_entity_type() {
         model) echo "schema" ;;
         platform) echo "platforms" ;;
         ui_component) echo "ui_components" ;;
+        action) echo "actions" ;;
         *) echo "$input_type" ;;
     esac
 }
