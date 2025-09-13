@@ -27,7 +27,7 @@ DESCRIPTION:
     • Overall compliance scoring and remediation suggestions
 
 ARGUMENTS:
-    knowledge-map.json    Path to knowledge map file (default: knowledge-map-cmd.json)
+    knowledge-map.json    Path to knowledge map file (default: spec-graph.json)
     rules.json           Path to validation rules file (default: architecture-rules.json)
 
 OPTIONS:
@@ -62,7 +62,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
     exit 0
 fi
 
-KNOWLEDGE_MAP="${1:-knowledge-map-cmd.json}"
+KNOWLEDGE_MAP="${1:-spec-graph.json}"
 RULES_FILE="${2:-architecture-rules.json}"
 
 if [[ ! -f "$KNOWLEDGE_MAP" ]]; then

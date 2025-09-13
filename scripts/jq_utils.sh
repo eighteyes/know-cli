@@ -282,16 +282,16 @@ FUNCTIONS:
     
 EXAMPLES:
     # Get all entity types
-    get_entity_types knowledge-map-cmd.json
+    get_entity_types spec-graph.json
     
     # Get feature details
-    get_entity knowledge-map-cmd.json features real-time-telemetry
+    get_entity spec-graph.json features real-time-telemetry
     
     # Find what depends on a feature
-    find_dependents knowledge-map-cmd.json feature:real-time-telemetry
+    find_dependents spec-graph.json feature:real-time-telemetry
     
     # Generate system report
-    generate_system_summary knowledge-map-cmd.json
+    generate_system_summary spec-graph.json
 
 EOF
 }

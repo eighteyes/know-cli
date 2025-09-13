@@ -21,7 +21,7 @@ DESCRIPTION:
     Optimizes build/processing order based on dependency graph using various strategies
 
 ARGUMENTS:
-    knowledge-map.json    Path to knowledge map file (default: knowledge-map-cmd.json)
+    knowledge-map.json    Path to knowledge map file (default: spec-graph.json)
     strategy             Optimization strategy (default: topological)
 
 STRATEGIES:
@@ -52,7 +52,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
     exit 0
 fi
 
-KNOWLEDGE_MAP="${1:-knowledge-map-cmd.json}"
+KNOWLEDGE_MAP="${1:-spec-graph.json}"
 STRATEGY="${2:-topological}"
 
 if [[ ! -f "$KNOWLEDGE_MAP" ]]; then

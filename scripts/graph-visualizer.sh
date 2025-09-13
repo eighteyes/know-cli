@@ -21,7 +21,7 @@ DESCRIPTION:
     Generates visual representations of dependency graphs in multiple formats
 
 ARGUMENTS:
-    knowledge-map.json    Path to knowledge map file (default: knowledge-map-cmd.json)
+    knowledge-map.json    Path to knowledge map file (default: spec-graph.json)
 
 OPTIONS:
     -f, --format FORMAT   Output format (default: ascii)
@@ -89,7 +89,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Set default knowledge map if not provided
-KNOWLEDGE_MAP="${KNOWLEDGE_MAP:-knowledge-map-cmd.json}"
+KNOWLEDGE_MAP="${KNOWLEDGE_MAP:-spec-graph.json}"
 
 if [[ ! -f "$KNOWLEDGE_MAP" ]]; then
     echo "❌ Knowledge map file not found: $KNOWLEDGE_MAP"

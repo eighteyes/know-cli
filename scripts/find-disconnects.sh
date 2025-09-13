@@ -24,7 +24,7 @@ DESCRIPTION:
     • Self-dependencies and circular dependencies
 
 ARGUMENTS:
-    knowledge-map.json    Path to knowledge map file (default: knowledge-map-cmd.json)
+    knowledge-map.json    Path to knowledge map file (default: spec-graph.json)
 
 OPTIONS:
     -h, --help           Show this help message
@@ -44,7 +44,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
     exit 0
 fi
 
-KNOWLEDGE_MAP="${1:-knowledge-map-cmd.json}"
+KNOWLEDGE_MAP="${1:-spec-graph.json}"
 
 if [[ ! -f "$KNOWLEDGE_MAP" ]]; then
     echo "❌ Knowledge map file not found: $KNOWLEDGE_MAP"

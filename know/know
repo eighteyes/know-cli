@@ -7,7 +7,7 @@ set -euo pipefail
 
 # Directories
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-KNOWLEDGE_MAP="${KNOWLEDGE_MAP:-${SCRIPT_DIR}/../knowledge-map-cmd.json}"
+KNOWLEDGE_MAP="${KNOWLEDGE_MAP:-${SCRIPT_DIR}/../spec-graph.json}"
 LIB_DIR="${SCRIPT_DIR}/lib"
 TEMPLATE_DIR="${SCRIPT_DIR}/templates"
 GENERATOR_DIR="${SCRIPT_DIR}/generators"
@@ -67,6 +67,10 @@ ANALYSIS COMMANDS:
     know impact <entity_ref>              Impact analysis of changes
     know order                            Optimal implementation order
     know validate                         Reference integrity checking
+
+GRAPH COMMANDS:
+    know mod <command> [args...]          Graph modification (list, add, edit, connect, etc.)
+    know query <command> [args...]        Graph queries (traverse, reverse, path, stats, etc.)
 
 DISCOVERY COMMANDS:
     know list [entity_type]               List entities with autocomplete data
@@ -450,6 +454,14 @@ Then retry specification generation."
         priorities)
             show_implementation_priorities "$OUTPUT_FORMAT"
             ;;
+        mod)
+            # Forward to mod-graph.sh in know/lib
+            exec "$LIB_DIR/mod-graph.sh" "$@"
+            ;;
+        query)
+            # Forward to query-graph.sh in know/lib
+            exec "$LIB_DIR/query-graph.sh" "$@"
+            ;;
         *)
             error "Unknown command: $command. Use 'know --help' for usage."
             ;;
@@ -477,7 +489,8 @@ generate_spec() {
         
         # Export necessary environment variables for generator
         export KNOWLEDGE_MAP TEMPLATE_DIR LIB_DIR AI_MODE
-        export MOD_GRAPH JSON_GRAPH_QUERY
+        export MOD_GRAPH="$LIB_DIR/mod-graph.sh"
+        export JSON_GRAPH_QUERY="$LIB_DIR/query-graph.sh"
         
         local result
         result=$(bash "$generator" "$entity_ref" "$format")

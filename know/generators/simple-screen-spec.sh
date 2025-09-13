@@ -245,7 +245,7 @@ generate_simple_screen_spec() {
             echo "- **$missing**"
         done
         echo ""
-        echo "**How to fix:** Use \`./scripts/mod-graph.sh edit $entity_type_plural $entity_id\` to add missing information."
+        echo "**How to fix:** Use \`know mod edit $entity_type_plural $entity_id\` to add missing information."
     fi
     
     echo ""
@@ -257,9 +257,9 @@ generate_simple_screen_spec() {
 # Main entry point
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     # Load necessary functions
-    export MOD_GRAPH="${MOD_GRAPH:-./scripts/mod-graph.sh}"
+    export MOD_GRAPH="${MOD_GRAPH:-./know/lib/mod-graph.sh}"
     export KNOWLEDGE_MAP="${KNOWLEDGE_MAP:-./knowledge-map-cmd.json}"
-    export JSON_GRAPH_QUERY="${JSON_GRAPH_QUERY:-./scripts/json-graph-query.sh}"
+    export JSON_GRAPH_QUERY="${JSON_GRAPH_QUERY:-./know/lib/query-graph.sh}"
     
     # Source validation functions for completeness scoring
     source "${LIB_DIR:-./know/lib}/validation-comprehensive.sh"

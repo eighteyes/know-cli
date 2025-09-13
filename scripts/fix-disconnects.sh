@@ -3,7 +3,7 @@
 # Interactive tool to fix disconnected entities in dependency graph
 # Usage: ./scripts/fix-disconnects.sh [knowledge-map.json]
 
-KNOWLEDGE_MAP="${1:-knowledge-map-cmd.json}"
+KNOWLEDGE_MAP="${1:-spec-graph.json}"
 BACKUP_FILE="${KNOWLEDGE_MAP}.backup"
 
 if [[ ! -f "$KNOWLEDGE_MAP" ]]; then

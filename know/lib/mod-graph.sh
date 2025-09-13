@@ -35,7 +35,10 @@ show_usage() {
     echo -e "${CYAN}Fast CLI for managing spec-graph.json${NC}"
     echo
     echo -e "${YELLOW}Usage:${NC}"
-    echo "  $0 <command> [args...]"
+    echo "  $0 [--file|-f <graph-file>] <command> [args...]"
+    echo
+    echo -e "${YELLOW}Options:${NC}"
+    echo "  --file, -f <file>        Use specified graph file (default: spec-graph.json)"
     echo
     echo -e "${YELLOW}Entity Commands:${NC}"
     echo "  list [type]              List entities (optionally by type)"
@@ -519,6 +522,19 @@ resolve_circular_dependencies() {
     echo -e "  ${BOLD}7.${NC} component (implementation modules)"
     echo -e "  ${BOLD}8.${NC} ui_component, model, user_action (supporting elements)"
 }
+
+# Parse file option
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --file|-f)
+            KNOWLEDGE_MAP_FILE="$2"
+            shift 2
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
 
 # Main command dispatcher
 case "${1:-}" in

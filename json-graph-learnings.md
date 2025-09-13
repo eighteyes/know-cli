@@ -1,4 +1,4 @@
-# JSON Graph Evolution: Learnings from old/knowledge-map.json → knowledge-map-cmd.json
+# JSON Graph Evolution: Learnings from old/knowledge-map.json → spec-graph.json
 
 ## Latest Consolidations (Current Session)
 
@@ -12,6 +12,37 @@
 - **Action**: Eliminated `views` and `queries` sections 
 - **Reason**: Replaced by jq-based tooling and shell scripts
 - **Benefit**: Simpler structure, faster queries, universal JSON tooling
+
+### **24. Added User Actions Entity Type**
+- **Action**: Added `user_actions` entity type as system mutation layer
+- **Structure**: Clean properties (trigger_type, user_roles, state_mutation, acceptance_criteria)
+- **Graph Integration**: Full dependency relationships with components, screens, UI elements
+- **Benefit**: Completes user interaction model bridging UI → business logic
+
+### **25. Refined Implementation Phases Structure**
+- **Action**: Converted `implementation_phases` → `phases` array with `requirements` lists
+- **Eliminated**: `depends_on` arrays from phases (order implies sequence)
+- **Added**: Phase 6 "User Interactions" containing all user actions
+- **Benefit**: Cleaner planning structure, phases serve as graph reinforcement points
+
+### **26. Enhanced Dependency Detection and Auto-Resolution**
+- **Action**: Added depth limiting (3 levels), cycle detection, and auto-resolve to dependency traversal
+- **Implementation**: `./know/know query deps <entity> --resolve` triggers automatic circular dependency resolution
+- **Traversal Limits**: MAX_DEPTH=3 prevents infinite loops in complex dependency chains
+- **Cycle Detection**: Tracks visited entities to identify circular references during traversal
+- **Auto-Resolution**: Integrates with canonical hierarchy resolver to fix violations automatically
+- **Benefit**: Robust dependency analysis with built-in cycle protection and automatic remediation
+
+### **27. Graph Tooling Parameterization and Semantic Rename**
+- **Action**: Parameterized all graph analysis tools and renamed `knowledge-map-cmd.json` → `spec-graph.json`
+- **Implementation**: 
+  - Active tools (`know/lib/mod-graph.sh`, `know/lib/query-graph.sh`) now accept `--file|-f <graph-file>` parameter
+  - All 21 legacy analysis scripts updated to use `spec-graph.json` as default
+  - Bulk update of 84+ references across scripts, documentation, and examples
+- **Semantic Improvement**: New name `spec-graph.json` better reflects content (specification/schema) vs operational nature
+- **Flexibility**: All tools can now work with multiple graph files for testing, comparison, or different projects
+- **Migration Strategy**: Preserved backward compatibility through parameterization rather than breaking existing workflows
+- **Benefit**: Universal tool flexibility while maintaining semantic clarity and avoiding breaking changes
 
 ## Major Structural Optimizations
 

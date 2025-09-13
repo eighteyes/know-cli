@@ -8,7 +8,7 @@ Tracking all scripts in the `/scripts` directory with their descriptions and mat
 
 | Script | Status | Description |
 |--------|--------|-------------|
-| `graph-reporter.sh` | **Functional** | Interactive graph analysis tool with queries, dependency analysis, and visual reporting for knowledge-map-cmd.json |
+| `graph-reporter.sh` | **Functional** | Interactive graph analysis tool with queries, dependency analysis, and visual reporting for spec-graph.json |
 | `mod-graph.sh` | **Functional** | Clean CLI tool for managing knowledge graph entities and connections. Fast command-line interface for CRUD operations |
 | `mod-graph-tui.sh` | **Deprecated** | Dialog-based TUI version (replaced by cleaner CLI approach) |
 

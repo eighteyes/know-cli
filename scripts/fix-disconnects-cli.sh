@@ -3,7 +3,7 @@
 # CLI tool to fix disconnected entities in dependency graph  
 # Usage: ./scripts/fix-disconnects-cli.sh [OPTIONS] [knowledge-map.json]
 
-KNOWLEDGE_MAP="knowledge-map-cmd.json"
+KNOWLEDGE_MAP="spec-graph.json"
 BACKUP_FILE=""
 VERBOSE=false
 DRY_RUN=false

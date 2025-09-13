@@ -3,7 +3,7 @@
 # Check external dependencies in knowledge graph
 # Usage: ./scripts/check-externals.sh [knowledge-map.json]
 
-KNOWLEDGE_MAP="${1:-knowledge-map-cmd.json}"
+KNOWLEDGE_MAP="${1:-spec-graph.json}"
 
 echo "🔍 External Dependencies Analysis"
 echo "================================="

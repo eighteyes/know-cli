@@ -5,16 +5,14 @@ set -e
 
 GRAPH_FILE="spec-graph.json"
 
-if [[ ! -f "$GRAPH_FILE" ]]; then
-    echo "❌ Graph file not found: $GRAPH_FILE"
-    exit 1
-fi
-
 show_help() {
     echo "JSON Graph Query Tool"
     echo ""
     echo "USAGE:"
-    echo "  $0 <command> [options]"
+    echo "  $0 [--file|-f <graph-file>] <command> [options]"
+    echo ""
+    echo "OPTIONS:"
+    echo "  --file, -f <file>    Use specified graph file (default: spec-graph.json)"
     echo ""
     echo "COMMANDS:"
     echo "  traverse <entity_id> depends_on        - Show dependencies of entity"  
@@ -24,6 +22,7 @@ show_help() {
     echo "  impact <entity_id>                     - Show impact analysis (what depends on this)"
     echo "  user <user_id>                         - Show dependencies for user"
     echo "  cycles                                 - Detect circular dependencies"
+    echo "  scan-all                               - Comprehensive scan of ALL entities for cycles"
     echo "  stats                                  - Show graph statistics"
     echo "  view <view_name>                       - Show pre-computed view"
     echo ""
@@ -120,6 +119,7 @@ find_path() {
 
 show_dependencies() {
     local entity="$1"
+    local auto_resolve="${2:-false}"
     
     echo "📦 Dependency chain for '$entity':"
     
@@ -132,15 +132,23 @@ show_dependencies() {
         local current_depth="$2"
         
         # Depth limit to prevent infinite recursion
-        if [[ $current_depth -gt 5 ]]; then
-            echo "  ⚠️  MAX DEPTH REACHED (stopping at depth 5)"
+        if [[ $current_depth -gt 3 ]]; then
+            echo "  ⚠️  MAX DEPTH REACHED (stopping at depth 3)"
             return
         fi
         
         # Check if already processed
         for found in "${deps_found[@]}"; do
             if [[ "$found" == "$current_entity" ]]; then
-                echo "  🔄 CYCLE: $current_entity (already visited)"
+                echo "  🔄 CYCLE DETECTED: $current_entity (already visited)"
+                if [[ "$auto_resolve" == "true" ]]; then
+                    echo "  🔧 Auto-resolving circular dependencies..."
+                    ./know/know mod resolve-cycles
+                    echo "  ✅ Circular dependencies resolved. Re-run query to see clean results."
+                    exit 0
+                else
+                    echo "  💡 Run './know/know query deps $current_entity --resolve' to auto-fix cycles"
+                fi
                 return
             fi
         done
@@ -188,7 +196,7 @@ show_impact() {
         local current_depth="$2"
         
         # Depth limit to prevent infinite recursion
-        if [[ $current_depth -gt 5 ]]; then
+        if [[ $current_depth -gt 3 ]]; then
             return
         fi
         
@@ -262,29 +270,164 @@ show_user_access() {
 detect_cycles() {
     echo "🔄 Checking for circular dependencies..."
     
-    cycles=$(jq -r '
-        def has_cycle($start; $current; $visited):
+    # Enhanced cycle detection with path tracking
+    cycles_with_paths=$(jq -r '
+        def find_cycle_path($start; $current; $path; $visited):
             if $visited | has($current) then
-                if $current == $start then true else false end
+                if $current == $start then
+                    ($path + [$current] | join(" → "))
+                else empty end
             else
                 (.graph[$current].depends_on[]? // empty) as $next |
-                has_cycle($start; $next; $visited + {($current): true})
+                if $next then
+                    find_cycle_path($start; $next; $path + [$current]; $visited + {($current): true})
+                else empty end
             end;
         
         .graph | keys[] as $entity |
-        select(has_cycle($entity; $entity; {})) |
-        $entity
+        find_cycle_path($entity; $entity; []; {}) // empty
     ' "$GRAPH_FILE")
     
-    if [[ -n "$cycles" ]]; then
+    if [[ -n "$cycles_with_paths" ]]; then
         echo "  ⚠️  Circular dependencies found:"
-        echo "$cycles" | while read -r cycle; do
-            if [[ -n "$cycle" ]]; then
-                echo "    🔁 $cycle"
+        echo "$cycles_with_paths" | sort -u | while IFS= read -r cycle_path; do
+            if [[ -n "$cycle_path" ]]; then
+                echo "    🔁 $cycle_path"
             fi
         done
+        echo ""
+        echo "  💡 Run './know/know mod resolve-cycles' to auto-fix all cycles"
     else
         echo "  ✅ No circular dependencies detected"
+    fi
+}
+
+scan_all_cycles() {
+    echo "🔍 Comprehensive scan: Testing ALL entities for cycles and hierarchy violations..."
+    echo "📏 Canonical hierarchy: Project → Platform → Requirements → User → Screen → Feature/Functionality → Component → UI/Model/Action"
+    echo ""
+    
+    local total_entities=0
+    local entities_with_cycles=0
+    local hierarchy_violations=0
+    local cycle_patterns=()
+    local violation_patterns=()
+    
+    # Canonical hierarchy levels
+    get_hierarchy_level() {
+        local entity_type="$1"
+        case "$entity_type" in
+            "project") echo "1" ;;
+            "platform") echo "2" ;;
+            "requirement") echo "3" ;;
+            "user") echo "4" ;;
+            "screen") echo "5" ;;
+            "feature"|"functionality") echo "6" ;;
+            "component") echo "7" ;;
+            "ui_component"|"model"|"user_action") echo "8" ;;
+            *) echo "999" ;;
+        esac
+    }
+    
+    # Get all entities from the graph
+    local all_entities
+    all_entities=$(jq -r '.graph | keys[]' "$GRAPH_FILE")
+    
+    while IFS= read -r entity; do
+        if [[ -n "$entity" ]]; then
+            ((total_entities++))
+            
+            # Check hierarchy violations
+            local entity_type=$(echo "$entity" | cut -d':' -f1)
+            local entity_level=$(get_hierarchy_level "$entity_type")
+            
+            # Check each dependency for hierarchy violations
+            local direct_deps
+            direct_deps=$(jq -r --arg entity "$entity" '.graph[$entity].depends_on[]? // empty' "$GRAPH_FILE" 2>/dev/null)
+            
+            while IFS= read -r dep; do
+                if [[ -n "$dep" ]]; then
+                    local dep_type=$(echo "$dep" | cut -d':' -f1)
+                    local dep_level=$(get_hierarchy_level "$dep_type")
+                    
+                    # Check if dependency violates hierarchy (higher level depending on lower level)
+                    if [[ $entity_level -lt $dep_level ]]; then
+                        ((hierarchy_violations++))
+                        violation_patterns+=("$entity → $dep (level $entity_level → $dep_level)")
+                    fi
+                fi
+            done <<< "$direct_deps"
+            
+            # Test dependency traversal for cycles
+            local cycle_detected=false
+            local deps_found=()
+            
+            _scan_entity_cycles() {
+                local current_entity="$1"
+                local depth="$2"
+                
+                # Depth limit
+                if [[ $depth -gt 5 ]]; then
+                    return
+                fi
+                
+                # Check if already visited
+                for found in "${deps_found[@]}"; do
+                    if [[ "$found" == "$current_entity" ]]; then
+                        cycle_detected=true
+                        cycle_patterns+=("$entity (contains cycle at depth $depth)")
+                        return
+                    fi
+                done
+                
+                deps_found+=("$current_entity")
+                
+                # Get dependencies and recurse
+                local direct_deps
+                direct_deps=$(jq -r --arg entity "$current_entity" '.graph[$entity].depends_on[]? // empty' "$GRAPH_FILE" 2>/dev/null)
+                
+                while IFS= read -r dep; do
+                    if [[ -n "$dep" ]]; then
+                        _scan_entity_cycles "$dep" $((depth + 1))
+                    fi
+                done <<< "$direct_deps"
+            }
+            
+            _scan_entity_cycles "$entity" 0
+            
+            if [[ "$cycle_detected" == "true" ]]; then
+                ((entities_with_cycles++))
+            fi
+        fi
+    done <<< "$all_entities"
+    
+    echo "📊 Comprehensive Scan Results:"
+    echo "  📈 Total entities scanned: $total_entities"
+    echo "  🔁 Entities with cycles: $entities_with_cycles"
+    echo "  ⚠️  Hierarchy violations: $hierarchy_violations"
+    
+    if [[ $entities_with_cycles -gt 0 ]]; then
+        echo ""
+        echo "  🔴 Entities with circular dependency patterns:"
+        for pattern in "${cycle_patterns[@]}"; do
+            echo "    🔁 $pattern"
+        done
+    fi
+    
+    if [[ $hierarchy_violations -gt 0 ]]; then
+        echo ""
+        echo "  🔴 Canonical hierarchy violations:"
+        for violation in "${violation_patterns[@]}"; do
+            echo "    ⬆️  $violation"
+        done
+    fi
+    
+    if [[ $entities_with_cycles -gt 0 || $hierarchy_violations -gt 0 ]]; then
+        echo ""
+        echo "  💡 Run './know/know query cycles' for detailed cycle paths"
+        echo "  🔧 Run './know/know mod resolve-cycles' to auto-fix all issues"
+    else
+        echo "  ✅ No cycles or hierarchy violations detected"
     fi
 }
 
@@ -330,6 +473,25 @@ show_view() {
     jq -r --arg view "$view_name" '.views[$view]' "$GRAPH_FILE" | jq '.'
 }
 
+# Parse file option
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --file|-f)
+            GRAPH_FILE="$2"
+            shift 2
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+# Check if file exists
+if [[ ! -f "$GRAPH_FILE" ]]; then
+    echo "❌ Graph file not found: $GRAPH_FILE"
+    exit 1
+fi
+
 # Main command processing
 case "$1" in
     "traverse")
@@ -354,11 +516,15 @@ case "$1" in
         find_path "$2" "$3"
         ;;
     "deps")
-        if [[ $# -ne 2 ]]; then
-            echo "Usage: $0 deps <entity_id>"
+        if [[ $# -lt 2 ]]; then
+            echo "Usage: $0 deps <entity_id> [--resolve]"
             exit 1
         fi
-        show_dependencies "$2"
+        auto_resolve="false"
+        if [[ "${3:-}" == "--resolve" ]]; then
+            auto_resolve="true"
+        fi
+        show_dependencies "$2" "$auto_resolve"
         ;;
     "impact")
         if [[ $# -ne 2 ]]; then
@@ -376,6 +542,9 @@ case "$1" in
         ;;
     "cycles")
         detect_cycles
+        ;;
+    "scan-all")
+        scan_all_cycles
         ;;
     "stats")
         show_stats

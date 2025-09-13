@@ -78,7 +78,27 @@ Requirements ──────────────→ Functionality ──�
 
 ```json
 {
-  "meta": { /* project metadata */ },
+  "meta": { 
+    "project": {
+      "name": "Project Name",
+      "phases": [
+        {
+          "id": "1_foundation",
+          "name": "Foundation",
+          "description": "Core data models and infrastructure", 
+          "parallelizable": false,
+          "requirements": ["model:user-data", "platform:web-app"]
+        },
+        {
+          "id": "6_interactions", 
+          "name": "User Interactions",
+          "description": "User actions that mutate system state",
+          "parallelizable": true,
+          "requirements": ["user_action:admin-login", "user_action:export-report"]
+        }
+      ]
+    }
+  },
   "references": {
     "descriptions": { /* shared content references */ },
     "technical_architecture": { /* infrastructure configs */ },
@@ -117,6 +137,26 @@ Requirements ──────────────→ Functionality ──�
           "functional": ["displays_user_data_accurately", "sorting_filtering_working"],
           "performance": ["loads_under_2_seconds", "handles_1000_rows"],
           "integration": ["connects_to_user_api", "respects_admin_permissions"]
+        }
+      }
+    },
+    "user_actions": {
+      "admin-login": {
+        "id": "admin-login",
+        "type": "user_action",
+        "name": "Administrator Login",
+        "description": "Authenticate administrator with elevated privileges",
+        "trigger_type": "form_submission",
+        "user_roles": ["admin"],
+        "state_mutation": {
+          "target_model": "user_session",
+          "mutation_type": "create_record",
+          "new_state": "authenticated"
+        },
+        "acceptance_criteria": {
+          "functional": ["credentials_validated", "session_created"],
+          "performance": ["login_under_3_seconds"],
+          "security": ["password_hashed", "session_encrypted"]
         }
       }
     },
@@ -161,13 +201,15 @@ Requirements ──────────────→ Functionality ──�
         "feature:analytics",
         "model:user-data"
       ]
+    },
+    "user_action:admin-login": {
+      "depends_on": [
+        "component:login-form",
+        "ui_component:interactive-buttons",
+        "model:user-data",
+        "screen:admin-panel"
+      ]
     }
-  },
-
-  "project": {
-    "roadmap": { /* implementation milestones */ },
-    "strategic": { /* evolution plan */ },
-    "risks": { /* constraints and validation */ }
   }
 }
 ```

@@ -4,7 +4,7 @@ Comprehensive test suite for the `know` CLI tool that generates implementation s
 
 ## Overview
 
-This test suite validates all commands and functionality of the `know` tool using real entities from the knowledge graph (`knowledge-map-cmd.json`). Tests use TAP (Test Anything Protocol) format for standardized output and reporting.
+This test suite validates all commands and functionality of the `know` tool using real entities from the knowledge graph (`spec-graph.json`). Tests use TAP (Test Anything Protocol) format for standardized output and reporting.
 
 ## Test Structure
 
@@ -185,7 +185,7 @@ KNOWLEDGE_MAP="/path/to/knowledge-map.json" # Path to knowledge map
 - `bash` 4.0+
 - `jq` (JSON processor)
 - `know` command accessible
-- `knowledge-map-cmd.json` file
+- `spec-graph.json` file
 
 ## CI/CD Integration
 
@@ -212,7 +212,7 @@ KNOWLEDGE_MAP="/path/to/knowledge-map.json" # Path to knowledge map
 ### Common Issues
 
 **Test failures due to missing entities:**
-- Verify `knowledge-map-cmd.json` exists and has entities
+- Verify `spec-graph.json` exists and has entities
 - Check that entity types match expected structure
 
 **Permission errors:**

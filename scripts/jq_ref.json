@@ -158,23 +158,23 @@
       "source scripts/jq_ref.json",
       "",
       "# Get all entity types",
-      "jq -r \"$(load_jq_pattern 'entities' 'get_all_types')\" knowledge-map-cmd.json",
+      "jq -r \"$(load_jq_pattern 'entities' 'get_all_types')\" spec-graph.json",
       "",
       "# Find dependencies of an entity",
-      "jq -r --arg entity 'feature:real-time-telemetry' \"$(load_jq_pattern 'graph' 'get_dependencies')\" knowledge-map-cmd.json",
+      "jq -r --arg entity 'feature:real-time-telemetry' \"$(load_jq_pattern 'graph' 'get_dependencies')\" spec-graph.json",
       "",
       "# Get feature acceptance criteria", 
-      "jq -r --arg type 'features' --arg id 'real-time-telemetry' \"$(load_jq_pattern 'entities' 'get_acceptance_criteria')\" knowledge-map-cmd.json"
+      "jq -r --arg type 'features' --arg id 'real-time-telemetry' \"$(load_jq_pattern 'entities' 'get_acceptance_criteria')\" spec-graph.json"
     ],
     "advanced_usage": [
       "# Find circular dependencies",
-      "jq -r \"$(load_jq_pattern 'analysis' 'circular_dependencies')\" knowledge-map-cmd.json",
+      "jq -r \"$(load_jq_pattern 'analysis' 'circular_dependencies')\" spec-graph.json",
       "",
       "# Generate system summary",
-      "jq \"$(load_jq_pattern 'reporting' 'system_summary')\" knowledge-map-cmd.json",
+      "jq \"$(load_jq_pattern 'reporting' 'system_summary')\" spec-graph.json",
       "",
       "# Analyze dependency depth",
-      "jq -r \"$(load_jq_pattern 'analysis' 'dependency_depth')\" knowledge-map-cmd.json"
+      "jq -r \"$(load_jq_pattern 'analysis' 'dependency_depth')\" spec-graph.json"
     ]
   },
   "schema_compatibility": {

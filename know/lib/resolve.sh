@@ -15,9 +15,9 @@ resolve_entity_reference() {
     
     # If hint_type provided, try that first
     if [[ -n "$hint_type" ]]; then
-        local normalized_type
-        normalized_type=$(normalize_entity_type "$hint_type")
-        echo "${normalized_type}:${input}"
+        # Keep the hint_type as singular for the entity reference
+        # The backend tools will normalize as needed for JSON access
+        echo "${hint_type}:${input}"
         return
     fi
     

@@ -1,4 +1,4 @@
-- IMPORTANT: Keep ~/ai/commands/lb/knowledge-graph.md and json-graph-approach.md updated with the latest evolution of the structure in `knowledge-map-cmd.json` approach
+- IMPORTANT: Keep ~/ai/commands/lb/knowledge-graph.md and json-graph-approach.md updated with the latest evolution of the structure in `spec-graph.json` approach
 - IMPORTANT: When we improve the approach, save a learning entry to `json-graph-learning.md`
 - string together multiple `jq` commands into a single BASH call
 
@@ -35,7 +35,7 @@ EXAMPLES:
 - `mod-graph.sh`
 ```
 Knowledge Graph Modifier
-Fast CLI for managing knowledge-map-cmd.json
+Fast CLI for managing spec-graph.json
 
 Usage:
   ./scripts/mod-graph.sh <command> [args...]

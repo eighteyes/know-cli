@@ -23,7 +23,7 @@ DESCRIPTION:
     • Overall risk assessment and scoring
 
 ARGUMENTS:
-    knowledge-map.json    Path to knowledge map file (default: knowledge-map-cmd.json)
+    knowledge-map.json    Path to knowledge map file (default: spec-graph.json)
     entity-name          Optional: specific entity to analyze (analyzes all if not provided)
 
 OPTIONS:
@@ -53,7 +53,7 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
     exit 0
 fi
 
-KNOWLEDGE_MAP="${1:-knowledge-map-cmd.json}"
+KNOWLEDGE_MAP="${1:-spec-graph.json}"
 TARGET_ENTITY="$2"
 
 if [[ ! -f "$KNOWLEDGE_MAP" ]]; then

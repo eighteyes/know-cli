@@ -6,55 +6,55 @@ Comprehensive collection of jq commands for parsing and analyzing the JSON graph
 
 ### Get all entities of a specific type
 ```bash
-jq '.entities.screens' knowledge-map-cmd.json
-jq '.entities.features' knowledge-map-cmd.json
-jq '.entities.users' knowledge-map-cmd.json
-jq '.entities.platforms' knowledge-map-cmd.json
-jq '.entities.ui_components' knowledge-map-cmd.json
+jq '.entities.screens' spec-graph.json
+jq '.entities.features' spec-graph.json
+jq '.entities.users' spec-graph.json
+jq '.entities.platforms' spec-graph.json
+jq '.entities.ui_components' spec-graph.json
 ```
 
 ### Extract specific entity by ID
 ```bash
-jq '.entities.screens."fleet-dashboard"' knowledge-map-cmd.json
-jq '.entities.features."real-time-telemetry"' knowledge-map-cmd.json
+jq '.entities.screens."fleet-dashboard"' spec-graph.json
+jq '.entities.features."real-time-telemetry"' spec-graph.json
 ```
 
 ### List all entity IDs by type
 ```bash
-jq '.entities.screens | keys[]' knowledge-map-cmd.json
-jq '.entities.features | keys[]' knowledge-map-cmd.json
+jq '.entities.screens | keys[]' spec-graph.json
+jq '.entities.features | keys[]' spec-graph.json
 ```
 
 ## JSON Graph Database Queries
 
 ### Find what an entity depends on
 ```bash
-jq '.graph."user:owner".depends_on[]' knowledge-map-cmd.json
-jq '.graph."screen:fleet-dashboard".depends_on[]' knowledge-map-cmd.json
+jq '.graph."user:owner".depends_on[]' spec-graph.json
+jq '.graph."screen:fleet-dashboard".depends_on[]' spec-graph.json
 ```
 
 ### Find what depends on an entity (reverse lookup)
 ```bash
 # Who depends on web-platform?
-jq -r '.graph | to_entries[] | select(.value.depends_on[]? == "platform:web-platform") | .key' knowledge-map-cmd.json
+jq -r '.graph | to_entries[] | select(.value.depends_on[]? == "platform:web-platform") | .key' spec-graph.json
 
 # What depends on real-time-telemetry feature?
-jq -r '.graph | to_entries[] | select(.value.depends_on[]? == "feature:real-time-telemetry") | .key' knowledge-map-cmd.json
+jq -r '.graph | to_entries[] | select(.value.depends_on[]? == "feature:real-time-telemetry") | .key' spec-graph.json
 
 # What screens depend on status indicators?
-jq -r '.graph | to_entries[] | select(.value.depends_on[]? == "ui_component:status-indicators") | .key' knowledge-map-cmd.json
+jq -r '.graph | to_entries[] | select(.value.depends_on[]? == "ui_component:status-indicators") | .key' spec-graph.json
 ```
 
 ### Entity dependency counts
 ```bash
 # Entities with most dependencies (most complex)
-jq '.graph | to_entries | map({entity: .key, dep_count: (.value.depends_on | length)}) | sort_by(.dep_count) | reverse' knowledge-map-cmd.json
+jq '.graph | to_entries | map({entity: .key, dep_count: (.value.depends_on | length)}) | sort_by(.dep_count) | reverse' spec-graph.json
 
 # Most depended-upon entities (most critical)
-jq '.graph | to_entries[] | .value.depends_on[]' knowledge-map-cmd.json | sort | uniq -c | sort -nr
+jq '.graph | to_entries[] | .value.depends_on[]' spec-graph.json | sort | uniq -c | sort -nr
 
 # User access analysis
-jq '.graph | to_entries[] | select(.key | startswith("user:")) | {user: .key, access_count: (.value.depends_on | length)}' knowledge-map-cmd.json
+jq '.graph | to_entries[] | select(.key | startswith("user:")) | {user: .key, access_count: (.value.depends_on | length)}' spec-graph.json
 ```
 
 ## Multi-Hop Dependency Analysis
@@ -68,7 +68,7 @@ def find_deps($entity):
   $dep, find_deps($dep);
 
 find_deps("feature:real-time-telemetry")
-' knowledge-map-cmd.json
+' spec-graph.json
 ```
 
 ### Trace all paths to a dependency
@@ -85,7 +85,7 @@ def find_paths_to($target; $current; $visited):
 
 .graph | keys[] as $entity |
 find_paths_to("platform:aws-infrastructure"; $entity; {})
-' knowledge-map-cmd.json
+' spec-graph.json
 ```
 
 ## Impact Analysis Queries
@@ -99,7 +99,7 @@ def find_dependents($target):
   $dependent, find_dependents($dependent);
 
 find_dependents("platform:aws-infrastructure") | unique
-' knowledge-map-cmd.json
+' spec-graph.json
 ```
 
 ### Circular dependency detection
@@ -117,7 +117,7 @@ def has_cycle($start; $current; $visited):
 .graph | keys[] as $entity |
 select(has_cycle($entity; $entity; {})) |
 $entity
-' knowledge-map-cmd.json
+' spec-graph.json
 ```
 
 ## Type-Based Dependency Analysis
@@ -125,31 +125,31 @@ $entity
 ### Dependencies by entity type
 ```bash
 # What do users depend on?
-jq -r '.graph | to_entries[] | select(.key | startswith("user:")) | {user: .key, depends_on: .value.depends_on}' knowledge-map-cmd.json
+jq -r '.graph | to_entries[] | select(.key | startswith("user:")) | {user: .key, depends_on: .value.depends_on}' spec-graph.json
 
 # What do screens depend on?
-jq -r '.graph | to_entries[] | select(.key | startswith("screen:")) | {screen: .key, depends_on: .value.depends_on}' knowledge-map-cmd.json
+jq -r '.graph | to_entries[] | select(.key | startswith("screen:")) | {screen: .key, depends_on: .value.depends_on}' spec-graph.json
 
 # What do features depend on?
-jq -r '.graph | to_entries[] | select(.key | startswith("feature:")) | {feature: .key, depends_on: .value.depends_on}' knowledge-map-cmd.json
+jq -r '.graph | to_entries[] | select(.key | startswith("feature:")) | {feature: .key, depends_on: .value.depends_on}' spec-graph.json
 
 # What do platforms depend on?
-jq -r '.graph | to_entries[] | select(.key | startswith("platform:")) | {platform: .key, depends_on: .value.depends_on}' knowledge-map-cmd.json
+jq -r '.graph | to_entries[] | select(.key | startswith("platform:")) | {platform: .key, depends_on: .value.depends_on}' spec-graph.json
 ```
 
 ### Cross-type dependency patterns
 ```bash
 # Which users depend on which screens?
 jq -r '.graph | to_entries[] | select(.key | startswith("user:")) | 
-{user: .key, screens: [.value.depends_on[] | select(startswith("screen:"))]}' knowledge-map-cmd.json
+{user: .key, screens: [.value.depends_on[] | select(startswith("screen:"))]}' spec-graph.json
 
 # Which screens depend on which features?
 jq -r '.graph | to_entries[] | select(.key | startswith("screen:")) |
-{screen: .key, features: [.value.depends_on[] | select(startswith("feature:"))]}' knowledge-map-cmd.json
+{screen: .key, features: [.value.depends_on[] | select(startswith("feature:"))]}' spec-graph.json
 
 # Which features depend on which platforms?
 jq -r '.graph | to_entries[] | select(.key | startswith("feature:")) |
-{feature: .key, platforms: [.value.depends_on[] | select(startswith("platform:"))]}' knowledge-map-cmd.json
+{feature: .key, platforms: [.value.depends_on[] | select(startswith("platform:"))]}' spec-graph.json
 ```
 
 ## Validation Queries
@@ -161,7 +161,7 @@ jq -r '
 (.graph | keys) as $valid_entities |
 .graph | to_entries[] | .value.depends_on[]? |
 select(. as $ref | $valid_entities | index($ref) | not)
-' knowledge-map-cmd.json
+' spec-graph.json
 ```
 
 ### Orphaned entities
@@ -171,13 +171,13 @@ jq -r '
 (.graph | [.[] | .depends_on[]?]) as $referenced |
 .graph | keys[] |
 select(. as $entity | $referenced | index($entity) | not)
-' knowledge-map-cmd.json
+' spec-graph.json
 ```
 
 ### Self-dependencies
 ```bash
 # Entities that depend on themselves
-jq -r '.graph | to_entries[] | select(.value.depends_on[]? == .key) | .key' knowledge-map-cmd.json
+jq -r '.graph | to_entries[] | select(.value.depends_on[]? == .key) | .key' spec-graph.json
 ```
 
 ## Reporting Queries
@@ -196,7 +196,7 @@ jq '{
     group_by(.) | map({entity: .[0], dependent_count: length}) |
     sort_by(.dependent_count) | reverse | .[0:10]
   )
-}' knowledge-map-cmd.json
+}' spec-graph.json
 ```
 
 ### Complexity analysis
@@ -206,12 +206,12 @@ jq '.graph | to_entries | map({
   entity: .key,
   complexity: (.value.depends_on | length),
   dependencies: .value.depends_on
-}) | sort_by(.complexity) | reverse | .[0:5]' knowledge-map-cmd.json
+}) | sort_by(.complexity) | reverse | .[0:5]' spec-graph.json
 
 # System bottlenecks (most depended upon)
 jq '[.graph | .[] | .depends_on[]?] | 
 group_by(.) | map({dependency: .[0], usage_count: length}) |
-sort_by(.usage_count) | reverse | .[0:5]' knowledge-map-cmd.json
+sort_by(.usage_count) | reverse | .[0:5]' spec-graph.json
 ```
 
 ## Advanced Analysis
@@ -229,7 +229,7 @@ def depth($entity; $visited):
 
 .graph | to_entries | map({entity: .key, depth: depth(.key; {})}) |
 group_by(.depth) | map({layer: .[0].depth, entities: [.[].entity]})
-' knowledge-map-cmd.json
+' spec-graph.json
 ```
 
 ### Dependency strength analysis
@@ -240,31 +240,31 @@ group_by(.) | map({
   entity: .[0], 
   strength: length,
   critical: (if length > 5 then true else false end)
-}) | sort_by(.strength) | reverse' knowledge-map-cmd.json
+}) | sort_by(.strength) | reverse' spec-graph.json
 
 ## Content Reference Queries
 
 ### Access shared content references
 ```bash
 # List all content references
-jq '.references.descriptions | keys[]' knowledge-map-cmd.json
+jq '.references.descriptions | keys[]' spec-graph.json
 
 # Get specific description reference
-jq '.references.descriptions."real-time-telemetry-desc"' knowledge-map-cmd.json
+jq '.references.descriptions."real-time-telemetry-desc"' spec-graph.json
 
 # Find entities using a specific reference
-jq -r '.entities | to_entries[] | .value | to_entries[] | select(.value.description_ref? == "real-time-telemetry-desc") | .key' knowledge-map-cmd.json
+jq -r '.entities | to_entries[] | .value | to_entries[] | select(.value.description_ref? == "real-time-telemetry-desc") | .key' spec-graph.json
 ```
 
 ### Component implementation queries
 ```bash
 # List all component implementations
-jq '.references.component_implementations | keys[]' knowledge-map-cmd.json
+jq '.references.component_implementations | keys[]' spec-graph.json
 
 # Get specific component configuration
-jq '.references.component_implementations."status-indicators"' knowledge-map-cmd.json
+jq '.references.component_implementations."status-indicators"' spec-graph.json
 
 # Find components with specializations
-jq '.references.component_implementations | to_entries[] | select(.value.specialized_for?) | {component: .key, specializations: .value.specialized_for}' knowledge-map-cmd.json
+jq '.references.component_implementations | to_entries[] | select(.value.specialized_for?) | {component: .key, specializations: .value.specialized_for}' spec-graph.json
 ```
 ```

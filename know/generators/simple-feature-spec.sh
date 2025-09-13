@@ -45,7 +45,7 @@ generate_simple_feature_spec() {
         echo "- Key functionality and user workflows"
         echo "- Success criteria and expected outcomes"
         echo ""
-        echo "**How to fix:** \`./scripts/mod-graph.sh edit $entity_type_plural $entity_id\`"
+        echo "**How to fix:** \`know mod edit $entity_type_plural $entity_id\`"
         echo ""
         return 1
     else
@@ -341,7 +341,7 @@ generate_simple_feature_spec() {
         echo "\`\`\`bash"
         echo "# Add feature description"
         echo "# Edit: .entities.$entity_type_plural.$entity_id.description"
-        echo "./scripts/mod-graph.sh edit $entity_type_plural $entity_id"
+        echo "know mod edit $entity_type_plural $entity_id"
         echo ""
         echo "# Add functional requirements"
         echo "# Edit: .entities.$entity_type_plural.$entity_id.acceptance_criteria.functional"
@@ -357,8 +357,8 @@ generate_simple_feature_spec() {
         echo "\`\`\`bash"
         echo "# Add integration and security requirements"
         echo "# Connect to user personas and data models"
-        echo "./scripts/mod-graph.sh connect $entity_ref user:<user-type>"
-        echo "./scripts/mod-graph.sh connect $entity_ref model:<data-model>"
+        echo "know mod connect $entity_ref user:<user-type>"
+        echo "know mod connect $entity_ref model:<data-model>"
         echo "\`\`\`"
     fi
     
@@ -371,9 +371,9 @@ generate_simple_feature_spec() {
 # Main entry point
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     # Load necessary functions
-    export MOD_GRAPH="${MOD_GRAPH:-./scripts/mod-graph.sh}"
+    export MOD_GRAPH="${MOD_GRAPH:-./know/lib/mod-graph.sh}"
     export KNOWLEDGE_MAP="${KNOWLEDGE_MAP:-./knowledge-map-cmd.json}"
-    export JSON_GRAPH_QUERY="${JSON_GRAPH_QUERY:-./scripts/json-graph-query.sh}"
+    export JSON_GRAPH_QUERY="${JSON_GRAPH_QUERY:-./know/lib/query-graph.sh}"
     
     # Source validation functions for completeness scoring
     source "${LIB_DIR:-./know/lib}/validation-comprehensive.sh"

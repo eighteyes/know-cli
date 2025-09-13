@@ -17,7 +17,7 @@ DESCRIPTION:
     Analyzes dependency bundles and identifies optimization opportunities
 
 ARGUMENTS:
-    knowledge-map.json    Path to knowledge map file (default: knowledge-map-cmd.json)
+    knowledge-map.json    Path to knowledge map file (default: spec-graph.json)
     analysis-type        Type of analysis to perform (default: size)
 
 ANALYSIS TYPES:
@@ -48,7 +48,7 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
     exit 0
 fi
 
-KNOWLEDGE_MAP="${1:-knowledge-map-cmd.json}"
+KNOWLEDGE_MAP="${1:-spec-graph.json}"
 ANALYSIS_TYPE="${2:-size}"
 
 if [[ ! -f "$KNOWLEDGE_MAP" ]]; then

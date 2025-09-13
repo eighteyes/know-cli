@@ -24,7 +24,7 @@ DESCRIPTION:
     • ASCII tree visualization with depth control
 
 ARGUMENTS:
-    knowledge-map.json    Path to knowledge map file (default: knowledge-map-cmd.json)
+    knowledge-map.json    Path to knowledge map file (default: spec-graph.json)
     entity               Starting entity for tree walk (interactive if not provided)
     direction            Walk direction (default: down)
     max-depth            Maximum levels to traverse (default: 10)
@@ -63,7 +63,7 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
     exit 0
 fi
 
-KNOWLEDGE_MAP="${1:-knowledge-map-cmd.json}"
+KNOWLEDGE_MAP="${1:-spec-graph.json}"
 ENTITY="$2"
 DIRECTION="${3:-down}"
 MAX_DEPTH="${4:-10}"

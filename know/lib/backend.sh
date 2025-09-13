@@ -4,9 +4,9 @@
 # Provides a clean interface between know and the core graph scripts
 
 # Path to core scripts
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-JSON_GRAPH_QUERY="$SCRIPT_DIR/scripts/json-graph-query.sh"
-MOD_GRAPH="$SCRIPT_DIR/scripts/mod-graph.sh"
+LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+JSON_GRAPH_QUERY="$LIB_DIR/query-graph.sh"
+MOD_GRAPH="$LIB_DIR/mod-graph.sh"
 
 # Ensure backend scripts exist
 if [[ ! -f "$JSON_GRAPH_QUERY" ]]; then

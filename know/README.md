@@ -154,7 +154,7 @@ Uses the internal generator system with templates and rendering pipeline for:
 
 ## Knowledge Map Format
 
-Works with the current `knowledge-map-cmd.json` structure:
+Works with the current `spec-graph.json` structure:
 
 ```json
 {
