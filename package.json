@@ -1,0 +1,50 @@
+{
+  "name": "lucid-commander-knowledge-graph",
+  "version": "1.0.0",
+  "description": "Knowledge graph management system for Lucid Commander robotics platform",
+  "main": "index.js",
+  "scripts": {
+    "graph:list": "./know/lib/mod-graph.sh list",
+    "graph:list:users": "./know/lib/mod-graph.sh list users",
+    "graph:list:features": "./know/lib/mod-graph.sh list features",
+    "graph:list:components": "./know/lib/mod-graph.sh list components",
+    "graph:validate": "./know/lib/mod-graph.sh validate",
+    "graph:search": "./know/lib/mod-graph.sh search",
+    "graph:deps": "./know/lib/mod-graph.sh deps",
+    "graph:cycles": "./know/lib/mod-graph.sh cycles",
+    "graph:add": "./know/lib/mod-graph.sh add",
+    "graph:connect": "./know/lib/mod-graph.sh connect",
+    "graph:set": "./know/lib/mod-graph.sh set",
+    "graph:backup": "cp .ai/spec-graph.json .ai/spec-graph.backup.$(date +%s).json && echo 'Backup created'",
+    "graph:restore": "ls -t .ai/spec-graph.backup.*.json | head -1 | xargs -I {} sh -c 'cp {} .ai/spec-graph.json && echo \"Restored from {}\"'",
+    "graph:test": "npm run test:structure && npm run test:refs && npm run test:deps",
+    "test:structure": "jq -e . .ai/spec-graph.json > /dev/null && echo '✓ Valid JSON structure'",
+    "test:refs": "jq -e '.references | has(\"descriptions\", \"technical_architecture\", \"endpoints\", \"libraries\", \"protocols\", \"ui\")' .ai/spec-graph.json > /dev/null && echo '✓ References section complete'",
+    "test:deps": "./know/lib/mod-graph.sh cycles --scan-all",
+    "refs:list": "jq '.references | keys' .ai/spec-graph.json",
+    "refs:descriptions": "jq '.references.descriptions | keys' .ai/spec-graph.json",
+    "refs:count": "jq '.references | to_entries | map(.value | length) | add' .ai/spec-graph.json",
+    "query": "./know/lib/query-graph.sh",
+    "modify": "./know/lib/mod-graph.sh",
+    "viz:generate": "./scripts/graph-visualizer.sh",
+    "analyze:features": "./scripts/analyze-features.sh",
+    "analyze:complexity": "./scripts/complexity-scorer.sh",
+    "analyze:deps": "./scripts/dependency-metrics.sh",
+    "fix:disconnects": "./scripts/fix-disconnects-cli.sh",
+    "test:all": "npm run graph:test && npm run graph:validate",
+    "help": "echo 'Available commands:' && npm run | grep -E '^  [a-z]' | sed 's/^  /npm run /' | column -t -s ' '"
+  },
+  "keywords": [
+    "knowledge-graph",
+    "robotics",
+    "lucid-commander",
+    "fleet-management",
+    "spec-graph"
+  ],
+  "author": "Lucid Bots",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "ccusage": "^16.2.4"
+  }
+}

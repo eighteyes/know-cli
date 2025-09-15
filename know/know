@@ -7,8 +7,12 @@ set -euo pipefail
 
 # Directories
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-KNOWLEDGE_MAP="${KNOWLEDGE_MAP:-${SCRIPT_DIR}/../spec-graph.json}"
-LIB_DIR="${SCRIPT_DIR}/lib"
+# If we're running from /usr/local/bin, use the actual project location
+if [[ "$SCRIPT_DIR" == "/usr/local/bin" ]]; then
+    SCRIPT_DIR="/workspace/lb-www/know"
+fi
+KNOWLEDGE_MAP="${KNOWLEDGE_MAP:-/workspace/lb-www/.ai/spec-graph.json}"
+LIB_DIR="/workspace/lb-www/know/lib"
 TEMPLATE_DIR="${SCRIPT_DIR}/templates"
 GENERATOR_DIR="${SCRIPT_DIR}/generators"
 

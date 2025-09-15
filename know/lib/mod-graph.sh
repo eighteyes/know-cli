@@ -5,7 +5,7 @@
 
 set -e
 
-KNOWLEDGE_MAP_FILE="spec-graph.json"
+KNOWLEDGE_MAP_FILE="${KNOWLEDGE_MAP:-./.ai/spec-graph.json}"
 TEMP_FILE="/tmp/km_temp.json"
 BACKUP_DIR=".backup-temp"
 
@@ -74,7 +74,7 @@ show_usage() {
 }
 
 get_entity_types() {
-    jq -r '.entities | keys[]' "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "users platforms screens components features functionality requirements schema ui_components"
+    jq -r '.entities | keys[]' "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "users platforms screens components features objectives requirements schema ui_components"
 }
 
 list_entities() {
@@ -91,11 +91,11 @@ list_entities() {
         echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
         echo
 
-        # WHAT: Business/Functional perspective (Project → User → Functionality → Actions)
+        # WHAT: Business/Functional perspective (Project → User → Objectives → Actions)
         echo -e "${GREEN}🎯 WHAT (Business Perspective)${NC}"
         echo -e "${GREEN}═══════════════════════════════${NC}"
-        echo -e "${CYAN}Flow: Project → User → Functionality → Actions${NC}"
-        echo -e "${DIM}Integration: User→Requirements, Functionality→Features, Actions→Components${NC}"
+        echo -e "${CYAN}Flow: Project → User → Objectives → Actions${NC}"
+        echo -e "${DIM}Integration: User→Requirements, Objectives→Features, Actions→Components${NC}"
         echo
 
         # Users define WHO uses the system
@@ -105,14 +105,14 @@ list_entities() {
             jq -r ".entities.users | to_entries[] | \"│  • \(.key) - \(.value.name // \"No name\")\"" "$KNOWLEDGE_MAP_FILE"
         fi
 
-        # Functionality defines WHAT the system does
-        count=$(jq -r ".entities.functionality | length" "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "0")
+        # Objectives defines WHAT the system does
+        count=$(jq -r ".entities.objectives | length" "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "0")
         if [[ "$count" -gt 0 ]]; then
-            echo -e "${YELLOW}├─ functionality ($count entities) - WHAT the system does${NC}"
-            jq -r ".entities.functionality | to_entries[] | \"│  • \(.key) - \(.value.name // \"No name\")\"" "$KNOWLEDGE_MAP_FILE"
+            echo -e "${YELLOW}├─ objectives ($count entities) - WHAT the system does${NC}"
+            jq -r ".entities.objectives | to_entries[] | \"│  • \(.key) - \(.value.name // \"No name\")\"" "$KNOWLEDGE_MAP_FILE"
         fi
 
-        # Actions - User interactions that implement the functionality
+        # Actions - User interactions that implement the objectives
         count=$(jq -r ".entities.actions | length" "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "0")
         if [[ "$count" -gt 0 ]]; then
             echo -e "${YELLOW}├─ actions ($count entities) - Actions users take${NC}"
@@ -145,7 +145,7 @@ list_entities() {
 
         # Summary statistics with WHAT vs HOW breakdown
         local what_count=$(($(jq -r '.entities.users | length' "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "0") + \
-                           $(jq -r '.entities.functionality | length' "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "0") + \
+                           $(jq -r '.entities.objectives | length' "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "0") + \
                            $(jq -r '.entities.actions | length' "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "0")))
 
         local how_count=0
@@ -481,8 +481,8 @@ search_entities() {
 resolve_circular_dependencies() {
     echo -e "${CYAN}🔄 Resolving circular dependencies using canonical flow...${NC}"
     echo -e "${YELLOW}HOW: Project → Platform → Requirements → Interface → Feature → Action → Component → UI → Data Models${NC}"
-    echo -e "${YELLOW}WHAT: Project → User → Functionality → Implementation${NC}"
-    echo -e "${YELLOW}Integration: User → Requirements, Functionality → Features, Implementation → Action/Component${NC}"
+    echo -e "${YELLOW}WHAT: Project → User → Objectives → Implementation${NC}"
+    echo -e "${YELLOW}Integration: User → Requirements, Objectives → Features, Implementation → Action/Component${NC}"
     echo
     
     # Define the canonical dependency hierarchy using a function (lower number = higher in hierarchy, can't depend on higher numbers)
@@ -495,7 +495,7 @@ resolve_circular_dependencies() {
             "user") echo "35" ;;          # 3.5 - Parallel to requirements, feeds into interface
             "screen") echo "4" ;;         # Interface layer
             "interface") echo "4" ;;      # Interface layer (same as screen)
-            "functionality") echo "45" ;; # 4.5 - Between interface and features
+            "objectives") echo "45" ;; # 4.5 - Between interface and features
             "feature") echo "5" ;;
             "action") echo "6" ;;         # Actions come after features
             "component") echo "7" ;;
@@ -598,11 +598,11 @@ resolve_circular_dependencies() {
     echo -e "  ${BOLD}9.${NC} model/data_model (data structures)"
     echo
     echo -e "${PURPLE}WHAT (Business Flow):${NC}"
-    echo -e "  project → user → functionality → implementation"
+    echo -e "  project → user → objectives → implementation"
     echo
     echo -e "${PURPLE}Integration Points:${NC}"
     echo -e "  user → requirements"
-    echo -e "  functionality → features"
+    echo -e "  objectives → features"
     echo -e "  implementation → action/component"
 }
 

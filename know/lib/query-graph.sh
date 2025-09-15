@@ -3,7 +3,7 @@
 # JSON Graph Query Tool - Demonstrates graph database queries on pure JSON
 set -e
 
-GRAPH_FILE="spec-graph.json"
+GRAPH_FILE="${KNOWLEDGE_MAP:-./.ai/spec-graph.json}"
 
 # Convert singular entity type to plural for lookup
 get_plural_type() {
@@ -21,7 +21,7 @@ show_help() {
     echo "  $0 [--file|-f <graph-file>] <command> [options]"
     echo ""
     echo "OPTIONS:"
-    echo "  --file, -f <file>    Use specified graph file (default: spec-graph.json)"
+    echo "  --file, -f <file>    Use specified graph file (default: .ai/spec-graph.json)"
     echo ""
     echo "COMMANDS:"
     echo "  traverse <entity_id> depends_on        - Show dependencies of entity"  

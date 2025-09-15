@@ -5,7 +5,7 @@
 
 set -e
 
-KNOWLEDGE_MAP_FILE="spec-graph.json"
+KNOWLEDGE_MAP_FILE="${KNOWLEDGE_MAP:-./.ai/spec-graph.json}"
 TEMP_FILE="/tmp/km_temp.json"
 BACKUP_DIR=".backup-temp"
 
@@ -70,7 +70,7 @@ show_usage() {
 }
 
 get_entity_types() {
-    jq -r '.entities | keys[]' "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "users platforms screens components features functionality requirements schema ui_components"
+    jq -r '.entities | keys[]' "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "users platforms screens components features objectives requirements schema ui_components"
 }
 
 list_entities() {
@@ -412,7 +412,7 @@ search_entities() {
 resolve_circular_dependencies() {
     echo -e "${CYAN}🔄 Resolving circular dependencies using canonical flow...${NC}"
     echo -e "${YELLOW}Canonical Flow: Project → Platform → User → Interface → Feature → Component → UI → Implementation${NC}"
-    echo -e "${YELLOW}Side chains: Requirements → Functionality → Data Models${NC}"
+    echo -e "${YELLOW}Side chains: Requirements → Objectives → Data Models${NC}"
     echo
     
     # Define the canonical dependency hierarchy using a function (lower number = higher in hierarchy, can't depend on higher numbers)
@@ -425,7 +425,7 @@ resolve_circular_dependencies() {
             "user") echo "4" ;;
             "screen") echo "5" ;;
             "feature") echo "6" ;;
-            "functionality") echo "6" ;;  # Same level as features - can interconnect
+            "objectives") echo "6" ;;  # Same level as features - can interconnect
             "component") echo "7" ;;
             "ui_component") echo "8" ;;
             "model") echo "8" ;;          # Data models - support components and UI
@@ -517,7 +517,7 @@ resolve_circular_dependencies() {
     echo -e "  ${BOLD}3.${NC} requirement (system constraints and needs)"
     echo -e "  ${BOLD}4.${NC} user (roles and access patterns)"
     echo -e "  ${BOLD}5.${NC} screen (user interfaces)"
-    echo -e "  ${BOLD}6.${NC} feature, functionality (business logic)"
+    echo -e "  ${BOLD}6.${NC} feature, objectives (business logic)"
     echo -e "  ${BOLD}7.${NC} component (implementation modules)"
     echo -e "  ${BOLD}8.${NC} ui_component, model, action (supporting elements)"
 }

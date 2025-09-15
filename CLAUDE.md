@@ -2,12 +2,12 @@
 - IMPORTANT: When we improve the approach, save a learning entry to `json-graph-learning.md`
 - string together multiple `jq` commands into a single BASH call
 
-# Graph Dependency
+# Graph Dependency Map
 If you need to resolve circular dependencies, refer to this.
 ```
 HOW: Project → Platform → Requirements → Interface → Feature → Action → Component → UI → Data Models
-WHAT: Project → User → Functionality → Actions
-Integration: User → Requirements, Functionality → Features, Actions → Components
+WHAT: Project → User → Objectives → Actions
+Integration: User → Requirements, Objectives → Features, Actions → Components
 ```
 
 # GRAPH SCRIPTS
@@ -21,3 +21,7 @@ All Scripts: !`ls scripts/`
 
 # Graph
 !`cat spec-graph.json`
+
+# Work Notes
+IMPORTANT: DO NOT ADD FEATURES without approval. 
+Double check with me about graph schema changes, be precise.
