@@ -5,6 +5,7 @@
 
 KNOWLEDGE_MAP="spec-graph.json"
 BACKUP_FILE=""
+BACKUP_DIR=".backup-temp"
 VERBOSE=false
 DRY_RUN=false
 
@@ -54,8 +55,9 @@ success() {
 }
 
 create_backup() {
+    mkdir -p "$BACKUP_DIR"
     if [[ -z "$BACKUP_FILE" ]]; then
-        BACKUP_FILE="${KNOWLEDGE_MAP}.backup.$(date +%s)"
+        BACKUP_FILE="${BACKUP_DIR}/$(basename "$KNOWLEDGE_MAP").backup.$(date +%s)"
     fi
     cp "$KNOWLEDGE_MAP" "$BACKUP_FILE"
     log "Backup created: $BACKUP_FILE"

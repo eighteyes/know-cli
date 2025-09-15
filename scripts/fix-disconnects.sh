@@ -4,7 +4,8 @@
 # Usage: ./scripts/fix-disconnects.sh [knowledge-map.json]
 
 KNOWLEDGE_MAP="${1:-spec-graph.json}"
-BACKUP_FILE="${KNOWLEDGE_MAP}.backup"
+BACKUP_DIR=".backup-temp"
+BACKUP_FILE="${BACKUP_DIR}/$(basename "$KNOWLEDGE_MAP").backup"
 
 if [[ ! -f "$KNOWLEDGE_MAP" ]]; then
     echo "❌ Knowledge map file not found: $KNOWLEDGE_MAP"
@@ -12,6 +13,7 @@ if [[ ! -f "$KNOWLEDGE_MAP" ]]; then
 fi
 
 # Create backup
+mkdir -p "$BACKUP_DIR"
 cp "$KNOWLEDGE_MAP" "$BACKUP_FILE"
 echo "💾 Backup created: $BACKUP_FILE"
 echo

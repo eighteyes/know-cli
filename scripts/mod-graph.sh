@@ -7,6 +7,7 @@ set -e
 
 KNOWLEDGE_MAP_FILE="spec-graph.json"
 TEMP_FILE="/tmp/km_temp.json"
+BACKUP_DIR=".backup-temp"
 
 # Colors
 RED='\033[0;31m'
@@ -26,8 +27,9 @@ check_file() {
 }
 
 backup() {
-    cp "$KNOWLEDGE_MAP_FILE" "${KNOWLEDGE_MAP_FILE}.backup.$(date +%s)"
-    echo -e "${GREEN}✓ Backup created${NC}"
+    mkdir -p "$BACKUP_DIR"
+    cp "$KNOWLEDGE_MAP_FILE" "${BACKUP_DIR}/spec-graph.json.backup.$(date +%s)"
+    echo -e "${GREEN}✓ Backup created in ${BACKUP_DIR}${NC}"
 }
 
 show_usage() {
