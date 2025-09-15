@@ -53,6 +53,7 @@ source "$LIB_DIR/autocomplete.sh"
 source "$LIB_DIR/validate-simple.sh"
 source "$LIB_DIR/validation-comprehensive.sh"
 source "$LIB_DIR/workflows.sh"
+source "$LIB_DIR/health.sh"
 
 # Show usage
 usage() {
@@ -82,6 +83,8 @@ ANALYSIS & DEPENDENCIES:
     know impact <entity_ref>              Show what depends on this entity
     know gaps <entity_ref>                Show missing information
     know validate <entity_ref>            Check reference integrity
+    know validate-deps                    Validate dependency chains against rules
+    know validate-graph                   Full graph structure and dependency validation
     know order                            Show optimal implementation order
     know blockers                         Show entities blocking implementation
 
@@ -99,6 +102,12 @@ WORKFLOWS & AUTOMATION:
 GRAPH MANAGEMENT:
     know mod <command> [args...]          Modify graph (add, edit, connect entities)
     know query <command> [args...]        Query graph (traverse, stats, paths)
+
+MAINTENANCE & HEALTH:
+    know health                           Comprehensive graph health check
+    know repair [mode]                    Fix graph issues (interactive/auto/hanging/orphans/missing/self-deps/cycles)
+    know repair --interactive             Interactive repair wizard
+    know repair --auto                    Automatically fix all issues
 
 OPTIONS:
     --format <md|json|yaml>               Output format (default: md)
@@ -250,7 +259,7 @@ Then retry specification generation."
                 local entity_ref=$(resolve_entity_reference "$1")
                 local min_score=70
                 local comprehensive=false
-                
+
                 # Parse additional options
                 shift
                 while [[ $# -gt 0 ]]; do
@@ -268,7 +277,7 @@ Then retry specification generation."
                             ;;
                     esac
                 done
-                
+
                 if [[ "$comprehensive" == "true" ]]; then
                     validate_entity_comprehensive "$entity_ref" "$min_score"
                 else
@@ -278,6 +287,14 @@ Then retry specification generation."
                 # Original graph validation
                 validate_knowledge_map
             fi
+            ;;
+        validate-deps|check-deps)
+            # Validate dependency chains against CLAUDE.md rules
+            "$LIB_DIR/validate-dependencies.sh" "$KNOWLEDGE_MAP"
+            ;;
+        validate-graph)
+            # Full graph validation including structure and dependencies
+            "$LIB_DIR/validate-spec-graph.sh" "$KNOWLEDGE_MAP" "$LIB_DIR/dependency-rules.json"
             ;;
         cycles)
             detect_cycles
@@ -484,6 +501,18 @@ Then retry specification generation."
         query)
             # Forward to query-graph.sh in know/lib
             exec "$LIB_DIR/query-graph.sh" "$@"
+            ;;
+        health)
+            # Comprehensive health check
+            check_graph_health "$KNOWLEDGE_MAP"
+            ;;
+        repair)
+            # Graph repair functionality
+            local repair_mode="${1:-interactive}"
+            # Handle --interactive and --auto flags
+            [[ "$repair_mode" == "--interactive" ]] && repair_mode="interactive"
+            [[ "$repair_mode" == "--auto" ]] && repair_mode="auto"
+            repair_graph "$KNOWLEDGE_MAP" "$repair_mode"
             ;;
         *)
             error "Unknown command: $command. Use 'know --help' for usage."

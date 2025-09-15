@@ -1,5 +1,25 @@
 # JSON Graph Learning Log
 
+## Tool Consolidation: Scripts → Know Tool (2025-01-15)
+
+### **Maintenance Features Integration**
+- **Migrated**: 21 individual scripts consolidated into Know tool
+- **Key additions**:
+  - `know health` - Comprehensive graph health checking (orphans, hanging refs, missing entries, self-deps)
+  - `know repair` - Interactive and automatic graph repair modes
+- **Benefit**: Single unified tool instead of scattered scripts
+- **Learning**: Core maintenance operations should be first-class citizens in the main tool
+
+### **What to Keep vs Consolidate**
+- **Consolidated**: Health checks, basic repairs, common queries
+- **Keep separate**: Specialized analysis (bundle optimization, architecture validation)
+- **Learning**: 80/20 rule - integrate the 20% of features used 80% of the time
+
+### **Implementation Pattern**
+- Created `know/lib/health.sh` as dedicated maintenance module
+- Integrated into main dispatcher with clear command structure
+- **Learning**: Modular library files keep main tool clean while adding features
+
 ## JSON Graph Evolution: Learnings from old/knowledge-map.json → spec-graph.json
 
 ### Major Structural Optimizations
@@ -740,3 +760,102 @@ The spec-graph.json structure had recently been transformed, with the graph sect
 
 ### Key Takeaway
 When working with evolving data structures, AIs can conflate different versions or completely hallucinate fields. Always verify against the actual data, especially after structural migrations or when the AI's explanation seems suspiciously detailed or generic.
+
+## 2025-01-15: Graph Validation Infrastructure
+
+### Problem Identified
+The spec-graph.json lacked systematic validation to ensure data integrity and compliance with the dependency map from CLAUDE.md. Multiple issues existed:
+- Invalid entity references (e.g., `functionality:*` instead of `objective:*`)
+- Incorrect prefixes (e.g., `platform:` instead of `platforms:`)
+- Missing entities referenced in dependencies
+- No validation of dependency chain rules
+
+### Solutions Implemented
+
+#### 1. Created Comprehensive Graph Validator
+**Script:** `scripts/validate-spec-graph.sh` (later moved to `know/lib/`)
+**Features:**
+- JSON syntax validation
+- Required section checks (meta, entities, graph, references)
+- Entity ID format validation (type:name pattern)
+- Graph edge integrity (all references exist)
+- Orphaned node detection
+- Phase requirement validation
+- Reference ID uniqueness checks
+
+#### 2. Dependency Chain Validation
+**Based on CLAUDE.md dependency map:**
+```
+HOW: Project → Requirements → Interface → Feature → Action → Component → (UI + Data Models)
+WHAT: Project → User → Objectives → Actions
+Integration: User → Requirements, Objectives → Features, Actions → Components
+```
+
+**Implementation:**
+- Created `dependency-rules.json` to encode allowed dependencies
+- Validator checks every edge against these rules
+- Found 20+ violations in initial graph (components depending on features, etc.)
+
+#### 3. Entity Reference Normalization
+**Fixed multiple reference inconsistencies:**
+- `functionality:*` → `objective:*` (16 nodes updated)
+- `platform:*` → `platforms:*` (3 nodes updated)
+- `feature:analytics` → `feature:analytics-system`
+- `feature:maintenance-alerts` → `feature:maintenance-alert-system`
+- `model:*` → `data_models:*` (all model references)
+
+#### 4. Nested Reference Support
+**Problem:** References section had nested structure (e.g., `references.platforms.aws-infrastructure`)
+**Solution:** Validator builds reference IDs as `category:name` format to match graph usage
+
+### Integration with Know Tool
+
+#### Files Added to know/lib:
+- `validate-spec-graph.sh` - Complete graph structure validator
+- `validate-dependencies.sh` - Focused dependency chain validator
+- `dependency-rules.json` - Allowed dependency patterns
+
+#### New Know Commands:
+- `know validate-deps` - Validates dependency chains against CLAUDE.md rules
+- `know validate-graph` - Full graph structure and dependency validation
+
+### Validation Results
+
+**Initial State:**
+- 16 `functionality:*` nodes that didn't exist as entities
+- 3 `platform:*` references with wrong prefix
+- Multiple feature name mismatches
+- ~20 dependency violations (backwards dependencies)
+
+**After Fixes:**
+- ✅ Graph validation PASSED
+- 0 errors
+- 1 warning (30 orphaned reference nodes - expected)
+- 79 entities, 56 graph nodes, 122 dependencies
+
+### Key Learnings
+
+1. **Systematic Validation is Critical**: Manual graph maintenance leads to drift; automated validation catches issues early
+
+2. **Reference Consistency**: Entity references must match exactly across entities, graph, and phases sections
+
+3. **Dependency Direction Matters**: Components shouldn't depend on features; the flow must follow the defined hierarchy
+
+4. **Tool Integration**: Moving validation into the know tool makes it part of the standard workflow
+
+5. **Progressive Validation**: Start with structure, then references, then semantic rules (dependency chains)
+
+### Best Practices Established
+
+1. **Run validation after any graph modification**: `know validate-graph`
+2. **Check dependency chains when adding relationships**: `know validate-deps`
+3. **Use consistent naming patterns**: plural for categories, singular for references
+4. **Keep validation rules in sync with CLAUDE.md**: Update `dependency-rules.json` when dependency map changes
+
+### Future Improvements
+
+1. Add circular dependency detection (currently simplified due to performance)
+2. Validate entity field requirements by type
+3. Add auto-fix capability for common issues
+4. Create visualization of dependency violations
+5. Add validation to CI/CD pipeline

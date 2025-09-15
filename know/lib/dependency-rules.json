@@ -1,0 +1,12 @@
+{
+  "allowed_dependencies": {
+    "project": ["requirement", "user"],
+    "requirement": ["interface"],
+    "interface": ["feature"],
+    "feature": ["action"],
+    "action": ["component"],
+    "component": ["ui", "data_models"],
+    "user": ["objective", "requirement"],
+    "objective": ["action", "feature"]
+  }
+}
