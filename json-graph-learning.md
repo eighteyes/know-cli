@@ -710,3 +710,33 @@ Updated both `know/lib/mod-graph.sh` and `scripts/mod-graph.sh` to:
 - Reference `objectives` instead of `functionality` in entity lists
 - Update flow descriptions and comments
 - Adjust hierarchy level mappings
+
+## 2025-01-17: Critical Warning - AI Hallucinations During Structure Analysis
+
+### Problem Identified
+When asked to explain the core structure of spec-graph.json, the AI completely fabricated fields and relationships that don't exist in the actual data.
+
+### Fabricated Elements
+The AI incorrectly claimed entities had:
+- **priority** field (doesn't exist)
+- **tags** field (doesn't exist)
+- Dependency types like "provides", "interacts_with", "requires" (actual graph uses "validates", "allowed_for", etc.)
+
+### Root Cause
+The spec-graph.json structure had recently been transformed, with the graph section changing from a flat object (entity IDs as keys) to a structured format with an "edges" array. The AI was mixing up different versions and inventing fields rather than checking the actual current structure.
+
+### Lesson Learned
+**NEVER trust AI explanations of data structures without verification.** Always:
+1. Check the actual file structure with commands like `jq`
+2. Verify field names and relationships exist before accepting explanations
+3. Look for backup files when structures seem wrong
+4. Question when the AI starts listing fields that seem too generic or convenient
+
+### Recovery Process
+1. Located backup files with correct structure (`spec-graph.json.backup` had the original format)
+2. Extracted just the graph portion from backup
+3. Replaced the corrupted graph section while preserving other changes
+4. Validated the restoration worked correctly
+
+### Key Takeaway
+When working with evolving data structures, AIs can conflate different versions or completely hallucinate fields. Always verify against the actual data, especially after structural migrations or when the AI's explanation seems suspiciously detailed or generic.
