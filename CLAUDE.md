@@ -4,7 +4,7 @@ Graph File : `.ai/spec-graph.json`
 ```
 meta - all project level concerns, phases, name, out of scope
 meta.phases - ONLY location for planning / temporal information
-references - terminal graph nodes used for template generation, flexible schema
+references - terminal graph nodes used for template generation, flexible schema, biz logic, acceptance criteria, ui concerns, they use plaintext, not `key_object_notation` in final nodes
 entities - fundamental graph nodes used in dependency map below, fixed schema
 graph - unidirectional graph, ONLY depends_on links
 ```
@@ -12,7 +12,7 @@ graph - unidirectional graph, ONLY depends_on links
 # Graph Dependency Map
 If you need to resolve circular dependencies, refer to this.
 ```
-HOW: Project → Requirements → Interface → Feature → Action → Component → ( UI + Data Models )
+HOW: Project → Requirements → Interface → Feature → Component → ( UI + Data Models )
 WHAT: Project → User → Objectives → Actions
 Integration: User → Requirements, Objectives → Features, Actions → Components
 ```
@@ -30,5 +30,5 @@ IMPORTANT: Your assumptions about graphs are WRONG for this project. Validate an
 DO NOT ADD FEATURES without approval. 
 
 Double check with me about graph schema changes, be precise.
-We are using a graph, no `refs`, `requires`, or other direct dependencies in objects. 
+IMPORTANT: NO `refs`, `requires`, or other direct dependencies in objects, we are using a graph. 
 When we improve the approach, save a learning entry to `json-graph-learning.md`
