@@ -1,12 +1,47 @@
 {
   "allowed_dependencies": {
-    "project": ["requirement", "user"],
-    "requirement": ["interface"],
-    "interface": ["feature"],
-    "feature": ["action"],
-    "action": ["component"],
-    "component": ["ui", "data_models"],
-    "user": ["objective", "requirement"],
-    "objective": ["action", "feature"]
+    "project": ["requirements", "users"],
+    "requirements": ["interfaces", "components"],
+    "interfaces": ["features", "interfaces"],
+    "features": ["actions", "components"],
+    "actions": ["components", "presentation", "behavior"],
+    "components": ["components", "presentation", "behavior", "data_models"],
+    "users": ["objectives", "requirements"],
+    "objectives": ["actions", "features"]
+  },
+  "reference_categories": {
+    "technical_architecture": "Infrastructure components (API gateway, cache, database, message queue)",
+    "endpoints": "API endpoint definitions for fleet, mission control, robot commands, and telemetry",
+    "libraries": "Code libraries for HTTP client, state management, UI components, validation, WebRTC",
+    "protocols": "Communication protocols for authentication, robot communication, and telemetry formats",
+    "data_models": "Detailed model schemas for maintenance, missions, parts, robots, telemetry, users",
+    "platforms": "Platform specifications for AWS infrastructure, mobile, and web platforms",
+    "business_logic": "Detailed workflows and rules for operations like emergency stops, mission assignment, telemetry processing",
+    "acceptance_criteria": "Success criteria for features with functional, performance, and integration requirements",
+    "state_mutations": "State change specifications for critical operations",
+    "content": "Brand messaging, button text, and interface labels",
+    "colors": "Color system definitions with semantic names and hex values",
+    "typography": "Font specifications, weights, sizes, and type scales",
+    "spacing": "Layout and component spacing systems for consistent UI",
+    "ui_templates": "Reusable UI patterns for buttons, cards, modals, and tables"
+  },
+  "entity_descriptions": {
+    "project": "Top-level container representing the entire software project or system",
+    "requirements": "Functional or non-functional specifications that the system must satisfy",
+    "interfaces": "User interface screens and pages in the application",
+    "features": "Distinct functionality or capability provided to users",
+    "actions": "Specific user interactions or system operations",
+    "components": "Reusable building blocks of the system architecture",
+    "presentation": "Visual and layout aspects of user interface components",
+    "behavior": "Logic and state management for component interactions",
+    "data_models": "Structure and schema definitions for data entities",
+    "users": "Actors or roles that interact with the system",
+    "objectives": "High-level goals or outcomes that users want to achieve"
+  },
+  "reference_notes": {
+    "purpose": "References are terminal graph nodes used for template generation and detailed specifications",
+    "schema": "Each reference category uses a flexible schema tailored to its specific needs",
+    "naming": "Reference keys use plaintext naming (not key_object_notation) for final nodes",
+    "usage": "Entities in the graph can reference these nodes for implementation details and specifications"
   }
 }

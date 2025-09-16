@@ -859,3 +859,154 @@ Integration: User → Requirements, Objectives → Features, Actions → Compone
 3. Add auto-fix capability for common issues
 4. Create visualization of dependency violations
 5. Add validation to CI/CD pipeline
+
+## Graph Relationship Management (2025-01-18)
+
+### Key Learning: All relationships belong in the graph, not as entity attributes
+
+**Problem:** Kept adding reference attributes directly to entities (like `screen`, `parent`, `uses`, etc.)
+
+**Solution:** The graph is the ONLY place where relationships between entities are defined. Entities should only contain their core properties (name, description).
+
+**Examples:**
+
+Wrong:
+```json
+"entities.interfaces.fleet-dashboard": {
+  "name": "...",
+  "description": "...",
+  "screen": "fleet-dashboard"  // WRONG - relationship as attribute
+}
+```
+
+Right:
+```json
+"graph": {
+  "interface:fleet-dashboard": {
+    "depends_on": ["screen:fleet-dashboard"]  // RIGHT - relationship in graph
+  }
+}
+```
+
+### Key Learning: References are flat key-value stores
+
+**Problem:** Creating complex nested structures in references with relationships
+
+**Solution:** References should be simple, granular key-value pairs for reusable values, not complex nested structures with their own relationships.
+
+### Key Learning: Entity types matter for naming
+
+**Problem:** Used same names for both references sections and entity types (e.g., `presentation` for both)
+
+**Solution:** Keep entity type names and reference section names distinct to avoid confusion. We settled on:
+- `references.design` - for visual/design specifications
+- `entities.presentation` - for UI component instances
+- `entities.behavior` - for interaction patterns
+
+### Suggested Base Prompt Addition:
+
+"CRITICAL: The graph is the ONLY place where relationships between entities are defined. NEVER add reference attributes directly to entities (like 'screen', 'parent', 'uses', etc.). These relationships MUST be expressed as dependencies in the graph section. References are simple, flat key-value stores for reusable values, not complex nested structures. If you find yourself adding a reference to an entity, STOP and add it to the graph instead."
+
+### Key Pattern: Screen-Interface-Component Hierarchy
+
+Every interface entity links to a screen through the graph:
+- `interface:*` depends on `screen:*` (for URL/routing)
+- Sub-interfaces also depend on parent interfaces
+- Components depend on interfaces they belong to
+- This creates full traceability from any entity back to a screen URL
+
+## Consolidating Related References (2025-01-18)
+
+### Key Learning: Consolidate references with shared attributes
+
+**Problem:** Had separate `references.endpoints` and `references.screens` both containing URLs
+
+**Solution:** Consolidated into a single `references.screens` with a `type` field to differentiate:
+- `type: "page"` for user-facing routes
+- `type: "api"` for API endpoints
+
+This avoids duplication and keeps all routes (URLs) in one place.
+
+### Key Learning: Design tokens vs UI patterns organization
+
+**Problem:** Confusion between where design tokens belong vs UI component patterns
+
+**Solution:** 
+- `references.design` contains all visual/design specifications:
+  - Design tokens (colors, typography, spacing)
+  - UI patterns (button_patterns, card_patterns, etc.)
+  - Themes and styles
+- `entities.presentation` for actual UI component instances
+- `entities.behavior` for interaction patterns
+
+The key distinction: references contain reusable specifications, entities contain instances.
+
+### Key Learning: Screen-Interface mapping pattern
+
+**Pattern established:**
+1. `references.screens` - Contains URLs and route metadata
+2. `entities.interfaces` - Contains interface descriptions and business logic
+3. Graph connects them: `interface:fleet-dashboard` depends on `screen:fleet-dashboard`
+
+This separation allows:
+- URLs to change without affecting interface entities
+- Multiple interfaces to potentially share screens
+- Clear separation between routing and interface logic
+
+### Key Learning: Entity naming must avoid reference section names
+
+**Problem:** Named entity type `presentation` which conflicted with wanting `references.presentation`
+
+**Solution:** Use `references.design` for design specifications to avoid collision with `entities.presentation`
+
+**Rule:** Keep entity type names and reference section names distinct
+
+### Tools Integration Pattern
+
+**Success:** Created generators that traverse the graph to create useful outputs:
+- Sitemap generator - shows page hierarchy with components
+- Routes generator - shows all routes (pages + APIs) with dependencies
+
+These tools demonstrate the power of the graph structure - can generate different views of the same data by traversing relationships.
+
+### Graph Dependency Patterns Observed
+
+1. **Interfaces → Screens** (for URLs)
+2. **Interfaces → Features** (business capabilities)  
+3. **Components → Screens** (API endpoints they call)
+4. **Actions → Components** (UI they use)
+5. **Actions → Screens** (APIs they call)
+6. **Sub-interfaces → Parent interfaces** (hierarchy)
+
+This creates full traceability from any entity to its URL/endpoint.
+
+## Dependency Rules Enhancement (2025-01-18)
+
+### Key Learning: Entity descriptions belong with dependency rules
+
+**Addition:** Added `entity_descriptions` to `know/lib/dependency-rules.json` to centralize entity type documentation.
+
+**Structure:**
+```json
+"entity_descriptions": {
+  "project": "Top-level container representing the entire software project or system",
+  "requirements": "Functional or non-functional specifications that the system must satisfy",
+  "interfaces": "User interface screens and pages in the application",
+  "features": "Distinct functionality or capability provided to users",
+  "actions": "Specific user interactions or system operations",
+  "components": "Reusable building blocks of the system architecture",
+  "presentation": "Visual and layout aspects of user interface components",
+  "behavior": "Logic and state management for component interactions",
+  "data_models": "Structure and schema definitions for data entities",
+  "users": "Actors or roles that interact with the system",
+  "objectives": "High-level goals or outcomes that users want to achieve"
+}
+```
+
+**Benefits:**
+- Single source of truth for what each entity type represents
+- Improves understanding of the graph structure
+- Can be used by tools for documentation generation
+- Helps maintain consistency in entity usage
+
+**Note:** The file was automatically reformatted to use plural forms in `allowed_dependencies` (e.g., `requirements` instead of `requirement`) to match actual entity type naming conventions in spec-graph.json.

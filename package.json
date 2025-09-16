@@ -32,6 +32,7 @@
     "analyze:deps": "./scripts/dependency-metrics.sh",
     "fix:disconnects": "./scripts/fix-disconnects-cli.sh",
     "test:all": "npm run graph:test && npm run graph:validate",
+    "validate-graph": "./know/lib/validate-spec-graph.sh",
     "help": "echo 'Available commands:' && npm run | grep -E '^  [a-z]' | sed 's/^  /npm run /' | column -t -s ' '"
   },
   "keywords": [

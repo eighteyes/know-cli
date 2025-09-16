@@ -7,12 +7,24 @@ set -euo pipefail
 
 # Directories
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# If we're running from /usr/local/bin, use the actual project location
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# If we're running from /usr/local/bin, find the actual project
 if [[ "$SCRIPT_DIR" == "/usr/local/bin" ]]; then
-    SCRIPT_DIR="/workspace/lb-www/know"
+    # Look for the project in common locations
+    if [[ -d "$HOME/work/lb-www" ]]; then
+        PROJECT_ROOT="$HOME/work/lb-www"
+        SCRIPT_DIR="$PROJECT_ROOT/know"
+    elif [[ -d "/workspace/lb-www" ]]; then
+        PROJECT_ROOT="/workspace/lb-www"
+        SCRIPT_DIR="$PROJECT_ROOT/know"
+    else
+        error "Cannot find project directory. Please set PROJECT_ROOT environment variable."
+    fi
 fi
-KNOWLEDGE_MAP="${KNOWLEDGE_MAP:-/workspace/lb-www/.ai/spec-graph.json}"
-LIB_DIR="/workspace/lb-www/know/lib"
+
+KNOWLEDGE_MAP="${KNOWLEDGE_MAP:-$PROJECT_ROOT/.ai/spec-graph.json}"
+LIB_DIR="$SCRIPT_DIR/lib"
 TEMPLATE_DIR="${SCRIPT_DIR}/templates"
 GENERATOR_DIR="${SCRIPT_DIR}/generators"
 
@@ -54,6 +66,7 @@ source "$LIB_DIR/validate-simple.sh"
 source "$LIB_DIR/validation-comprehensive.sh"
 source "$LIB_DIR/workflows.sh"
 source "$LIB_DIR/health.sh"
+source "$LIB_DIR/dynamic-commands.sh"
 
 # Show usage
 usage() {
@@ -108,6 +121,15 @@ MAINTENANCE & HEALTH:
     know repair [mode]                    Fix graph issues (interactive/auto/hanging/orphans/missing/self-deps/cycles)
     know repair --interactive             Interactive repair wizard
     know repair --auto                    Automatically fix all issues
+
+DEPENDENCY RULES:
+    know rules                            Show allowed dependency patterns
+    know suggest <entity>                 Suggest valid connections for entity
+    know validate-connection <from> <to>  Check if connection is allowed
+
+NAVIGATION & ROUTING:
+    know sitemap                          Generate sitemap with page hierarchy
+    know routes                           Show all pages and API endpoints
 
 OPTIONS:
     --format <md|json|yaml>               Output format (default: md)
@@ -495,8 +517,13 @@ Then retry specification generation."
             show_implementation_priorities "$OUTPUT_FORMAT"
             ;;
         mod)
-            # Forward to mod-graph.sh in know/lib
-            exec "$LIB_DIR/mod-graph.sh" "$@"
+            # Forward to enhanced mod-graph with rule validation
+            if [[ "${1:-}" == "connect" ]]; then
+                shift
+                "$LIB_DIR/mod-graph-enhanced.sh" connect "$@"
+            else
+                exec "$LIB_DIR/mod-graph.sh" "$@"
+            fi
             ;;
         query)
             # Forward to query-graph.sh in know/lib
@@ -513,6 +540,35 @@ Then retry specification generation."
             [[ "$repair_mode" == "--interactive" ]] && repair_mode="interactive"
             [[ "$repair_mode" == "--auto" ]] && repair_mode="auto"
             repair_graph "$KNOWLEDGE_MAP" "$repair_mode"
+            ;;
+        rules)
+            # Show dependency rules
+            echo "📋 Dependency Rules (from $LIB_DIR/dependency-rules.json)"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            generate_dynamic_help "$LIB_DIR/dependency-rules.json"
+            ;;
+        suggest)
+            # Suggest valid connections for an entity
+            [[ $# -ge 1 ]] || error "Usage: know suggest <entity_ref>"
+            local entity_ref=$(resolve_entity_reference "$1")
+            suggest_connections "$entity_ref" "$LIB_DIR/dependency-rules.json" "$KNOWLEDGE_MAP"
+            ;;
+        validate-connection)
+            # Validate if a connection is allowed
+            [[ $# -ge 2 ]] || error "Usage: know validate-connection <from> <to>"
+            local from_ref=$(resolve_entity_reference "$1")
+            local to_ref=$(resolve_entity_reference "$2")
+            validate_connection "$from_ref" "$to_ref" "$LIB_DIR/dependency-rules.json"
+            ;;
+        sitemap)
+            # Generate sitemap showing page hierarchy with components
+            shift
+            "$GENERATOR_DIR/sitemap.sh" "${1:-.ai/spec-graph.json}"
+            ;;
+        routes)
+            # Show all pages and API endpoints with dependencies
+            shift
+            "$GENERATOR_DIR/routes.sh" "${1:-.ai/spec-graph.json}"
             ;;
         *)
             error "Unknown command: $command. Use 'know --help' for usage."
@@ -548,18 +604,11 @@ generate_spec() {
         local original_dir=$(pwd)
         cd "$(dirname "$SCRIPT_DIR")"
         
-        local result
-        result=$(bash "$generator" "$entity_ref" "$format")
+        # Call the generator directly (not capturing output)
+        bash "$generator" "$entity_ref" "$format"
 
         # Restore original directory
         cd "$original_dir"
-
-        if [[ -n "$output_file" ]]; then
-            echo "$result" > "$output_file"
-            success "Specification written to $output_file"
-        else
-            echo "$result"
-        fi
     else
         error "No generator found for $spec_type (expected: $generator)"
     fi
@@ -595,3 +644,15 @@ generate_ai_spec() {
 }
 
 main "$@"
+# Sitemap command - shows page hierarchy with components
+sitemap() {
+    local graph_file="${1:-.ai/spec-graph.json}"
+    "$KNOW_DIR/generators/sitemap.sh" "$graph_file"
+}
+
+# Routes command - shows all pages and API endpoints
+routes() {
+    local graph_file="${1:-.ai/spec-graph.json}"
+    "$KNOW_DIR/generators/routes.sh" "$graph_file"
+}
+

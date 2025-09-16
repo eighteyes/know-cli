@@ -547,12 +547,5 @@ analyze_completeness_batch_json() {
         }'
 }
 
-# Export validation functions for use in main know script
-if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
-    # Being sourced - export functions
-    export -f validate_entity_comprehensive
-    export -f get_completeness_score  
-    export -f analyze_completeness_batch
-    export -f generate_validation_json
-    export -f analyze_completeness_batch_json
-fi
+# Functions are automatically available when sourced
+# No need for export -f which isn't portable across shells

@@ -64,19 +64,23 @@ generate_simple_feature_spec() {
     echo ""
     
     echo "## Dependencies"
-    # Get dependencies using our working script
-    if "$JSON_GRAPH_QUERY" deps "$entity_ref" >/dev/null 2>&1; then
-        echo "This feature depends on the following entities:"
+    # Get direct dependencies from the graph
+    local deps=$(jq -r --arg ref "$entity_ref" '.graph[$ref].depends_on[]? // empty' "$KNOWLEDGE_MAP" 2>/dev/null)
+
+    if [[ -n "$deps" ]]; then
+        echo "This feature directly depends on:"
         echo ""
-        "$JSON_GRAPH_QUERY" deps "$entity_ref" | head -20 | while read -r line; do
-            if [[ "$line" =~ ^[[:space:]]*📋[[:space:]](.+)[[:space:]]\((.+):[[:space:]](.+)\)$ ]]; then
-                echo "- **${BASH_REMATCH[1]}** (${BASH_REMATCH[2]}): ${BASH_REMATCH[3]}"
-            elif [[ "$line" =~ ^[[:space:]]*🎯[[:space:]](.+)[[:space:]]\((.+):[[:space:]](.+)\).*\[ROOT\]$ ]]; then
-                echo "- **ROOT**: ${BASH_REMATCH[1]} (${BASH_REMATCH[2]}): ${BASH_REMATCH[3]}"
+        while IFS= read -r dep; do
+            if [[ -n "$dep" ]]; then
+                local dep_name=$(jq -r --arg d "$dep" '
+                    ($d | split(":")) as [$type, $id] |
+                    .entities[$type + "s"][$id].name // $id
+                ' "$KNOWLEDGE_MAP" 2>/dev/null)
+                echo "- **$dep**: $dep_name"
             fi
-        done
+        done <<< "$deps"
     else
-        echo "*No dependencies found or dependency analysis failed*"
+        echo "*No direct dependencies defined*"
     fi
     echo ""
     

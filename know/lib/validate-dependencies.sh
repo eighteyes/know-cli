@@ -38,6 +38,9 @@ total_edges=0
 
 # Process each edge in the graph
 while IFS='|' read -r from_node to_node; do
+    # Skip empty lines
+    [[ -z "$from_node" || -z "$to_node" ]] && continue
+
     ((total_edges++))
 
     # Extract type from node (e.g., "user:owner" -> "user")

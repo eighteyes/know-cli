@@ -5,9 +5,7 @@
 # Debug mode toggle
 DEBUG=${DEBUG:-false}
 
-# Load centralized jq utilities
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-source "$SCRIPT_DIR/scripts/jq_utils.sh"
+# No longer need external jq utilities - functionality integrated
 
 # Debug logging
 debug() {
@@ -61,7 +59,7 @@ list_entities() {
     fi
     
     echo "Entities of type '$entity_type':"
-    apply_entity_pattern "entities" "list_entities_with_names" "$KNOWLEDGE_MAP" "$entity_type"
+    jq -r ".entities.$entity_type | to_entries[] | \"  \(.key) - \(.value.name // .key)\"" "$KNOWLEDGE_MAP"
 }
 
 # Normalize entity type (singular to plural)
@@ -103,7 +101,7 @@ get_entity_name() {
     local type=$(echo "$type_id" | cut -d' ' -f1)
     local id=$(echo "$type_id" | cut -d' ' -f2-)
     
-    apply_entity_pattern "entities" "get_entity_name" "$KNOWLEDGE_MAP" "$type" "$id"
+    jq -r ".entities.$type.\"$id\".name // \"$id\"" "$KNOWLEDGE_MAP"
 }
 
 # Format acceptance criteria as checkboxes

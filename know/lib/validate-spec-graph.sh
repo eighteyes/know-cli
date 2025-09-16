@@ -17,12 +17,12 @@ NC='\033[0m'
 
 error() {
     echo -e "${RED}[ERROR]${NC} $1" >&2
-    ((ERRORS++))
+    ((ERRORS++)) || true
 }
 
 warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1" >&2
-    ((WARNINGS++))
+    ((WARNINGS++)) || true
 }
 
 success() {
@@ -101,6 +101,7 @@ all_entities=$(jq -r '
      elif $type == "objectives" then "objective"
      elif $type == "users" then "user"
      elif $type == "screens" then "screen"
+     elif $type == "interfaces" then "interface"
      elif $type == "ui_components" then "ui_component"
      elif $type == "actions" then "action"
      elif $type == "components" then "component"
@@ -203,44 +204,57 @@ else
     success "No duplicate reference IDs"
 fi
 
-# 11. Validate required entity fields based on type
+# 11. Validate required entity fields (all entities should have name and description)
 info "Checking required fields by entity type..."
-for entity_type in features requirements objectives users screens ui_components actions components; do
+entity_types=$(jq -r '.entities | keys[]' "$GRAPH_FILE" 2>/dev/null)
+for entity_type in $entity_types; do
     if jq -e ".entities.$entity_type" "$GRAPH_FILE" >/dev/null 2>&1; then
         jq -r ".entities.$entity_type | keys[]" "$GRAPH_FILE" 2>/dev/null | while read -r entity_name; do
-            entity_id="${entity_type%s}:$entity_name"  # Remove plural 's' for ID
+            # Build entity ID with proper singular/plural handling
+            if [[ "$entity_type" == "interfaces" ]]; then
+                entity_id="interface:$entity_name"
+            elif [[ "${entity_type: -1}" == "s" ]]; then
+                entity_id="${entity_type%s}:$entity_name"
+            else
+                entity_id="$entity_type:$entity_name"
+            fi
 
-            case "$entity_type" in
-                features|requirements|objectives)
-                    if ! jq -e ".entities.$entity_type[\"$entity_name\"] | has(\"name\")" "$GRAPH_FILE" >/dev/null 2>&1; then
-                        error "Entity missing required 'name' field: $entity_id"
-                    fi
-                    if ! jq -e ".entities.$entity_type[\"$entity_name\"] | has(\"description\")" "$GRAPH_FILE" >/dev/null 2>&1; then
-                        warning "Entity missing 'description' field: $entity_id"
-                    fi
-                    ;;
-                users)
-                    if ! jq -e ".entities.$entity_type[\"$entity_name\"] | has(\"name\")" "$GRAPH_FILE" >/dev/null 2>&1; then
-                        error "User entity missing 'name' field: $entity_id"
-                    fi
-                    if ! jq -e ".entities.$entity_type[\"$entity_name\"] | has(\"role\")" "$GRAPH_FILE" >/dev/null 2>&1; then
-                        warning "User entity missing 'role' field: $entity_id"
-                    fi
-                    ;;
-                screens|ui_components)
-                    if ! jq -e ".entities.$entity_type[\"$entity_name\"] | has(\"name\")" "$GRAPH_FILE" >/dev/null 2>&1; then
-                        error "UI entity missing 'name' field: $entity_id"
-                    fi
-                    ;;
-            esac
+            # All entities must have name and description
+            if ! jq -e ".entities.$entity_type[\"$entity_name\"] | has(\"name\")" "$GRAPH_FILE" >/dev/null 2>&1; then
+                error "Entity missing required 'name' field: $entity_id"
+            fi
+            if ! jq -e ".entities.$entity_type[\"$entity_name\"] | has(\"description\")" "$GRAPH_FILE" >/dev/null 2>&1; then
+                warning "Entity missing 'description' field: $entity_id"
+            fi
         done
     fi
 done
 
-# 12. Validate dependency chains
+# 12. Check entity types against dependency-rules.json
+info "Checking entity type descriptions..."
+DEPENDENCY_RULES_FILE="./know/lib/dependency-rules.json"
+if [[ -f "$DEPENDENCY_RULES_FILE" ]]; then
+    entity_types=$(jq -r '.entities | keys[]' "$GRAPH_FILE" 2>/dev/null)
+    missing_descriptions=0
+
+    for entity_type in $entity_types; do
+        # Check if this entity type has a description in dependency-rules.json
+        if ! jq -e ".entity_descriptions | has(\"$entity_type\")" "$DEPENDENCY_RULES_FILE" >/dev/null 2>&1; then
+            error "Entity type '$entity_type' missing from dependency-rules.json entity_descriptions"
+            ((missing_descriptions++))
+        fi
+    done
+
+    if [[ $missing_descriptions -eq 0 ]]; then
+        success "All entity types have descriptions in dependency-rules.json"
+    fi
+else
+    warning "Dependency rules file not found: $DEPENDENCY_RULES_FILE"
+fi
+
+# 13. Validate dependency chains
 info "Checking dependency chain validity..."
-RULES_FILE="${2:-.ai/tmp/dependency-rules.json}"
-if [[ -f "$RULES_FILE" ]]; then
+if [[ -f "$DEPENDENCY_RULES_FILE" ]]; then
     invalid_deps=0
 
     # Check each edge against allowed dependencies
@@ -249,36 +263,57 @@ if [[ -f "$RULES_FILE" ]]; then
         from_type=$(echo "$from_node" | cut -d: -f1)
         to_type=$(echo "$to_node" | cut -d: -f1)
 
-        # Normalize plural to singular
-        from_type=${from_type%s}
-        to_type=${to_type%s}
+        # Check if from_node is an entity
+        from_is_entity=false
+        if jq -e ".entities | has(\"${from_type}s\")" "$GRAPH_FILE" >/dev/null 2>&1; then
+            from_type="${from_type}s"
+            from_is_entity=true
+        elif jq -e ".entities | has(\"$from_type\")" "$GRAPH_FILE" >/dev/null 2>&1; then
+            from_is_entity=true
+        fi
 
-        # Map to dependency rule types
-        [[ "$from_type" == "screen" || "$from_type" == "ui_component" ]] && from_type="interface"
-        [[ "$to_type" == "screen" || "$to_type" == "ui_component" ]] && to_type="interface"
-        [[ "$from_type" == "data_model" ]] && from_type="data_models"
-        [[ "$to_type" == "data_model" ]] && to_type="data_models"
-        [[ "$from_type" == "platform" ]] && from_type="platforms"
-        [[ "$to_type" == "platform" ]] && to_type="platforms"
+        # Check if to_node is an entity
+        to_is_entity=false
+        if jq -e ".entities | has(\"${to_type}s\")" "$GRAPH_FILE" >/dev/null 2>&1; then
+            to_type="${to_type}s"
+            to_is_entity=true
+        elif jq -e ".entities | has(\"$to_type\")" "$GRAPH_FILE" >/dev/null 2>&1; then
+            to_is_entity=true
+        fi
 
-        # Check if dependency is allowed
-        allowed=$(jq -r ".allowed_dependencies.\"$from_type\" // []" "$RULES_FILE" 2>/dev/null)
-        if [[ "$allowed" != "[]" ]] && [[ "$allowed" != "null" ]]; then
-            if ! echo "$allowed" | jq -e ".[] | select(. == \"$to_type\")" >/dev/null 2>&1; then
-                error "Invalid dependency: $from_node -> $to_node ($from_type cannot depend on $to_type)"
-                ((invalid_deps++))
+        # Special mapping for interfaces
+        if [[ "$from_type" == "interface" ]]; then
+            from_type="interfaces"
+            from_is_entity=true
+        fi
+        if [[ "$to_type" == "interface" ]]; then
+            to_type="interfaces"
+            to_is_entity=true
+        fi
+
+        # Only check allowed dependencies between entities (not references)
+        # Entities can depend on any references without restriction
+        if [[ "$from_is_entity" == "true" ]] && [[ "$to_is_entity" == "true" ]]; then
+            # Both are entities, check if dependency is allowed
+            allowed=$(jq -r ".allowed_dependencies.\"$from_type\" // []" "$DEPENDENCY_RULES_FILE" 2>/dev/null)
+            if [[ "$allowed" != "[]" ]] && [[ "$allowed" != "null" ]]; then
+                if ! echo "$allowed" | jq -e ".[] | select(. == \"$to_type\")" >/dev/null 2>&1; then
+                    error "Invalid dependency: $from_node -> $to_node ($from_type cannot depend on $to_type)"
+                    ((invalid_deps++))
+                fi
             fi
         fi
+        # If to_node is a reference, allow the dependency (no check needed)
     done
 
     if [[ $invalid_deps -eq 0 ]]; then
         success "All dependencies follow the allowed patterns"
     fi
 else
-    info "Dependency rules file not found: $RULES_FILE (skipping chain validation)"
+    info "Dependency rules file not found: $DEPENDENCY_RULES_FILE (skipping chain validation)"
 fi
 
-# 13. Summary
+# 14. Summary
 echo ""
 echo "========================================="
 echo "Validation Summary:"

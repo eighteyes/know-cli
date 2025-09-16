@@ -99,25 +99,15 @@ Integration: User -> Requirements, Functionality -> Features, Action -> Componen
       ]
     }
   },
-  "references": {
-    "descriptions": { /* shared content references */ },
+  "references": { /* All terminal graph nodes, intended for template output. Schema flexible here */
     "technical_architecture": { /* infrastructure configs */ },
     "endpoints": { /* API specifications */ },
     "libraries": { /* dependency versions */ },
     "protocols": { /* communication specs */ },
     "ui": { /* design system colors, typography, spacing */ },
-    "component_implementations": {
-      "admin-dashboard-table": {
-        "base_component": "ui_components.data-table",
-        "context": "admin_interface",
-        "specialized_for": ["screen:admin-panel", "user:admin"],
-        "data_source": "user_analytics_api",
-        "styling": "admin_theme"
-      }
-    }
   },
   
-  "entities": {
+  "entities": { /* MUST be in dependency graph, 
     "users": { 
       "admin": {
         "id": "admin",
@@ -292,8 +282,7 @@ Organize shared configurations and technical details:
   "endpoints": { /* API specs */ },
   "libraries": { /* versions */ },
   "protocols": { /* communication */ },
-  "ui": { /* design system */ },
-  "component_implementations": { /* configs */ }
+  "ui": { /* design system */ }
 }
 ```
 
