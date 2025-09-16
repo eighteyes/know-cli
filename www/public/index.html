@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowledge Graph Builder</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- AI Prompt Bar -->
+    <header id="ai-prompt-bar">
+        <div class="prompt-container">
+            <input type="text" id="ai-prompt" placeholder="Ask AI to help build your graph..." />
+            <button id="ai-submit" aria-label="Send to AI">→</button>
+        </div>
+    </header>
+
+    <div id="main-container">
+        <!-- Left Navigation -->
+        <nav id="phase-nav">
+            <button class="phase-btn active" data-phase="discover">Discover</button>
+            <button class="phase-btn" data-phase="validation" disabled>Validation</button>
+            <button class="phase-btn" data-phase="define">Define</button>
+            <button class="phase-btn" data-phase="deliver" disabled>Deliver</button>
+            <button class="phase-btn" data-phase="phases">Phases</button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main id="phase-content">
+            <!-- Dynamic content loaded here -->
+        </main>
+
+        <!-- Right Sidebar - Entity Browser -->
+        <aside id="entity-sidebar">
+            <h3>Entities & References</h3>
+            <div id="entity-accordion">
+                <!-- Dynamically populated -->
+            </div>
+
+            <!-- Persistent 2D Graph View -->
+            <section id="sidebar-graph">
+                <header>
+                    <h4>Graph Overview</h4>
+                    <button id="graph-refresh" aria-label="Refresh graph view">↻</button>
+                </header>
+                <canvas id="graph-minimap" width="280" height="220" role="img"
+                        aria-label="Interactive knowledge graph overview"></canvas>
+                <p class="graph-hint">Drag nodes to inspect dependencies. Click to focus in main view.</p>
+            </section>
+        </aside>
+    </div>
+
+    <!-- Entity Review Modal (hidden by default) -->
+    <div id="entity-review-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Review Extracted Entities</h2>
+                <button class="close-modal" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body" id="entity-review-content">
+                <!-- Populated dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button id="accept-entities">Accept Selected</button>
+                <button id="edit-entities">Edit More</button>
+                <button id="validate-entities">Run Validation</button>
+                <button id="cancel-review">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/discover.js"></script>
+    <script src="js/graph.js"></script>
+</body>
+</html>
