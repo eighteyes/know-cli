@@ -15,12 +15,15 @@ generate_simple_feature_spec() {
     # Convert to plural for JSON paths
     local entity_type_plural="${entity_type}s"
     
-    # Get entity name and basic info
+    # Get entity name and basic info using mod-graph
+    local entity_json
+    entity_json=$($MOD_GRAPH show "${entity_type}s" "$entity_id" 2>/dev/null | sed -n '/Entity Details/,/^$/p' | sed '1d' | sed 's/\x1b\[[0-9;]*m//g')
+
     local entity_name
-    entity_name=$(jq -r --arg type "${entity_type}s" --arg id "$entity_id" '.entities[$type][$id].name // $id' "$KNOWLEDGE_MAP")
-    
+    entity_name=$(echo "$entity_json" | jq -r '.name // empty' 2>/dev/null || echo "$entity_id")
+
     local entity_description
-    entity_description=$(jq -r --arg type "${entity_type}s" --arg id "$entity_id" '.entities[$type][$id].description // "No description available"' "$KNOWLEDGE_MAP")
+    entity_description=$(echo "$entity_json" | jq -r '.description // "No description available"' 2>/dev/null)
     
     # Get completeness score
     local completeness_score
@@ -65,7 +68,9 @@ generate_simple_feature_spec() {
     
     echo "## Dependencies"
     # Get direct dependencies from the graph
-    local deps=$(jq -r --arg ref "$entity_ref" '.graph[$ref].depends_on[]? // empty' "$KNOWLEDGE_MAP" 2>/dev/null)
+    # Use query-graph to get dependencies
+    local QUERY_GRAPH="${JSON_GRAPH_QUERY:-$(dirname "$(dirname "$0")")/lib/query-graph.sh}"
+    local deps=$($QUERY_GRAPH deps "$entity_ref" 2>/dev/null | grep "^  📋" | sed 's/^.*📋 //' | cut -d' ' -f1)
 
     if [[ -n "$deps" ]]; then
         echo "This feature directly depends on:"
@@ -129,8 +134,16 @@ generate_simple_feature_spec() {
         echo "### Infrastructure Components"
         echo ""
         
-        # Parse each architecture component properly
-        local components=(api_gateway message_broker database cache_layer)
+        # Load architecture component names from dependency rules if available
+        local rules_file="${LIB_DIR:-$(dirname "$(dirname "${BASH_SOURCE[0]}")")}/lib/dependency-rules.json"
+        local components=()
+
+        if [[ -f "$rules_file" ]]; then
+            # Get common architecture components from reference description
+            components=(api_gateway message_broker database cache_layer)
+        else
+            components=(api_gateway message_broker database cache_layer)
+        fi
         
         for component in "${components[@]}"; do
             local component_data

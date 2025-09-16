@@ -74,7 +74,30 @@ show_usage() {
 }
 
 get_entity_types() {
-    jq -r '.entities | keys[]' "$KNOWLEDGE_MAP_FILE" 2>/dev/null || echo "users platforms screens components features objectives requirements schema ui_components"
+    # Load from dependency rules if available
+    local rules_file="${LIB_DIR:-$(dirname "${BASH_SOURCE[0]}")}/dependency-rules.json"
+    if [[ -f "$rules_file" ]]; then
+        # Get all unique entity types from allowed_dependencies
+        jq -r '[
+            .allowed_dependencies | keys[],
+            (.allowed_dependencies | .[] | .[])
+        ] | unique | .[]' "$rules_file" 2>/dev/null | while read -r type; do
+            # Add plural form for consistency
+            case "$type" in
+                user) echo "users" ;;
+                component) echo "components" ;;
+                feature) echo "features" ;;
+                action) echo "actions" ;;
+                interface) echo "interfaces" ;;
+                requirement) echo "requirements" ;;
+                objective) echo "objectives" ;;
+                *) echo "${type}s" ;;
+            esac
+        done | sort -u
+    else
+        # Fallback to knowledge map
+        jq -r '.entities | keys[]' "$KNOWLEDGE_MAP_FILE" 2>/dev/null
+    fi
 }
 
 list_entities() {
@@ -126,9 +149,23 @@ list_entities() {
         echo -e "${CYAN}Flow: Platform → Requirements → Interface → Feature → Action → Component → UI → Data${NC}"
         echo
 
-        # Define HOW entity types in dependency order (actions are in WHAT)
-        local how_types=("platforms" "requirements" "screens" "features" "components" "ui_components" "schema")
-        local how_descriptions=("Infrastructure foundation" "System constraints" "User interfaces" "System capabilities" "Technical components" "UI building blocks" "Data structures")
+        # Load entity types and descriptions from dependency rules
+        local rules_file="${LIB_DIR:-$(dirname "${BASH_SOURCE[0]}")}/dependency-rules.json"
+        local how_types=()
+        local how_descriptions=()
+
+        if [[ -f "$rules_file" ]]; then
+            # Get HOW entities based on dependency chain
+            how_types=("platforms" "requirements" "interfaces" "features" "components" "presentation" "behavior" "data_models")
+            for entity_type in "${how_types[@]}"; do
+                local desc=$(jq -r --arg type "${entity_type%s}" '.entity_descriptions[$type] // ""' "$rules_file" 2>/dev/null)
+                how_descriptions+=("${desc:-No description}")
+            done
+        else
+            # Fallback
+            how_types=("platforms" "requirements" "screens" "features" "components" "ui_components" "schema")
+            how_descriptions=("Infrastructure foundation" "System constraints" "User interfaces" "System capabilities" "Technical components" "UI building blocks" "Data structures")
+        fi
 
         local i=0
         for entity_type in "${how_types[@]}"; do
@@ -293,8 +330,11 @@ show_entity() {
     echo -e "\n${CYAN}🔗 Dependencies:${NC}"
     # Handle entity type mapping (entities uses plurals, graph uses singular)
     local graph_key
+    # Use singular forms for graph keys
+    local singular_type="${type%s}"
     if [[ "$type" == "users" ]]; then graph_key="user:$id"
     elif [[ "$type" == "platforms" ]]; then graph_key="platform:$id"
+    elif [[ "$type" == "interfaces" ]]; then graph_key="interface:$id"
     elif [[ "$type" == "screens" ]]; then graph_key="screen:$id"
     elif [[ "$type" == "components" ]]; then graph_key="component:$id"
     elif [[ "$type" == "features" ]]; then graph_key="feature:$id"

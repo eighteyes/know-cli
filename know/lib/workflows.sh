@@ -99,11 +99,21 @@ create_feature_interactive() {
         local dep_type=$(echo "$dependency" | cut -d':' -f1)
         local dep_id=$(echo "$dependency" | cut -d':' -f2)
         
-        case "$dep_type" in
-            platform) dep_type="platforms" ;;
-            component) dep_type="components" ;;
-            screen) dep_type="screens" ;;
-        esac
+        # Normalize dependency type using central function
+        if type -t normalize_entity_type >/dev/null 2>&1; then
+            dep_type=$(normalize_entity_type "$dep_type")
+        else
+            case "$dep_type" in
+                platform) dep_type="platforms" ;;
+                component) dep_type="components" ;;
+                screen|interface) dep_type="interfaces" ;;
+                user) dep_type="users" ;;
+                requirement) dep_type="requirements" ;;
+                feature) dep_type="features" ;;
+                action) dep_type="actions" ;;
+                objective) dep_type="objectives" ;;
+            esac
+        fi
         
         if "$MOD_GRAPH" show "$dep_type" "$dep_id" >/dev/null 2>&1; then
             dependencies+=("$dependency")

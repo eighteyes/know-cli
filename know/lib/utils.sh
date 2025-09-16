@@ -5,6 +5,9 @@
 # Debug mode toggle
 DEBUG=${DEBUG:-false}
 
+# Path to dependency rules
+DEPENDENCY_RULES="${LIB_DIR:-$(dirname "${BASH_SOURCE[0]}")}/dependency-rules.json"
+
 # No longer need external jq utilities - functionality integrated
 
 # Debug logging
@@ -26,9 +29,19 @@ get_entity_stats() {
     ' "$KNOWLEDGE_MAP"
 }
 
-# Get available entity types (now uses centralized pattern)
+# Get available entity types from dependency rules
 get_entity_types() {
-    apply_pattern "entities" "get_all_types" "$KNOWLEDGE_MAP"
+    if [[ -f "$DEPENDENCY_RULES" ]]; then
+        # Get all unique entity types from allowed_dependencies
+        (
+            jq -r '.allowed_dependencies | keys[]' "$DEPENDENCY_RULES" 2>/dev/null
+            jq -r '.allowed_dependencies | to_entries[] | .value[]' "$DEPENDENCY_RULES" 2>/dev/null
+        ) | sort -u
+    else
+        # Fallback to getting from knowledge map
+        apply_pattern "entities" "get_all_types" "$KNOWLEDGE_MAP" 2>/dev/null || \
+        jq -r '.entities | keys[]' "$KNOWLEDGE_MAP" 2>/dev/null
+    fi
 }
 
 # Check if entity exists (now uses centralized pattern)
@@ -59,7 +72,7 @@ list_entities() {
     fi
     
     echo "Entities of type '$entity_type':"
-    jq -r ".entities.$entity_type | to_entries[] | \"  \(.key) - \(.value.name // .key)\"" "$KNOWLEDGE_MAP"
+    "$MOD_GRAPH" list "$entity_type" 2>/dev/null | grep -v "^📋" | grep -v "^$" || true
 }
 
 # Normalize entity type (singular to plural)
@@ -101,7 +114,13 @@ get_entity_name() {
     local type=$(echo "$type_id" | cut -d' ' -f1)
     local id=$(echo "$type_id" | cut -d' ' -f2-)
     
-    jq -r ".entities.$type.\"$id\".name // \"$id\"" "$KNOWLEDGE_MAP"
+    local entity_json
+    entity_json=$("$MOD_GRAPH" show "$type" "$id" 2>/dev/null | sed -n '/Entity Details/,/^$/p' | sed '1d' | sed 's/\x1b\[[0-9;]*m//g')
+    if [[ -n "$entity_json" ]]; then
+        echo "$entity_json" | jq -r '.name // empty' 2>/dev/null || echo "$id"
+    else
+        echo "$id"
+    fi
 }
 
 # Format acceptance criteria as checkboxes
@@ -119,4 +138,37 @@ format_acceptance_criteria() {
 extract_template_vars() {
     local template_content="$1"
     grep -o '{{[^}]*}}' <<< "$template_content" | sort -u || true
+}
+
+# Get entity descriptions from dependency rules
+get_entity_description() {
+    local entity_type="$1"
+    if [[ -f "$DEPENDENCY_RULES" ]]; then
+        jq -r --arg type "$entity_type" '.entity_descriptions[$type] // ""' "$DEPENDENCY_RULES" 2>/dev/null
+    fi
+}
+
+# Get reference categories from dependency rules
+get_reference_categories() {
+    if [[ -f "$DEPENDENCY_RULES" ]]; then
+        jq -r '.reference_categories | keys[]' "$DEPENDENCY_RULES" 2>/dev/null
+    fi
+}
+
+# Get reference category description
+get_reference_description() {
+    local category="$1"
+    if [[ -f "$DEPENDENCY_RULES" ]]; then
+        jq -r --arg cat "$category" '.reference_categories[$cat] // ""' "$DEPENDENCY_RULES" 2>/dev/null
+    fi
+}
+
+# Get allowed dependencies for an entity type
+get_allowed_dependencies() {
+    local entity_type="$1"
+    # Normalize to singular form for lookup
+    local singular_type="${entity_type%s}"
+    if [[ -f "$DEPENDENCY_RULES" ]]; then
+        jq -r --arg type "$singular_type" '.allowed_dependencies[$type] // [] | .[]' "$DEPENDENCY_RULES" 2>/dev/null
+    fi
 }

@@ -11,15 +11,26 @@ validate_entity_comprehensive() {
     local entity_type=$(echo "$entity_ref" | cut -d':' -f1)
     local entity_id=$(echo "$entity_ref" | cut -d':' -f2)
     
-    # Handle plural mapping
-    case "$entity_type" in
-        feature) entity_type="features" ;;
-        component) entity_type="components" ;;
-        screen) entity_type="screens" ;;
-        user) entity_type="users" ;;
-        platform) entity_type="platforms" ;;
-        requirement) entity_type="requirements" ;;
-    esac
+    # Load utils.sh for normalize_entity_type if not already loaded
+    local script_dir="$(dirname "${BASH_SOURCE[0]}")"
+    if type -t normalize_entity_type >/dev/null 2>&1; then
+        entity_type=$(normalize_entity_type "$entity_type")
+    else
+        # Fallback normalization
+        case "$entity_type" in
+            feature) entity_type="features" ;;
+            component) entity_type="components" ;;
+            screen|interface) entity_type="interfaces" ;;
+            user) entity_type="users" ;;
+            platform) entity_type="platforms" ;;
+            requirement) entity_type="requirements" ;;
+            objective) entity_type="objectives" ;;
+            action) entity_type="actions" ;;
+            presentation) entity_type="presentation" ;;
+            behavior) entity_type="behavior" ;;
+            data_model) entity_type="data_models" ;;
+        esac
+    fi
     
     echo "🔍 Comprehensive Analysis: $entity_ref"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

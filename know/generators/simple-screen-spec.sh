@@ -58,15 +58,17 @@ generate_simple_screen_spec() {
         "$JSON_GRAPH_QUERY" deps "$entity_ref" | while read -r line; do
             if [[ "$line" =~ component:([^[:space:]]+) ]]; then
                 local component_id="${BASH_REMATCH[1]}"
-                local component_name=$(jq -r --arg id "$component_id" '.entities.components[$id].name // $id' "$KNOWLEDGE_MAP")
-                local component_desc=$(jq -r --arg id "$component_id" '.entities.components[$id].description // ""' "$KNOWLEDGE_MAP")
+                # Components entity type from dependency rules
+                local entity_type="components"
+                local component_name=$(jq -r --arg id "$component_id" --arg type "$entity_type" '.entities[$type][$id].name // $id' "$KNOWLEDGE_MAP")
+                local component_desc=$(jq -r --arg id "$component_id" --arg type "$entity_type" '.entities[$type][$id].description // ""' "$KNOWLEDGE_MAP")
                 
                 echo "**$component_name** (\`component:$component_id\`)"
                 [[ -n "$component_desc" && "$component_desc" != "null" ]] && echo "  - $component_desc"
                 
                 # Get component functionality if available
                 local functionality
-                functionality=$(jq -r --arg id "$component_id" '.entities.components[$id].functionality[]? // empty' "$KNOWLEDGE_MAP" 2>/dev/null)
+                functionality=$(jq -r --arg id "$component_id" --arg type "components" '.entities[$type][$id].functionality[]? // empty' "$KNOWLEDGE_MAP" 2>/dev/null)
                 if [[ -n "$functionality" ]]; then
                     echo "  - **Functions:**"
                     while IFS= read -r func; do
@@ -165,8 +167,9 @@ generate_simple_screen_spec() {
         "$JSON_GRAPH_QUERY" impact "$entity_ref" | while read -r line; do
             if [[ "$line" =~ user:([^[:space:]]+) ]]; then
                 local user_id="${BASH_REMATCH[1]}"
-                local user_name=$(jq -r --arg id "$user_id" '.entities.users[$id].name // $id' "$KNOWLEDGE_MAP")
-                local user_desc=$(jq -r --arg id "$user_id" '.entities.users[$id].description // ""' "$KNOWLEDGE_MAP")
+                # Users entity type
+                local user_name=$(jq -r --arg id "$user_id" --arg type "users" '.entities[$type][$id].name // $id' "$KNOWLEDGE_MAP")
+                local user_desc=$(jq -r --arg id "$user_id" --arg type "users" '.entities[$type][$id].description // ""' "$KNOWLEDGE_MAP")
                 
                 echo "**$user_name** (\`user:$user_id\`)"
                 [[ -n "$user_desc" && "$user_desc" != "null" ]] && echo "  - Role: $user_desc"
