@@ -3,12 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Knowledge Graph Builder</title>
+    <title>Lucid Commander - Knowledge Graph Builder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <!-- AI Prompt Bar -->
     <header id="ai-prompt-bar">
+        <!-- Phase Navigation Hamburger - Left Side -->
+        <div class="phase-hamburger">
+            <button id="phase-menu-toggle" class="hamburger-btn" aria-label="Toggle phase menu">
+                <div class="hamburger-icon">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <div class="current-phase" id="current-phase-indicator">Discover</div>
+            </button>
+
+            <!-- Dropdown Phase Menu -->
+            <nav id="phase-dropdown" class="phase-dropdown hidden">
+                <button class="phase-btn active" data-phase="discover">Discover</button>
+                <button class="phase-btn" data-phase="validation" disabled>Validation</button>
+                <button class="phase-btn" data-phase="define">Define</button>
+                <button class="phase-btn" data-phase="deliver" disabled>Deliver</button>
+                <button class="phase-btn" data-phase="phases">Phases</button>
+            </nav>
+        </div>
+
         <div class="prompt-container">
             <input type="text" id="ai-prompt" placeholder="Ask AI to help build your graph..." />
             <button id="ai-submit" aria-label="Send to AI">→</button>
@@ -16,14 +40,6 @@
     </header>
 
     <div id="main-container">
-        <!-- Left Navigation -->
-        <nav id="phase-nav">
-            <button class="phase-btn active" data-phase="discover">Discover</button>
-            <button class="phase-btn" data-phase="validation" disabled>Validation</button>
-            <button class="phase-btn" data-phase="define">Define</button>
-            <button class="phase-btn" data-phase="deliver" disabled>Deliver</button>
-            <button class="phase-btn" data-phase="phases">Phases</button>
-        </nav>
 
         <!-- Main Content Area -->
         <main id="phase-content">
@@ -32,7 +48,24 @@
 
         <!-- Right Sidebar - Entity Browser -->
         <aside id="entity-sidebar">
-            <h3>Entities & References</h3>
+            <!-- Graph Management Section -->
+            <section id="sidebar-graph-manager">
+                <div class="app-title">
+                    <h3>Lucid Dream</h3>
+                    <p>Live. Know. Ship.</p>
+                </div>
+                <div class="graph-manager">
+                    <select id="graph-selector">
+                        <option value="current">spec-graph.json</option>
+                    </select>
+                    <div class="graph-controls">
+                        <button id="graph-new" title="New Graph">+</button>
+                        <button id="graph-save" title="Save Graph">✓</button>
+                        <button id="graph-restore" title="Restore Graph">✕</button>
+                    </div>
+                </div>
+            </section>
+
             <div id="entity-accordion">
                 <!-- Dynamically populated -->
             </div>
@@ -43,9 +76,92 @@
                     <h4>Graph Overview</h4>
                     <button id="graph-refresh" aria-label="Refresh graph view">↻</button>
                 </header>
-                <canvas id="graph-minimap" width="280" height="220" role="img"
+                <!-- Graph control sliders -->
+                <div id="graph-controls" class="graph-controls-panel">
+                    <div class="slider-control">
+                        <label>Start Angle: <span id="start-angle-value">0</span>°</label>
+                        <input type="range" id="start-angle" min="-180" max="180" value="0" step="5">
+                    </div>
+                    <div class="slider-control">
+                        <label>Spread: <span id="spread-value">252</span>°</label>
+                        <input type="range" id="spread" min="30" max="360" value="252" step="10">
+                    </div>
+                    <div class="slider-control">
+                        <label>Layer Gap: <span id="layer-spacing-value">30</span>px</label>
+                        <input type="range" id="layer-spacing" min="10" max="50" value="30" step="2">
+                    </div>
+                    <div class="slider-control">
+                        <label>Origin X: <span id="origin-x-value">25</span>px</label>
+                        <input type="range" id="origin-x" min="10" max="100" value="25" step="5">
+                    </div>
+                    <div class="slider-control">
+                        <label>Origin Y: <span id="origin-y-value">50</span>%</label>
+                        <input type="range" id="origin-y" min="20" max="80" value="50" step="5">
+                    </div>
+                    <div class="slider-control">
+                        <label>Base Radius: <span id="base-radius-value">40</span>px</label>
+                        <input type="range" id="base-radius" min="20" max="80" value="40" step="5">
+                    </div>
+                    <div class="slider-control">
+                        <label>Node Size: <span id="node-size-value">3</span>px</label>
+                        <input type="range" id="node-size" min="1" max="8" value="3" step="1">
+                    </div>
+                    <div class="slider-control">
+                        <label>V-Jitter: <span id="vertical-jitter-value">4</span>px</label>
+                        <input type="range" id="vertical-jitter" min="0" max="10" value="4" step="1">
+                    </div>
+                    <div class="slider-control">
+                        <label>Line Width: <span id="line-width-value">0.8</span></label>
+                        <input type="range" id="line-width" min="0.2" max="2" value="0.8" step="0.1">
+                    </div>
+                    <div class="slider-control">
+                        <label>Node Gap: <span id="node-gap-value">1</span></label>
+                        <input type="range" id="node-gap" min="0" max="5" value="1" step="0.5">
+                    </div>
+                    <div class="slider-control">
+                        <label>Layer Curve: <span id="layer-curve-value">0</span>°</label>
+                        <input type="range" id="layer-curve" min="-30" max="30" value="0" step="5">
+                    </div>
+                    <div class="slider-control">
+                        <label>Glow Size: <span id="glow-size-value">3</span>px</label>
+                        <input type="range" id="glow-size" min="0" max="10" value="3" step="1">
+                    </div>
+                    <div class="slider-control">
+                        <label>Line Opacity: <span id="line-opacity-value">30</span>%</label>
+                        <input type="range" id="line-opacity" min="10" max="100" value="30" step="10">
+                    </div>
+                    <div class="slider-control">
+                        <label>Spiral: <span id="spiral-value">0</span></label>
+                        <input type="range" id="spiral" min="0" max="20" value="0" step="1">
+                    </div>
+                    <div class="slider-control">
+                        <label>Wave Amp: <span id="wave-amp-value">0</span>px</label>
+                        <input type="range" id="wave-amp" min="0" max="20" value="0" step="2">
+                    </div>
+                    <div class="slider-control">
+                        <label>Wave Freq: <span id="wave-freq-value">1</span></label>
+                        <input type="range" id="wave-freq" min="0.5" max="5" value="1" step="0.5">
+                    </div>
+                    <div class="config-output">
+                        <label>Config (copy to share):</label>
+                        <textarea id="config-output" readonly rows="2">-15,80,12,10,20,20</textarea>
+                        <button id="copy-config" title="Copy to clipboard">📋</button>
+                    </div>
+                    <div class="config-input">
+                        <label>Load Config:</label>
+                        <input type="text" id="config-input" placeholder="Paste config here">
+                        <button id="load-config" title="Load configuration">↻</button>
+                    </div>
+                </div>
+                <!-- Fixed node info display panel -->
+                <div id="graph-node-info" class="node-info-panel">
+                    <div class="info-placeholder">
+                        <div class="info-label">GRAPH_OVERVIEW</div>
+                        <div class="info-text">Click a node to view details</div>
+                    </div>
+                </div>
+                <canvas id="graph-minimap" width="280" height="240" role="img"
                         aria-label="Interactive knowledge graph overview"></canvas>
-                <p class="graph-hint">Drag nodes to inspect dependencies. Click to focus in main view.</p>
             </section>
         </aside>
     </div>
@@ -69,6 +185,7 @@
         </div>
     </div>
 
+    <script src="js/minimap.js"></script>
     <script src="js/app.js"></script>
     <script src="js/discover.js"></script>
     <script src="js/graph.js"></script>
