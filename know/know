@@ -77,6 +77,7 @@ CORE OPERATIONS:
     know list [entity_type]               List available entities
     know search <term> [entity_type]     Find entities by name or description
     know check <type> <entity_id>        Validate entity completeness
+    know check references                Check all reference keys have parent entities
     know preview <type> <entity_id>      Preview what will be generated
 
     know feature                          List all features
@@ -101,6 +102,15 @@ ANALYSIS & DEPENDENCIES:
     know order                            Show optimal implementation order
     know blockers                         Show entities blocking implementation
 
+GAP ANALYSIS:
+    know gap-analyze <entity_id>          Analyze implementation gaps for entity
+    know gap-analyze-all                  Analyze all users and objectives
+    know gap-summary                      Show gap analysis summary
+    know gap-report [format]              Generate comprehensive gap report
+    know gap-qa                           Interactive full chain builder
+    know chain-builder                    Create complete implementation chains
+    know gap-score <entity_id>            Get completeness score for entity
+
 WORKFLOWS & AUTOMATION:
     know create-feature                   Interactive feature creation
     know complete <entity_ref>            Interactive gap completion
@@ -115,6 +125,7 @@ WORKFLOWS & AUTOMATION:
 GRAPH MANAGEMENT:
     know mod <command> [args...]          Modify graph (add, edit, connect entities)
     know query <command> [args...]        Query graph (traverse, stats, paths)
+    know component-map <cmd> [args...]    Map components to interfaces
 
 MAINTENANCE & HEALTH:
     know health                           Comprehensive graph health check
@@ -126,10 +137,20 @@ DEPENDENCY RULES:
     know rules                            Show allowed dependency patterns
     know suggest <entity>                 Suggest valid connections for entity
     know validate-connection <from> <to>  Check if connection is allowed
+    know connect-references               List orphaned reference keys
+    know connect-references interactive   Interactive FZF tool to connect keys
+    know connect-references batch <ref> <entity>  Batch connect all keys from reference
 
 NAVIGATION & ROUTING:
     know sitemap                          Generate sitemap with page hierarchy
     know routes                           Show all pages and API endpoints
+
+PHASE MANAGEMENT:
+    know phases display                   Show current implementation phases
+    know phases restructure               Generate optimal phases from dependencies
+    know phases prioritize                Interactively adjust entity priorities
+    know phases validate                  Check phase dependency validity
+    know phases stats                     Show phase statistics and metrics
 
 OPTIONS:
     --format <md|json|yaml>               Output format (default: md)
@@ -350,9 +371,19 @@ Then retry specification generation."
             preview_generation "$1" "$entity_ref"
             ;;
         check)
-            [[ $# -ge 2 ]] || error "Usage: know check <type> <entity_id>"
-            local entity_ref=$(resolve_entity_reference "$2" "$1")
-            validate_entity_completeness "$entity_ref" "$1"
+            if [[ "$1" == "references" ]] || [[ "$1" == "reference-parents" ]]; then
+                # Check that all references have parent entities
+                shift
+                if [[ "$OUTPUT_FORMAT" == "json" ]]; then
+                    "$LIB_DIR/check-reference-parents.sh" --json "$@"
+                else
+                    "$LIB_DIR/check-reference-parents.sh" "$@"
+                fi
+            else
+                [[ $# -ge 2 ]] || error "Usage: know check <type> <entity_id> OR know check references"
+                local entity_ref=$(resolve_entity_reference "$2" "$1")
+                validate_entity_completeness "$entity_ref" "$1"
+            fi
             ;;
         completeness)
             if [[ $# -ge 1 ]]; then
@@ -476,6 +507,29 @@ Then retry specification generation."
                 done
             fi
             ;;
+        gap-analyze)
+            [[ $# -ge 1 ]] || error "Usage: know gap-analyze <entity_id>"
+            local entity_ref=$(resolve_entity_reference "$1")
+            "$LIB_DIR/gap-analysis.sh" analyze "$entity_ref"
+            ;;
+        gap-analyze-all)
+            "$LIB_DIR/gap-analysis.sh" analyze-all
+            ;;
+        gap-summary)
+            "$LIB_DIR/gap-analysis.sh" summary
+            ;;
+        gap-report)
+            local format="${1:-text}"
+            "$LIB_DIR/gap-reporter.sh" "$format"
+            ;;
+        gap-qa|chain-builder)
+            "$GENERATOR_DIR/full-chain-qa.sh"
+            ;;
+        gap-score)
+            [[ $# -ge 1 ]] || error "Usage: know gap-score <entity_id>"
+            local entity_ref=$(resolve_entity_reference "$1")
+            "$LIB_DIR/completeness-scorer.sh" score "$entity_ref"
+            ;;
         todo)
             echo "📝 Next Actions Needed"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -529,6 +583,10 @@ Then retry specification generation."
             # Forward to query-graph.sh in know/lib
             exec "$LIB_DIR/query-graph.sh" "$@"
             ;;
+        component-map)
+            # Forward to component-map.sh in know/lib
+            exec "$LIB_DIR/component-map.sh" "$@"
+            ;;
         health)
             # Comprehensive health check
             check_graph_health "$KNOWLEDGE_MAP"
@@ -560,6 +618,10 @@ Then retry specification generation."
             local to_ref=$(resolve_entity_reference "$2")
             validate_connection "$from_ref" "$to_ref" "$LIB_DIR/dependency-rules.json"
             ;;
+        connect-references)
+            # Interactive tool to connect orphaned reference keys to entities
+            "$LIB_DIR/connect-references.sh" "$@"
+            ;;
         sitemap)
             # Generate sitemap showing page hierarchy with components
             shift
@@ -569,6 +631,11 @@ Then retry specification generation."
             # Show all pages and API endpoints with dependencies
             shift
             "$GENERATOR_DIR/routes.sh" "${1:-.ai/spec-graph.json}"
+            ;;
+        phases)
+            # Phase management functionality
+            shift
+            exec "$LIB_DIR/phase-manager.sh" "$@"
             ;;
         *)
             error "Unknown command: $command. Use 'know --help' for usage."
