@@ -33,6 +33,7 @@ show_help() {
     echo "  cycles                                 - Detect circular dependencies"
     echo "  scan-all                               - Comprehensive scan of ALL entities for cycles"
     echo "  stats                                  - Show graph statistics"
+    echo "  ref-usage                              - Analyze reference usage and connectivity"
     echo "  view <view_name>                       - Show pre-computed view"
     echo ""
     echo "EXAMPLES:"
@@ -496,9 +497,91 @@ show_stats() {
 
 show_view() {
     local view_name="$1"
-    
+
     echo "👁️  Pre-computed view: '$view_name'"
     jq -r --arg view "$view_name" '.views[$view]' "$GRAPH_FILE" | jq '.'
+}
+
+analyze_reference_usage() {
+    echo "🔍 Reference Usage Analysis:"
+    echo ""
+
+    # Get all graph dependencies into a temp file for fast lookup
+    local TEMP_DEPS="/tmp/deps_$$.txt"
+    jq -r '.graph | to_entries | map(.value.depends_on[]?) | .[]' "$GRAPH_FILE" > "$TEMP_DEPS"
+
+    local total_refs=0
+    local used_refs=0
+    local orphaned_refs=0
+
+    # Process each reference category
+    for category in $(jq -r '.references | keys[]' "$GRAPH_FILE"); do
+        echo "📂 $category:"
+
+        # Check if it's an object
+        if [[ $(jq --arg cat "$category" '.references[$cat] | type' "$GRAPH_FILE") == '"object"' ]]; then
+            local category_total=0
+            local category_used=0
+            local orphaned_list=()
+            local used_list=()
+
+            # Get keys and check usage
+            for key in $(jq -r --arg cat "$category" '.references[$cat] | keys[]' "$GRAPH_FILE"); do
+                ((category_total++))
+                ((total_refs++))
+                local ref_id="$category:$key"
+
+                # Check if ref is in dependencies
+                if grep -q "^${ref_id}$" "$TEMP_DEPS"; then
+                    ((category_used++))
+                    ((used_refs++))
+                    # Count occurrences
+                    local count=$(grep -c "^${ref_id}$" "$TEMP_DEPS")
+                    used_list+=("$key ($count uses)")
+                else
+                    ((orphaned_refs++))
+                    orphaned_list+=("$key")
+                fi
+            done
+
+            # Display results for this category
+            echo "  📊 Total: $category_total | Used: $category_used | Orphaned: $((category_total - category_used))"
+
+            if [[ ${#used_list[@]} -gt 0 ]]; then
+                echo "  ✅ Connected references:"
+                for ref in "${used_list[@]}"; do
+                    echo "    • $ref"
+                done
+            fi
+
+            if [[ ${#orphaned_list[@]} -gt 0 ]]; then
+                echo "  ⚠️  Orphaned references (not used):"
+                for ref in "${orphaned_list[@]}"; do
+                    echo "    • $ref"
+                done
+            fi
+        else
+            echo "  ⚠️  Category is not an object with keys (skipping)"
+        fi
+        echo ""
+    done
+
+    # Cleanup
+    rm -f "$TEMP_DEPS"
+
+    # Summary
+    echo "📈 Summary:"
+    echo "  Total references: $total_refs"
+    echo "  Connected: $used_refs ($(( (used_refs * 100) / (total_refs > 0 ? total_refs : 1) ))%)"
+    echo "  Orphaned: $orphaned_refs ($(( (orphaned_refs * 100) / (total_refs > 0 ? total_refs : 1) ))%)"
+
+    if [[ $orphaned_refs -gt 0 ]]; then
+        echo ""
+        echo "💡 Recommendations:"
+        echo "  • Consider flattening nested reference structures"
+        echo "  • Connect orphaned references to relevant entities"
+        echo "  • Remove truly unused references"
+    fi
 }
 
 # Parse file option
@@ -576,6 +659,10 @@ case "$1" in
         ;;
     "stats")
         show_stats
+        ;;
+    "ref-usage")
+        # Use the optimized standalone script for reference analysis
+        /workspace/lb-www/know/lib/ref-usage-simple.sh
         ;;
     "view")
         if [[ $# -ne 2 ]]; then
