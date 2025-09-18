@@ -1,5 +1,77 @@
 # JSON Graph Learning Log
 
+## 2025-01-17: Reference Validation and Connection Tools
+
+### Problem
+After flattening references, discovered that all 110 reference keys were orphaned (not connected to any entities). The graph structure stores dependencies as `entity -> reference:key`, but there was no tooling to:
+1. Validate which reference keys lack parent entities
+2. Connect orphaned references to appropriate entities
+3. Understand the dependency graph structure differences
+
+### Solution
+Created comprehensive tooling for reference management:
+1. **Check tool** (`know check references`) - Validates all reference keys have parent entities
+2. **Connect tool** (`know connect-references`) - Interactive and batch modes for connection
+3. **Graph structure understanding** - Dependencies stored as object with `depends_on` arrays, not edge list
+
+### Key Insights
+
+1. **Graph Structure is Object-Based, Not Edge-Based**
+   - Graph is `{ "entity:id": { "depends_on": [...] } }`
+   - NOT an array of edges like `[{ source, target }]`
+   - Must traverse backwards to find parents (who depends on this?)
+
+2. **Reference Keys Must Be Fully Qualified**
+   - References connect as `category:key` (e.g., `technical_architecture:api_gateway`)
+   - Entities check requires parsing type:id format
+   - Must handle singular/plural conversions (feature/features)
+
+3. **Interactive Tools Need Non-Interactive Fallbacks**
+   - FZF tools won't work in CI/CD or non-terminal environments
+   - Default to list mode when not interactive
+   - Provide batch mode for automation
+
+4. **Entity Types vs Individual Entities**
+   - `.entities` contains types (features, components, etc.)
+   - Individual entities are nested: `.entities.components["fleet-status-map"]`
+   - Must check entity existence differently than simple key lookup
+
+### Implementation Details
+
+**check-reference-parents.sh**:
+- Traverses graph backwards using jq to find parents
+- Checks if parents are entities (not just other references)
+- Groups orphaned keys by reference category for readability
+- Supports JSON output for programmatic use
+
+**connect-references.sh**:
+- Lists all individual entities (not just types)
+- Shows reference value and entity description side-by-side
+- Multi-select with Tab for connecting to multiple entities
+- Batch mode for connecting all keys from a reference at once
+
+### Results
+- Identified 110 orphaned reference keys immediately
+- Connected 4 technical_architecture keys as proof of concept
+- Tools now integrated into main `know` command
+- Clear path forward for connecting remaining references
+
+### Lessons for Future Tools
+
+1. **Always understand the data structure first**
+   - Don't assume edge lists or standard graph formats
+   - Check actual JSON structure before writing traversal logic
+
+2. **Build for both interactive and automated use**
+   - Interactive mode for developer experience
+   - List/batch modes for CI/CD and automation
+   - JSON output for integration with other tools
+
+3. **Test with real data immediately**
+   - Initial script checked wrong entity structure
+   - Testing revealed need for type:id parsing
+   - Real usage exposed the 110 orphaned keys issue
+
 ## 2025-01-17: Reference Structure Simplification
 
 ### Problem

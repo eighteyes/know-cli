@@ -1,4 +1,4 @@
-- IMPORTANT: Keep ~/ai/commands/lb/knowledge-graph.md and json-graph-approach.md updated with the latest evolution of the structure in `spec-graph.json` approach
+- IMPORTANT: Keep ~/ai/commands/lb/knowledge-graph.md and graph-approach.md updated with the latest evolution of the structure in `.ai/3spec-graph.json` approach
 - IMPORTANT: When we improve the approach, save a learning entry to `json-graph-learning.md`
 - string together multiple `jq` commands into a single BASH call
 

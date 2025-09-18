@@ -4,6 +4,9 @@
   "description": "Knowledge graph management system for Lucid Commander robotics platform",
   "main": "index.js",
   "scripts": {
+    "start": "cd www && npm run dev",
+    "start:prod": "cd www && npm start",
+    "dev": "cd www && npm run dev",
     "graph:list": "./know/lib/mod-graph.sh list",
     "graph:list:users": "./know/lib/mod-graph.sh list users",
     "graph:list:features": "./know/lib/mod-graph.sh list features",
