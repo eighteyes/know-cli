@@ -1,0 +1,1579 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "format": "json-graph",
+    "description": "Lucid Commander robotics platform knowledge map",
+    "generated_at": "2025-09-10T00:00:00Z",
+    "project_root": "/Users/god/work/lb-www",
+    "source": ".ai/requirements/input.md",
+    "project": {
+      "name": "Lucid Commander",
+      "abbreviation": "LC",
+      "tagline": "Robots That Work. Literally.",
+      "brand_promise": "Delivering automated cleaning solutions that operate reliably in commercial environments without requiring specialized expertise to manage",
+      "deployment": {
+        "window_washing_drones": 1000,
+        "painting_drones": "in_development",
+        "pressure_washing_rover": "in_development"
+      },
+      "out_of_scope": [
+        "robotic_edge_software",
+        "drone_information_outside_missions",
+        "robot_firmware_development",
+        "hardware_manufacturing",
+        "flight_controller_software"
+      ],
+      "phases": [
+        {
+          "id": "1_foundation",
+          "name": "Foundation",
+          "description": "Core data models and infrastructure that everything depends on",
+          "parallelizable": false,
+          "requirements": [
+            "model:robot-fleet",
+            "model:telemetry-stream",
+            "model:mission-data",
+            "platform:aws-infrastructure"
+          ]
+        },
+        {
+          "id": "2_core_services",
+          "name": "Core Services",
+          "description": "Essential services that enable features",
+          "parallelizable": true,
+          "requirements": [
+            "objectives:telemetry-streaming",
+            "objectives:data-aggregation",
+            "requirement:system-reliability",
+            "requirement:low-latency-teleoperation"
+          ]
+        },
+        {
+          "id": "3_features",
+          "name": "Features",
+          "description": "Business objectives - all can be developed in parallel",
+          "parallelizable": true,
+          "requirements": [
+            "feature:real-time-telemetry",
+            "feature:fleet-coordination",
+            "feature:mission-automation",
+            "feature:predictive-maintenance",
+            "feature:analytics",
+            "feature:natural-language-interface"
+          ]
+        },
+        {
+          "id": "4_interfaces",
+          "name": "Interfaces",
+          "description": "User-facing components and screens",
+          "parallelizable": true,
+          "requirements": [
+            "ui_component:status-indicators",
+            "screen:fleet-dashboard",
+            "screen:teleoperation-interface",
+            "screen:business-intelligence",
+            "screen:device-diagnostics",
+            "screen:mission-control"
+          ]
+        },
+        {
+          "id": "5_user_access",
+          "name": "User Access",
+          "description": "Role-based access controls",
+          "parallelizable": true,
+          "requirements": [
+            "user:owner",
+            "user:operations-manager",
+            "user:operator",
+            "user:teleoperator",
+            "user:fleet-teleoperator",
+            "user:customer-service",
+            "user:executive"
+          ]
+        },
+        {
+          "id": "6_interactions",
+          "name": "User Interactions",
+          "description": "User actions that mutate system state through UI interactions",
+          "parallelizable": true,
+          "requirements": [
+            "action:emergency-stop-robot",
+            "action:assign-mission",
+            "action:navigate-to-diagnostics",
+            "action:approve-maintenance-order",
+            "action:export-analytics-report"
+          ]
+        }
+      ]
+    }
+  },
+  "references": {
+    "technical_architecture": {
+      "api_gateway": {
+        "id": "api-gateway",
+        "type": "infrastructure",
+        "technology": "AWS API Gateway",
+        "base_url": "https://api.lucidbots.com",
+        "authentication": "JWT Bearer tokens",
+        "rate_limiting": "1000 requests/minute",
+        "cors_enabled": true
+      },
+      "message_broker": {
+        "id": "message-broker",
+        "type": "infrastructure",
+        "technology": "Apache Kafka",
+        "cluster_size": "3 nodes",
+        "retention_policy": "7 days",
+        "partitions": 12
+      },
+      "database": {
+        "id": "primary-database",
+        "type": "infrastructure",
+        "technology": "PostgreSQL",
+        "version": "15.2",
+        "connection_pool": 100,
+        "backup_frequency": "4 hours"
+      },
+      "cache_layer": {
+        "id": "redis-cache",
+        "type": "infrastructure",
+        "technology": "Redis",
+        "version": "7.0",
+        "memory": "16GB",
+        "ttl_default": "300s"
+      }
+    },
+    "endpoints": {
+      "telemetry_stream": {
+        "id": "telemetry-stream-endpoint",
+        "method": "WebSocket",
+        "path": "/ws/telemetry/{robot_id}",
+        "authentication": "required",
+        "rate_limit": "100 messages/second",
+        "timeout": "30s"
+      },
+      "fleet_status": {
+        "id": "fleet-status-endpoint",
+        "method": "GET",
+        "path": "/api/v1/fleet/status",
+        "response_format": "JSON",
+        "cache_ttl": "5s",
+        "authentication": "required"
+      },
+      "mission_control": {
+        "id": "mission-control-endpoint",
+        "method": "POST",
+        "path": "/api/v1/missions",
+        "request_format": "JSON",
+        "response_format": "JSON",
+        "authentication": "required"
+      },
+      "robot_command": {
+        "id": "robot-command-endpoint",
+        "method": "POST",
+        "path": "/api/v1/robots/{robot_id}/commands",
+        "request_format": "JSON",
+        "timeout": "5s",
+        "authentication": "required"
+      }
+    },
+    "libraries": {
+      "ui_framework": {
+        "id": "react-framework",
+        "name": "React",
+        "version": "18.2.0",
+        "purpose": "Frontend UI components and state management"
+      },
+      "websocket_client": {
+        "id": "socket-io-client",
+        "name": "Socket.IO Client",
+        "version": "4.7.0",
+        "purpose": "Real-time WebSocket communication"
+      },
+      "state_management": {
+        "id": "redux-toolkit",
+        "name": "Redux Toolkit",
+        "version": "1.9.5",
+        "purpose": "Application state management"
+      },
+      "http_client": {
+        "id": "axios-client",
+        "name": "Axios",
+        "version": "1.4.0",
+        "purpose": "HTTP request handling with interceptors"
+      },
+      "ui_components": {
+        "id": "ant-design",
+        "name": "Ant Design",
+        "version": "5.6.0",
+        "purpose": "Pre-built UI component library"
+      }
+    },
+    "protocols": {
+      "robot_communication": {
+        "id": "mqtt-protocol",
+        "name": "MQTT",
+        "version": "3.1.1",
+        "broker": "AWS IoT Core",
+        "qos_level": "1",
+        "keep_alive": "60s"
+      },
+      "telemetry_format": {
+        "id": "json-telemetry",
+        "name": "JSON Telemetry Protocol",
+        "schema_version": "1.2",
+        "compression": "gzip",
+        "encoding": "UTF-8"
+      },
+      "authentication": {
+        "id": "jwt-auth",
+        "name": "JWT Authentication",
+        "algorithm": "RS256",
+        "expiration": "24h",
+        "refresh_expiration": "7d"
+      }
+    },
+    "ui": {
+      "brand": {
+        "tagline": "Robots That Work. Literally.",
+        "promise": "Delivering automated cleaning solutions that operate reliably in commercial environments without requiring specialized expertise to manage",
+        "interface_principles": [
+          "professional_action_oriented_design",
+          "clear_status_communication_no_jargon",
+          "direct_feedback_next_step_guidance",
+          "reliability_focused_visual_hierarchy"
+        ]
+      },
+      "colors": {
+        "primary": {
+          "background_dark": "rgba(18, 18, 20, 1)",
+          "glass_overlay": "rgba(18, 18, 20, 0.80)",
+          "backdrop_blur": "15px"
+        },
+        "interactive": {
+          "white_base": "#fff",
+          "white_transparent": "rgba(255, 255, 255, 0.1)",
+          "white_border": "rgba(255, 255, 255, 0.2)"
+        },
+        "status": {
+          "error_stop": "#FF0000",
+          "primary_blue": "#0076FE",
+          "secondary_blue": "#33E2FF"
+        },
+        "neutral": {
+          "black_overlay": "rgba(0, 0, 0, 0.5)",
+          "glass_background": "rgba(0, 0, 0, 0.9)"
+        }
+      },
+      "typography": {
+        "font_stack": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        "sizes": {
+          "small": "12px",
+          "medium": "14px",
+          "base": "16px",
+          "large": "20px"
+        },
+        "weights": {
+          "normal": 400,
+          "medium": 500,
+          "semibold": 600,
+          "bold": 700
+        }
+      },
+      "spacing": {
+        "micro": [
+          "2px",
+          "4px",
+          "8px",
+          "12px",
+          "16px"
+        ],
+        "component": [
+          "20px",
+          "24px",
+          "32px"
+        ],
+        "layout": [
+          "48px",
+          "64px",
+          "80px"
+        ]
+      },
+      "implementation": [
+        "responsive_design_mobile_first",
+        "progressive_web_app_capabilities",
+        "real_time_websocket_architecture",
+        "component_based_design_system",
+        "accessibility_compliance_WCAG_2_1_AA"
+      ]
+    },
+    "data_models": {
+      "robot-fleet-model": {
+        "type": "model",
+        "name": "Robot Fleet Model",
+        "description": "Window washing drones and pressure washing rovers with operational data",
+        "attributes": {
+          "device-id": "UUID",
+          "model-type": "STRING",
+          "serial-number": "STRING",
+          "owner-id": "UUID",
+          "operator-assignments": "ARRAY<UUID>",
+          "status": "ENUM[operational,maintenance,offline,error]",
+          "location": "COORDINATES",
+          "battery-level": "PERCENTAGE"
+        }
+      },
+      "mission-data-model": {
+        "type": "model",
+        "name": "Mission Data Model",
+        "description": "Mission planning, execution, and completion data",
+        "attributes": {
+          "mission-id": "UUID",
+          "robot-id": "UUID",
+          "start-time": "TIMESTAMP",
+          "completion-status": "ENUM[pending,active,completed,failed]",
+          "waypoints": "ARRAY<COORDINATES>",
+          "coverage-percentage": "PERCENTAGE",
+          "duration": "DURATION"
+        }
+      },
+      "telemetry-stream-model": {
+        "type": "model",
+        "name": "Telemetry Stream Model",
+        "description": "Real-time operational data from robots",
+        "attributes": {
+          "timestamp": "TIMESTAMP",
+          "device-id": "UUID",
+          "coordinates": "COORDINATES",
+          "altitude": "FLOAT",
+          "battery": "PERCENTAGE",
+          "signal-strength": "INTEGER",
+          "weather-conditions": "JSON"
+        }
+      },
+      "user-permissions-model": {
+        "type": "model",
+        "name": "User Permissions Model",
+        "description": "Role-based access control and company segmentation",
+        "attributes": {
+          "user-id": "UUID",
+          "role-type": "ENUM[owner,operator,teleoperator,fleet-teleoperator,customer-service,operations-manager,executive]",
+          "company-id": "UUID",
+          "assigned-robots": "ARRAY<UUID>",
+          "permission-level": "INTEGER",
+          "access-scope": "ENUM[company,fleet,device,none]"
+        }
+      },
+      "parts-inventory-model": {
+        "type": "model",
+        "name": "Parts Inventory Model",
+        "description": "Parts catalog and inventory management",
+        "attributes": {
+          "part-id": "UUID",
+          "part-name": "STRING",
+          "part-number": "STRING",
+          "robot-compatibility": "ARRAY<STRING>",
+          "current-stock": "INTEGER",
+          "reorder-threshold": "INTEGER",
+          "supplier-id": "UUID",
+          "unit-cost": "DECIMAL",
+          "lead-time": "DURATION"
+        }
+      },
+      "maintenance-order-model": {
+        "type": "model",
+        "name": "Maintenance Orders Model",
+        "description": "Parts ordering and maintenance workflow tracking",
+        "attributes": {
+          "order-id": "UUID",
+          "robot-id": "UUID",
+          "parts-list": "ARRAY<UUID>",
+          "order-status": "ENUM[pending,approved,ordered,shipped,delivered,completed]",
+          "requester-id": "UUID",
+          "approver-id": "UUID",
+          "supplier-id": "UUID",
+          "order-date": "TIMESTAMP",
+          "estimated-delivery": "TIMESTAMP",
+          "total-cost": "DECIMAL"
+        }
+      }
+    },
+    "acceptance_criteria": {
+      "real_time_telemetry": {
+        "functional": [
+          "live_positioning_accurate",
+          "battery_status_real_time"
+        ],
+        "performance": [
+          "data_freshness_5_to_10_seconds"
+        ],
+        "integration": [
+          "telemetry_stream_model_integration"
+        ]
+      },
+      "emergency_stop": {
+        "functional": [
+          "robot_stops_immediately",
+          "status_updated_in_ui"
+        ],
+        "performance": [
+          "action_executed_under_200ms"
+        ],
+        "safety": [
+          "fail_safe_mechanisms_activated"
+        ]
+      },
+      "assign_mission": {
+        "functional": [
+          "mission_created_successfully",
+          "robot_assigned",
+          "ui_updated"
+        ],
+        "performance": [
+          "assignment_processed_under_5_seconds"
+        ]
+      }
+    },
+    "state_mutations": {
+      "emergency_stop": {
+        "target_model": "robot-fleet",
+        "mutation_type": "status_update",
+        "new_state": "emergency_stopped"
+      },
+      "assign_mission": {
+        "target_model": "mission-data",
+        "mutation_type": "create_record",
+        "related_updates": [
+          "robot-fleet.status"
+        ]
+      }
+    },
+    "platforms": {
+      "web-platform": {
+        "id": "web-platform",
+        "type": "platform",
+        "name": "Web Platform",
+        "description": "Primary interface with full feature set including Mission Control, Fleet Management, Advanced Diagnostics, and Business Intelligence",
+        "status": "active"
+      },
+      "mobile-platform": {
+        "id": "mobile-platform",
+        "type": "platform",
+        "name": "Mobile Platform",
+        "description": "Field operations interface with essential features: Robot Control, Mission Status, Device Health, Emergency Teleoperation, and Push Notifications",
+        "status": "active"
+      },
+      "aws-infrastructure": {
+        "id": "aws-infrastructure",
+        "type": "platform",
+        "name": "AWS Infrastructure",
+        "description": "Data and communication backbone using IoT Core, S3, Kinesis, Glue, PostgreSQL, REST APIs, and WebSocket connections",
+        "status": "active"
+      }
+    }
+  },
+  "entities": {
+    "users": {
+      "owner": {
+        "id": "owner",
+        "type": "user",
+        "name": "Owner",
+        "description": "Multi-role permission system with Owners, Operators, Teleoperators, Fleet Teleoperators, Customer Service, Operations Managers, and Executives",
+        "status": "active"
+      },
+      "operator": {
+        "id": "operator",
+        "type": "user",
+        "name": "Operator",
+        "description": "Multi-role permission system with Owners, Operators, Teleoperators, Fleet Teleoperators, Customer Service, Operations Managers, and Executives",
+        "status": "active"
+      },
+      "teleoperator": {
+        "id": "teleoperator",
+        "type": "user",
+        "name": "Teleoperator",
+        "description": "Multi-role permission system with Owners, Operators, Teleoperators, Fleet Teleoperators, Customer Service, Operations Managers, and Executives",
+        "status": "active"
+      },
+      "fleet-teleoperator": {
+        "id": "fleet-teleoperator",
+        "type": "user",
+        "name": "Fleet Teleoperator",
+        "description": "Multi-role permission system with Owners, Operators, Teleoperators, Fleet Teleoperators, Customer Service, Operations Managers, and Executives",
+        "status": "active"
+      },
+      "customer-service": {
+        "id": "customer-service",
+        "type": "user",
+        "name": "Customer Service",
+        "description": "Multi-role permission system with Owners, Operators, Teleoperators, Fleet Teleoperators, Customer Service, Operations Managers, and Executives",
+        "status": "active"
+      },
+      "operations-manager": {
+        "id": "operations-manager",
+        "type": "user",
+        "name": "Operations Manager",
+        "description": "Multi-role permission system with Owners, Operators, Teleoperators, Fleet Teleoperators, Customer Service, Operations Managers, and Executives",
+        "status": "active"
+      },
+      "executive": {
+        "id": "executive",
+        "type": "user",
+        "name": "Executive",
+        "description": "Multi-role permission system with Owners, Operators, Teleoperators, Fleet Teleoperators, Customer Service, Operations Managers, and Executives",
+        "status": "active"
+      }
+    },
+    "screens": {
+      "fleet-dashboard": {
+        "id": "fleet-dashboard",
+        "type": "screen",
+        "name": "Fleet Management Dashboard",
+        "description": "Real-time fleet status map with device health indicators, active mission assignments, and maintenance alert prioritization",
+        "status": "active"
+      },
+      "mission-control": {
+        "id": "mission-control",
+        "type": "screen",
+        "name": "Mission Control Interface",
+        "description": "Click and Clean interface for waypoint-based mission planning with autonomous pathfinding and scheduling",
+        "status": "active"
+      },
+      "device-diagnostics": {
+        "id": "device-diagnostics",
+        "type": "screen",
+        "name": "Device Diagnostics",
+        "description": "Individual device analysis with mission history, component health monitoring, and predictive maintenance triggers",
+        "status": "active"
+      },
+      "teleoperation-interface": {
+        "id": "teleoperation-interface",
+        "type": "screen",
+        "name": "Teleoperation Interface",
+        "description": "Real-time robot control over internet with live camera feed, telemetry overlay, and emergency intervention (<200ms latency)",
+        "status": "active"
+      },
+      "business-intelligence": {
+        "id": "business-intelligence",
+        "type": "screen",
+        "name": "Business Intelligence Dashboard",
+        "description": "Operational metrics including flight time analytics, mission completion rates, fleet utilization, and performance trends",
+        "status": "active"
+      },
+      "parts-store": {
+        "id": "parts-store",
+        "type": "screen",
+        "name": "Parts Store Interface",
+        "description": null,
+        "status": "active"
+      }
+    },
+    "components": {
+      "fleet-status-map": {
+        "id": "fleet-status-map",
+        "type": "component",
+        "name": "Fleet Status Map",
+        "description": "Real-time fleet status map with device health indicators, active mission assignments, and maintenance alert prioritization",
+        "status": "active"
+      },
+      "robot-controls": {
+        "id": "robot-controls",
+        "type": "component",
+        "name": "Robot Control Interface",
+        "description": null,
+        "status": "active"
+      },
+      "waypoint-map": {
+        "id": "waypoint-map",
+        "type": "component",
+        "name": "Waypoint Planning Map",
+        "description": null,
+        "status": "active"
+      },
+      "camera-feed": {
+        "id": "camera-feed",
+        "type": "component",
+        "name": "Live Camera Feed",
+        "description": "Real-time robot control over internet with live camera feed, telemetry overlay, and emergency intervention (<200ms latency)",
+        "status": "active"
+      },
+      "device-analyzer": {
+        "id": "device-analyzer",
+        "type": "component",
+        "name": "Device Analysis Tools",
+        "description": "Individual device analysis with mission history, component health monitoring, and predictive maintenance triggers",
+        "status": "active"
+      },
+      "operational-metrics": {
+        "id": "operational-metrics",
+        "type": "component",
+        "name": "Operational Metrics Dashboard",
+        "description": null,
+        "status": "active"
+      },
+      "parts-catalog": {
+        "id": "parts-catalog",
+        "type": "component",
+        "name": "Parts Catalog Browser",
+        "description": null,
+        "status": "active"
+      },
+      "maintenance-order-manager": {
+        "id": "maintenance-orders",
+        "type": "component",
+        "name": "Maintenance Order Manager",
+        "description": null,
+        "status": "active"
+      },
+      "inventory-tracker": {
+        "id": "inventory-tracker",
+        "type": "component",
+        "name": "Inventory Tracking System",
+        "description": null,
+        "status": "active"
+      },
+      "supplier-integration": {
+        "id": "supplier-integration",
+        "type": "component",
+        "name": "Supplier Integration",
+        "description": "Integrates with supplier APIs",
+        "status": "active"
+      },
+      "fleet-table-owner": {
+        "id": "owner-fleet-table",
+        "type": "component",
+        "name": "Owner Fleet Data Table",
+        "description": "Owner Fleet Data Table",
+        "status": "active"
+      },
+      "fleet-table-operator": {
+        "id": "operator-fleet-table",
+        "type": "component",
+        "name": "Operator Fleet Control Table",
+        "description": "Operator Fleet Control Table",
+        "status": "active"
+      },
+      "robot-controls-teleoperator": {
+        "id": "teleoperator-robot-controls",
+        "type": "component",
+        "name": "Teleoperator Robot Controls",
+        "description": "Teleoperator Robot Controls",
+        "status": "active"
+      },
+      "device-analyzer-owner": {
+        "id": "owner-device-analyzer",
+        "type": "component",
+        "name": "Owner Device Analytics",
+        "description": "Owner Device Analytics",
+        "status": "active"
+      },
+      "device-analyzer-technician": {
+        "id": "technician-device-analyzer",
+        "type": "component",
+        "name": "Technician Device Diagnostics",
+        "description": "Technician Device Diagnostics",
+        "status": "active"
+      },
+      "websocket-manager": {
+        "id": "websocket-manager",
+        "type": "component",
+        "name": "WebSocket Manager",
+        "description": "Manages real-time websocket connections for telemetry",
+        "status": "active"
+      },
+      "telemetry-processor": {
+        "id": "telemetry-processor",
+        "type": "component",
+        "name": "Telemetry Processor",
+        "description": "Processes incoming telemetry data streams",
+        "status": "active"
+      },
+      "fleet-controller": {
+        "id": "fleet-controller",
+        "type": "component",
+        "name": "Fleet Controller",
+        "description": "Orchestrates fleet-wide operations",
+        "status": "active"
+      },
+      "conflict-resolver": {
+        "id": "conflict-resolver",
+        "type": "component",
+        "name": "Conflict Resolver",
+        "description": "Resolves scheduling and resource conflicts",
+        "status": "active"
+      },
+      "edge-ai-analyzer": {
+        "id": "edge-ai-analyzer",
+        "type": "component",
+        "name": "Edge AI Analyzer",
+        "description": "Performs AI analysis at the edge for maintenance predictions",
+        "status": "active"
+      },
+      "maintenance-scheduler": {
+        "id": "maintenance-scheduler",
+        "type": "component",
+        "name": "Maintenance Scheduler",
+        "description": "Schedules maintenance tasks based on predictions",
+        "status": "active"
+      },
+      "path-planner": {
+        "id": "path-planner",
+        "type": "component",
+        "name": "Path Planner",
+        "description": "Plans optimal paths for missions",
+        "status": "active"
+      },
+      "mission-scheduler": {
+        "id": "mission-scheduler",
+        "type": "component",
+        "name": "Mission Scheduler",
+        "description": "Schedules and queues missions",
+        "status": "active"
+      },
+      "data-pipeline": {
+        "id": "data-pipeline",
+        "type": "component",
+        "name": "Data Pipeline",
+        "description": "ETL pipeline for analytics data",
+        "status": "active"
+      },
+      "report-generator": {
+        "id": "report-generator",
+        "type": "component",
+        "name": "Report Generator",
+        "description": "Generates analytical reports",
+        "status": "active"
+      },
+      "inventory-manager": {
+        "id": "inventory-manager",
+        "type": "component",
+        "name": "Inventory Manager",
+        "description": "Manages parts inventory",
+        "status": "active"
+      },
+      "alert-generator": {
+        "id": "alert-generator",
+        "type": "component",
+        "name": "Alert Generator",
+        "description": "Generates maintenance and operational alerts",
+        "status": "active"
+      },
+      "notification-service": {
+        "id": "notification-service",
+        "type": "component",
+        "name": "Notification Service",
+        "description": "Delivers notifications to users",
+        "status": "active"
+      },
+      "ml-detector": {
+        "id": "ml-detector",
+        "type": "component",
+        "name": "ML Detector",
+        "description": "Machine learning anomaly detector",
+        "status": "active"
+      },
+      "anomaly-classifier": {
+        "id": "anomaly-classifier",
+        "type": "component",
+        "name": "Anomaly Classifier",
+        "description": "Classifies detected anomalies",
+        "status": "active"
+      },
+      "nlp-processor": {
+        "id": "nlp-processor",
+        "type": "component",
+        "name": "NLP Processor",
+        "description": "Natural language processing engine",
+        "status": "active"
+      },
+      "command-interpreter": {
+        "id": "command-interpreter",
+        "type": "component",
+        "name": "Command Interpreter",
+        "description": "Interprets natural language commands",
+        "status": "active"
+      }
+    },
+    "features": {
+      "real-time-telemetry": {
+        "id": "real-time-telemetry",
+        "type": "feature",
+        "name": "Real-Time Telemetry",
+        "description": "Live position, altitude, battery status, environmental data, and mission progress with 5-10s freshness",
+        "status": "in_progress"
+      },
+      "predictive-maintenance": {
+        "id": "predictive-maintenance",
+        "type": "feature",
+        "name": "Predictive Maintenance",
+        "description": "Edge-based component health analysis with maintenance alerts and automated scheduling recommendations",
+        "status": "active"
+      },
+      "natural-language-interface": {
+        "id": "natural-language-interface",
+        "type": "feature",
+        "name": "Natural Language Interface",
+        "description": "Text-to-command processing and voice command integration for hands-free operation",
+        "status": "active"
+      },
+      "fleet-coordination": {
+        "id": "fleet-coordination",
+        "type": "feature",
+        "name": "Fleet Coordination",
+        "description": "Fleet Coordination",
+        "status": "active"
+      },
+      "mission-automation": {
+        "id": "mission-automation",
+        "type": "feature",
+        "name": "Mission Automation",
+        "description": null,
+        "status": "active"
+      },
+      "analytics-system": {
+        "id": "analytics",
+        "type": "feature",
+        "name": "Analytics",
+        "description": "Comprehensive analytics platform providing real-time insights into fleet performance, mission effectiveness, and operational metrics. Enables data-driven decision making through advanced reporting, trend analysis, and predictive analytics capabilities.",
+        "status": "active"
+      },
+      "parts-ordering-system": {
+        "id": "parts-ordering-system",
+        "type": "feature",
+        "name": "Parts Ordering System",
+        "description": null,
+        "status": "active"
+      },
+      "maintenance-alert-system": {
+        "id": "maintenance-alerts",
+        "type": "feature",
+        "name": "Maintenance Alert System",
+        "description": null,
+        "status": "active"
+      },
+      "ai-anomaly-detection": {
+        "id": "ai-anomaly-detection",
+        "type": "feature",
+        "name": "AI Anomaly Detection",
+        "description": null,
+        "status": "active"
+      }
+    },
+    "objectives": {
+      "robot-control": {
+        "id": "robot-control",
+        "type": "objectives",
+        "name": "Robot Control",
+        "description": "Core capability for controlling and operating robots remotely",
+        "status": "active"
+      },
+      "fleet-management": {
+        "id": "fleet-management",
+        "type": "objectives",
+        "name": "Fleet Management",
+        "description": "Capability to manage multiple robots as a coordinated fleet",
+        "status": "active"
+      },
+      "telemetry-monitoring": {
+        "id": "telemetry-monitoring",
+        "type": "objectives",
+        "name": "Telemetry Monitoring",
+        "description": "Real-time monitoring of robot status and performance data",
+        "status": "active"
+      },
+      "maintenance-management": {
+        "id": "maintenance-management",
+        "type": "objectives",
+        "name": "Maintenance Management",
+        "description": "Predictive and reactive maintenance capabilities",
+        "status": "active"
+      },
+      "analytics-insights": {
+        "id": "analytics-insights",
+        "type": "objectives",
+        "name": "Analytics & Insights",
+        "description": "Data analysis and business intelligence capabilities",
+        "status": "active"
+      },
+      "mission-planning": {
+        "id": "mission-planning",
+        "type": "objectives",
+        "name": "Mission Planning",
+        "description": "Autonomous and manual mission planning capabilities",
+        "status": "active"
+      },
+      "diagnostics": {
+        "id": "diagnostics",
+        "type": "objectives",
+        "name": "Diagnostics",
+        "description": "System and device diagnostic capabilities",
+        "status": "active"
+      },
+      "user-management": {
+        "id": "user-management",
+        "type": "objectives",
+        "name": "User Management",
+        "description": "User access control and permissions management",
+        "status": "active"
+      }
+    },
+    "requirements": {
+      "low-latency-teleoperation": {
+        "id": "low-latency-teleoperation",
+        "type": "requirement",
+        "name": "Low Latency Teleoperation",
+        "description": "Low Latency Teleoperation",
+        "status": "active"
+      },
+      "near-real-time-data": {
+        "id": "near-real-time-data",
+        "type": "requirement",
+        "name": "Near Real-Time Data",
+        "description": "Near Real-Time Data",
+        "status": "active"
+      },
+      "emergency-response": {
+        "id": "emergency-response",
+        "type": "requirement",
+        "name": "Emergency Response",
+        "description": "Emergency Response",
+        "status": "active"
+      },
+      "fleet-scalability": {
+        "id": "fleet-scalability",
+        "type": "requirement",
+        "name": "Fleet Scalability",
+        "description": "Fleet Scalability",
+        "status": "active"
+      },
+      "system-reliability": {
+        "id": "system-reliability",
+        "type": "requirement",
+        "name": "System Reliability",
+        "description": "System Reliability",
+        "status": "active"
+      },
+      "multi-tenant-security": {
+        "id": "multi-tenant-security",
+        "type": "requirement",
+        "name": "Multi-Tenant Security",
+        "description": "Multi-Tenant Security",
+        "status": "active"
+      }
+    },
+    "ui_components": {
+      "dark-theme": {
+        "id": "dark-theme",
+        "type": "ui_component",
+        "name": "Dark Theme",
+        "description": "Professional dark theme with rgba(18, 18, 20, 1) background optimized for extended operational use",
+        "status": "active"
+      },
+      "glassmorphism-style": {
+        "id": "glass-morphism",
+        "type": "ui_component",
+        "name": "Glass Morphism Design",
+        "description": "Glass overlay design system with backdrop blur effects for modern interface aesthetics",
+        "status": "active"
+      },
+      "status-indicators": {
+        "id": "status-indicators",
+        "type": "ui_component",
+        "name": "Status Indicator System",
+        "description": "Color-coded status system using error red #FF0000, primary blue #0076FE, and secondary blue #33E2FF",
+        "status": "active"
+      },
+      "button-system": {
+        "id": "interactive-buttons",
+        "type": "ui_component",
+        "name": "Interactive Button Components",
+        "description": "White-based interactive elements with transparent overlays and border highlights for clear action feedback",
+        "status": "active"
+      },
+      "data-visualization": {
+        "id": "data-visualization",
+        "type": "ui_component",
+        "name": "Data Visualization Components",
+        "description": "Chart and graph components optimized for real-time telemetry and analytics display",
+        "status": "active"
+      },
+      "responsive-layout": {
+        "id": "responsive-layout",
+        "type": "ui_component",
+        "name": "Responsive Layout System",
+        "description": "Mobile-first responsive design system with progressive web app capabilities",
+        "status": "active"
+      }
+    },
+    "actions": {
+      "emergency-stop-robot": {
+        "id": "emergency-stop-robot",
+        "type": "action",
+        "name": "Emergency Stop Robot",
+        "description": "Immediately halt all robot operations with fail-safe activation",
+        "status": "active"
+      },
+      "assign-mission": {
+        "id": "assign-mission",
+        "type": "action",
+        "name": "Assign Mission to Robot",
+        "description": "Assign waypoint-based cleaning mission to specific robot",
+        "status": "active"
+      },
+      "navigate-to-diagnostics": {
+        "id": "navigate-to-diagnostics",
+        "type": "action",
+        "name": "Navigate to Device Diagnostics",
+        "description": "Navigation action to device diagnostics screen",
+        "status": "active"
+      },
+      "approve-maintenance-order": {
+        "id": "approve-maintenance-order",
+        "type": "action",
+        "name": "Approve Maintenance Order",
+        "description": "Approve pending maintenance order for parts procurement",
+        "status": "active"
+      },
+      "export-analytics-report": {
+        "id": "export-analytics-report",
+        "type": "action",
+        "name": "Export Analytics Report",
+        "description": "Generate and download analytics report in specified format",
+        "status": "active"
+      }
+    }
+  },
+  "graph": {
+    "user:owner": {
+      "depends_on": [
+        "functionality:fleet-management",
+        "functionality:analytics-insights",
+        "functionality:maintenance-management",
+        "functionality:user-management"
+      ],
+      "connections": null,
+      "phase": "5_user_access",
+      "phase_name": "User Access"
+    },
+    "user:operator": {
+      "depends_on": [
+        "functionality:robot-control",
+        "functionality:telemetry-monitoring",
+        "functionality:mission-planning"
+      ],
+      "connections": null,
+      "phase": "5_user_access",
+      "phase_name": "User Access"
+    },
+    "user:teleoperator": {
+      "depends_on": [
+        "functionality:robot-control",
+        "functionality:telemetry-monitoring",
+        "functionality:diagnostics"
+      ],
+      "connections": null,
+      "phase": "5_user_access",
+      "phase_name": "User Access"
+    },
+    "user:fleet-teleoperator": {
+      "depends_on": [
+        "functionality:fleet-management",
+        "functionality:robot-control",
+        "functionality:telemetry-monitoring"
+      ],
+      "connections": null,
+      "phase": "5_user_access",
+      "phase_name": "User Access"
+    },
+    "user:customer-service": {
+      "depends_on": [
+        "functionality:diagnostics",
+        "functionality:maintenance-management"
+      ],
+      "connections": null,
+      "phase": "5_user_access",
+      "phase_name": "User Access"
+    },
+    "user:operations-manager": {
+      "depends_on": [
+        "functionality:fleet-management",
+        "functionality:analytics-insights",
+        "functionality:mission-planning"
+      ],
+      "connections": null,
+      "phase": "5_user_access",
+      "phase_name": "User Access"
+    },
+    "user:executive": {
+      "depends_on": [
+        "functionality:analytics-insights",
+        "functionality:user-management"
+      ],
+      "connections": null,
+      "phase": "5_user_access",
+      "phase_name": "User Access"
+    },
+    "platform:web-platform": {
+      "depends_on": [],
+      "connections": null
+    },
+    "platform:mobile-platform": {
+      "depends_on": [],
+      "connections": null
+    },
+    "platform:aws-infrastructure": {
+      "depends_on": [
+        "platform:mobile-platform",
+        "platform:web-platform"
+      ],
+      "connections": null,
+      "phase": "1_foundation",
+      "phase_name": "Foundation"
+    },
+    "screen:fleet-dashboard": {
+      "depends_on": [
+        "feature:real-time-telemetry",
+        "feature:fleet-coordination",
+        "feature:analytics"
+      ],
+      "phase": "4_interfaces",
+      "phase_name": "Interfaces"
+    },
+    "screen:mission-control": {
+      "depends_on": [
+        "feature:mission-automation",
+        "feature:fleet-coordination"
+      ],
+      "phase": "4_interfaces",
+      "phase_name": "Interfaces"
+    },
+    "screen:device-diagnostics": {
+      "depends_on": [
+        "feature:ai-anomaly-detection",
+        "feature:predictive-maintenance"
+      ],
+      "phase": "4_interfaces",
+      "phase_name": "Interfaces"
+    },
+    "screen:teleoperation-interface": {
+      "depends_on": [
+        "feature:fleet-coordination",
+        "requirement:low-latency-teleoperation",
+        "requirement:emergency-response"
+      ],
+      "phase": "4_interfaces",
+      "phase_name": "Interfaces"
+    },
+    "screen:business-intelligence": {
+      "depends_on": [
+        "feature:analytics"
+      ],
+      "phase": "4_interfaces",
+      "phase_name": "Interfaces"
+    },
+    "component:fleet-status-map": {
+      "depends_on": [
+        "feature:real-time-telemetry"
+      ],
+      "connections": null
+    },
+    "component:robot-controls": {
+      "depends_on": [
+        "requirement:emergency-response",
+        "requirement:low-latency-teleoperation"
+      ],
+      "connections": null
+    },
+    "component:waypoint-map": {
+      "depends_on": [
+        "feature:mission-automation"
+      ],
+      "connections": null
+    },
+    "component:camera-feed": {
+      "depends_on": [
+        "requirement:low-latency-teleoperation"
+      ],
+      "connections": null
+    },
+    "component:device-analyzer": {
+      "depends_on": [
+        "feature:predictive-maintenance"
+      ],
+      "connections": null
+    },
+    "component:operational-metrics": {
+      "depends_on": [
+        "feature:analytics-system"
+      ],
+      "connections": null
+    },
+    "component:fleet-table-owner": {
+      "depends_on": [
+        "component:fleet-status-map",
+        "feature:analytics-system",
+        "screen:business-intelligence",
+        "user:owner"
+      ],
+      "connections": null
+    },
+    "component:fleet-table-operator": {
+      "depends_on": [
+        "component:fleet-status-map",
+        "feature:real-time-telemetry",
+        "screen:fleet-dashboard",
+        "user:operator"
+      ],
+      "connections": null
+    },
+    "component:robot-controls-teleoperator": {
+      "depends_on": [
+        "component:robot-controls",
+        "component:camera-feed",
+        "requirement:low-latency-teleoperation",
+        "requirement:emergency-response",
+        "screen:teleoperation-interface",
+        "user:teleoperator"
+      ],
+      "connections": null
+    },
+    "component:device-analyzer-owner": {
+      "depends_on": [
+        "component:device-analyzer",
+        "feature:analytics-system",
+        "feature:predictive-maintenance",
+        "screen:business-intelligence",
+        "user:owner"
+      ],
+      "connections": null
+    },
+    "component:device-analyzer-technician": {
+      "depends_on": [
+        "component:device-analyzer",
+        "feature:parts-ordering-system",
+        "screen:device-diagnostics",
+        "user:customer-service"
+      ],
+      "connections": null
+    },
+    "feature:real-time-telemetry": {
+      "depends_on": [
+        "platform:aws-infrastructure",
+        "component:websocket-manager",
+        "component:telemetry-processor"
+      ],
+      "phase": "3_features",
+      "phase_name": "Features"
+    },
+    "functionality:telemetry-streaming": {
+      "depends_on": [
+        "requirement:low-latency-teleoperation",
+        "requirement:near-real-time-data"
+      ],
+      "connections": null,
+      "phase": "2_core_services",
+      "phase_name": "Core Services"
+    },
+    "functionality:data-aggregation": {
+      "depends_on": [
+        "requirement:fleet-scalability",
+        "requirement:near-real-time-data"
+      ],
+      "connections": null,
+      "phase": "2_core_services",
+      "phase_name": "Core Services"
+    },
+    "functionality:zone-assignment-algorithm": {
+      "depends_on": [
+        "requirement:fleet-scalability",
+        "requirement:system-reliability"
+      ],
+      "connections": null
+    },
+    "functionality:conflict-resolution-engine": {
+      "depends_on": [
+        "requirement:emergency-response",
+        "requirement:low-latency-teleoperation"
+      ],
+      "connections": null
+    },
+    "functionality:pathfinding-service": {
+      "depends_on": [
+        "requirement:near-real-time-data"
+      ],
+      "connections": null
+    },
+    "functionality:ml-health-analysis": {
+      "depends_on": [
+        "requirement:near-real-time-data",
+        "requirement:system-reliability"
+      ],
+      "connections": null
+    },
+    "functionality:predictive-analytics-engine": {
+      "depends_on": [
+        "requirement:fleet-scalability"
+      ],
+      "connections": null
+    },
+    "functionality:natural-language-processor": {
+      "depends_on": [
+        "requirement:system-reliability"
+      ],
+      "connections": null
+    },
+    "feature:predictive-maintenance": {
+      "depends_on": [
+        "component:edge-ai-analyzer",
+        "component:maintenance-scheduler"
+      ],
+      "phase": "3_features",
+      "phase_name": "Features"
+    },
+    "feature:natural-language-interface": {
+      "depends_on": [
+        "component:nlp-processor",
+        "component:command-interpreter"
+      ],
+      "phase": "3_features",
+      "phase_name": "Features"
+    },
+    "feature:fleet-coordination": {
+      "depends_on": [
+        "platform:aws-infrastructure",
+        "component:fleet-controller",
+        "component:conflict-resolver"
+      ],
+      "phase": "3_features",
+      "phase_name": "Features"
+    },
+    "feature:mission-automation": {
+      "depends_on": [
+        "component:path-planner",
+        "component:mission-scheduler"
+      ],
+      "phase": "3_features",
+      "phase_name": "Features"
+    },
+    "feature:analytics-system": {
+      "depends_on": [],
+      "connections": null
+    },
+    "requirement:low-latency-teleoperation": {
+      "depends_on": [
+        "platform:aws-infrastructure"
+      ],
+      "connections": null,
+      "phase": "2_core_services",
+      "phase_name": "Core Services"
+    },
+    "requirement:near-real-time-data": {
+      "depends_on": [],
+      "connections": null
+    },
+    "requirement:emergency-response": {
+      "depends_on": [],
+      "connections": null
+    },
+    "requirement:fleet-scalability": {
+      "depends_on": [],
+      "connections": null
+    },
+    "requirement:system-reliability": {
+      "depends_on": [],
+      "connections": null,
+      "phase": "2_core_services",
+      "phase_name": "Core Services"
+    },
+    "requirement:multi-tenant-security": {
+      "depends_on": [],
+      "connections": null
+    },
+    "model:robot-fleet-model": {
+      "depends_on": [
+        "platform:aws-infrastructure"
+      ],
+      "connections": null
+    },
+    "model:mission-data-model": {
+      "depends_on": [],
+      "connections": null
+    },
+    "model:telemetry-stream-model": {
+      "depends_on": [],
+      "connections": null
+    },
+    "model:user-permissions-model": {
+      "depends_on": [
+        "component:device-analyzer",
+        "component:robot-controls",
+        "screen:device-diagnostics",
+        "screen:teleoperation-interface"
+      ],
+      "connections": null
+    },
+    "ui_component:dark-theme": {
+      "connections": null
+    },
+    "ui_component:glassmorphism-style": {
+      "connections": null
+    },
+    "ui_component:status-indicators": {
+      "connections": null,
+      "phase": "4_interfaces",
+      "phase_name": "Interfaces"
+    },
+    "ui_component:button-system": {
+      "connections": null
+    },
+    "ui_component:data-visualization": {
+      "connections": null
+    },
+    "ui_component:responsive-layout": {
+      "connections": null
+    },
+    "action:emergency-stop-robot": {
+      "depends_on": [
+        "component:robot-controls",
+        "ui_component:button-system",
+        "ui_component:status-indicators",
+        "requirement:emergency-response",
+        "model:robot-fleet-model",
+        "screen:teleoperation-interface",
+        "screen:fleet-dashboard"
+      ],
+      "connections": null,
+      "phase": "6_interactions",
+      "phase_name": "User Interactions"
+    },
+    "action:assign-mission": {
+      "depends_on": [
+        "component:waypoint-map",
+        "ui_component:button-system",
+        "ui_component:data-visualization",
+        "requirement:system-reliability",
+        "model:mission-data-model",
+        "model:robot-fleet-model",
+        "screen:mission-control",
+        "screen:fleet-dashboard"
+      ],
+      "connections": null,
+      "phase": "6_interactions",
+      "phase_name": "User Interactions"
+    },
+    "action:navigate-to-diagnostics": {
+      "depends_on": [
+        "component:fleet-status-map",
+        "ui_component:button-system",
+        "screen:fleet-dashboard",
+        "screen:business-intelligence",
+        "screen:device-diagnostics"
+      ],
+      "connections": null,
+      "phase": "6_interactions",
+      "phase_name": "User Interactions"
+    },
+    "action:approve-maintenance-order": {
+      "depends_on": [
+        "component:maintenance-order-manager",
+        "ui_component:button-system",
+        "model:maintenance-order-model",
+        "screen:parts-store",
+        "screen:business-intelligence"
+      ],
+      "connections": null,
+      "phase": "6_interactions",
+      "phase_name": "User Interactions"
+    },
+    "action:export-analytics-report": {
+      "depends_on": [
+        "component:operational-metrics",
+        "ui_component:button-system",
+        "ui_component:data-visualization",
+        "feature:analytics-system",
+        "model:mission-data-model",
+        "model:robot-fleet-model",
+        "screen:business-intelligence"
+      ],
+      "connections": null,
+      "phase": "6_interactions",
+      "phase_name": "User Interactions"
+    },
+    "functionality:robot-control": {
+      "depends_on": [
+        "feature:fleet-coordination",
+        "feature:mission-automation",
+        "requirement:low-latency-teleoperation"
+      ]
+    },
+    "functionality:fleet-management": {
+      "depends_on": [
+        "feature:fleet-coordination",
+        "requirement:fleet-scalability"
+      ]
+    },
+    "functionality:telemetry-monitoring": {
+      "depends_on": [
+        "feature:real-time-telemetry",
+        "requirement:near-real-time-data"
+      ]
+    },
+    "functionality:maintenance-management": {
+      "depends_on": [
+        "feature:predictive-maintenance",
+        "feature:parts-ordering-system",
+        "feature:maintenance-alerts"
+      ]
+    },
+    "functionality:analytics-insights": {
+      "depends_on": [
+        "feature:analytics",
+        "feature:ai-anomaly-detection"
+      ]
+    },
+    "functionality:mission-planning": {
+      "depends_on": [
+        "feature:mission-automation",
+        "feature:natural-language-interface"
+      ]
+    },
+    "functionality:diagnostics": {
+      "depends_on": [
+        "feature:ai-anomaly-detection",
+        "requirement:system-reliability"
+      ]
+    },
+    "functionality:user-management": {
+      "depends_on": [
+        "requirement:multi-tenant-security"
+      ]
+    },
+    "feature:analytics": {
+      "depends_on": [
+        "platform:aws-infrastructure",
+        "component:data-pipeline",
+        "component:report-generator"
+      ],
+      "phase": "3_features",
+      "phase_name": "Features"
+    },
+    "feature:parts-ordering-system": {
+      "depends_on": [
+        "component:inventory-manager",
+        "component:supplier-integration"
+      ]
+    },
+    "feature:maintenance-alerts": {
+      "depends_on": [
+        "component:alert-generator",
+        "component:notification-service"
+      ]
+    },
+    "feature:ai-anomaly-detection": {
+      "depends_on": [
+        "component:ml-detector",
+        "component:anomaly-classifier"
+      ]
+    }
+  }
+}

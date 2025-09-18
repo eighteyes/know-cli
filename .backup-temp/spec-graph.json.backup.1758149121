@@ -677,6 +677,22 @@
           "name": "Dark Theme",
           "description": "Professional dark theme with rgba(18, 18, 20, 1) background optimized for extended operational use",
           "id": "dark-theme"
+        },
+        "jira": {
+          "name": "JIRA Professional Theme",
+          "description": "Clean, task-oriented design inspired by JIRA's interface with characteristic blues and structured layout patterns",
+          "id": "jira-theme",
+          "primary_color": "#0052cc",
+          "background": "#fafbfc",
+          "category": "Professional"
+        },
+        "corporate": {
+          "name": "Corporate Clean Theme",
+          "description": "Modern corporate theme using light blue-greyish tones that feels professional, clean, and timeless for enterprise environments",
+          "id": "corporate-theme",
+          "primary_color": "#4a90c2",
+          "background": "#f8f9fa",
+          "category": "Enterprise"
         }
       },
       "styles": {
@@ -691,25 +707,6 @@
           "name": "Responsive Layout System",
           "description": "Mobile-first responsive design system with progressive web app capabilities",
           "id": "responsive-layout"
-        }
-      },
-      "indicators": {
-        "status": {
-          "name": "Status Indicator System",
-          "description": "Color-coded status system using error red #FF0000, primary blue #0076FE, and secondary blue #33E2FF",
-          "id": "status-indicators"
-        }
-      },
-      "components": {
-        "buttons": {
-          "name": "Button Visual Styles",
-          "description": "Visual appearance of buttons including colors, borders, and hover states",
-          "id": "button-styles"
-        },
-        "charts": {
-          "name": "Chart Visual Styles",
-          "description": "Visual styling for charts including colors, grids, and layouts",
-          "id": "chart-styles"
         }
       },
       "colors": {
@@ -854,6 +851,21 @@
             ]
           }
         }
+      },
+      "button-styles": {
+        "name": "Button Visual Styles",
+        "description": "Visual appearance of buttons including colors, borders, and hover states",
+        "id": "button-styles"
+      },
+      "chart-styles": {
+        "name": "Chart Visual Styles",
+        "description": "Visual styling for charts including colors, grids, and layouts",
+        "id": "chart-styles"
+      },
+      "status-indicators": {
+        "name": "Status Indicator System",
+        "description": "Color-coded status system using error red #FF0000, primary blue #0076FE, and secondary blue #33E2FF",
+        "id": "status-indicators"
       }
     },
     "screens": {
@@ -1154,6 +1166,64 @@
         "name": "Natural Language Command",
         "type": "api"
       }
+    },
+    "external": {
+      "ros-data-streamer": {
+        "type": "external_integration",
+        "protocol": "ROS2",
+        "purpose": "Stream real-time telemetry data from robotic fleet",
+        "endpoint": "wss://ros-bridge.example.com/stream",
+        "topics": [
+          "/telemetry/position",
+          "/telemetry/battery",
+          "/telemetry/sensors",
+          "/telemetry/diagnostics"
+        ],
+        "message_format": "JSON-ROS",
+        "authentication": "JWT",
+        "rate_limit": "1000 msg/sec",
+        "retry_policy": "exponential_backoff",
+        "sample_data": {
+          "position": {
+            "x": 10.5,
+            "y": 20.3,
+            "z": 5.1,
+            "orientation": {
+              "roll": 0.1,
+              "pitch": 0.2,
+              "yaw": 1.57
+            }
+          },
+          "battery": {
+            "voltage": 24.5,
+            "current": 3.2,
+            "percentage": 87,
+            "temperature": 35.2
+          },
+          "timestamp": "2025-09-16T10:30:45.123Z",
+          "robot_id": "fleet-001-drone-042"
+        }
+      }
+    },
+    "assets": {
+      "robot-picture": {
+        "id": "robot-picture",
+        "type": "image",
+        "format": "png",
+        "dimensions": "400x300",
+        "purpose": "Visual representation of robot for UI components",
+        "usage": "Robot status cards, fleet dashboard, teleoperation interface",
+        "accessibility_alt": "Industrial robot with articulated arm and sensor array"
+      },
+      "drone-picture": {
+        "id": "drone-picture",
+        "type": "image",
+        "format": "png",
+        "dimensions": "400x300",
+        "purpose": "Visual representation of drone for UI components",
+        "usage": "Fleet status, mission planning, aerial telemetry displays",
+        "accessibility_alt": "Quadcopter drone with camera gimbal and navigation lights"
+      }
     }
   },
   "entities": {
@@ -1185,6 +1255,11 @@
       "executive": {
         "name": "Executive",
         "description": "Multi-role permission system with Owners, Operators, Teleoperators, Fleet Teleoperators, Customer Service, Operations Managers, and Executives"
+      },
+      "poopys": {
+        "id": "poopys",
+        "type": "users",
+        "name": "Poopys"
       }
     },
     "components": {
@@ -1315,6 +1390,14 @@
       "command-interpreter": {
         "name": "Command Interpreter",
         "description": "Interprets natural language commands"
+      },
+      "theme-selector": {
+        "name": "Theme Selector",
+        "description": "Dropdown component for dynamic theme switching between Dark, JIRA, and Corporate themes"
+      },
+      "theme-manager": {
+        "name": "Theme Manager",
+        "description": "JavaScript component that handles theme switching, persistence, and smooth transitions"
       }
     },
     "features": {
@@ -1353,6 +1436,16 @@
       "ai-anomaly-detection": {
         "name": "AI Anomaly Detection",
         "description": null
+      },
+      "ai_text_integration": {
+        "id": "ai_text_integration",
+        "type": "features",
+        "name": "AI"
+      },
+      "test-feature": {
+        "id": "test-feature",
+        "type": "features",
+        "name": "Test Feature"
       }
     },
     "objectives": {
@@ -1435,32 +1528,11 @@
       "export-analytics-report": {
         "name": "Export Analytics Report",
         "description": "Generate and download analytics report in specified format"
-      }
-    },
-    "presentation": {
-      "button-styles": {
-        "name": "Button Visual Styles",
-        "description": "Visual appearance of buttons including colors, borders, and hover states"
       },
-      "chart-styles": {
-        "name": "Chart Visual Styles",
-        "description": "Visual styling for charts including colors, grids, and layouts"
-      },
-      "status-indicators": {
-        "name": "Status Indicator System",
-        "description": "Color-coded status system using error red #FF0000, primary blue #0076FE, and secondary blue #33E2FF"
-      },
-      "dark-theme": {
-        "name": "Dark Theme",
-        "description": "Professional dark theme with rgba(18, 18, 20, 1) background optimized for extended operational use"
-      },
-      "glassmorphism-style": {
-        "name": "Glass Morphism Design",
-        "description": "Glass overlay design system with backdrop blur effects for modern interface aesthetics"
-      },
-      "responsive-layout": {
-        "name": "Responsive Layout System",
-        "description": "Mobile-first responsive design system with progressive web app capabilities"
+      "steer_robot": {
+        "id": "steer_robot",
+        "type": "actions",
+        "name": "Steer"
       }
     },
     "behavior": {
@@ -1586,25 +1658,52 @@
   },
   "graph": {
     "user:owner": {
-      "depends_on": []
+      "depends_on": [
+        "objective:analytics-insights",
+        "objective:fleet-management",
+        "objective:maintenance-management",
+        "objective:user-management"
+      ]
     },
     "user:operator": {
-      "depends_on": []
+      "depends_on": [
+        "objective:robot-control",
+        "objective:telemetry-monitoring",
+        "objective:mission-planning"
+      ]
     },
     "user:teleoperator": {
-      "depends_on": []
+      "depends_on": [
+        "objective:robot-control",
+        "objective:telemetry-monitoring",
+        "objective:diagnostics"
+      ]
     },
     "user:fleet-teleoperator": {
-      "depends_on": []
+      "depends_on": [
+        "objective:fleet-management",
+        "objective:robot-control",
+        "objective:telemetry-monitoring"
+      ]
     },
     "user:customer-service": {
-      "depends_on": []
+      "depends_on": [
+        "objective:diagnostics",
+        "objective:maintenance-management"
+      ]
     },
     "user:operations-manager": {
-      "depends_on": []
+      "depends_on": [
+        "objective:fleet-management",
+        "objective:analytics-insights",
+        "objective:mission-planning"
+      ]
     },
     "user:executive": {
-      "depends_on": []
+      "depends_on": [
+        "objective:analytics-insights",
+        "objective:user-management"
+      ]
     },
     "platforms:web-platform": {
       "depends_on": []
@@ -1613,31 +1712,63 @@
       "depends_on": []
     },
     "platforms:aws-infrastructure": {
-      "depends_on": []
+      "depends_on": [
+        "platforms:mobile-platform",
+        "platforms:web-platform"
+      ]
     },
     "interface:fleet-dashboard": {
-      "depends_on": []
+      "depends_on": [
+        "feature:real-time-telemetry",
+        "feature:fleet-coordination",
+        "feature:analytics-system",
+        "screens:fleet-status",
+        "screens:robot-list"
+      ]
     },
     "interface:mission-control": {
-      "depends_on": []
+      "depends_on": [
+        "feature:mission-automation",
+        "feature:fleet-coordination",
+        "screens:mission-list"
+      ]
     },
     "interface:device-diagnostics": {
-      "depends_on": []
+      "depends_on": [
+        "feature:ai-anomaly-detection",
+        "feature:predictive-maintenance",
+        "screens:robot-detail",
+        "screens:maintenance-schedule"
+      ]
     },
     "interface:teleoperation-interface": {
-      "depends_on": []
+      "depends_on": [
+        "feature:fleet-coordination"
+      ]
     },
     "interface:business-intelligence": {
-      "depends_on": []
+      "depends_on": [
+        "feature:analytics-system",
+        "screens:analytics-operational"
+      ]
     },
     "component:fleet-status-map": {
-      "depends_on": []
+      "depends_on": [
+        "screens:fleet-status",
+        "technical_architecture:api_gateway",
+        "technical_architecture:cache_layer",
+        "technical_architecture:database"
+      ]
     },
     "component:robot-controls": {
-      "depends_on": []
+      "depends_on": [
+        "screens:robot-command"
+      ]
     },
     "component:waypoint-map": {
-      "depends_on": []
+      "depends_on": [
+        "screens:mission-control"
+      ]
     },
     "component:camera-feed": {
       "depends_on": []
@@ -1646,61 +1777,117 @@
       "depends_on": []
     },
     "component:operational-metrics": {
-      "depends_on": []
+      "depends_on": [
+        "screens:analytics-operational"
+      ]
     },
     "component:fleet-table-owner": {
-      "depends_on": []
+      "depends_on": [
+        "component:fleet-status-map",
+        "component:operational-metrics"
+      ]
     },
     "component:fleet-table-operator": {
-      "depends_on": []
+      "depends_on": [
+        "component:fleet-status-map",
+        "component:telemetry-processor"
+      ]
     },
     "component:robot-controls-teleoperator": {
-      "depends_on": []
+      "depends_on": [
+        "component:robot-controls",
+        "component:camera-feed"
+      ]
     },
     "component:device-analyzer-owner": {
-      "depends_on": []
+      "depends_on": [
+        "component:device-analyzer",
+        "component:operational-metrics",
+        "component:maintenance-scheduler"
+      ]
     },
     "component:device-analyzer-technician": {
-      "depends_on": []
+      "depends_on": [
+        "component:device-analyzer",
+        "component:inventory-manager"
+      ]
     },
     "feature:real-time-telemetry": {
-      "depends_on": []
+      "depends_on": [
+        "component:websocket-manager",
+        "component:telemetry-processor",
+        "component:fleet-status-map"
+      ]
     },
     "feature:predictive-maintenance": {
-      "depends_on": []
+      "depends_on": [
+        "component:edge-ai-analyzer",
+        "component:maintenance-scheduler",
+        "component:device-analyzer"
+      ]
     },
     "feature:natural-language-interface": {
-      "depends_on": []
+      "depends_on": [
+        "component:nlp-processor",
+        "component:command-interpreter"
+      ]
     },
     "feature:fleet-coordination": {
-      "depends_on": []
+      "depends_on": [
+        "component:fleet-controller",
+        "component:conflict-resolver"
+      ]
     },
     "feature:mission-automation": {
-      "depends_on": []
+      "depends_on": [
+        "component:path-planner",
+        "component:mission-scheduler",
+        "component:waypoint-map"
+      ]
     },
     "feature:analytics-system": {
-      "depends_on": []
+      "depends_on": [
+        "component:data-pipeline",
+        "component:report-generator",
+        "component:operational-metrics"
+      ]
     },
     "requirement:low-latency-teleoperation": {
-      "depends_on": []
+      "depends_on": [
+        "component:robot-controls",
+        "component:camera-feed"
+      ]
     },
     "requirement:near-real-time-data": {
-      "depends_on": []
+      "depends_on": [
+        "platforms:aws-infrastructure"
+      ]
     },
     "requirement:emergency-response": {
-      "depends_on": []
+      "depends_on": [
+        "component:robot-controls"
+      ]
     },
     "requirement:fleet-scalability": {
-      "depends_on": []
+      "depends_on": [
+        "platforms:aws-infrastructure"
+      ]
     },
     "requirement:system-reliability": {
-      "depends_on": []
+      "depends_on": [
+        "platforms:aws-infrastructure"
+      ]
     },
     "requirement:multi-tenant-security": {
-      "depends_on": []
+      "depends_on": [
+        "platforms:aws-infrastructure",
+        "data_models:user-permissions-model"
+      ]
     },
     "data_models:robot-fleet-model": {
-      "depends_on": []
+      "depends_on": [
+        "platforms:aws-infrastructure"
+      ]
     },
     "data_models:mission-data-model": {
       "depends_on": []
@@ -1709,210 +1896,312 @@
       "depends_on": []
     },
     "data_models:user-permissions-model": {
-      "depends_on": []
+      "depends_on": [
+        "component:device-analyzer",
+        "component:robot-controls",
+        "interface:device-diagnostics",
+        "interface:teleoperation-interface"
+      ]
     },
     "action:emergency-stop-robot": {
       "depends_on": [
-        "presentation:button-styles",
+        "component:robot-controls",
+        "design:button-styles",
         "behavior:button-interactions",
-        "presentation:status-indicators"
+        "design:status-indicators",
+        "screens:emergency-stop"
       ]
     },
     "action:assign-mission": {
       "depends_on": [
-        "presentation:button-styles",
+        "component:waypoint-map",
+        "design:button-styles",
         "behavior:button-interactions",
-        "presentation:chart-styles",
-        "behavior:chart-interactions"
+        "design:chart-styles",
+        "behavior:chart-interactions",
+        "screens:mission-control"
       ]
     },
     "action:navigate-to-diagnostics": {
       "depends_on": [
-        "presentation:button-styles",
+        "component:fleet-status-map",
+        "design:button-styles",
         "behavior:button-interactions"
       ]
     },
     "action:approve-maintenance-order": {
       "depends_on": [
-        "presentation:button-styles",
-        "behavior:button-interactions"
+        "component:maintenance-order-manager",
+        "design:button-styles",
+        "behavior:button-interactions",
+        "screens:maintenance-approve"
       ]
     },
     "action:export-analytics-report": {
       "depends_on": [
-        "presentation:button-styles",
+        "component:operational-metrics",
+        "design:button-styles",
         "behavior:button-interactions",
-        "presentation:chart-styles",
-        "behavior:chart-interactions"
+        "design:chart-styles",
+        "behavior:chart-interactions",
+        "screens:analytics-export"
       ]
     },
     "feature:parts-ordering-system": {
-      "depends_on": []
+      "depends_on": [
+        "component:inventory-manager",
+        "component:supplier-integration",
+        "component:device-analyzer-technician"
+      ]
     },
     "feature:maintenance-alert-system": {
-      "depends_on": []
+      "depends_on": [
+        "component:alert-generator",
+        "component:notification-service"
+      ]
     },
     "feature:ai-anomaly-detection": {
-      "depends_on": []
+      "depends_on": [
+        "component:ml-detector",
+        "component:anomaly-classifier"
+      ]
     },
     "component:fleet-controller": {
       "depends_on": []
     },
     "component:telemetry-processor": {
-      "depends_on": []
+      "depends_on": [
+        "screens:robot-telemetry-history"
+      ]
     },
     "component:edge-ai-analyzer": {
       "depends_on": []
     },
     "component:nlp-processor": {
-      "depends_on": []
+      "depends_on": [
+        "screens:nlp-command"
+      ]
     },
     "component:ml-detector": {
-      "depends_on": []
+      "depends_on": [
+        "screens:anomaly-detection"
+      ]
     },
     "component:report-generator": {
-      "depends_on": []
+      "depends_on": [
+        "screens:analytics-export"
+      ]
     },
     "component:inventory-manager": {
-      "depends_on": []
+      "depends_on": [
+        "screens:parts-list",
+        "screens:parts-order"
+      ]
     },
     "interface:parts-store": {
-      "depends_on": []
+      "depends_on": [
+        "screens:parts-list"
+      ]
     },
     "interface:fleet-map-view": {
-      "depends_on": []
+      "depends_on": [
+        "interface:fleet-dashboard"
+      ]
     },
     "interface:fleet-list-view": {
-      "depends_on": []
+      "depends_on": [
+        "interface:fleet-dashboard"
+      ]
     },
     "interface:mission-planning": {
-      "depends_on": []
+      "depends_on": [
+        "interface:mission-control"
+      ]
     },
     "interface:mission-history": {
-      "depends_on": []
+      "depends_on": [
+        "interface:mission-control"
+      ]
     },
     "interface:mission-templates": {
-      "depends_on": []
+      "depends_on": [
+        "interface:mission-control"
+      ]
     },
     "interface:teleoperate-single": {
-      "depends_on": []
+      "depends_on": [
+        "interface:teleoperation-interface"
+      ]
     },
     "interface:teleoperate-fleet": {
-      "depends_on": []
+      "depends_on": [
+        "interface:teleoperation-interface"
+      ]
     },
     "interface:diagnostics-alerts": {
-      "depends_on": []
+      "depends_on": [
+        "interface:device-diagnostics"
+      ]
     },
     "interface:diagnostics-maintenance": {
-      "depends_on": []
+      "depends_on": [
+        "interface:device-diagnostics"
+      ]
     },
     "interface:analytics-operations": {
-      "depends_on": []
+      "depends_on": [
+        "interface:business-intelligence"
+      ]
     },
     "interface:analytics-financial": {
-      "depends_on": []
+      "depends_on": [
+        "interface:business-intelligence"
+      ]
     },
     "interface:analytics-performance": {
-      "depends_on": []
+      "depends_on": [
+        "interface:business-intelligence"
+      ]
     },
     "interface:parts-catalog": {
-      "depends_on": []
+      "depends_on": [
+        "interface:parts-store"
+      ]
     },
     "interface:parts-orders": {
-      "depends_on": []
+      "depends_on": [
+        "interface:parts-store"
+      ]
     },
     "interface:parts-inventory": {
-      "depends_on": []
+      "depends_on": [
+        "interface:parts-store"
+      ]
     },
     "interface:settings": {
       "depends_on": []
     },
     "interface:login": {
-      "depends_on": []
+      "depends_on": [
+        "screens:user-auth",
+        "screens:user-permissions"
+      ]
     },
     "component:websocket-manager": {
-      "depends_on": []
+      "depends_on": [
+        "screens:telemetry-stream"
+      ]
     },
     "component:maintenance-order-manager": {
-      "depends_on": []
+      "depends_on": [
+        "screens:maintenance-approve",
+        "screens:maintenance-create"
+      ]
     },
     "objective:robot-control": {
-      "depends_on": []
+      "depends_on": [
+        "platforms:web-platform",
+        "platforms:mobile-platform"
+      ]
     },
     "objective:fleet-management": {
-      "depends_on": []
+      "depends_on": [
+        "feature:fleet-coordination",
+        "platforms:mobile-platform",
+        "platforms:web-platform"
+      ]
     },
     "objective:telemetry-monitoring": {
-      "depends_on": []
+      "depends_on": [
+        "platforms:aws-infrastructure",
+        "data_models:telemetry-stream-model"
+      ]
     },
     "objective:maintenance-management": {
-      "depends_on": []
+      "depends_on": [
+        "data_models:maintenance-order-model",
+        "data_models:parts-inventory-model"
+      ]
     },
     "objective:analytics-insights": {
-      "depends_on": []
+      "depends_on": [
+        "platforms:aws-infrastructure"
+      ]
     },
     "objective:mission-planning": {
-      "depends_on": []
+      "depends_on": [
+        "data_models:mission-data-model"
+      ]
     },
     "objective:diagnostics": {
-      "depends_on": []
+      "depends_on": [
+        "platforms:web-platform"
+      ]
     },
     "objective:user-management": {
-      "depends_on": []
+      "depends_on": [
+        "data_models:user-permissions-model"
+      ]
     },
     "component:parts-catalog": {
-      "depends_on": []
+      "depends_on": [
+        "data_models:parts-inventory-model"
+      ]
     },
     "component:inventory-tracker": {
-      "depends_on": []
+      "depends_on": [
+        "data_models:parts-inventory-model"
+      ]
     },
     "component:supplier-integration": {
-      "depends_on": []
+      "depends_on": [
+        "platforms:aws-infrastructure"
+      ]
     },
     "component:conflict-resolver": {
-      "depends_on": []
+      "depends_on": [
+        "data_models:mission-data-model"
+      ]
     },
     "component:maintenance-scheduler": {
-      "depends_on": []
+      "depends_on": [
+        "data_models:maintenance-order-model"
+      ]
     },
     "component:path-planner": {
-      "depends_on": []
+      "depends_on": [
+        "data_models:mission-data-model"
+      ]
     },
     "component:mission-scheduler": {
-      "depends_on": []
+      "depends_on": [
+        "data_models:mission-data-model"
+      ]
     },
     "component:data-pipeline": {
-      "depends_on": []
+      "depends_on": [
+        "platforms:aws-infrastructure"
+      ]
     },
     "component:alert-generator": {
-      "depends_on": []
+      "depends_on": [
+        "data_models:telemetry-stream-model"
+      ]
     },
     "component:notification-service": {
-      "depends_on": []
+      "depends_on": [
+        "platforms:aws-infrastructure"
+      ]
     },
     "component:anomaly-classifier": {
-      "depends_on": []
+      "depends_on": [
+        "data_models:telemetry-stream-model"
+      ]
     },
     "component:command-interpreter": {
-      "depends_on": []
-    },
-    "presentation:button-styles": {
-      "depends_on": []
-    },
-    "presentation:chart-styles": {
-      "depends_on": []
-    },
-    "presentation:status-indicators": {
-      "depends_on": []
-    },
-    "presentation:dark-theme": {
-      "depends_on": []
-    },
-    "presentation:glassmorphism-style": {
-      "depends_on": []
-    },
-    "presentation:responsive-layout": {
-      "depends_on": []
+      "depends_on": [
+        "data_models:robot-fleet-model"
+      ]
     },
     "behavior:button-interactions": {
       "depends_on": []
@@ -1932,274 +2221,16 @@
     "behavior:navigation-handlers": {
       "depends_on": []
     },
-    "actions:approve-maintenance-order": {
+    "actions:steer_robot": {
       "depends_on": []
     },
-    "actions:assign-mission": {
+    "features:ai_text_integration": {
       "depends_on": []
     },
-    "actions:emergency-stop-robot": {
+    "features:test-feature": {
       "depends_on": []
     },
-    "actions:export-analytics-report": {
-      "depends_on": []
-    },
-    "actions:navigate-to-diagnostics": {
-      "depends_on": []
-    },
-    "components:alert-generator": {
-      "depends_on": []
-    },
-    "components:anomaly-classifier": {
-      "depends_on": []
-    },
-    "components:camera-feed": {
-      "depends_on": []
-    },
-    "components:command-interpreter": {
-      "depends_on": []
-    },
-    "components:conflict-resolver": {
-      "depends_on": []
-    },
-    "components:data-pipeline": {
-      "depends_on": []
-    },
-    "components:device-analyzer": {
-      "depends_on": []
-    },
-    "components:device-analyzer-owner": {
-      "depends_on": []
-    },
-    "components:device-analyzer-technician": {
-      "depends_on": []
-    },
-    "components:edge-ai-analyzer": {
-      "depends_on": []
-    },
-    "components:fleet-controller": {
-      "depends_on": []
-    },
-    "components:fleet-status-map": {
-      "depends_on": []
-    },
-    "components:fleet-table-operator": {
-      "depends_on": []
-    },
-    "components:fleet-table-owner": {
-      "depends_on": []
-    },
-    "components:inventory-manager": {
-      "depends_on": []
-    },
-    "components:inventory-tracker": {
-      "depends_on": []
-    },
-    "components:maintenance-order-manager": {
-      "depends_on": []
-    },
-    "components:maintenance-scheduler": {
-      "depends_on": []
-    },
-    "components:mission-scheduler": {
-      "depends_on": []
-    },
-    "components:ml-detector": {
-      "depends_on": []
-    },
-    "components:nlp-processor": {
-      "depends_on": []
-    },
-    "components:notification-service": {
-      "depends_on": []
-    },
-    "components:operational-metrics": {
-      "depends_on": []
-    },
-    "components:parts-catalog": {
-      "depends_on": []
-    },
-    "components:path-planner": {
-      "depends_on": []
-    },
-    "components:report-generator": {
-      "depends_on": []
-    },
-    "components:robot-controls": {
-      "depends_on": []
-    },
-    "components:robot-controls-teleoperator": {
-      "depends_on": []
-    },
-    "components:supplier-integration": {
-      "depends_on": []
-    },
-    "components:telemetry-processor": {
-      "depends_on": []
-    },
-    "components:waypoint-map": {
-      "depends_on": []
-    },
-    "components:websocket-manager": {
-      "depends_on": []
-    },
-    "features:ai-anomaly-detection": {
-      "depends_on": []
-    },
-    "features:analytics-system": {
-      "depends_on": []
-    },
-    "features:fleet-coordination": {
-      "depends_on": []
-    },
-    "features:maintenance-alert-system": {
-      "depends_on": []
-    },
-    "features:mission-automation": {
-      "depends_on": []
-    },
-    "features:natural-language-interface": {
-      "depends_on": []
-    },
-    "features:parts-ordering-system": {
-      "depends_on": []
-    },
-    "features:predictive-maintenance": {
-      "depends_on": []
-    },
-    "features:real-time-telemetry": {
-      "depends_on": []
-    },
-    "interfaces:analytics-financial": {
-      "depends_on": []
-    },
-    "interfaces:analytics-operations": {
-      "depends_on": []
-    },
-    "interfaces:analytics-performance": {
-      "depends_on": []
-    },
-    "interfaces:business-intelligence": {
-      "depends_on": []
-    },
-    "interfaces:device-diagnostics": {
-      "depends_on": []
-    },
-    "interfaces:diagnostics-alerts": {
-      "depends_on": []
-    },
-    "interfaces:diagnostics-maintenance": {
-      "depends_on": []
-    },
-    "interfaces:fleet-dashboard": {
-      "depends_on": []
-    },
-    "interfaces:fleet-list-view": {
-      "depends_on": []
-    },
-    "interfaces:fleet-map-view": {
-      "depends_on": []
-    },
-    "interfaces:login": {
-      "depends_on": []
-    },
-    "interfaces:mission-control": {
-      "depends_on": []
-    },
-    "interfaces:mission-history": {
-      "depends_on": []
-    },
-    "interfaces:mission-planning": {
-      "depends_on": []
-    },
-    "interfaces:mission-templates": {
-      "depends_on": []
-    },
-    "interfaces:parts-catalog": {
-      "depends_on": []
-    },
-    "interfaces:parts-inventory": {
-      "depends_on": []
-    },
-    "interfaces:parts-orders": {
-      "depends_on": []
-    },
-    "interfaces:parts-store": {
-      "depends_on": []
-    },
-    "interfaces:settings": {
-      "depends_on": []
-    },
-    "interfaces:teleoperate-fleet": {
-      "depends_on": []
-    },
-    "interfaces:teleoperate-single": {
-      "depends_on": []
-    },
-    "interfaces:teleoperation-interface": {
-      "depends_on": []
-    },
-    "objectives:analytics-insights": {
-      "depends_on": []
-    },
-    "objectives:diagnostics": {
-      "depends_on": []
-    },
-    "objectives:fleet-management": {
-      "depends_on": []
-    },
-    "objectives:maintenance-management": {
-      "depends_on": []
-    },
-    "objectives:mission-planning": {
-      "depends_on": []
-    },
-    "objectives:robot-control": {
-      "depends_on": []
-    },
-    "objectives:telemetry-monitoring": {
-      "depends_on": []
-    },
-    "objectives:user-management": {
-      "depends_on": []
-    },
-    "requirements:emergency-response": {
-      "depends_on": []
-    },
-    "requirements:fleet-scalability": {
-      "depends_on": []
-    },
-    "requirements:low-latency-teleoperation": {
-      "depends_on": []
-    },
-    "requirements:multi-tenant-security": {
-      "depends_on": []
-    },
-    "requirements:near-real-time-data": {
-      "depends_on": []
-    },
-    "requirements:system-reliability": {
-      "depends_on": []
-    },
-    "users:customer-service": {
-      "depends_on": []
-    },
-    "users:executive": {
-      "depends_on": []
-    },
-    "users:fleet-teleoperator": {
-      "depends_on": []
-    },
-    "users:operations-manager": {
-      "depends_on": []
-    },
-    "users:operator": {
-      "depends_on": []
-    },
-    "users:owner": {
-      "depends_on": []
-    },
-    "users:teleoperator": {
+    "users:poopys": {
       "depends_on": []
     }
   }
