@@ -25,6 +25,7 @@ An interactive web application for building knowledge graphs with AI assistance,
 - Node.js 16+
 - The `know` CLI tool installed and accessible
 - A `spec-graph.json` file in `.ai/` directory
+- (Optional) Anthropic API key for AI-powered entity extraction
 
 ### Installation
 

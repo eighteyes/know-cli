@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="wireframe">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,10 +8,44 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/themes.css">
-    <link rel="stylesheet" href="css/theme-overrides.css">
 </head>
 <body>
+    <!-- Start View - Google-like minimal interface -->
+    <div id="start-view" class="start-view">
+        <div class="start-container">
+            <!-- Phase hamburger for docked state -->
+            <div class="phase-hamburger docked-hamburger" style="display: none;">
+                <button id="docked-phase-menu-toggle" class="hamburger-btn" aria-label="Toggle phase menu">
+                    <div class="hamburger-icon">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <div class="current-phase">Discover</div>
+                </button>
+            </div>
+
+            <div class="start-logo">
+                <h1>Lucid Dream</h1>
+                <p>Wake. Know. Ship.</p>
+                <span class="project-name" id="project-name"></span>
+            </div>
+            <div class="start-input-group">
+                <div class="start-input-row">
+                    <input type="text" id="start-ai-prompt" class="start-input" placeholder="Describe your vision..." autofocus />
+                    <button id="start-submit" class="start-submit" aria-label="Start">→</button>
+                </div>
+                <div class="start-separator">— or —</div>
+                <select id="start-graph-selector" class="start-graph-selector">
+                    <option value="">Select a graph to load...</option>
+                    <option value="spec-graph.json">spec-graph.json</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Discover View - Main application interface -->
+    <div id="discover-view" class="discover-view hidden">
     <!-- AI Prompt Bar -->
     <header id="ai-prompt-bar">
         <!-- Phase Navigation Hamburger - Left Side -->
@@ -47,22 +81,13 @@
         <!-- Left Phase Sidebar (inside main container) -->
         <nav id="phase-sidebar-inner" class="phase-sidebar-inner hidden">
             <div class="sidebar-content">
+                <button class="phase-btn" data-phase="start">Start</button>
                 <button class="phase-btn active" data-phase="discover">Discover</button>
                 <button class="phase-btn" data-phase="validation" disabled>Validation</button>
                 <button class="phase-btn" data-phase="define">Define</button>
                 <button class="phase-btn" data-phase="deliver" disabled>Deliver</button>
                 <button class="phase-btn" data-phase="phases">Phases</button>
 
-                <!-- Theme Selector -->
-                <div class="theme-selector">
-                    <label for="theme-select">Interface Theme</label>
-                    <select id="theme-select">
-                        <option value="wireframe">Wireframe Dark</option>
-                        <option value="dark">Futuristic Dark</option>
-                        <option value="jira">JIRA Professional</option>
-                        <option value="corporate">Corporate Clean</option>
-                    </select>
-                </div>
             </div>
         </nav>
 
@@ -128,12 +153,12 @@
         </div>
     </div>
 
-    <script src="js/theme-manager.js"></script>
     <script src="js/minimap.js"></script>
     <script src="js/app.js"></script>
     <script src="js/discover.js"></script>
     <script src="js/graph.js"></script>
     <script src="js/vessel-canvas.js"></script>
     <script src="js/mini-vessel.js"></script>
+    </div> <!-- End discover-view -->
 </body>
 </html>

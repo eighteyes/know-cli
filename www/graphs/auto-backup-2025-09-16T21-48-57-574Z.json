@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "project": {
+      "name": "New Project",
+      "tagline": "Define your vision"
+    },
+    "phases": {}
+  },
+  "references": {},
+  "entities": {
+    "users": {},
+    "objectives": {},
+    "actions": {},
+    "features": {},
+    "components": {},
+    "interfaces": {},
+    "requirements": {},
+    "platforms": {}
+  },
+  "graph": {}
+}

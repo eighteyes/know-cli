@@ -7,32 +7,87 @@ class DiscoverPhase {
         this.extractedEntities = [];
         this.graphVisualizer = null;
         this.entityReviewer = new EntityReviewer(this);
+        // Load expand state from localStorage, defaulting to false
+        this.isQuestionExpanded = localStorage.getItem('discoverExpandQuestion') === 'true';
     }
 
     async init() {
         this.renderInterface();
+        // Only proceed with questions if graph is loaded
+        if (this.app.graph) {
+            await this.generateNextQuestion();
+            this.bindEvents();
+        }
+    }
+
+    // Method to refresh the phase (called from app.js)
+    async refresh() {
         await this.generateNextQuestion();
-        this.bindEvents();
     }
 
     renderInterface() {
         const content = document.getElementById('phase-content');
+
+        // Show empty state if no graph is loaded
+        if (!this.app.graph) {
+            content.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 3em; opacity: 0.2; margin-bottom: 20px;">🌙</div>
+                        <h2 style="margin-bottom: 20px; opacity: 0.8;">No Knowledge Graph Loaded</h2>
+                        <p style="font-size: 1.2em; margin-bottom: 30px; opacity: 0.7;">Begin your journey by loading or creating a graph</p>
+                        <p style="font-size: 0.9em; opacity: 0.5;">Go to the Start tab to select a graph or describe your vision</p>
+                    </div>
+                </div>`;
+            return;
+        }
+
         content.innerHTML = `
             <div class="discover-container">
-                <div class="project-header">
-                    <h2 id="project-name">${this.app.graph?.meta?.project?.name || 'New Project'}</h2>
-                    <p id="project-tagline">${this.app.graph?.meta?.project?.tagline || 'Define your vision'}</p>
-                </div>
 
                 <div class="qa-section">
                     <div class="question-box">
-                        <h3>Current Question:</h3>
+                        <div class="question-header">
+                            <h3>Current Question:</h3>
+                            <button id="expand-question-toggle" class="expand-toggle" title="Show context and guidance">
+                                <span class="expand-icon">${this.isQuestionExpanded ? '▼' : '▶'}</span>
+                                <span class="expand-text">Expand Question</span>
+                            </button>
+                        </div>
                         <p id="current-question">Loading...</p>
+                        <div id="question-context" class="question-context ${this.isQuestionExpanded ? 'expanded' : 'collapsed'}">
+                            <div class="context-content">
+                                <div class="guidance">
+                                    <h4>💡 Guidance</h4>
+                                    <p id="guidance-text">Loading context...</p>
+                                </div>
+                                <div class="multiple-choice" id="multiple-choice" style="display: none;">
+                                    <h4>📝 Suggested Options</h4>
+                                    <div id="choice-options"></div>
+                                </div>
+                                <div class="assumptions" id="assumptions" style="display: none;">
+                                    <h4>🤔 Assumptions</h4>
+                                    <ul id="assumptions-list"></ul>
+                                </div>
+                                <div class="examples" id="examples" style="display: none;">
+                                    <h4>📋 Examples</h4>
+                                    <ul id="examples-list"></ul>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="answer-box">
                         <label>Your Answer:</label>
                         <textarea id="user-answer" rows="4" placeholder="Type your answer here..."></textarea>
+                        <div id="answer-guidance" class="answer-guidance ${this.isQuestionExpanded ? 'expanded' : 'collapsed'}">
+                            <div class="guidance-content">
+                                <div class="next-questions">
+                                    <h4>📋 Coming Up</h4>
+                                    <div id="upcoming-questions"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="qa-controls">
@@ -84,6 +139,11 @@ class DiscoverPhase {
         document.getElementById('accept-all')?.addEventListener('click', () => this.acceptAllEntities());
         document.getElementById('reject-all')?.addEventListener('click', () => this.rejectEntities());
 
+        // Expand question toggle functionality
+        document.getElementById('expand-question-toggle')?.addEventListener('click', () => {
+            this.toggleQuestionExpand();
+        });
+
         // Allow Enter key in answer box to submit
         document.getElementById('user-answer').addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && e.ctrlKey) {
@@ -108,8 +168,9 @@ class DiscoverPhase {
             // Fallback to default question
             this.currentQuestion = {
                 type: 'exploration',
-                text: 'What are the main features your system needs to provide?',
-                context: null
+                text: 'What are the main features your system needs to provide? (default)',
+                context: null,
+                isDefault: true
             };
             this.displayQuestion(this.currentQuestion);
         }
@@ -142,8 +203,9 @@ class DiscoverPhase {
             Object.keys(this.app.graph.entities[type]).length === 0)) {
             return {
                 type: 'initial',
-                text: 'What is the name of your project and what problem does it solve?',
-                context: null
+                text: 'What is the name of your project and what problem does it solve? (default)',
+                context: null,
+                isDefault: true
             };
         }
 
@@ -169,11 +231,11 @@ class DiscoverPhase {
 
         // Default exploration questions
         const explorationQuestions = [
-            'What are the main features your system needs to provide?',
-            'Who are the users of your system and what roles do they have?',
-            'What technical platforms or infrastructure will you use?',
-            'What are the key business objectives this system must achieve?',
-            'Are there any specific requirements or constraints?'
+            'What are the main features your system needs to provide? (default)',
+            'Who are the users of your system and what roles do they have? (default)',
+            'What technical platforms or infrastructure will you use? (default)',
+            'What are the key business objectives this system must achieve? (default)',
+            'Are there any specific requirements or constraints? (default)'
         ];
 
         return {
@@ -185,7 +247,207 @@ class DiscoverPhase {
 
     displayQuestion(question) {
         document.getElementById('current-question').textContent = question.text;
+        this.updateQuestionContext(question);
         this.updateProgress();
+    }
+
+    updateQuestionContext(question) {
+        // Generate context based on question type and current graph state
+        const guidance = this.generateGuidance(question);
+        document.getElementById('guidance-text').textContent = guidance.text;
+
+        // Show/hide multiple choice if available
+        const multipleChoiceDiv = document.getElementById('multiple-choice');
+        const choiceOptions = document.getElementById('choice-options');
+        if (guidance.multipleChoice && guidance.multipleChoice.length > 0) {
+            multipleChoiceDiv.style.display = 'block';
+            choiceOptions.innerHTML = guidance.multipleChoice.map((choice, index) =>
+                `<div class="choice-option" data-choice="${choice}">
+                    <span class="choice-text">${choice}</span>
+                </div>`
+            ).join('');
+
+            // Add click handlers to populate answer box
+            choiceOptions.querySelectorAll('.choice-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    const choice = option.dataset.choice;
+                    const answerBox = document.getElementById('user-answer');
+                    const currentAnswer = answerBox.value.trim();
+
+                    // Toggle selection visual feedback
+                    option.classList.add('selected');
+                    setTimeout(() => option.classList.remove('selected'), 200);
+
+                    // Append to existing answer if there's content, otherwise replace
+                    if (currentAnswer) {
+                        answerBox.value = currentAnswer + '\n\n' + choice;
+                    } else {
+                        answerBox.value = choice;
+                    }
+
+                    // Focus the answer box
+                    answerBox.focus();
+                });
+            });
+        } else {
+            multipleChoiceDiv.style.display = 'none';
+        }
+
+        // Show/hide assumptions if available
+        const assumptionsDiv = document.getElementById('assumptions');
+        const assumptionsList = document.getElementById('assumptions-list');
+        if (guidance.assumptions && guidance.assumptions.length > 0) {
+            assumptionsDiv.style.display = 'block';
+            assumptionsList.innerHTML = guidance.assumptions.map(assumption =>
+                `<li>${assumption}</li>`
+            ).join('');
+        } else {
+            assumptionsDiv.style.display = 'none';
+        }
+
+        // Show/hide examples if available
+        const examplesDiv = document.getElementById('examples');
+        const examplesList = document.getElementById('examples-list');
+        if (guidance.examples && guidance.examples.length > 0) {
+            examplesDiv.style.display = 'block';
+            examplesList.innerHTML = guidance.examples.map(example =>
+                `<li>${example}</li>`
+            ).join('');
+        } else {
+            examplesDiv.style.display = 'none';
+        }
+
+        // Update upcoming questions
+        this.updateUpcomingQuestions();
+    }
+
+    updateUpcomingQuestions() {
+        const upcomingDiv = document.getElementById('upcoming-questions');
+        const nextQuestions = this.generateUpcomingQuestions();
+
+        upcomingDiv.innerHTML = nextQuestions.map((q, index) =>
+            `<div class="upcoming-question">
+                <span class="question-number">${index + 1}.</span>
+                <span class="question-preview">${q}</span>
+            </div>`
+        ).join('');
+    }
+
+    generateUpcomingQuestions() {
+        // Generate next 2 potential questions based on current graph state
+        const questions = [];
+
+        if (!this.app.graph?.entities || Object.keys(this.app.graph.entities).every(type =>
+            Object.keys(this.app.graph.entities[type]).length === 0)) {
+            questions.push(
+                "What are the main user roles in your system? (default)",
+                "What are the core features users need? (default)"
+            );
+        } else {
+            questions.push(
+                "How do these components connect to each other? (default)",
+                "What are the key business requirements? (default)"
+            );
+        }
+
+        return questions;
+    }
+
+    generateGuidance(question) {
+        // Generate contextual guidance based on question type and graph state
+        let guidance = {
+            text: '',
+            multipleChoice: [],
+            assumptions: [],
+            examples: []
+        };
+
+        switch (question.type) {
+            case 'initial':
+                guidance.text = "Establish your project foundation. Focus on the core problem and primary purpose.";
+                guidance.examples = [
+                    "Fleet Management System - Manages autonomous delivery robots",
+                    "Healthcare Portal - Connects patients with healthcare providers",
+                    "E-commerce Platform - Online marketplace for artisan goods"
+                ];
+                guidance.assumptions = [
+                    "You understand your target users",
+                    "You've identified the main problem to solve"
+                ];
+                break;
+
+            case 'dependency':
+                guidance.text = "Think about technical components, services, or data this entity needs. Consider direct and indirect dependencies.";
+                guidance.multipleChoice = [
+                    "Database connections",
+                    "External APIs",
+                    "User authentication",
+                    "Real-time communication",
+                    "File storage"
+                ];
+                guidance.assumptions = [
+                    "Dependencies should be clearly defined",
+                    "Each dependency serves a specific purpose"
+                ];
+                break;
+
+            case 'completion':
+                guidance.text = "Provide detailed information about this entity's purpose, functionality, and system integration.";
+                guidance.examples = [
+                    "What data does it handle?",
+                    "What operations can users perform?",
+                    "How does it interact with other components?"
+                ];
+                guidance.assumptions = [
+                    "More detail leads to better system design",
+                    "Clear responsibilities prevent overlap"
+                ];
+                break;
+
+            case 'exploration':
+            default:
+                guidance.text = "Explore different system aspects. Think broadly about functionality, users, technical requirements, and business goals.";
+                guidance.multipleChoice = [
+                    "User management and authentication",
+                    "Data processing and analytics",
+                    "Real-time communication",
+                    "External integrations",
+                    "Mobile and web interfaces"
+                ];
+                guidance.assumptions = [
+                    "Your system serves multiple user types",
+                    "You need data storage and processing capabilities"
+                ];
+                break;
+        }
+
+        return guidance;
+    }
+
+    toggleQuestionExpand() {
+        this.isQuestionExpanded = !this.isQuestionExpanded;
+
+        // Save state to localStorage for persistence
+        localStorage.setItem('discoverExpandQuestion', this.isQuestionExpanded.toString());
+
+        // Update UI
+        const contextDiv = document.getElementById('question-context');
+        const answerGuidanceDiv = document.getElementById('answer-guidance');
+        const expandIcon = document.querySelector('.expand-icon');
+
+        if (this.isQuestionExpanded) {
+            contextDiv.classList.remove('collapsed');
+            contextDiv.classList.add('expanded');
+            answerGuidanceDiv.classList.remove('collapsed');
+            answerGuidanceDiv.classList.add('expanded');
+            expandIcon.textContent = '▼';
+        } else {
+            contextDiv.classList.remove('expanded');
+            contextDiv.classList.add('collapsed');
+            answerGuidanceDiv.classList.remove('expanded');
+            answerGuidanceDiv.classList.add('collapsed');
+            expandIcon.textContent = '▶';
+        }
     }
 
     displayGaps(gaps) {
@@ -289,6 +551,9 @@ class DiscoverPhase {
     }
 
     async acceptAllEntities() {
+        // Save Q&A session first
+        await this.saveQASession();
+
         for (const entity of this.extractedEntities) {
             await this.addEntityToGraph(entity);
         }
@@ -304,6 +569,25 @@ class DiscoverPhase {
 
         // Generate next question
         await this.generateNextQuestion();
+    }
+
+    async saveQASession() {
+        const answer = document.getElementById('user-answer').value;
+        if (!answer || !this.currentQuestion) return;
+
+        try {
+            await fetch(`${this.app.apiBase}/discover/save-qa`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    question: this.currentQuestion,
+                    answer: answer,
+                    entities: this.extractedEntities
+                })
+            });
+        } catch (error) {
+            console.error('Failed to save Q&A session:', error);
+        }
     }
 
     async addEntityToGraph(entity) {
