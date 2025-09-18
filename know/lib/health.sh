@@ -175,8 +175,11 @@ check_graph_health() {
     echo "📈 GRAPH HEALTH SUMMARY:"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-    local total_entities=$(jq -r '.entities | to_entries | map(.value | length) | add' "$graph_file")
-    local total_deps=$(jq -r '.graph | to_entries | map(.value.depends_on | length) | add' "$graph_file")
+    # Use query-graph stats to get totals
+    local QUERY_GRAPH="${JSON_GRAPH_QUERY:-$(dirname "$0")/query-graph.sh}"
+    local stats_output=$("$QUERY_GRAPH" stats 2>/dev/null)
+    local total_entities=$(echo "$stats_output" | grep "Total entities:" | grep -o '[0-9]*' || echo 0)
+    local total_deps=$(echo "$stats_output" | grep "Total dependencies:" | grep -o '[0-9]*' || echo 0)
 
     echo "   📊 Total entities: $total_entities"
     echo "   📊 Total dependencies: $total_deps"

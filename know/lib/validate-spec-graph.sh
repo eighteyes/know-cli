@@ -3,11 +3,15 @@
 # Spec Graph Validator
 # Validates the structure and integrity of spec-graph.json
 
-set -euo pipefail
+set -uo pipefail
 
 GRAPH_FILE="${1:-.ai/spec-graph.json}"
 ERRORS=0
 WARNINGS=0
+
+# Define paths to graph tools
+MOD_GRAPH="${MOD_GRAPH:-$(dirname "$0")/mod-graph.sh}"
+QUERY_GRAPH="${JSON_GRAPH_QUERY:-$(dirname "$0")/query-graph.sh}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -36,6 +40,7 @@ info() {
 # Check if file exists
 if [[ ! -f "$GRAPH_FILE" ]]; then
     error "Graph file not found: $GRAPH_FILE"
+    echo -e "${RED}Cannot continue without graph file${NC}" >&2
     exit 1
 fi
 
@@ -43,7 +48,8 @@ info "Validating $GRAPH_FILE"
 
 # 1. Validate JSON syntax
 if ! jq empty "$GRAPH_FILE" 2>/dev/null; then
-    error "Invalid JSON syntax"
+    error "Invalid JSON syntax - cannot parse file for further validation"
+    echo -e "${RED}Cannot continue with invalid JSON${NC}" >&2
     exit 1
 fi
 success "JSON syntax valid"
@@ -78,12 +84,11 @@ fi
 
 # 4. Check entity structure (grouped by type)
 info "Checking entity structure..."
+# Get entity types directly from the JSON - mod-graph doesn't have list-types
 entity_types=$(jq -r '.entities | keys[]' "$GRAPH_FILE" 2>/dev/null)
 for type in $entity_types; do
-    if ! jq -e ".entities.$type | type == \"object\"" "$GRAPH_FILE" >/dev/null 2>&1; then
-        error "Entity type '$type' is not an object"
-    else
-        entity_count=$(jq ".entities.$type | length" "$GRAPH_FILE" 2>/dev/null)
+    entity_count=$(jq ".entities.$type | length" "$GRAPH_FILE" 2>/dev/null)
+    if [[ $entity_count -gt 0 ]]; then
         success "Entity type '$type' contains $entity_count entities"
     fi
 done
@@ -134,24 +139,24 @@ info "Checking graph edge integrity..."
 # Check each edge references valid nodes (entities or references)
 invalid_edges=0
 # Graph is structured as { "node_id": { "depends_on": [...] } }
-jq -r '.graph | to_entries[] | .key as $from | .value.depends_on[]? | $from + "|" + .' "$GRAPH_FILE" 2>/dev/null | while IFS='|' read -r from to; do
+while IFS='|' read -r from to; do
     if ! echo "$all_nodes" | grep -q "^$from$"; then
         error "Graph source references non-existent node: $from"
-        ((invalid_edges++))
+        ((invalid_edges++)) || true
     fi
     if ! echo "$all_nodes" | grep -q "^$to$"; then
         error "Graph edge references non-existent node: $from -> $to"
-        ((invalid_edges++))
+        ((invalid_edges++)) || true
     fi
-done
+done < <(jq -r '.graph | to_entries[] | .key as $from | .value.depends_on[]? | $from + "|" + .' "$GRAPH_FILE" 2>/dev/null)
 
 # Also check that all nodes in graph exist in entities or references
-jq -r '.graph | keys[]' "$GRAPH_FILE" 2>/dev/null | while read -r node; do
+while read -r node; do
     if ! echo "$all_nodes" | grep -q "^$node$"; then
         error "Graph contains node not in entities or references: $node"
-        ((invalid_edges++))
+        ((invalid_edges++)) || true
     fi
-done
+done < <(jq -r '.graph | keys[]' "$GRAPH_FILE" 2>/dev/null)
 
 if [[ $invalid_edges -eq 0 ]]; then
     success "All graph edges reference valid nodes"
@@ -186,11 +191,11 @@ fi
 # 9. Validate phase references
 info "Checking phase requirement references..."
 if jq -e '.meta.project.phases' "$GRAPH_FILE" >/dev/null 2>&1; then
-    jq -r '.meta.project.phases[].requirements[]' "$GRAPH_FILE" 2>/dev/null | while read -r req; do
+    while read -r req; do
         if ! echo "$all_nodes" | grep -q "^$req$"; then
             error "Phase references non-existent node: $req"
         fi
-    done
+    done < <(jq -r '.meta.project.phases[].requirements[]' "$GRAPH_FILE" 2>/dev/null || true)
 fi
 
 # 10. Check for duplicate IDs in references
@@ -209,7 +214,7 @@ info "Checking required fields by entity type..."
 entity_types=$(jq -r '.entities | keys[]' "$GRAPH_FILE" 2>/dev/null)
 for entity_type in $entity_types; do
     if jq -e ".entities.$entity_type" "$GRAPH_FILE" >/dev/null 2>&1; then
-        jq -r ".entities.$entity_type | keys[]" "$GRAPH_FILE" 2>/dev/null | while read -r entity_name; do
+        while read -r entity_name; do
             # Build entity ID with proper singular/plural handling
             if [[ "$entity_type" == "interfaces" ]]; then
                 entity_id="interface:$entity_name"
@@ -226,7 +231,7 @@ for entity_type in $entity_types; do
             if ! jq -e ".entities.$entity_type[\"$entity_name\"] | has(\"description\")" "$GRAPH_FILE" >/dev/null 2>&1; then
                 warning "Entity missing 'description' field: $entity_id"
             fi
-        done
+        done < <(jq -r ".entities.$entity_type | keys[]" "$GRAPH_FILE" 2>/dev/null || true)
     fi
 done
 
@@ -258,7 +263,7 @@ if [[ -f "$DEPENDENCY_RULES_FILE" ]]; then
     invalid_deps=0
 
     # Check each edge against allowed dependencies
-    jq -r '.graph | to_entries[] | .key as $from | .value.depends_on[]? | $from + "|" + .' "$GRAPH_FILE" 2>/dev/null | while IFS='|' read -r from_node to_node; do
+    while IFS='|' read -r from_node to_node; do
         # Extract type from node (e.g., "user:owner" -> "user")
         from_type=$(echo "$from_node" | cut -d: -f1)
         to_type=$(echo "$to_node" | cut -d: -f1)
@@ -304,7 +309,7 @@ if [[ -f "$DEPENDENCY_RULES_FILE" ]]; then
             fi
         fi
         # If to_node is a reference, allow the dependency (no check needed)
-    done
+    done < <(jq -r '.graph | to_entries[] | .key as $from | .value.depends_on[]? | $from + "|" + .' "$GRAPH_FILE" 2>/dev/null || true)
 
     if [[ $invalid_deps -eq 0 ]]; then
         success "All dependencies follow the allowed patterns"
@@ -328,9 +333,11 @@ if [[ $WARNINGS -gt 0 ]]; then
     echo -e "${YELLOW}⚠ Found $WARNINGS warnings${NC}"
 fi
 
-# Statistics
-total_entities=$(jq '[.entities | to_entries[] | .value | keys[]] | length' "$GRAPH_FILE" 2>/dev/null || echo 0)
-total_edges=$(jq '[.graph | to_entries[] | .value.depends_on[]?] | length' "$GRAPH_FILE" 2>/dev/null || echo 0)
+# Statistics - Use query-graph where possible
+stats_output=$("$QUERY_GRAPH" stats 2>/dev/null)
+total_entities=$(echo "$stats_output" | grep "Total entities:" | sed 's/.*: //' | grep -o '[0-9]*' | head -1 || echo 0)
+total_edges=$(echo "$stats_output" | grep "Total dependencies:" | sed 's/.*: //' | grep -o '[0-9]*' | head -1 || echo 0)
+# References and graph nodes still need direct JQ as they're not in graph scripts
 total_refs=$(jq '.references | length' "$GRAPH_FILE" 2>/dev/null || echo 0)
 total_graph_nodes=$(jq '.graph | length' "$GRAPH_FILE" 2>/dev/null || echo 0)
 

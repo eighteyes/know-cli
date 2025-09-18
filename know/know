@@ -107,13 +107,9 @@ GAP ANALYSIS:
     know gap-analyze-all                  Analyze all users and objectives
     know gap-summary                      Show gap analysis summary
     know gap-report [format]              Generate comprehensive gap report
-    know gap-qa                           Interactive full chain builder
-    know chain-builder                    Create complete implementation chains
     know gap-score <entity_id>            Get completeness score for entity
 
 WORKFLOWS & AUTOMATION:
-    know create-feature                   Interactive feature creation
-    know complete <entity_ref>            Interactive gap completion
     know implementation-chain <entity_ref> Create full implementation plan
     know priorities                       Show implementation priorities
     know completeness [entity_type]       Show completeness scores
@@ -122,13 +118,21 @@ WORKFLOWS & AUTOMATION:
     know package <entity_id>             Complete implementation package
     know test <entity_ref>               Generate test scenarios
 
+INTERACTIVE WORKFLOWS:
+    know create <entity_type>            Interactive entity creation wizard
+    know complete <entity_ref>            Interactive gap completion
+    know chain-builder                   Interactive full chain builder (User→Objectives→Features→Actions→Components)
+    know repair --interactive            Interactive repair wizard
+    know connect-references interactive  Interactive FZF reference connector
+    know phases prioritize               Interactive phase management
+
 GRAPH MANAGEMENT:
     know mod <command> [args...]          Modify graph (add, edit, connect entities)
     know query <command> [args...]        Query graph (traverse, stats, paths)
     know component-map <cmd> [args...]    Map components to interfaces
 
 MAINTENANCE & HEALTH:
-    know health                           Comprehensive graph health check
+    know health [verbose]                 Comprehensive health check (all validations)
     know repair [mode]                    Fix graph issues (interactive/auto/hanging/orphans/missing/self-deps/cycles)
     know repair --interactive             Interactive repair wizard
     know repair --auto                    Automatically fix all issues
@@ -176,6 +180,11 @@ COMMON WORKFLOWS:
     # Generation workflow
     know component fleet-status-map       # Generate ready specifications
     know package teleoperation-interface # Create complete implementation package
+
+    # Interactive workflow
+    know create feature                   # Interactive feature creation wizard
+    know complete feature:auth            # Interactive gap fixing
+    know repair --interactive            # Guided repair process
 
 ENTITY REFERENCE FORMAT:
     <type>:<id>                           Full reference (feature:real-time-telemetry)
@@ -522,7 +531,8 @@ Then retry specification generation."
             local format="${1:-text}"
             "$LIB_DIR/gap-reporter.sh" "$format"
             ;;
-        gap-qa|chain-builder)
+        chain-builder|gap-qa)
+            # gap-qa is kept for backward compatibility but not advertised
             "$GENERATOR_DIR/full-chain-qa.sh"
             ;;
         gap-score)
@@ -554,7 +564,29 @@ Then retry specification generation."
         completion)
             generate_completion
             ;;
+        create)
+            # Interactive entity creation - generalized
+            local entity_type="${1:-feature}"
+            case "$entity_type" in
+                feature|features)
+                    create_feature_interactive
+                    ;;
+                component|components)
+                    echo "Component creation wizard not yet implemented"
+                    echo "Use: know mod add components <id> <name>"
+                    ;;
+                screen|screens)
+                    echo "Screen creation wizard not yet implemented"
+                    echo "Use: know mod add screens <id> <name>"
+                    ;;
+                *)
+                    echo "Interactive creation not yet available for: $entity_type"
+                    echo "Use: know mod add $entity_type <id> <name>"
+                    ;;
+            esac
+            ;;
         create-feature)
+            # Legacy support - redirect to create feature
             create_feature_interactive
             ;;
         complete)
@@ -571,13 +603,8 @@ Then retry specification generation."
             show_implementation_priorities "$OUTPUT_FORMAT"
             ;;
         mod)
-            # Forward to enhanced mod-graph with rule validation
-            if [[ "${1:-}" == "connect" ]]; then
-                shift
-                "$LIB_DIR/mod-graph-enhanced.sh" connect "$@"
-            else
-                exec "$LIB_DIR/mod-graph.sh" "$@"
-            fi
+            # Forward to mod-graph.sh (has built-in rule validation)
+            exec "$LIB_DIR/mod-graph.sh" "$@"
             ;;
         query)
             # Forward to query-graph.sh in know/lib
@@ -588,8 +615,14 @@ Then retry specification generation."
             exec "$LIB_DIR/component-map.sh" "$@"
             ;;
         health)
-            # Comprehensive health check
-            check_graph_health "$KNOWLEDGE_MAP"
+            # Comprehensive health check that integrates all validation tools
+            if [[ -f "$LIB_DIR/health-comprehensive.sh" ]]; then
+                source "$LIB_DIR/health-comprehensive.sh"
+                comprehensive_health_check "$KNOWLEDGE_MAP" "${2:-false}"
+            else
+                # Fallback to original structural health check
+                check_graph_health "$KNOWLEDGE_MAP"
+            fi
             ;;
         repair)
             # Graph repair functionality

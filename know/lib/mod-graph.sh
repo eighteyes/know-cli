@@ -5,7 +5,10 @@
 
 set -e
 
+# Configuration
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 KNOWLEDGE_MAP_FILE="${KNOWLEDGE_MAP:-./.ai/spec-graph.json}"
+DEPENDENCY_RULES="${DEPENDENCY_RULES:-$SCRIPT_DIR/dependency-rules.json}"
 TEMP_FILE="/tmp/km_temp.json"
 BACKUP_DIR=".backup-temp"
 
@@ -56,6 +59,7 @@ show_usage() {
     echo "  disconnect <from> <to>   Remove dependency"
     echo "  deps <entity>            Show dependencies for entity"
     echo "  dependents <entity>      Show what depends on entity"
+    echo "  allowed <entity>         Show allowed connections for entity type"
     echo "  resolve-cycles           Fix circular dependencies using canonical flow"
     echo "  validate                 Validate graph structure"
     echo
@@ -74,30 +78,8 @@ show_usage() {
 }
 
 get_entity_types() {
-    # Load from dependency rules if available
-    local rules_file="${LIB_DIR:-$(dirname "${BASH_SOURCE[0]}")}/dependency-rules.json"
-    if [[ -f "$rules_file" ]]; then
-        # Get all unique entity types from allowed_dependencies
-        jq -r '[
-            .allowed_dependencies | keys[],
-            (.allowed_dependencies | .[] | .[])
-        ] | unique | .[]' "$rules_file" 2>/dev/null | while read -r type; do
-            # Add plural form for consistency
-            case "$type" in
-                user) echo "users" ;;
-                component) echo "components" ;;
-                feature) echo "features" ;;
-                action) echo "actions" ;;
-                interface) echo "interfaces" ;;
-                requirement) echo "requirements" ;;
-                objective) echo "objectives" ;;
-                *) echo "${type}s" ;;
-            esac
-        done | sort -u
-    else
-        # Fallback to knowledge map
-        jq -r '.entities | keys[]' "$KNOWLEDGE_MAP_FILE" 2>/dev/null
-    fi
+    # Simply get entity types from the knowledge map
+    jq -r '.entities | keys[]' "$KNOWLEDGE_MAP_FILE" 2>/dev/null
 }
 
 list_entities() {
@@ -358,24 +340,102 @@ show_entity() {
     fi
 }
 
+validate_dependency() {
+    local from="$1" to="$2"
+
+    # If no dependency rules file exists, allow all connections (backward compatibility)
+    if [[ ! -f "$DEPENDENCY_RULES" ]]; then
+        return 0
+    fi
+
+    # Extract entity types
+    local from_type="${from%%:*}"
+    local to_type="${to%%:*}"
+
+    # Map singular to plural forms for consistency with dependency rules
+    case "$from_type" in
+        user) from_type="users" ;;
+        objective) from_type="objectives" ;;
+        feature) from_type="features" ;;
+        action) from_type="actions" ;;
+        component) from_type="components" ;;
+        interface) from_type="interfaces" ;;
+        requirement) from_type="requirements" ;;
+    esac
+
+    case "$to_type" in
+        user) to_type="users" ;;
+        objective) to_type="objectives" ;;
+        feature) to_type="features" ;;
+        action) to_type="actions" ;;
+        component) to_type="components" ;;
+        interface) to_type="interfaces" ;;
+        requirement) to_type="requirements" ;;
+    esac
+
+    # Check if this connection is allowed according to dependency rules
+    local allowed=$(jq -r ".allowed_dependencies.\"$from_type\"[]? // empty" "$DEPENDENCY_RULES" 2>/dev/null)
+
+    # If from_type not in rules, check if it's a valid entity type
+    if [[ -z "$allowed" ]]; then
+        # Check if it's a reference type (references can be depended upon but don't have dependencies)
+        if jq -e ".reference_descriptions.\"$from_type\"" "$DEPENDENCY_RULES" > /dev/null 2>&1; then
+            echo -e "${RED}✗ Reference nodes cannot have dependencies: $from_type${NC}"
+            echo -e "${YELLOW}References are terminal nodes that can be depended upon but don't depend on anything${NC}"
+            return 1
+        fi
+
+        echo -e "${YELLOW}⚠ Warning: No dependency rules defined for type: $from_type${NC}"
+        return 0
+    fi
+
+    # Check if to_type is in allowed dependencies
+    for allowed_type in $allowed; do
+        if [[ "$to_type" == "$allowed_type" ]] || [[ "$allowed_type" == "$to_type"* ]]; then
+            return 0
+        fi
+    done
+
+    # Check if to_type is a reference (references can always be depended upon)
+    if jq -e ".reference_descriptions.\"$to_type\"" "$DEPENDENCY_RULES" > /dev/null 2>&1; then
+        return 0
+    fi
+
+    echo -e "${RED}✗ Invalid dependency: $from_type cannot depend on $to_type${NC}"
+    echo -e "${YELLOW}Allowed dependencies for $from_type: $allowed${NC}"
+    echo -e "${CYAN}See dependency rules in: $DEPENDENCY_RULES${NC}"
+    return 1
+}
+
 connect_entities() {
     local from="$1" to="$2"
     
     if [[ -z "$from" || -z "$to" ]]; then
         echo -e "${RED}✗ Usage: connect <from> <to>${NC}"
-        echo -e "${YELLOW}Example: connect user:owner feature:real-time-telemetry${NC}"
+        echo -e "${YELLOW}Example: connect user:owner objective:fleet-management${NC}"
         return 1
     fi
-    
+
+    # Validate against dependency rules
+    if ! validate_dependency "$from" "$to"; then
+        return 1
+    fi
+
     # Validate entities exist in graph
     if ! jq -e ".graph.\"$from\"" "$KNOWLEDGE_MAP_FILE" > /dev/null 2>&1; then
-        echo -e "${RED}✗ Source entity not found: $from${NC}"
+        echo -e "${RED}✗ Source entity not found in graph: $from${NC}"
+        echo -e "${YELLOW}Note: Entity must exist in graph before adding dependencies${NC}"
         return 1
     fi
-    
+
+    # Allow connecting to references that may not be in graph
+    local to_type="${to%%:*}"
     if ! jq -e ".graph.\"$to\"" "$KNOWLEDGE_MAP_FILE" > /dev/null 2>&1; then
-        echo -e "${RED}✗ Target entity not found: $to${NC}"
-        return 1
+        # Check if it's a valid reference type
+        if ! jq -e ".reference_descriptions.\"$to_type\"" "$DEPENDENCY_RULES" > /dev/null 2>&1; then
+            echo -e "${RED}✗ Target entity not found: $to${NC}"
+            return 1
+        fi
     fi
     
     backup
@@ -478,6 +538,56 @@ validate_graph() {
     echo -e "${GREEN}✓ Validation complete${NC}"
 }
 
+show_allowed_connections() {
+    local entity="$1"
+
+    if [[ -z "$entity" ]]; then
+        echo -e "${RED}✗ Usage: allowed <entity_or_type>${NC}"
+        return 1
+    fi
+
+    # Extract entity type
+    local entity_type="${entity%%:*}"
+
+    # Check if dependency rules exist
+    if [[ ! -f "$DEPENDENCY_RULES" ]]; then
+        echo -e "${YELLOW}⚠ No dependency rules file found at: $DEPENDENCY_RULES${NC}"
+        return 1
+    fi
+
+    echo -e "${CYAN}📋 Allowed connections for type '${entity_type}':${NC}"
+
+    # Show what this type can depend on
+    local allowed_deps=$(jq -r ".allowed_dependencies.\"$entity_type\"[]? // empty" "$DEPENDENCY_RULES" 2>/dev/null)
+    if [[ -n "$allowed_deps" ]]; then
+        echo -e "${GREEN}Can depend on:${NC}"
+        for dep in $allowed_deps; do
+            echo -e "  → ${BLUE}$dep${NC}"
+        done
+    else
+        # Check if it's a reference type
+        if jq -e ".reference_descriptions.\"$entity_type\"" "$DEPENDENCY_RULES" > /dev/null 2>&1; then
+            echo -e "${YELLOW}  ✗ Reference nodes cannot have dependencies${NC}"
+            echo -e "${DIM}  References are terminal nodes (leaf nodes in the graph)${NC}"
+        else
+            echo -e "${YELLOW}  ✗ No dependency rules defined for this type${NC}"
+        fi
+    fi
+
+    # Show what can depend on this type
+    echo -e "\n${GREEN}Can be depended upon by:${NC}"
+    jq -r '.allowed_dependencies | to_entries[] | select(.value[] == "'"$entity_type"'") | .key' "$DEPENDENCY_RULES" 2>/dev/null | while read -r from_type; do
+        echo -e "  ← ${BLUE}$from_type${NC}"
+    done
+
+    # Check if it's a reference that can be depended upon
+    if jq -e ".reference_descriptions.\"$entity_type\"" "$DEPENDENCY_RULES" > /dev/null 2>&1; then
+        local ref_desc=$(jq -r ".reference_descriptions.\"$entity_type\"" "$DEPENDENCY_RULES")
+        echo -e "  ← ${BLUE}Any entity type${NC} (reference node)"
+        echo -e "${DIM}  Description: $ref_desc${NC}"
+    fi
+}
+
 show_stats() {
     echo -e "${PURPLE}📊 Knowledge Graph Statistics${NC}"
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -509,8 +619,8 @@ search_entities() {
     
     for entity_type in $(get_entity_types); do
         local matches=$(jq -r ".entities.$entity_type | to_entries[] | select(.key | test(\"$term\"; \"i\")) | \"$entity_type:\(.key) - \(.value.name // \"No name\")\"" "$KNOWLEDGE_MAP_FILE" 2>/dev/null)
-        local name_matches=$(jq -r ".entities.$entity_type | to_entries[] | select(.value.name // \"\" | test(\"$term\"; \"i\")) | \"$entity_type:\(.key) - \(.value.name // \"No name\")\"" "$KNOWLEDGE_MAP_FILE" 2>/dev/null)
-        
+        local name_matches=$(jq -r ".entities.$entity_type | to_entries[] | select(.value.name | select(. != null) | test(\"$term\"; \"i\")) | \"$entity_type:\(.key) - \(.value.name)\"" "$KNOWLEDGE_MAP_FILE" 2>/dev/null)
+
         if [[ -n "$matches" || -n "$name_matches" ]]; then
             echo -e "${YELLOW}$entity_type:${NC}"
             (echo "$matches"; echo "$name_matches") | sort -u | sed 's/^/  /'
@@ -667,7 +777,12 @@ case "${1:-}" in
         ;;
     "add")
         check_file
-        add_entity "$2" "$3" "$4"
+        if [[ "$2" == "graph-link" ]]; then
+            # Handle "add graph-link" as connect command
+            connect_entities "$3" "$4"
+        else
+            add_entity "$2" "$3" "$4"
+        fi
         ;;
     "set")
         check_file
@@ -692,6 +807,9 @@ case "${1:-}" in
     "deps"|"dependencies")
         check_file
         show_dependencies "$2"
+        ;;
+    "allowed")
+        show_allowed_connections "$2"
         ;;
     "dependents"|"rdeps")
         check_file
