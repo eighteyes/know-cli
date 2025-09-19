@@ -238,18 +238,222 @@ app.post('/api/ai/extract-entities', async (req, res) => {
     try {
         const { text, graph } = req.body;
 
-        // Mock entity extraction for MVP
-        const extracted = {
-            entities: [],
-            references: [],
-            connections: []
-        };
+        // Check if API key is configured
+        if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'your_anthropic_api_key_here' || process.env.ANTHROPIC_API_KEY === 'your_api_key_here') {
+            // Fallback to simple keyword detection
+            const extracted = { entities: [], references: [], connections: [] };
+            const keywords = text.toLowerCase();
 
-        // Simple keyword detection for demo
+            if (keywords.includes('user') || keywords.includes('admin') || keywords.includes('customer')) {
+                extracted.entities.push({
+                    type: 'users',
+                    name: 'primary-user',
+                    description: 'Main system user'
+                });
+            }
+
+            if (keywords.includes('dashboard') || keywords.includes('interface') || keywords.includes('screen')) {
+                extracted.entities.push({
+                    type: 'interfaces',
+                    name: 'main-dashboard',
+                    description: 'Primary user interface'
+                });
+            }
+
+            if (keywords.includes('data') || keywords.includes('database') || keywords.includes('storage')) {
+                extracted.entities.push({
+                    type: 'data-models',
+                    name: 'core-data-model',
+                    description: 'Primary data structure'
+                });
+            }
+
+            if (keywords.includes('api') || keywords.includes('endpoint')) {
+                extracted.references.push({
+                    key: 'api_base_url',
+                    value: '/api/v1'
+                });
+            }
+
+            if (extracted.entities.length > 1) {
+                extracted.connections.push({
+                    from: extracted.entities[0].name,
+                    to: extracted.entities[1].name
+                });
+            }
+
+            return res.json(extracted);
+        }
+
+        // Build comprehensive prompt for entity extraction
+        let prompt = `You are an expert system architect analyzing user responses to extract structured entities and references for a software project graph.
+
+ENTITY TYPES AND DESCRIPTIONS:
+- project: Top-level container representing the entire software project
+- requirements: Functional or non-functional specifications the system must satisfy
+- interfaces: User interface screens and pages in the application
+- features: Distinct functionality or capability provided to users
+- actions: Specific user interactions or system operations
+- components: Reusable building blocks of the system architecture
+- presentation: Visual and layout aspects of user interface components
+- behavior: Logic and state management for component interactions
+- data_models: Structure and schema definitions for data entities
+- users: Actors or roles that interact with the system
+- objectives: High-level goals or outcomes that users want to achieve
+
+REFERENCE CATEGORIES:
+- technical_architecture: Infrastructure components and system architecture
+- endpoints: API endpoint definitions
+- libraries: Code libraries and frameworks
+- protocols: Communication protocols
+- platforms: Platform specifications (cloud, mobile, web)
+- business_logic: Detailed workflows and rules
+- acceptance_criteria: Success criteria for features
+- content: User-facing text, branding, taglines
+- labels: Specific text labels for UI elements
+- styles: CSS styles and visual specifications
+- configuration: Feature toggles, environment configs
+- metrics: Analytics events and KPIs
+- examples: Sample inputs/outputs and test scenarios
+- constraints: Business rules and system invariants
+- terminology: Domain-specific terms and naming conventions
+
+DEPENDENCY RULES:
+- project → [requirements, users]
+- requirements → [interfaces]
+- interfaces → [features]
+- features → [actions]
+- actions → [components]
+- components → [presentation, behavior, data_models, assets]
+- users → [objectives, requirements]
+- objectives → [actions, features]
+
+USER RESPONSE TO ANALYZE:
+"${text}"
+
+EXISTING GRAPH CONTEXT:
+${graph ? JSON.stringify(graph, null, 2) : 'No existing graph provided'}
+
+ANALYSIS INSTRUCTIONS:
+1. Extract meaningful entities mentioned or implied in the user response
+2. Use kebab-case naming (e.g., "user-dashboard", "api-gateway")
+3. Create concise but descriptive entity descriptions
+4. Identify key-value references that would be useful for implementation
+5. Suggest logical connections between entities based on dependency rules
+6. Avoid duplicating entities that already exist in the graph
+7. Focus on extracting 2-5 high-quality entities rather than many low-quality ones
+
+RESPONSE FORMAT:
+Return a JSON object with this exact structure:
+{
+  "entities": [
+    {
+      "type": "entity_type",
+      "name": "kebab-case-name",
+      "description": "Clear description of what this entity represents"
+    }
+  ],
+  "references": [
+    {
+      "category": "reference_category",
+      "key": "kebab-case-key",
+      "value": "actual value or specification"
+    }
+  ],
+  "connections": [
+    {
+      "from": "source-entity-name",
+      "to": "target-entity-name",
+      "reason": "Brief explanation of the relationship"
+    }
+  ]
+}`;
+
+        const message = await anthropic.messages.create({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 1500,
+            messages: [{
+                role: 'user',
+                content: prompt
+            }]
+        });
+
+        // Parse the response
+        const responseText = message.content[0].text;
+        let extractedData;
+
+        try {
+            // Try to extract JSON from the response
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                extractedData = JSON.parse(jsonMatch[0]);
+            } else {
+                throw new Error('No JSON found in response');
+            }
+
+            // Validate and clean the response structure
+            extractedData.entities = extractedData.entities || [];
+            extractedData.references = extractedData.references || [];
+            extractedData.connections = extractedData.connections || [];
+
+            // Clean entity names to ensure kebab-case
+            extractedData.entities = extractedData.entities.map(entity => ({
+                ...entity,
+                name: entity.name ? entity.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : 'unnamed-entity'
+            }));
+
+            // Clean reference keys to ensure kebab-case
+            extractedData.references = extractedData.references.map(ref => ({
+                ...ref,
+                key: ref.key ? ref.key.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : 'unnamed-key'
+            }));
+
+        } catch (parseError) {
+            console.warn('Failed to parse Claude response as JSON, using fallback extraction');
+
+            // Fallback: try to extract entities manually from the response
+            extractedData = { entities: [], references: [], connections: [] };
+
+            const lines = responseText.split('\n');
+            let currentSection = null;
+
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+
+                if (trimmedLine.includes('entities') || trimmedLine.includes('ENTITIES')) {
+                    currentSection = 'entities';
+                } else if (trimmedLine.includes('references') || trimmedLine.includes('REFERENCES')) {
+                    currentSection = 'references';
+                } else if (trimmedLine.includes('connections') || trimmedLine.includes('CONNECTIONS')) {
+                    currentSection = 'connections';
+                } else if (currentSection === 'entities' && trimmedLine.includes(':')) {
+                    // Try to extract entity information
+                    const parts = trimmedLine.split(':');
+                    if (parts.length >= 2) {
+                        const name = parts[0].replace(/[^a-z0-9]+/gi, '-').toLowerCase().replace(/^-+|-+$/g, '');
+                        const description = parts.slice(1).join(':').trim();
+                        if (name && description) {
+                            extractedData.entities.push({
+                                type: 'features', // default type
+                                name: name,
+                                description: description
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        res.json(extractedData);
+    } catch (error) {
+        console.error('Error extracting entities:', error);
+
+        // Final fallback to simple extraction
+        const fallbackExtracted = { entities: [], references: [], connections: [] };
         const keywords = text.toLowerCase();
 
         if (keywords.includes('user') || keywords.includes('admin') || keywords.includes('customer')) {
-            extracted.entities.push({
+            fallbackExtracted.entities.push({
                 type: 'users',
                 name: 'primary-user',
                 description: 'Main system user'
@@ -257,41 +461,14 @@ app.post('/api/ai/extract-entities', async (req, res) => {
         }
 
         if (keywords.includes('dashboard') || keywords.includes('interface') || keywords.includes('screen')) {
-            extracted.entities.push({
+            fallbackExtracted.entities.push({
                 type: 'interfaces',
                 name: 'main-dashboard',
                 description: 'Primary user interface'
             });
         }
 
-        if (keywords.includes('data') || keywords.includes('database') || keywords.includes('storage')) {
-            extracted.entities.push({
-                type: 'data-models',
-                name: 'core-data-model',
-                description: 'Primary data structure'
-            });
-        }
-
-        // Add some references
-        if (keywords.includes('api') || keywords.includes('endpoint')) {
-            extracted.references.push({
-                key: 'api_base_url',
-                value: '/api/v1'
-            });
-        }
-
-        // Suggest connections
-        if (extracted.entities.length > 1) {
-            extracted.connections.push({
-                from: extracted.entities[0].name,
-                to: extracted.entities[1].name
-            });
-        }
-
-        res.json(extracted);
-    } catch (error) {
-        console.error('Error extracting entities:', error);
-        res.status(500).json({ error: 'Failed to extract entities' });
+        res.json(fallbackExtracted);
     }
 });
 
