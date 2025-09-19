@@ -724,33 +724,382 @@ app.post('/api/ai/command', async (req, res) => {
     try {
         const { command, graph } = req.body;
 
-        // Parse command for simple operations
-        const lowerCommand = command.toLowerCase();
+        // Check if API key is configured
+        if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'your_anthropic_api_key_here' || process.env.ANTHROPIC_API_KEY === 'your_api_key_here') {
+            // Enhanced fallback with better pattern matching
+            const lowerCommand = command.toLowerCase();
+            let graphUpdates = null;
+            let message = '';
 
-        let graphUpdates = null;
-        let message = '';
+            // Make a copy of the graph to modify
+            const updatedGraph = JSON.parse(JSON.stringify(graph || { entities: {}, references: {}, graph: [] }));
 
-        // Simple command parsing
-        if (lowerCommand.includes('add user')) {
-            if (!graph.entities.users) graph.entities.users = {};
-            const userName = command.match(/add user (\w+)/i)?.[1] || 'new-user';
-            graph.entities.users[userName] = { description: 'Added via AI command' };
-            graphUpdates = graph;
-            message = `Added user: ${userName}`;
-        } else if (lowerCommand.includes('add feature')) {
-            if (!graph.entities.features) graph.entities.features = {};
-            const featureName = command.match(/add feature (\w+)/i)?.[1] || 'new-feature';
-            graph.entities.features[featureName] = { description: 'Added via AI command' };
-            graphUpdates = graph;
-            message = `Added feature: ${featureName}`;
-        } else {
-            message = 'Command processed. Use "add user [name]" or "add feature [name]" to modify the graph.';
+            // Initialize entities if needed
+            if (!updatedGraph.entities) updatedGraph.entities = {};
+            if (!updatedGraph.references) updatedGraph.references = {};
+            if (!updatedGraph.graph) updatedGraph.graph = [];
+
+            // Parse various command patterns
+            if (lowerCommand.includes('add') || lowerCommand.includes('create')) {
+                // Extract entity type and name
+                let entityType = null;
+                let entityName = null;
+                let description = '';
+
+                // Check for different entity types
+                const entityTypes = ['user', 'feature', 'interface', 'component', 'requirement', 'action', 'objective', 'data-model', 'behavior', 'presentation'];
+                for (const type of entityTypes) {
+                    if (lowerCommand.includes(type)) {
+                        entityType = type + 's'; // pluralize
+                        if (type === 'interface') entityType = 'interfaces';
+                        if (type === 'data-model') entityType = 'data-models';
+
+                        // Try to extract name from command
+                        const patterns = [
+                            new RegExp(`add (?:a |an )?${type}\\s+(?:called |named |for )?([\\w-]+)`, 'i'),
+                            new RegExp(`create (?:a |an )?${type}\\s+(?:called |named |for )?([\\w-]+)`, 'i'),
+                            new RegExp(`add ([\\w-]+)\\s+${type}`, 'i'),
+                            new RegExp(`create ([\\w-]+)\\s+${type}`, 'i')
+                        ];
+
+                        for (const pattern of patterns) {
+                            const match = command.match(pattern);
+                            if (match) {
+                                entityName = match[1].toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                                break;
+                            }
+                        }
+
+                        // Extract description if present
+                        const descMatch = command.match(/(?:for|to|that)\s+(.+?)(?:\.|$)/i);
+                        if (descMatch) {
+                            description = descMatch[1].trim();
+                        } else {
+                            description = `${type.charAt(0).toUpperCase() + type.slice(1)} added via command`;
+                        }
+
+                        break;
+                    }
+                }
+
+                if (entityType && entityName) {
+                    if (!updatedGraph.entities[entityType]) updatedGraph.entities[entityType] = {};
+                    updatedGraph.entities[entityType][entityName] = { description };
+                    graphUpdates = updatedGraph;
+                    message = `Added ${entityType.slice(0, -1)}: ${entityName}`;
+                } else if (entityType) {
+                    // Default name if couldn't extract
+                    entityName = `new-${entityType.slice(0, -1)}-${Date.now() % 1000}`;
+                    if (!updatedGraph.entities[entityType]) updatedGraph.entities[entityType] = {};
+                    updatedGraph.entities[entityType][entityName] = { description: description || 'Added via command' };
+                    graphUpdates = updatedGraph;
+                    message = `Added ${entityType.slice(0, -1)}: ${entityName}`;
+                }
+            } else if (lowerCommand.includes('remove') || lowerCommand.includes('delete')) {
+                // Handle removal
+                const entityTypes = Object.keys(updatedGraph.entities);
+                let removed = false;
+
+                for (const entityType of entityTypes) {
+                    const entities = Object.keys(updatedGraph.entities[entityType] || {});
+                    for (const entityName of entities) {
+                        if (lowerCommand.includes(entityName)) {
+                            delete updatedGraph.entities[entityType][entityName];
+
+                            // Remove from graph connections
+                            updatedGraph.graph = updatedGraph.graph.filter(
+                                conn => conn.from !== `${entityType}:${entityName}` &&
+                                       conn.to !== `${entityType}:${entityName}`
+                            );
+
+                            graphUpdates = updatedGraph;
+                            message = `Removed ${entityType.slice(0, -1)}: ${entityName}`;
+                            removed = true;
+                            break;
+                        }
+                    }
+                    if (removed) break;
+                }
+
+                if (!removed) {
+                    message = 'Could not find entity to remove. Please specify an existing entity name.';
+                }
+            } else if (lowerCommand.includes('connect') || lowerCommand.includes('link')) {
+                // Handle connections
+                const words = command.toLowerCase().split(/\s+/);
+                let fromEntity = null;
+                let toEntity = null;
+
+                // Find entities in the command
+                for (const entityType of Object.keys(updatedGraph.entities)) {
+                    for (const entityName of Object.keys(updatedGraph.entities[entityType])) {
+                        if (words.includes(entityName)) {
+                            if (!fromEntity) {
+                                fromEntity = `${entityType}:${entityName}`;
+                            } else if (!toEntity) {
+                                toEntity = `${entityType}:${entityName}`;
+                            }
+                        }
+                    }
+                }
+
+                if (fromEntity && toEntity) {
+                    updatedGraph.graph.push({ from: fromEntity, to: toEntity });
+                    graphUpdates = updatedGraph;
+                    message = `Connected ${fromEntity} to ${toEntity}`;
+                } else {
+                    message = 'Could not identify entities to connect. Please specify two existing entities.';
+                }
+            } else {
+                message = 'Command not understood. Try: "add feature user-auth", "remove unused-component", "connect user-dashboard to api-gateway"';
+            }
+
+            return res.json({ graphUpdates, message });
         }
 
-        res.json({ graphUpdates, message });
+        // Build comprehensive prompt for intelligent command parsing
+        const prompt = `You are an expert at understanding natural language commands for modifying a software project graph structure.
+
+ENTITY TYPES (use exact type names):
+- project: Top-level container
+- requirements: Functional/non-functional specifications
+- interfaces: UI screens and pages
+- features: Distinct functionality
+- actions: User interactions or operations
+- components: Reusable building blocks
+- presentation: Visual UI aspects
+- behavior: Logic and state management
+- data-models: Data structures and schemas
+- users: System actors and roles
+- objectives: High-level goals
+
+CURRENT GRAPH STRUCTURE:
+${JSON.stringify(graph, null, 2)}
+
+USER COMMAND:
+"${command}"
+
+ANALYSIS INSTRUCTIONS:
+1. Parse the natural language command to understand the intended operation
+2. Identify the operation type: add, remove, modify, connect, disconnect
+3. Extract entity types and names (use kebab-case for names)
+4. Generate appropriate descriptions for new entities
+5. Validate operations against the dependency rules
+6. Handle bulk operations if multiple entities are mentioned
+7. For connections, ensure both entities exist or create them if needed
+
+DEPENDENCY RULES:
+- project → [requirements, users]
+- requirements → [interfaces]
+- interfaces → [features]
+- features → [actions]
+- actions → [components]
+- components → [presentation, behavior, data-models]
+- users → [objectives, requirements]
+- objectives → [actions, features]
+
+OPERATIONS TO SUPPORT:
+- Add/Create: "add a user authentication feature", "create admin dashboard interface"
+- Remove/Delete: "remove unused components", "delete old-api feature"
+- Connect/Link: "connect user-dashboard to api-gateway", "link authentication to user-management"
+- Modify/Update: "rename user-dashboard to admin-panel", "update description of auth-feature"
+- Bulk: "add features: login, logout, and password-reset"
+
+RESPONSE FORMAT:
+Return a JSON object with this structure:
+{
+  "operations": [
+    {
+      "type": "add|remove|modify|connect",
+      "entityType": "entity type name",
+      "entityName": "kebab-case-name",
+      "description": "entity description (for add)",
+      "from": "source entity (for connect)",
+      "to": "target entity (for connect)",
+      "oldName": "old name (for modify)",
+      "newName": "new name (for modify)"
+    }
+  ],
+  "summary": "Clear explanation of what was done"
+}`;
+
+        const message = await anthropic.messages.create({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 1000,
+            messages: [{
+                role: 'user',
+                content: prompt
+            }]
+        });
+
+        // Parse the response
+        const responseText = message.content[0].text;
+        let commandData;
+
+        try {
+            // Try to extract JSON from the response
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                commandData = JSON.parse(jsonMatch[0]);
+            } else {
+                throw new Error('No JSON found in response');
+            }
+        } catch (parseError) {
+            console.warn('Failed to parse Claude response as JSON, using fallback');
+            // Fallback to simple command parsing
+            return res.json({
+                graphUpdates: null,
+                message: 'Could not parse command. Try simpler commands like "add feature user-auth" or "connect user to dashboard".'
+            });
+        }
+
+        // Apply the operations to the graph
+        let updatedGraph = JSON.parse(JSON.stringify(graph || { entities: {}, references: {}, graph: [] }));
+
+        // Initialize structures if needed
+        if (!updatedGraph.entities) updatedGraph.entities = {};
+        if (!updatedGraph.references) updatedGraph.references = {};
+        if (!updatedGraph.graph) updatedGraph.graph = [];
+
+        let operationMessages = [];
+
+        for (const operation of (commandData.operations || [])) {
+            switch (operation.type) {
+                case 'add':
+                case 'create':
+                    if (operation.entityType && operation.entityName) {
+                        // Ensure entity type exists (pluralize if needed)
+                        let entityType = operation.entityType;
+                        if (!entityType.endsWith('s')) {
+                            if (entityType === 'interface') {
+                                entityType = 'interfaces';
+                            } else if (entityType === 'data-model') {
+                                entityType = 'data-models';
+                            } else {
+                                entityType += 's';
+                            }
+                        }
+
+                        if (!updatedGraph.entities[entityType]) {
+                            updatedGraph.entities[entityType] = {};
+                        }
+
+                        updatedGraph.entities[entityType][operation.entityName] = {
+                            description: operation.description || `${operation.entityType} created via command`
+                        };
+
+                        operationMessages.push(`Added ${operation.entityType}: ${operation.entityName}`);
+                    }
+                    break;
+
+                case 'remove':
+                case 'delete':
+                    if (operation.entityType && operation.entityName) {
+                        let entityType = operation.entityType;
+                        if (!entityType.endsWith('s')) {
+                            if (entityType === 'interface') {
+                                entityType = 'interfaces';
+                            } else if (entityType === 'data-model') {
+                                entityType = 'data-models';
+                            } else {
+                                entityType += 's';
+                            }
+                        }
+
+                        if (updatedGraph.entities[entityType] && updatedGraph.entities[entityType][operation.entityName]) {
+                            delete updatedGraph.entities[entityType][operation.entityName];
+
+                            // Remove related connections
+                            const entityRef = `${entityType}:${operation.entityName}`;
+                            updatedGraph.graph = updatedGraph.graph.filter(
+                                conn => conn.from !== entityRef && conn.to !== entityRef
+                            );
+
+                            operationMessages.push(`Removed ${operation.entityType}: ${operation.entityName}`);
+                        }
+                    }
+                    break;
+
+                case 'connect':
+                case 'link':
+                    if (operation.from && operation.to) {
+                        // Check if connection already exists
+                        const exists = updatedGraph.graph.some(
+                            conn => conn.from === operation.from && conn.to === operation.to
+                        );
+
+                        if (!exists) {
+                            updatedGraph.graph.push({
+                                from: operation.from,
+                                to: operation.to
+                            });
+                            operationMessages.push(`Connected ${operation.from} to ${operation.to}`);
+                        } else {
+                            operationMessages.push(`Connection already exists: ${operation.from} to ${operation.to}`);
+                        }
+                    }
+                    break;
+
+                case 'modify':
+                case 'update':
+                case 'rename':
+                    if (operation.entityType && operation.oldName && operation.newName) {
+                        let entityType = operation.entityType;
+                        if (!entityType.endsWith('s')) {
+                            if (entityType === 'interface') {
+                                entityType = 'interfaces';
+                            } else if (entityType === 'data-model') {
+                                entityType = 'data-models';
+                            } else {
+                                entityType += 's';
+                            }
+                        }
+
+                        if (updatedGraph.entities[entityType] && updatedGraph.entities[entityType][operation.oldName]) {
+                            // Copy the entity with new name
+                            updatedGraph.entities[entityType][operation.newName] = updatedGraph.entities[entityType][operation.oldName];
+
+                            // Update description if provided
+                            if (operation.description) {
+                                updatedGraph.entities[entityType][operation.newName].description = operation.description;
+                            }
+
+                            // Delete old entity
+                            delete updatedGraph.entities[entityType][operation.oldName];
+
+                            // Update connections
+                            const oldRef = `${entityType}:${operation.oldName}`;
+                            const newRef = `${entityType}:${operation.newName}`;
+
+                            updatedGraph.graph = updatedGraph.graph.map(conn => {
+                                if (conn.from === oldRef) conn.from = newRef;
+                                if (conn.to === oldRef) conn.to = newRef;
+                                return conn;
+                            });
+
+                            operationMessages.push(`Renamed ${operation.oldName} to ${operation.newName}`);
+                        }
+                    }
+                    break;
+            }
+        }
+
+        // Prepare response
+        const finalMessage = commandData.summary || operationMessages.join('. ') || 'Command processed but no changes made.';
+
+        res.json({
+            graphUpdates: operationMessages.length > 0 ? updatedGraph : null,
+            message: finalMessage
+        });
+
     } catch (error) {
         console.error('Error processing AI command:', error);
-        res.status(500).json({ error: 'Failed to process command' });
+
+        // Final fallback
+        res.json({
+            graphUpdates: null,
+            message: 'Failed to process command. Try simpler commands like "add feature authentication" or "connect user to dashboard".'
+        });
     }
 });
 
