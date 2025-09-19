@@ -20,6 +20,8 @@
             <select id="graph-file-selector">
                 <option value="">Select Graph File...</option>
             </select>
+            <button id="save-graph-btn" class="graph-action-btn" title="Save changes" style="display:none;">✓</button>
+            <button id="revert-graph-btn" class="graph-action-btn" title="Revert changes" style="display:none;">✕</button>
         </div>
     </div>
 
@@ -148,7 +150,7 @@
                     </div>
 
                     <div class="qa-frontier">
-                        <button id="next-question">Next Question</button>
+                        <button id="next-question" class="qa-control-btn">Next Question</button>
                         <div class="upcoming-questions">
                             <div id="next-question-preview" class="question-preview"></div>
                             <div id="next-next-question-preview" class="question-preview"></div>

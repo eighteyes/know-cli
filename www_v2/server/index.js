@@ -209,27 +209,274 @@ Example format:
 // Expand question with multiple choice and recommendations
 app.post('/api/ai/expand-question', async (req, res) => {
     try {
-        const { question } = req.body;
+        const { question, context, existingQA } = req.body;
 
-        // Mock expanded options for MVP
-        const expanded = {
-            choices: [
-                "Cloud-based solution with auto-scaling",
-                "On-premise deployment for data security",
-                "Hybrid approach with selective cloud services",
-                "Serverless architecture for cost optimization",
-                "Containerized microservices"
-            ],
-            recommendation: "Based on modern practices, a cloud-based solution with auto-scaling would provide the best balance of performance, cost, and maintainability.",
-            tradeoffs: "Cloud solutions offer scalability but may have higher long-term costs. On-premise provides more control but requires more maintenance.",
-            alternatives: "Consider using a Platform-as-a-Service (PaaS) solution to reduce operational overhead while maintaining flexibility.",
-            challenges: "Main challenges include data migration, security compliance, and ensuring minimal downtime during deployment."
-        };
+        // Check if API key is configured
+        if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'your_anthropic_api_key_here' || process.env.ANTHROPIC_API_KEY === 'your_api_key_here') {
+            // Fallback to contextual mock data based on question content
+            const questionLower = question ? question.toLowerCase() : '';
+            let expanded;
 
-        res.json(expanded);
+            if (questionLower.includes('deploy') || questionLower.includes('host') || questionLower.includes('infrastructure')) {
+                expanded = {
+                    choices: [
+                        "Cloud-based solution with auto-scaling",
+                        "On-premise deployment for data security",
+                        "Hybrid approach with selective cloud services",
+                        "Serverless architecture for cost optimization",
+                        "Containerized microservices"
+                    ],
+                    recommendation: "Based on modern practices, a cloud-based solution with auto-scaling would provide the best balance of performance, cost, and maintainability.",
+                    tradeoffs: "Cloud solutions offer scalability but may have higher long-term costs. On-premise provides more control but requires more maintenance.",
+                    alternatives: "Consider using a Platform-as-a-Service (PaaS) solution to reduce operational overhead while maintaining flexibility.",
+                    challenges: "Main challenges include data migration, security compliance, and ensuring minimal downtime during deployment."
+                };
+            } else if (questionLower.includes('database') || questionLower.includes('data') || questionLower.includes('storage')) {
+                expanded = {
+                    choices: [
+                        "Relational database (PostgreSQL/MySQL)",
+                        "NoSQL document store (MongoDB)",
+                        "Time-series database (InfluxDB)",
+                        "Graph database (Neo4j)",
+                        "Multi-model database approach"
+                    ],
+                    recommendation: "For most applications, a relational database like PostgreSQL provides the best balance of features, performance, and ecosystem support.",
+                    tradeoffs: "Relational databases offer ACID compliance but may be less flexible for unstructured data. NoSQL provides flexibility but may lack strong consistency.",
+                    alternatives: "Consider starting with a single database and adding specialized stores as specific needs arise.",
+                    challenges: "Key challenges include data modeling decisions, migration strategies, and ensuring proper backup and recovery procedures."
+                };
+            } else if (questionLower.includes('auth') || questionLower.includes('security') || questionLower.includes('login')) {
+                expanded = {
+                    choices: [
+                        "OAuth 2.0 with third-party providers",
+                        "JWT-based authentication system",
+                        "Session-based authentication",
+                        "Multi-factor authentication (MFA)",
+                        "Single Sign-On (SSO) integration"
+                    ],
+                    recommendation: "Implement OAuth 2.0 with reputable providers (Google, GitHub) for user convenience while maintaining JWT tokens for API authentication.",
+                    tradeoffs: "OAuth reduces development overhead but creates dependency on third parties. Custom auth provides control but requires security expertise.",
+                    alternatives: "Consider passwordless authentication using magic links or WebAuthn for improved user experience.",
+                    challenges: "Main challenges include secure token storage, handling token refresh, and implementing proper session management."
+                };
+            } else {
+                // Generic fallback
+                expanded = {
+                    choices: [
+                        "Industry standard approach",
+                        "Custom solution tailored to needs",
+                        "Open-source framework integration",
+                        "Third-party service integration",
+                        "Hybrid approach combining multiple options"
+                    ],
+                    recommendation: "Start with industry standards and well-established patterns, then customize based on specific requirements.",
+                    tradeoffs: "Standard approaches offer reliability but may lack specific features. Custom solutions provide flexibility but require more development time.",
+                    alternatives: "Evaluate existing solutions thoroughly before building custom implementations.",
+                    challenges: "Balance between time-to-market, maintenance overhead, and feature requirements."
+                };
+            }
+
+            return res.json(expanded);
+        }
+
+        // Build comprehensive prompt for intelligent question expansion
+        let prompt = `You are an expert software architect and product strategist helping to expand a discovery question with intelligent multiple-choice options and analysis.
+
+QUESTION TO EXPAND:
+"${question}"
+
+PROJECT CONTEXT:
+${context ? `Project Context: ${context}` : 'No specific project context provided'}
+
+EXISTING Q&A CONTEXT:
+${existingQA && existingQA.length > 0
+    ? existingQA.map((qa, index) => `Q${index + 1}: ${qa.question}\nA${index + 1}: ${qa.answer}`).join('\n\n')
+    : 'No previous Q&A available'
+}
+
+YOUR TASK:
+Generate 4-6 strategic multiple-choice options that represent different approaches to answering this question. Then provide expert analysis covering:
+
+1. CHOICES: Specific, actionable options that represent different strategic approaches
+2. RECOMMENDATION: Your expert recommendation based on modern best practices
+3. TRADEOFFS: Honest analysis of the pros and cons of different approaches
+4. ALTERNATIVES: Additional approaches or variations to consider
+5. CHALLENGES: Potential obstacles, risks, or implementation difficulties
+
+GUIDELINES:
+- Make choices specific and actionable, not generic
+- Base recommendations on industry best practices and current technology trends
+- Include realistic tradeoffs that acknowledge both benefits and drawbacks
+- Suggest practical alternatives that might work better in certain contexts
+- Identify real challenges teams typically face with each approach
+- Consider the existing project context and previous answers
+- Focus on strategic decisions rather than implementation details
+
+RESPONSE FORMAT:
+Return a JSON object with this exact structure:
+{
+  "choices": [
+    "Specific choice option 1",
+    "Specific choice option 2",
+    "Specific choice option 3",
+    "Specific choice option 4",
+    "Specific choice option 5"
+  ],
+  "recommendation": "Clear recommendation with reasoning based on best practices",
+  "tradeoffs": "Honest analysis of key tradeoffs between the main approaches",
+  "alternatives": "Additional approaches or variations worth considering",
+  "challenges": "Realistic challenges and potential obstacles to implementation"
+}`;
+
+        const message = await anthropic.messages.create({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 1200,
+            messages: [{
+                role: 'user',
+                content: prompt
+            }]
+        });
+
+        // Parse the response
+        const responseText = message.content[0].text;
+        let expandedData;
+
+        try {
+            // Try to extract JSON from the response
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                expandedData = JSON.parse(jsonMatch[0]);
+            } else {
+                throw new Error('No JSON found in response');
+            }
+
+            // Validate and ensure required fields exist
+            expandedData.choices = expandedData.choices || [];
+            expandedData.recommendation = expandedData.recommendation || '';
+            expandedData.tradeoffs = expandedData.tradeoffs || '';
+            expandedData.alternatives = expandedData.alternatives || '';
+            expandedData.challenges = expandedData.challenges || '';
+
+            // Ensure choices is an array and limit to reasonable number
+            if (Array.isArray(expandedData.choices)) {
+                expandedData.choices = expandedData.choices.slice(0, 8); // Max 8 choices
+            } else {
+                expandedData.choices = [];
+            }
+
+        } catch (parseError) {
+            console.warn('Failed to parse Claude response as JSON, using fallback extraction');
+
+            // Fallback: try to extract structured information from the response
+            expandedData = {
+                choices: [],
+                recommendation: '',
+                tradeoffs: '',
+                alternatives: '',
+                challenges: ''
+            };
+
+            const lines = responseText.split('\n');
+            let currentSection = null;
+            let sectionContent = [];
+
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+
+                if (trimmedLine.toLowerCase().includes('choices') || trimmedLine.toLowerCase().includes('options')) {
+                    if (currentSection && sectionContent.length > 0) {
+                        expandedData[currentSection] = sectionContent.join(' ').trim();
+                    }
+                    currentSection = 'choices';
+                    sectionContent = [];
+                } else if (trimmedLine.toLowerCase().includes('recommendation')) {
+                    if (currentSection && sectionContent.length > 0) {
+                        if (currentSection === 'choices') {
+                            expandedData.choices = sectionContent.filter(c => c.trim().length > 0);
+                        } else {
+                            expandedData[currentSection] = sectionContent.join(' ').trim();
+                        }
+                    }
+                    currentSection = 'recommendation';
+                    sectionContent = [];
+                } else if (trimmedLine.toLowerCase().includes('tradeoffs') || trimmedLine.toLowerCase().includes('trade-offs')) {
+                    if (currentSection && sectionContent.length > 0) {
+                        if (currentSection === 'choices') {
+                            expandedData.choices = sectionContent.filter(c => c.trim().length > 0);
+                        } else {
+                            expandedData[currentSection] = sectionContent.join(' ').trim();
+                        }
+                    }
+                    currentSection = 'tradeoffs';
+                    sectionContent = [];
+                } else if (trimmedLine.toLowerCase().includes('alternatives')) {
+                    if (currentSection && sectionContent.length > 0) {
+                        if (currentSection === 'choices') {
+                            expandedData.choices = sectionContent.filter(c => c.trim().length > 0);
+                        } else {
+                            expandedData[currentSection] = sectionContent.join(' ').trim();
+                        }
+                    }
+                    currentSection = 'alternatives';
+                    sectionContent = [];
+                } else if (trimmedLine.toLowerCase().includes('challenges')) {
+                    if (currentSection && sectionContent.length > 0) {
+                        if (currentSection === 'choices') {
+                            expandedData.choices = sectionContent.filter(c => c.trim().length > 0);
+                        } else {
+                            expandedData[currentSection] = sectionContent.join(' ').trim();
+                        }
+                    }
+                    currentSection = 'challenges';
+                    sectionContent = [];
+                } else if (trimmedLine.length > 0 && currentSection) {
+                    // Clean the line and add to current section
+                    const cleanLine = trimmedLine.replace(/^\d+\.\s*/, '').replace(/^-\s*/, '').replace(/^\*\s*/, '');
+                    if (cleanLine.length > 0) {
+                        sectionContent.push(cleanLine);
+                    }
+                }
+            }
+
+            // Handle the last section
+            if (currentSection && sectionContent.length > 0) {
+                if (currentSection === 'choices') {
+                    expandedData.choices = sectionContent.filter(c => c.trim().length > 0);
+                } else {
+                    expandedData[currentSection] = sectionContent.join(' ').trim();
+                }
+            }
+
+            // If we still don't have good data, provide a basic fallback
+            if (expandedData.choices.length === 0) {
+                expandedData.choices = [
+                    "Standard industry approach",
+                    "Custom solution",
+                    "Third-party integration",
+                    "Hybrid approach"
+                ];
+            }
+        }
+
+        res.json(expandedData);
     } catch (error) {
         console.error('Error expanding question:', error);
-        res.status(500).json({ error: 'Failed to expand question' });
+
+        // Final fallback
+        const fallbackExpanded = {
+            choices: [
+                "Industry standard approach",
+                "Custom solution tailored to needs",
+                "Third-party service integration",
+                "Hybrid approach combining options"
+            ],
+            recommendation: "Evaluate standard approaches first, then customize based on specific requirements.",
+            tradeoffs: "Standard solutions offer reliability but may lack specific features. Custom solutions provide flexibility but require more development time.",
+            alternatives: "Consider phased implementation starting with proven solutions.",
+            challenges: "Balance between time-to-market, maintenance overhead, and feature requirements."
+        };
+
+        res.json(fallbackExpanded);
     }
 });
 
