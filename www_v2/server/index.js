@@ -4,9 +4,16 @@ const path = require('path');
 const { exec } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
+require('dotenv').config();
+const Anthropic = require('@anthropic-ai/sdk');
 
 const app = express();
 const PORT = 8880;
+
+// Initialize Anthropic client
+const anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY
+});
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
@@ -74,14 +81,16 @@ app.get('/api/graphs/:filename', async (req, res) => {
 app.post('/api/graphs/save', async (req, res) => {
     try {
         await ensureGraphsDir();
-        const timestamp = Date.now();
-        const filename = `graph-${timestamp}.json`;
+
+        // Extract filename from request body if provided, otherwise generate new one
+        const { filename: providedFilename, ...graphData } = req.body;
+        const filename = providedFilename || `graph-${Date.now()}.json`;
         const filepath = path.join(GRAPHS_DIR, filename);
 
-        await fs.writeFile(filepath, JSON.stringify(req.body, null, 2));
+        await fs.writeFile(filepath, JSON.stringify(graphData, null, 2));
 
         // Also update the main spec-graph.json if it exists
-        await fs.writeFile(AI_SPEC_GRAPH, JSON.stringify(req.body, null, 2));
+        await fs.writeFile(AI_SPEC_GRAPH, JSON.stringify(graphData, null, 2));
 
         res.json({ success: true, filename });
     } catch (error) {
@@ -97,8 +106,94 @@ app.post('/api/ai/generate-questions', async (req, res) => {
     try {
         const { context, existingQA } = req.body;
 
-        // For MVP, return mock questions
-        // In production, this would call Anthropic API
+        // Check if API key is configured
+        if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'your_anthropic_api_key_here' || process.env.ANTHROPIC_API_KEY === 'your_api_key_here') {
+            // Return mock questions if API key not configured
+            const questions = [
+                { number: 1, text: "What is the primary goal of this system?" },
+                { number: 2, text: "Who are the main users of this application?" },
+                { number: 3, text: "What key features are essential for the MVP?" },
+                { number: 4, text: "What are the performance requirements?" },
+                { number: 5, text: "How will users interact with the system?" }
+            ];
+            return res.json({ questions });
+        }
+
+        // Build prompt for question generation
+        let prompt = `You are helping to generate insightful questions for a software project discovery session.
+
+Context: ${context || 'No specific context provided'}
+
+`;
+
+        if (existingQA && existingQA.length > 0) {
+            prompt += `Previous Q&A pairs:\n`;
+            existingQA.forEach((qa, index) => {
+                prompt += `Q${index + 1}: ${qa.question}\nA${index + 1}: ${qa.answer}\n\n`;
+            });
+        }
+
+        prompt += `Generate 5-10 strategic questions that will help uncover important requirements, constraints, and decisions for this project. Each question should:
+1. Be specific and actionable
+2. Build on the context and previous answers
+3. Help clarify technical, business, or user experience aspects
+4. Avoid questions already answered in the previous Q&A
+
+Return the response as a JSON object with a "questions" array containing objects with "number" and "text" fields.
+
+Example format:
+{
+  "questions": [
+    { "number": 1, "text": "What is the primary goal of this system?" },
+    { "number": 2, "text": "Who are the main users of this application?" }
+  ]
+}`;
+
+        const message = await anthropic.messages.create({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 1000,
+            messages: [{
+                role: 'user',
+                content: prompt
+            }]
+        });
+
+        // Parse the response
+        const responseText = message.content[0].text;
+        let questionsData;
+
+        try {
+            // Try to extract JSON from the response
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                questionsData = JSON.parse(jsonMatch[0]);
+            } else {
+                throw new Error('No JSON found in response');
+            }
+        } catch (parseError) {
+            console.warn('Failed to parse Claude response as JSON, using fallback');
+            // Fallback: extract questions manually
+            const lines = responseText.split('\n').filter(line => line.trim());
+            const questions = [];
+            let questionNumber = 1;
+
+            for (const line of lines) {
+                if (line.includes('?') && !line.includes('Example') && !line.includes('format')) {
+                    const cleanText = line.replace(/^\d+\.\s*/, '').replace(/^-\s*/, '').trim();
+                    if (cleanText.length > 10) {
+                        questions.push({ number: questionNumber++, text: cleanText });
+                    }
+                }
+            }
+
+            questionsData = { questions: questions.slice(0, 10) };
+        }
+
+        res.json(questionsData);
+    } catch (error) {
+        console.error('Error generating questions:', error);
+
+        // Fallback to mock questions on error
         const questions = [
             { number: 1, text: "What is the primary goal of this system?" },
             { number: 2, text: "Who are the main users of this application?" },
@@ -107,21 +202,7 @@ app.post('/api/ai/generate-questions', async (req, res) => {
             { number: 5, text: "How will users interact with the system?" }
         ];
 
-        // If we have context, generate more specific questions
-        if (context && context.length > 20) {
-            questions.push(
-                { number: 6, text: "What data needs to be stored and managed?" },
-                { number: 7, text: "What are the security requirements?" },
-                { number: 8, text: "How should the system handle errors?" },
-                { number: 9, text: "What integrations are required?" },
-                { number: 10, text: "What is the expected scale of usage?" }
-            );
-        }
-
         res.json({ questions });
-    } catch (error) {
-        console.error('Error generating questions:', error);
-        res.status(500).json({ error: 'Failed to generate questions' });
     }
 });
 
