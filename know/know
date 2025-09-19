@@ -73,88 +73,56 @@ usage() {
     cat << EOF
 know - Generate implementation specifications from knowledge map
 
-CORE OPERATIONS:
-    know list [entity_type]               List available entities
-    know search <term> [entity_type]     Find entities by name or description
-    know check <type> <entity_id>        Validate entity completeness
-    know check references                Check all reference keys have parent entities
-    know preview <type> <entity_id>      Preview what will be generated
-
-    know feature                          List all features
-    know component                        List all components
-    know screen                           List all screens
-    know functionality                    List all functionality
-    know requirement                      List all requirements
-
+GENERATE SPECIFICATIONS:
     know feature <entity_id>              Generate feature specification
     know component <entity_id>            Generate component specification
     know screen <entity_id>               Generate screen/UI specification
-    know functionality <entity_id>        Generate functionality specification
-    know requirement <entity_id>          Generate requirement specification
-
-ANALYSIS & DEPENDENCIES:
-    know deps <entity_ref>                Show dependency chain
-    know impact <entity_ref>              Show what depends on this entity
-    know gaps <entity_ref>                Show missing information
-    know validate <entity_ref>            Check reference integrity
-    know validate-deps                    Validate dependency chains against rules
-    know validate-graph                   Full graph structure and dependency validation
-    know order                            Show optimal implementation order
-    know blockers                         Show entities blocking implementation
-
-GAP ANALYSIS:
-    know gap-analyze <entity_id>          Analyze implementation gaps for entity
-    know gap-analyze-all                  Analyze all users and objectives
-    know gap-summary                      Show gap analysis summary
-    know gap-report [format]              Generate comprehensive gap report
-    know gap-score <entity_id>            Get completeness score for entity
-
-WORKFLOWS & AUTOMATION:
-    know implementation-chain <entity_ref> Create full implementation plan
-    know priorities                       Show implementation priorities
-    know completeness [entity_type]       Show completeness scores
-    know ready-check <entity_ref>         Implementation readiness check
-    know todo                            Show next actions needed
-    know package <entity_id>             Complete implementation package
+    know package <entity_id>             Generate complete implementation package
     know test <entity_ref>               Generate test scenarios
 
-INTERACTIVE WORKFLOWS:
-    know create <entity_type>            Interactive entity creation wizard
-    know complete <entity_ref>            Interactive gap completion
-    know chain-builder                   Interactive full chain builder (User→Objectives→Features→Actions→Components)
-    know repair --interactive            Interactive repair wizard
-    know connect-references interactive  Interactive FZF reference connector
-    know phases prioritize               Interactive phase management
-
-GRAPH MANAGEMENT:
-    know mod <command> [args...]          Modify graph (add, edit, connect entities)
-    know query <command> [args...]        Query graph (traverse, stats, paths)
-    know component-map <cmd> [args...]    Map components to interfaces
-
-MAINTENANCE & HEALTH:
-    know health [verbose]                 Comprehensive health check (all validations)
-    know repair [mode]                    Fix graph issues (interactive/auto/hanging/orphans/missing/self-deps/cycles)
-    know repair --interactive             Interactive repair wizard
-    know repair --auto                    Automatically fix all issues
-
-DEPENDENCY RULES:
-    know rules                            Show allowed dependency patterns
-    know suggest <entity>                 Suggest valid connections for entity
-    know validate-connection <from> <to>  Check if connection is allowed
-    know connect-references               List orphaned reference keys
-    know connect-references interactive   Interactive FZF tool to connect keys
-    know connect-references batch <ref> <entity>  Batch connect all keys from reference
-
-NAVIGATION & ROUTING:
+GENERATE ARTIFACTS:
     know sitemap                          Generate sitemap with page hierarchy
-    know routes                           Show all pages and API endpoints
+    know routes                           Generate all pages and API endpoints
+    know implementation-chain <entity_ref> Generate full implementation plan
+    know priorities                       Generate implementation priorities
+    know order                            Generate optimal implementation order
+
+BROWSE & DISCOVER:
+    know list [entity_type]               List available entities
+    know search <term> [entity_type]     Find entities by name or description
+    know feature                          List all features
+    know component                        List all components
+    know screen                           List all screens
+
+ANALYZE READINESS:
+    know check <type> <entity_id>        Check if ready to generate
+    know gaps <entity_ref>                Show what's missing before generation
+    know completeness [entity_type]       Show generation readiness scores
+    know ready-check <entity_ref>         Check if ready for implementation
+    know blockers                         Show what's blocking generation
+
+EXPLORE DEPENDENCIES:
+    know deps <entity_ref>                Show dependency chain
+    know impact <entity_ref>              Show what depends on this entity
+    know preview <type> <entity_id>      Preview what will be generated
+    know todo                            Show next actions needed
+
+INTERACTIVE TOOLS:
+    know create <entity_type>            Create entity to generate from
+    know complete <entity_ref>            Fix gaps to enable generation
+    know chain-builder                   Build full implementation chains
+
+GRAPH MAINTENANCE (supports generation):
+    know mod <command> [args...]          Modify graph data
+    know query <command> [args...]        Query graph data
+    know repair [mode]                    Fix issues blocking generation
+    know validate <entity_ref>            Validate before generation
+    know health [verbose]                 Check graph health
 
 PHASE MANAGEMENT:
-    know phases display                   Show current implementation phases
-    know phases restructure               Generate optimal phases from dependencies
-    know phases prioritize                Interactively adjust entity priorities
-    know phases validate                  Check phase dependency validity
-    know phases stats                     Show phase statistics and metrics
+    know phases display                   Show implementation phases
+    know phases restructure               Generate optimal phases
+    know phases stats                     Show phase statistics
 
 OPTIONS:
     --format <md|json|yaml>               Output format (default: md)
@@ -165,26 +133,26 @@ OPTIONS:
     --completion-status                   Check autocomplete status
     --help                                Show this help
 
-COMMON WORKFLOWS:
+EXAMPLES:
 
-    # Discovery workflow
-    know list features                    # Browse available features
-    know search telemetry                 # Find specific entities
-    know check feature real-time-telemetry # Validate before generating
+    # Generate specifications
+    know feature real-time-telemetry      # Generate feature spec
+    know component fleet-status-map       # Generate component spec
+    know package teleoperation-interface  # Generate complete package
 
-    # Analysis workflow
-    know gaps feature:user-auth           # Identify missing information
-    know deps feature:user-auth           # Understand dependencies
-    know implementation-chain feature:user-auth # Plan full implementation
+    # Generate artifacts
+    know sitemap                          # Generate site structure
+    know routes                           # Generate routing table
+    know implementation-chain feature:auth # Generate implementation plan
 
-    # Generation workflow
-    know component fleet-status-map       # Generate ready specifications
-    know package teleoperation-interface # Create complete implementation package
+    # Check before generating
+    know check feature real-time-telemetry # Is it ready to generate?
+    know gaps feature:user-auth           # What's missing?
+    know deps feature:user-auth           # What dependencies needed?
 
-    # Interactive workflow
-    know create feature                   # Interactive feature creation wizard
+    # Fix gaps to enable generation
     know complete feature:auth            # Interactive gap fixing
-    know repair --interactive            # Guided repair process
+    know create feature                   # Create new entity to generate from
 
 ENTITY REFERENCE FORMAT:
     <type>:<id>                           Full reference (feature:real-time-telemetry)
