@@ -67,6 +67,7 @@ source "$LIB_DIR/validation-comprehensive.sh"
 source "$LIB_DIR/workflows.sh"
 source "$LIB_DIR/health.sh"
 source "$LIB_DIR/dynamic-commands.sh"
+source "$LIB_DIR/connect.sh"
 
 # Show usage
 usage() {
@@ -94,12 +95,17 @@ BROWSE & DISCOVER:
     know component                        List all components
     know screen                           List all screens
 
-ANALYZE READINESS:
-    know check <type> <entity_id>        Check if ready to generate
-    know gaps <entity_ref>                Show what's missing before generation
-    know completeness [entity_type]       Show generation readiness scores
-    know ready-check <entity_ref>         Check if ready for implementation
-    know blockers                         Show what's blocking generation
+CONNECTION & HEALTH:
+    know connect --auto                   Auto-connect with summary & approval
+    know connect --auto -y                Skip approval, apply automatically
+    know connect --interactive            Review each connection individually
+    know connect <entity>                 Find potential connections for entity
+    know connect <source> <target>        Connect two specific entities directly
+    know health                          Check overall graph health
+    know health --readiness              Show readiness scores
+    know health --gaps                   Analyze what's missing
+    know health --orphans                List disconnected entities
+    know health <entity>                 Check specific entity readiness
 
 EXPLORE DEPENDENCIES:
     know deps <entity_ref>                Show dependency chain
@@ -107,17 +113,11 @@ EXPLORE DEPENDENCIES:
     know preview <type> <entity_id>      Preview what will be generated
     know todo                            Show next actions needed
 
-INTERACTIVE TOOLS:
-    know create <entity_type>            Create entity to generate from
-    know complete <entity_ref>            Fix gaps to enable generation
-    know chain-builder                   Build full implementation chains
-
-GRAPH MAINTENANCE (supports generation):
+GRAPH MAINTENANCE:
     know mod <command> [args...]          Modify graph data
     know query <command> [args...]        Query graph data
-    know repair [mode]                    Fix issues blocking generation
-    know validate <entity_ref>            Validate before generation
-    know health [verbose]                 Check graph health
+    know repair [mode]                    Fix structural issues
+    know validate <entity_ref>            Validate graph structure
 
 PHASE MANAGEMENT:
     know phases display                   Show implementation phases
@@ -149,6 +149,11 @@ EXAMPLES:
     know check feature real-time-telemetry # Is it ready to generate?
     know gaps feature:user-auth           # What's missing?
     know deps feature:user-auth           # What dependencies needed?
+
+    # Connect entities in the graph
+    know connect --auto                   # Auto-connect by name similarity
+    know connect features:fleet-coordination # Find connections for this feature
+    know connect features:analytics-system actions:export-analytics-report
 
     # Fix gaps to enable generation
     know complete feature:auth            # Interactive gap fixing
@@ -583,13 +588,76 @@ Then retry specification generation."
             exec "$LIB_DIR/component-map.sh" "$@"
             ;;
         health)
-            # Comprehensive health check that integrates all validation tools
-            if [[ -f "$LIB_DIR/health-comprehensive.sh" ]]; then
-                source "$LIB_DIR/health-comprehensive.sh"
-                comprehensive_health_check "$KNOWLEDGE_MAP" "${2:-false}"
+            # Enhanced health command with readiness checks
+            health_command "$@"
+            ;;
+        connect)
+            # Smart connection system
+            # Check if we're on macOS with old Bash (3.x)
+            bash_major="${BASH_VERSION%%.*}"
+            if [[ "$bash_major" == "3" ]] || [[ "$bash_major" -lt 4 ]] 2>/dev/null; then
+                # Use Mac-compatible version
+                case "${1:-}" in
+                    --auto)
+                        echo -e "${BLUE}Using Mac-compatible auto-connector...${NC}"
+                        # Check for -y flag
+                        if [[ "${2:-}" == "-y" ]]; then
+                            "$LIB_DIR/connect-simple.sh" -y
+                        else
+                            "$LIB_DIR/connect-simple.sh"
+                        fi
+                        ;;
+                    --interactive)
+                        echo -e "${BLUE}Interactive connection mode...${NC}"
+                        chmod +x "$LIB_DIR/connect-interactive.sh" 2>/dev/null
+                        "$LIB_DIR/connect-interactive.sh" "${@:2}"
+                        ;;
+                    --help)
+                        echo -e "${GREEN}know connect${NC} - Connect entities in the knowledge graph"
+                        echo
+                        echo "Usage:"
+                        echo "  know connect --auto              # Auto-connect entities"
+                        echo "  know connect --interactive       # Review connections one by one"
+                        echo "  know connect <source> <target>   # Connect two entities"
+                        echo "  know connect <entity>            # Find connections for entity"
+                        ;;
+                    *)
+                        if [[ -n "${1:-}" ]] && [[ -n "${2:-}" ]]; then
+                            # Direct connection
+                            "$LIB_DIR/connect-direct.sh" "$1" "$2"
+                        elif [[ -n "${1:-}" ]]; then
+                            # Find connections (simplified)
+                            "$LIB_DIR/connect-mac.sh" --find "$1"
+                        else
+                            # Show help
+                            echo -e "${GREEN}know connect${NC} - Connect entities in the knowledge graph"
+                            echo
+                            echo "Usage:"
+                            echo "  know connect --auto              # Auto-connect entities"
+                            echo "  know connect <source> <target>   # Connect two entities"
+                            echo "  know connect <entity>            # Find connections for entity"
+                        fi
+                        ;;
+                esac
             else
-                # Fallback to original structural health check
-                check_graph_health "$KNOWLEDGE_MAP"
+                # Bash 4+ - use full version
+                if [[ "${1:-}" == "--auto" ]] && [[ "${2:-}" != "--iterative" ]]; then
+                    # Use simple connector for basic auto mode
+                    echo -e "${BLUE}Using simple auto-connector...${NC}"
+                    if [[ "${2:-}" == "-y" ]]; then
+                        "$LIB_DIR/connect-simple.sh" -y
+                    else
+                        "$LIB_DIR/connect-simple.sh"
+                    fi
+                elif [[ "${1:-}" == "--interactive" ]]; then
+                    # Interactive mode
+                    chmod +x "$LIB_DIR/connect-interactive.sh" 2>/dev/null
+                    "$LIB_DIR/connect-interactive.sh" "${@:2}"
+                else
+                    # Use full connect.sh for specific connections or iterative mode
+                    source "$LIB_DIR/connect.sh"
+                    connect_command "$@"
+                fi
             fi
             ;;
         repair)
