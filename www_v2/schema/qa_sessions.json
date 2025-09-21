@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "QA Sessions Schema",
+  "description": "Schema for qa_sessions stored in graph.meta.qa_sessions",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["question", "answer", "answered", "skipped", "timestamp", "source"],
+    "properties": {
+      "question": {
+        "type": "string",
+        "description": "The question text presented to the user"
+      },
+      "answer": {
+        "type": ["string", "null"],
+        "description": "User's answer to the question (null if skipped)"
+      },
+      "answered": {
+        "type": "boolean",
+        "description": "True if the question was answered"
+      },
+      "skipped": {
+        "type": "boolean",
+        "description": "True if the question was skipped"
+      },
+      "timestamp": {
+        "type": "string",
+        "format": "date-time",
+        "description": "ISO 8601 timestamp when the question was answered or skipped"
+      },
+      "source": {
+        "type": "string",
+        "description": "Source of the question (e.g., 'user', 'ai', 'system')",
+        "default": "user"
+      },
+      "expandedOptions": {
+        "type": ["object", "null"],
+        "description": "Expanded question context and options",
+        "properties": {
+          "recommendations": {
+            "type": "string",
+            "description": "Recommended approaches or best practices"
+          },
+          "multiple_choice": {
+            "type": "array",
+            "description": "Pre-defined answer options",
+            "items": {
+              "type": "string"
+            }
+          },
+          "alternatives": {
+            "type": "string",
+            "description": "Alternative approaches or options to consider"
+          },
+          "tradeoffs": {
+            "type": "string",
+            "description": "Tradeoffs to consider when answering"
+          },
+          "challenges": {
+            "type": "string",
+            "description": "Common challenges or pitfalls to be aware of"
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    [
+      {
+        "question": "What is the primary purpose of your application?",
+        "answer": "A real-time dashboard for monitoring fleet operations",
+        "answered": true,
+        "skipped": false,
+        "timestamp": "2025-01-20T10:30:15Z",
+        "source": "user",
+        "expandedOptions": null
+      },
+      {
+        "question": "What data storage approach will you use?",
+        "answer": "PostgreSQL with Redis caching",
+        "answered": true,
+        "skipped": false,
+        "timestamp": "2025-01-20T10:31:45Z",
+        "source": "ai",
+        "expandedOptions": {
+          "recommendations": "Consider your data volume, query patterns, and consistency requirements",
+          "multiple_choice": [
+            "Relational (PostgreSQL, MySQL)",
+            "NoSQL (MongoDB, DynamoDB)",
+            "Time-series (InfluxDB, TimescaleDB)",
+            "Hybrid approach"
+          ],
+          "alternatives": "You could also consider managed services like AWS RDS or Google Cloud SQL",
+          "tradeoffs": "Relational databases offer consistency but may require more scaling effort",
+          "challenges": "Real-time data ingestion at scale can be challenging with traditional databases"
+        }
+      },
+      {
+        "question": "Who are the main users of this system?",
+        "answer": null,
+        "answered": false,
+        "skipped": true,
+        "timestamp": "2025-01-20T10:32:00Z",
+        "source": "user",
+        "expandedOptions": null
+      }
+    ]
+  ]
+}

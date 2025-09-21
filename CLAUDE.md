@@ -42,6 +42,9 @@ Query: !`./know/lib/query-graph.sh -h`
 Modify: !`./know/lib/mod-graph.sh -h`
 Know Tool: !`./know/know`
 
+# WWW_v2 Map
+@www_v2/ASTDOM_MAP.md
+
 # Work Notes
 DO NOT ADD FEATURES without approval. 
 Double check with me about graph schema changes, be precise. 

@@ -26,7 +26,8 @@
     </div>
 
     <div id="ai-bar" class="ai-bar hidden">
-        <input type="text" id="ai-input" placeholder="AI Assistant: Enter commands or modifications...">
+        <input type="text" id="ai-input" placeholder="AI: Commands: 'mock' for test questions | 'new' for fresh questions | 'add [type] [name]' for modifications | any text for prioritized questions">
+        <button id="ai-submit" class="submit-btn">Submit</button>
     </div>
 
     <div class="sidebar-toggle hidden" id="sidebar-toggle">◀</div>
@@ -106,12 +107,18 @@
             <div class="qa-container">
                 <div class="qa-section">
                     <div class="qa-input">
+                        <div id="batch-progress" class="batch-progress">
+                            <div class="batch-bullet" data-position="1"></div>
+                            <div class="batch-bullet" data-position="2"></div>
+                            <div class="batch-bullet" data-position="3"></div>
+                        </div>
                         <h3 id="current-question">Question #1: <span id="question-text"></span></h3>
                         <textarea id="answer-input" placeholder="Enter your answer..." rows="4"></textarea>
                     </div>
 
                     <div class="qa-controls">
-                        <button id="submit-answer">Submit</button>
+                        <button id="submit-answer">Answer</button>
+                        <button id="skip-question">Skip</button>
                         <button id="expand-toggle" class="toggle-btn">Expand Options ▼</button>
 
                         <div id="expand-options" class="expand-options hidden">
@@ -140,12 +147,20 @@
 
                     <div id="extraction-choices" class="extraction-choices hidden">
                         <div class="detections">
-                            <h4>Entities/References Detected:</h4>
+                            <h4>Modifications:</h4>
                             <ul id="detections-list"></ul>
                         </div>
                         <div id="connections" class="connections hidden">
                             <h4>Connections Detected:</h4>
                             <ul id="connections-list"></ul>
+                        </div>
+                        <div id="pending-changes" class="pending-changes hidden">
+                            <h4>Pending Changes:</h4>
+                            <div id="pending-changes-summary"></div>
+                            <div class="commit-controls">
+                                <button id="commit-changes" class="commit-btn">Commit</button>
+                                <button id="discard-changes" class="discard-btn">Discard</button>
+                            </div>
                         </div>
                     </div>
 
@@ -160,6 +175,11 @@
                     <div class="question-list">
                         <button id="toggle-question-list">Show Question List ▼</button>
                         <div id="question-list" class="hidden">
+                            <div class="answers-bar">
+                                <span class="try-prefix">Try:</span>
+                                <input type="text" id="answers-input" placeholder="1 A, 2 B, 3 D ...">
+                                <button id="answers-submit" class="submit-btn">Submit</button>
+                            </div>
                             <label>
                                 <input type="checkbox" id="show-multiple-choices">
                                 Show Multiple Choices

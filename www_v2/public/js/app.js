@@ -281,6 +281,68 @@ function initializeEventListeners() {
     });
 }
 
+// Helper function to count total entities
+function getTotalEntityCount() {
+    if (!state.activeGraph || !state.activeGraph.entities) return 0;
+
+    let count = 0;
+    Object.keys(state.activeGraph.entities).forEach(entityType => {
+        if (state.activeGraph.entities[entityType]) {
+            count += Object.keys(state.activeGraph.entities[entityType]).length;
+        }
+    });
+    return count;
+}
+
+// Helper function to update discover progress bar
+function updateDiscoverProgressBar() {
+    const topBar = document.getElementById('top-bar');
+    if (!topBar || state.currentPage !== 'discover') return;
+
+    const entityCount = getTotalEntityCount();
+    const maxEntities = 20;
+    const percentage = Math.min((entityCount / maxEntities) * 100, 100);
+
+    // Check if we already have a progress bar, otherwise create it
+    let progressBar = document.getElementById('discover-progress-bar');
+    if (!progressBar) {
+        // Hide regular nav buttons when in discover mode
+        document.querySelectorAll('.page-btn').forEach(btn => {
+            btn.style.display = 'none';
+        });
+
+        // Create progress bar container
+        progressBar = document.createElement('div');
+        progressBar.id = 'discover-progress-bar';
+        progressBar.className = 'discover-progress-bar';
+
+        const progressFill = document.createElement('div');
+        progressFill.className = 'progress-fill';
+        progressFill.id = 'discover-progress-fill';
+
+        progressBar.appendChild(progressFill);
+
+        // Insert in the nav area
+        const navArea = topBar.querySelector('.page-btn')?.parentElement || topBar;
+        navArea.appendChild(progressBar);
+    }
+
+    // Update progress fill
+    const progressFill = document.getElementById('discover-progress-fill');
+    if (progressFill) {
+        progressFill.style.width = `${percentage}%`;
+
+        // Update text color based on entity count (white for first 10, black after)
+        if (entityCount < 10) {
+            progressFill.classList.add('light-text');
+            progressFill.classList.remove('dark-text');
+        } else {
+            progressFill.classList.add('dark-text');
+            progressFill.classList.remove('light-text');
+        }
+    }
+}
+
 // Navigation
 function navigateToPage(pageName) {
     // Re-check mock mode on navigation to ensure it's current
@@ -306,6 +368,21 @@ function navigateToPage(pageName) {
     document.querySelectorAll('.page-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.page === pageName);
     });
+
+    // Handle discover page progress bar
+    if (pageName === 'discover') {
+        // Show progress bar for discover page
+        updateDiscoverProgressBar();
+    } else {
+        // Remove progress bar and show normal navigation
+        const progressBar = document.getElementById('discover-progress-bar');
+        if (progressBar) {
+            progressBar.remove();
+        }
+        document.querySelectorAll('.page-btn').forEach(btn => {
+            btn.style.display = '';
+        });
+    }
 
     // Show/hide top bar and sidebar based on page
     const topBar = document.getElementById('top-bar');
@@ -937,6 +1014,7 @@ async function commitPendingChanges() {
 
     // Update UI
     updateEntitiesReferences();
+    updateDiscoverProgressBar();  // Update progress bar with new entity count
     saveGraph();
 
     // Hide extraction UI

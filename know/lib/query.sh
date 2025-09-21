@@ -174,10 +174,63 @@ show_dependencies() {
     done
 }
 
+# Show adjacents (both dependencies and dependents)
+show_adjacents() {
+    local entity_ref="$1"
+
+    echo "🔄 Adjacent Connections for $entity_ref:"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo
+    echo "⬆️  UPSTREAM (Dependencies - what this depends on):"
+    echo
+
+    local deps
+    deps=$(get_dependencies "$entity_ref")
+
+    if [[ -z "$deps" ]]; then
+        echo "  ✅ No dependencies"
+    else
+        while IFS= read -r dep; do
+            if [[ -n "$dep" ]]; then
+                local dep_name
+                dep_name=$(get_entity_name "$dep")
+                echo "  📋 $dep ($dep_name)"
+            fi
+        done <<< "$deps"
+    fi
+
+    echo
+    echo "⬇️  DOWNSTREAM (Dependents - what depends on this):"
+    echo
+
+    # Find dependents using jq
+    local dependents
+    dependents=$(jq -r --arg entity "$entity_ref" '
+        .graph | to_entries[] |
+        select(.value.outbound |
+            to_entries[] |
+            select(.key | test("requires|uses|depends_on")) |
+            .value[]? == $entity
+        ) | .key
+    ' "$KNOWLEDGE_MAP" 2>/dev/null)
+
+    if [[ -z "$dependents" ]]; then
+        echo "  ✅ No dependents"
+    else
+        while IFS= read -r dependent; do
+            if [[ -n "$dependent" ]]; then
+                local dep_name
+                dep_name=$(get_entity_name "$dependent")
+                echo "  📋 $dependent ($dep_name)"
+            fi
+        done <<< "$dependents"
+    fi
+}
+
 # Show impact analysis
 show_impact_analysis() {
     local entity_ref="$1"
-    
+
     echo "💥 Impact Analysis for $entity_ref:"
     echo "   (Entities that would be affected by changes)"
     echo

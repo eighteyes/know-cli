@@ -269,3 +269,171 @@ Flattened references to granular, specific items:
 - Prefer mod-graph/query-graph over direct JQ
 - Handle colored output appropriately
 - Maintain abstraction layer
+
+## 2025-01-19: Discover Workflow Enhancement & UI Improvements
+
+### Multiple Choice Workflow Implementation
+- Added answers input bar with format "1A 2B 3D" for rapid batch answering
+- Bidirectional sync between answers input and multiple choice selections
+- Toggle behavior shows answers bar when "Show Multiple Choices" is checked
+- **Learning**: Provide multiple input methods for different user workflows
+
+### Proposal Reasoning System
+- Added explanatory blurbs for every entity/reference/connection proposal
+- Reasoning explains why each item is being proposed and its architectural importance
+- Visual hierarchy with italicized reasoning text below main proposal
+- **Learning**: AI suggestions need transparency - explain the "why" not just the "what"
+
+### UI/UX Enhancements Applied
+1. **Answer Button**: Changed "Submit" to "Answer" for clearer action
+2. **Blue CTA Styling**: Answer button now uses blue (#0066cc) to match CTA patterns
+3. **Flexible Input Parsing**: Accepts "1A", "1 A", "1A 2B", "1A, 2B" formats
+4. **Mock Data Fallbacks**: Rich fallback data when AI API unavailable
+
+### Workflow Alignment Verification
+- Start Page: Vision → Entities → Questions (10 initial) ✅
+- Discover Page: Question batch (3) → Answer/Skip → Extract → Rework ✅
+- AI Bar: Generate questions or modify graph ✅
+- Question Management: History, rework after 3 answers, priority sorting ✅
+- **Match Assessment**: 95% alignment with specification
+
+### Key Implementation Patterns
+
+1. **State Management Pattern**
+   ```javascript
+   // Centralized state for Q&A session
+   state.qaSession = {
+       currentQuestion: null,
+       questionQueue: [],
+       answeredQuestions: [],
+       skippedQuestions: [],
+       answeredSinceRework: 0,
+       reworkThreshold: 3
+   }
+   ```
+
+2. **Extraction UI Reuse**
+   - Used existing extraction UI for modification proposals
+   - Consistent interface for all entity/reference additions
+   - Single UI pattern for multiple workflows
+
+3. **Progressive Enhancement**
+   - Core functionality works without AI API
+   - Rich experience when API available
+   - Graceful fallbacks with contextual mock data
+
+### Frontend-Backend Contract Established
+
+**Entity Extraction Response**:
+```json
+{
+  "entities": [{
+    "type": "users",
+    "name": "primary-user",
+    "description": "Main system user",
+    "reasoning": "User entity detected based on..."
+  }],
+  "references": [{
+    "key": "api_base_url",
+    "value": "/api/v1",
+    "reasoning": "API endpoint pattern detected..."
+  }],
+  "connections": [{
+    "from": "primary-user",
+    "to": "main-dashboard",
+    "reasoning": "Primary relationship establishes..."
+  }]
+}
+```
+
+### Lessons for Future UI Work
+1. **Reuse existing UI patterns** - Don't reinvent the extraction display
+2. **Provide input flexibility** - Multiple ways to accomplish same task
+3. **Explain AI reasoning** - Transparency builds trust and understanding
+4. **Mock data should be contextual** - Not just placeholder but realistic examples
+5. **State should be centralized** - Single source of truth for session data
+
+## 2025-01-19: Continued Web App Q&A Enhancement (Session 2)
+
+### Q&A Session State Management
+- **Problem**: Needed persistent Q&A sessions that survive page reloads
+- **Solution**: Save all Q&A data in `meta.qa_sessions` array in graph
+- **Structure**:
+  ```json
+  {
+    question: "text",
+    answer: "user's answer" | null,
+    answered: boolean,
+    skipped: boolean,
+    timestamp: "ISO 8601",
+    source: "user" | "ai-generated" | "mock" | "saved",
+    expandedOptions: {...} | null
+  }
+  ```
+- **Learning**: Graph is the source of truth for all persistent state
+
+### Data Structure Simplification
+- **Removed `priority` field**: Array position IS the priority
+- **Removed `selectedOptions` persistence**: UI state doesn't belong in graph
+- **Learning**: Don't store derived or UI-only data in persistent storage
+
+### AI Bar Command System
+- **"mock"**: Instantly loads test questions
+- **"add [entity] [name]"**: Shows modification proposal using existing extraction UI
+- **Any other text**: Generates prioritized questions based on graph connectivity
+- **Learning**: Command shortcuts and clear patterns improve UX
+
+### Save/Revert Graph Management
+- **Problem**: Every small change was auto-saving to server
+- **Solution**:
+  - Local changes marked with `markUnsavedChanges()`
+  - Save button explicitly commits to server
+  - Revert button restores original state
+- **Learning**: Separate "local changes" from "server persistence" for better control
+
+### UI Improvements
+- **"Submit" → "Answer"**: Clearer action verb
+- **Blue Answer Button**: Visual hierarchy with #0066cc
+- **Auto-advance**: Answer button loads next question automatically
+- **"Modifications" label**: Renamed from "Detections" for clarity
+- **Learning**: Small UX improvements compound into better workflow
+
+### Logging System Architecture
+- **Structure**: `.ai/tf/logs/YYYY-MM-DD/session-{timestamp}.log`
+- **Persistence**: Logs never deleted, only archived
+- **Format**: `HH:MM:SS [LEVEL] Message` (no dates in entries)
+- **Learning**: Historical logs are invaluable for debugging
+
+### Key Implementation Patterns
+
+1. **Question Queue Management**
+   - Show only top 3 unanswered/unskipped
+   - Rework every 3 answers for clarity
+   - Load saved sessions on graph load
+
+2. **UI Reuse Pattern**
+   - Extraction UI serves both entity detection and modification proposals
+   - Single UI component, multiple contexts
+   - Consistent user experience
+
+3. **State Recovery**
+   ```javascript
+   loadSavedQASessions() {
+     // Rebuild answered/skipped from meta.qa_sessions
+     // Restore answeredSinceRework count
+     // Set current question from queue
+   }
+   ```
+
+### Pitfalls Avoided
+1. **Don't duplicate UI components** - Reuse extraction UI for proposals
+2. **Priority numbers are redundant** when you have array order
+3. **Always clear AI input** after processing
+4. **Load Q&A on any graph load**, not just discover page
+5. **Separate concerns**: Save marks changes, Save button commits
+
+### Results
+- Complete session persistence and recovery
+- Clean separation of local vs server state
+- Unified UI patterns across workflows
+- Command-driven AI bar for power users

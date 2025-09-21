@@ -108,8 +108,11 @@ CONNECTION & HEALTH:
     know health <entity>                 Check specific entity readiness
 
 EXPLORE DEPENDENCIES:
-    know deps <entity_ref>                Show dependency chain
-    know impact <entity_ref>              Show what depends on this entity
+    know deps <entity_ref>                Show dependency chain (alias: up/upstream)
+    know impact <entity_ref>              Show what depends on this entity (alias: down/downstream)
+    know adjacents <entity_ref>           Show both dependencies and dependents
+    know up <entity_ref>                  Show upstream dependencies (what this depends on)
+    know down <entity_ref>                Show downstream dependents (what depends on this)
     know preview <type> <entity_id>      Preview what will be generated
     know todo                            Show next actions needed
 
@@ -265,15 +268,20 @@ Then retry specification generation."
                 fi
             fi
             ;;
-        deps)
+        deps|up|upstream)
             [[ $# -ge 1 ]] || error "Usage: know deps <entity_ref>"
             local entity_ref=$(resolve_entity_reference "$1")
             show_dependencies "$entity_ref"
             ;;
-        impact)
+        impact|down|downstream)
             [[ $# -ge 1 ]] || error "Usage: know impact <entity_ref>"
             local entity_ref=$(resolve_entity_reference "$1")
             show_impact_analysis "$entity_ref"
+            ;;
+        adjacents)
+            [[ $# -ge 1 ]] || error "Usage: know adjacents <entity_ref>"
+            local entity_ref=$(resolve_entity_reference "$1")
+            show_adjacents "$entity_ref"
             ;;
         order)
             show_implementation_order

@@ -69,6 +69,12 @@
     100% { transform: translateY(-100%); opacity: 0; }
 }
 
+/* AI Thinking Indicator Animations */
+@keyframes thinking-sweep {
+    0% { transform: translateX(0%); }
+    100% { transform: translateX(200%); }
+}
+
 @keyframes circuitFlow {
     0% { background-position: 0 0; }
     100% { background-position: 20px 20px; }
@@ -631,6 +637,53 @@ body::after {
     text-shadow: 0 0 4px var(--secondary-blue);
     text-transform: uppercase;
     letter-spacing: 1px;
+}
+
+/* AI Thinking Indicator - Glowing blue line under AI bar */
+.ai-thinking-indicator {
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    z-index: 1000;
+    pointer-events: none;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.ai-thinking-indicator.active {
+    opacity: 1;
+}
+
+.ai-thinking-indicator .thinking-line {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(0, 118, 254, 0.4) 10%,
+        rgba(0, 200, 254, 0.8) 50%,
+        rgba(0, 118, 254, 0.4) 90%,
+        transparent 100%);
+    box-shadow: 0 0 15px rgba(0, 200, 254, 0.8);
+    animation: thinking-sweep 1.5s ease-in-out infinite;
+}
+
+/* Response complete indicator - grey circle */
+.ai-thinking-indicator.complete .thinking-line {
+    animation: none;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    transform: translateX(-50%) translateY(-3px);
+    background: #666;
+    box-shadow: 0 0 10px rgba(102, 102, 102, 0.5);
+    transition: all 0.3s ease;
 }
 
 .phase-dropdown {

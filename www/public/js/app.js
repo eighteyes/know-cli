@@ -1,3 +1,87 @@
+// AI Request Manager - Handles debouncing and thinking indicator
+class AIRequestManager {
+    constructor() {
+        this.pendingRequests = new Map();
+        this.debounceTimers = new Map();
+        this.debounceDelay = 500; // 500ms debounce
+        this.indicator = null;
+        this.initIndicator();
+    }
+
+    initIndicator() {
+        this.indicator = document.getElementById('ai-thinking-indicator');
+        if (!this.indicator) {
+            console.warn('AI thinking indicator not found in DOM');
+        }
+    }
+
+    showThinking() {
+        if (this.indicator) {
+            this.indicator.classList.remove('complete');
+            this.indicator.classList.add('active');
+        }
+    }
+
+    showComplete() {
+        if (this.indicator) {
+            this.indicator.classList.add('complete');
+            setTimeout(() => {
+                this.indicator.classList.remove('active', 'complete');
+            }, 2000);
+        }
+    }
+
+    hideThinking() {
+        if (this.indicator) {
+            this.indicator.classList.remove('active', 'complete');
+        }
+    }
+
+    async makeRequest(requestId, requestFunction) {
+        // Cancel any pending request with the same ID
+        if (this.pendingRequests.has(requestId)) {
+            const controller = this.pendingRequests.get(requestId);
+            controller.abort();
+        }
+
+        // Clear any existing debounce timer
+        if (this.debounceTimers.has(requestId)) {
+            clearTimeout(this.debounceTimers.get(requestId));
+        }
+
+        // Create new abort controller
+        const controller = new AbortController();
+        this.pendingRequests.set(requestId, controller);
+
+        // Debounce the request
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(async () => {
+                try {
+                    this.showThinking();
+                    const result = await requestFunction(controller.signal);
+                    this.showComplete();
+                    this.pendingRequests.delete(requestId);
+                    this.debounceTimers.delete(requestId);
+                    resolve(result);
+                } catch (error) {
+                    if (error.name !== 'AbortError') {
+                        console.error('AI request failed:', error);
+                        this.hideThinking();
+                        reject(error);
+                    }
+                    this.pendingRequests.delete(requestId);
+                    this.debounceTimers.delete(requestId);
+                }
+            }, this.debounceDelay);
+
+            this.debounceTimers.set(requestId, timer);
+        });
+    }
+}
+
+// Global AI Request Manager instance
+window.aiRequestManager = new AIRequestManager();
+
 // Main Application Class
 class KnowledgeGraphApp {
     constructor() {
@@ -10,6 +94,7 @@ class KnowledgeGraphApp {
         this.minimap = null;
         this.isModified = false;
         this.currentGraphName = null;
+        this.aiRequestManager = window.aiRequestManager;
         this.init();
     }
 
@@ -87,17 +172,27 @@ class KnowledgeGraphApp {
 
     async loadGraph(graphName = null) {
         try {
-            // Get current selected graph if no specific name provided
-            const selectedGraph = graphName || document.getElementById('graph-selector')?.value || 'spec-graph.json';
+            // Check localStorage first for a vision-based graph
+            const localGraph = localStorage.getItem('knowledge_graph');
+            if (localGraph && !graphName) {
+                // Load from localStorage if available and no specific graph requested
+                this.graph = JSON.parse(localGraph);
+                console.log('Loaded graph from localStorage (vision-based)');
+                this.currentGraphName = 'local_vision_graph';
+                this.isModified = true; // Mark as modified since it's local
+            } else {
+                // Get current selected graph if no specific name provided
+                const selectedGraph = graphName || document.getElementById('graph-selector')?.value || 'spec-graph.json';
 
-            const response = await fetch(`${this.apiBase}/graph?name=${encodeURIComponent(selectedGraph)}`);
-            this.graph = await response.json();
+                const response = await fetch(`${this.apiBase}/graph?name=${encodeURIComponent(selectedGraph)}`);
+                this.graph = await response.json();
 
-            console.log(`Loaded graph: ${this.graph.meta?.loadedFrom || selectedGraph}`);
+                console.log(`Loaded graph: ${this.graph.meta?.loadedFrom || selectedGraph}`);
 
-            // Track current graph and reset modified state
-            this.currentGraphName = selectedGraph;
-            this.isModified = false;
+                // Track current graph and reset modified state
+                this.currentGraphName = selectedGraph;
+                this.isModified = false;
+            }
             this.updateDropdownDisplay();
 
             // Update project name display if in discover view
@@ -333,11 +428,40 @@ class KnowledgeGraphApp {
         const input = document.getElementById('start-ai-prompt');
         const value = input.value.trim();
 
-        if (value) {
-            // Transfer value to main AI prompt
-            const mainPrompt = document.getElementById('ai-prompt');
-            if (mainPrompt) {
-                mainPrompt.value = value;
+        if (!value) return;
+
+        // Use AI Request Manager for debouncing
+        await this.aiRequestManager.makeRequest('start-submit', async (signal) => {
+            // Check if we're starting with a vision (creating new graph)
+            const isVision = value.toLowerCase().includes('build') ||
+                           value.toLowerCase().includes('create') ||
+                           value.toLowerCase().includes('vision') ||
+                           value.length > 50; // Assume longer text is a vision description
+
+            if (isVision) {
+                // Show friendly confirmation dialog
+                const confirmMessage = `
+🌟 Starting fresh with a new vision!
+
+This will replace your current graph in local storage with a new one based on your vision.
+
+Your current graph will be backed up, but any unsaved work will be replaced.
+
+Would you like to continue?
+                `.trim();
+
+                if (confirm(confirmMessage)) {
+                    await this.createGraphFromVision(value);
+                } else {
+                    // User cancelled, keep them on start page
+                    throw new Error('User cancelled');
+                }
+            } else {
+                // Transfer value to main AI prompt for normal processing
+                const mainPrompt = document.getElementById('ai-prompt');
+                if (mainPrompt) {
+                    mainPrompt.value = value;
+                }
             }
 
             // Switch to discover view
@@ -347,7 +471,13 @@ class KnowledgeGraphApp {
             if (this.phases.discover && this.phases.discover.handleAIPrompt) {
                 this.phases.discover.handleAIPrompt(value);
             }
-        }
+
+            return true;
+        }).catch(error => {
+            if (error.message !== 'User cancelled') {
+                console.error('Error in handleStartSubmit:', error);
+            }
+        });
     }
 
     async handleStartLoadGraph() {
@@ -366,6 +496,102 @@ class KnowledgeGraphApp {
 
         // Switch to discover view
         this.showDiscoverView();
+    }
+
+    async createGraphFromVision(visionText) {
+        try {
+            // First, backup current graph to localStorage
+            const currentGraph = localStorage.getItem('knowledge_graph');
+            if (currentGraph) {
+                localStorage.setItem('knowledge_graph_backup', currentGraph);
+                console.log('Current graph backed up to localStorage');
+            }
+
+            // Load spec-graph.json as template
+            const response = await fetch(`${this.apiBase}/graph?name=spec-graph.json`);
+            const templateGraph = await response.json();
+
+            // Create new graph with only meta and first two levels of entities
+            const newGraph = {
+                meta: {
+                    ...templateGraph.meta,
+                    version: "1.0.0",
+                    format: "json-graph",
+                    description: visionText,
+                    generated_at: new Date().toISOString(),
+                    vision: visionText,
+                    project: {
+                        name: this.extractProjectName(visionText),
+                        abbreviation: "",
+                        tagline: "",
+                        brand_promise: visionText.slice(0, 200),
+                        deployment: {},
+                        out_of_scope: [],
+                        phases: templateGraph.meta?.project?.phases || []
+                    }
+                },
+                references: {},
+                entities: {
+                    users: {},
+                    objectives: {},
+                    requirements: {},
+                    interfaces: {},
+                    features: {},
+                    components: {},
+                    behavior: {},
+                    actions: {}
+                },
+                graph: []
+            };
+
+            // Store in localStorage
+            localStorage.setItem('knowledge_graph', JSON.stringify(newGraph));
+
+            // Update app's graph
+            this.graph = newGraph;
+            this.isModified = true;
+            this.currentGraphName = 'local_vision_graph';
+
+            // Notify user
+            this.showSuccess('✨ New graph created from your vision! Previous graph backed up.');
+
+            // Update entity sidebar if available
+            if (window.updateEntitySidebar) {
+                window.updateEntitySidebar();
+            }
+
+        } catch (error) {
+            console.error('Failed to create graph from vision:', error);
+            this.showError('Failed to create new graph from vision');
+        }
+    }
+
+    extractProjectName(visionText) {
+        // Try to extract a project name from the vision text
+        const namePatterns = [
+            /(?:build|create|develop)\s+(?:a\s+)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,
+            /^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/,
+            /(?:called|named)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i
+        ];
+
+        for (const pattern of namePatterns) {
+            const match = visionText.match(pattern);
+            if (match && match[1]) {
+                return match[1].trim();
+            }
+        }
+
+        return "New Project";
+    }
+
+    clearLocalGraph() {
+        // Clear the localStorage graph and reload
+        if (confirm('Clear your local vision-based graph and return to the default graph?')) {
+            localStorage.removeItem('knowledge_graph');
+            localStorage.removeItem('knowledge_graph_backup');
+            this.loadGraph('spec-graph.json');
+            this.showSuccess('Local graph cleared, returned to default graph');
+        }
     }
 
     bindEvents() {
@@ -1322,12 +1548,18 @@ class KnowledgeGraphApp {
         const prompt = document.getElementById('ai-prompt').value.trim();
         if (!prompt) return;
 
-        // For now, just log it
-        console.log('AI Prompt:', prompt);
-        this.showInfo('AI processing coming soon...');
+        // Use AI Request Manager for debouncing and indicator
+        await this.aiRequestManager.makeRequest('ai-prompt', async (signal) => {
+            // For now, simulate AI processing
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Clear the prompt
-        document.getElementById('ai-prompt').value = '';
+            console.log('AI Prompt:', prompt);
+            this.showInfo('AI processing coming soon...');
+
+            // Clear the prompt
+            document.getElementById('ai-prompt').value = '';
+            return true;
+        });
     }
 
     // Utility methods for notifications

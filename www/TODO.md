@@ -1,4 +1,4 @@
-# Knowledge Graph Builder - Implementation TODO
+  # Knowledge Graph Builder - Implementation TODO
 
 ## Overview
 Three core features to implement:

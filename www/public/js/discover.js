@@ -498,38 +498,47 @@ class DiscoverPhase {
             return;
         }
 
-        try {
-            // Extract entities from answer
-            const response = await fetch(`${this.app.apiBase}/discover/extract`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+        // Use AI Request Manager for debouncing and indicator
+        const aiRequestManager = window.aiRequestManager || this.app.aiRequestManager;
+        await aiRequestManager.makeRequest('submit-answer', async (signal) => {
+            try {
+                // Extract entities from answer
+                const response = await fetch(`${this.app.apiBase}/discover/extract`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question: this.currentQuestion,
+                        answer: answer,
+                        context: this.app.graph
+                    }),
+                    signal // Pass abort signal for cancellation
+                });
+
+                const result = await response.json();
+                this.extractedEntities = result.entities;
+
+                // Display suggestions
+                this.displaySuggestions(result.entities);
+
+                // Save to history
+                this.questionHistory.push({
                     question: this.currentQuestion,
                     answer: answer,
-                    context: this.app.graph
-                })
-            });
+                    entities: result.entities
+                });
 
-            const result = await response.json();
-            this.extractedEntities = result.entities;
+                // Clear answer box
+                document.getElementById('user-answer').value = '';
 
-            // Display suggestions
-            this.displaySuggestions(result.entities);
-
-            // Save to history
-            this.questionHistory.push({
-                question: this.currentQuestion,
-                answer: answer,
-                entities: result.entities
-            });
-
-            // Clear answer box
-            document.getElementById('user-answer').value = '';
-
-        } catch (error) {
-            console.error('Failed to extract entities:', error);
-            this.app.showError('Failed to process answer');
-        }
+                return result;
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error('Failed to extract entities:', error);
+                    this.app.showError('Failed to process answer');
+                }
+                throw error;
+            }
+        });
     }
 
     displaySuggestions(entities) {

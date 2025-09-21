@@ -70,7 +70,8 @@
     "out_of_scope": "Features and capabilities explicitly excluded from the project",
     "deployment": "Current deployment status and rollout information for different features",
     "project": "High-level project information including name, tagline, and brand promise",
-    "decisions": "Architecture and design decisions with rationale, alternatives considered, and trade-offs"
+    "decisions": "Architecture and design decisions with rationale, alternatives considered, and trade-offs",
+    "qa_sessions": "Ordered list of questions to refine the project"
   },
   "entity_descriptions": {
     "project": "Top-level container representing the entire software project or system",

@@ -14,11 +14,11 @@
 ## Immediate Tasks
 
 ### AI Integration
-- [ ] Connect to real Anthropic API for question generation
-- [ ] Implement actual entity/reference extraction from answers
-- [ ] AI-powered question expansion (multiple choice, recommendations, tradeoffs)
-- [ ] AI command parsing in AI bar for graph modifications
-- [ ] Question refinement based on previous answers
+- [x] Connect to real Anthropic API for question generation - ✅ COMPLETED: Added @anthropic-ai/sdk, implemented real Claude API integration with intelligent fallback to mock data when API key not configured. Includes robust JSON parsing and maintains existing response format.
+- [x] Implement actual entity/reference extraction from answers - ✅ COMPLETED: Enhanced /api/ai/extract-entities with real Claude API, comprehensive entity types (11+), reference categories (15+), dependency rules, kebab-case naming, and intelligent fallback.
+- [x] AI-powered question expansion (multiple choice, recommendations, tradeoffs) - ✅ COMPLETED: Enhanced /api/ai/expand-question with Claude API, context-aware choices, best practice recommendations, tradeoff analysis, alternatives, and challenges.
+- [x] AI command parsing in AI bar for graph modifications - ✅ COMPLETED: Enhanced /api/ai/command with Claude API, natural language understanding, support for add/remove/modify/connect operations, bulk operations, entity validation.
+- [x] Question refinement based on previous answers - ✅ ALREADY COMPLETED: Sophisticated refinement logic built into /api/ai/generate-questions with 4 progressive phases, pattern recognition, gap analysis, duplicate avoidance, and context-aware generation
 
 ### Discover Page Enhancements
 - [ ] Persist QA sessions to graph.meta.qa_sessions
