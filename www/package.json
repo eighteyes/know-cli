@@ -1,30 +1,27 @@
 {
-  "name": "knowledge-graph-webapp",
+  "name": "lucid-dream-v2",
   "version": "1.0.0",
-  "description": "Interactive Knowledge Graph Builder with AI assistance",
+  "description": "Lucid Dream - Wake. Know. Ship.",
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
     "dev": "nodemon server/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "serve": "npx http-server public -p 8880",
+    "test": "playwright test tests/workflows-simple.spec.js",
+    "test:all": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright show-report"
   },
-  "keywords": [
-    "knowledge-graph",
-    "ai",
-    "webapp"
-  ],
-  "author": "",
-  "license": "MIT",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.62.0",
-    "body-parser": "^1.20.2",
-    "child_process": "^1.0.2",
+    "@anthropic-ai/sdk": "^0.24.3",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "ws": "^8.14.2"
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
     "nodemon": "^3.0.1"
   }
 }

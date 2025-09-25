@@ -5,25 +5,23 @@
 
 set -euo pipefail
 
-# Directories
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Directories - resolve symlinks to get actual script location
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+# Resolve symlinks
+while [[ -h "$SCRIPT_PATH" ]]; do
+    SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
+    SCRIPT_PATH="$(readlink "$SCRIPT_PATH")"
+    [[ "$SCRIPT_PATH" != /* ]] && SCRIPT_PATH="$SCRIPT_DIR/$SCRIPT_PATH"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# If we're running from /usr/local/bin, find the actual project
-if [[ "$SCRIPT_DIR" == "/usr/local/bin" ]]; then
-    # Look for the project in common locations
-    if [[ -d "$HOME/work/lb-www" ]]; then
-        PROJECT_ROOT="$HOME/work/lb-www"
-        SCRIPT_DIR="$PROJECT_ROOT/know"
-    elif [[ -d "/workspace/lb-www" ]]; then
-        PROJECT_ROOT="/workspace/lb-www"
-        SCRIPT_DIR="$PROJECT_ROOT/know"
-    else
-        error "Cannot find project directory. Please set PROJECT_ROOT environment variable."
-    fi
+# Use spec-graph.json from current directory if it exists, otherwise fall back to project root
+if [[ -f "./.ai/spec-graph.json" ]]; then
+    KNOWLEDGE_MAP="${KNOWLEDGE_MAP:-$(pwd)/.ai/spec-graph.json}"
+else
+    KNOWLEDGE_MAP="${KNOWLEDGE_MAP:-$PROJECT_ROOT/.ai/spec-graph.json}"
 fi
-
-KNOWLEDGE_MAP="${KNOWLEDGE_MAP:-$PROJECT_ROOT/.ai/spec-graph.json}"
 LIB_DIR="$SCRIPT_DIR/lib"
 TEMPLATE_DIR="${SCRIPT_DIR}/templates"
 GENERATOR_DIR="${SCRIPT_DIR}/generators"
@@ -126,6 +124,17 @@ PHASE MANAGEMENT:
     know phases display                   Show implementation phases
     know phases restructure               Generate optimal phases
     know phases stats                     Show phase statistics
+
+LLM INTEGRATION:
+    know llm query <prompt> [provider]    Send query to LLM provider
+    know llm vision <statement>           Process vision statement
+    know llm questions <context>          Generate exploration questions
+    know llm extract <text>               Extract entities and connections
+    know llm test [provider]              Test provider connectivity
+    know llm config                       Manage LLM configuration
+    know llm config set <key> [value]     Set configuration value
+    know llm config set model             Interactive model selection
+    know llm config models [provider]     List available models
 
 OPTIONS:
     --format <md|json|yaml>               Output format (default: md)
@@ -713,6 +722,141 @@ Then retry specification generation."
             # Phase management functionality
             shift
             exec "$LIB_DIR/phase-manager.sh" "$@"
+            ;;
+        llm)
+            # LLM integration functionality
+            # At this point, 'llm' has already been shifted out, so $1 is the subcommand
+            local subcommand="${1:-help}"
+            shift || true  # Remove subcommand from $@
+
+            # Source the LLM library
+            source "$LIB_DIR/llm.sh"
+
+            case "$subcommand" in
+                query)
+                    # Direct query to LLM
+                    if [[ $# -eq 0 ]]; then
+                        error "Usage: know llm query <prompt> [provider] [model] [max_tokens] [temperature]"
+                    fi
+                    llm_query "$@"
+                    ;;
+                vision)
+                    # Process vision statement
+                    if [[ $# -eq 0 ]]; then
+                        error "Usage: know llm vision <vision_statement> [provider]"
+                    fi
+                    process_vision "$@"
+                    ;;
+                questions)
+                    # Generate questions
+                    if [[ $# -eq 0 ]]; then
+                        error "Usage: know llm questions <context> [entity_type] [provider]"
+                    fi
+                    generate_questions "$@"
+                    ;;
+                expand)
+                    # Expand question with MC/recommendations
+                    if [[ $# -eq 0 ]]; then
+                        error "Usage: know llm expand <question> [context] [provider]"
+                    fi
+                    expand_question "$@"
+                    ;;
+                extract)
+                    # Extract nodes/connections
+                    if [[ $# -eq 0 ]]; then
+                        error "Usage: know llm extract <input_text> [dependency_rules] [provider]"
+                    fi
+                    extract_nodes "$@"
+                    ;;
+                update-vision)
+                    # Update vision with priorities
+                    if [[ $# -lt 2 ]]; then
+                        error "Usage: know llm update-vision <current_graph> <new_input> [provider]"
+                    fi
+                    update_vision "$@"
+                    ;;
+                pair)
+                    # Pair requirements with objectives
+                    if [[ $# -lt 2 ]]; then
+                        error "Usage: know llm pair <requirements> <objectives> [provider]"
+                    fi
+                    pair_requirements_objectives "$@"
+                    ;;
+                infer)
+                    # Infer actions from objectives
+                    if [[ $# -eq 0 ]]; then
+                        error "Usage: know llm infer <objectives> [existing_actions] [provider]"
+                    fi
+                    infer_actions "$@"
+                    ;;
+                workpath)
+                    # Analyze workpath completion
+                    if [[ $# -eq 0 ]]; then
+                        error "Usage: know llm workpath <graph_state> [target_feature] [provider]"
+                    fi
+                    analyze_workpath "$@"
+                    ;;
+                test)
+                    # Test provider connectivity
+                    test_provider "${1:-mock}"
+                    ;;
+                providers)
+                    # List available providers
+                    list_providers
+                    ;;
+                config)
+                    # Configuration management
+                    # config is already shifted out
+                    source "$LIB_DIR/llm-config.sh"
+                    main "$@"
+                    ;;
+                mock)
+                    # Generate mock response for workflow
+                    if [[ $# -eq 0 ]]; then
+                        echo "Available mock workflows: vision, questions, extraction"
+                        echo "Usage: know llm mock <workflow>"
+                    else
+                        generate_workflow_mock "$1"
+                    fi
+                    ;;
+                help|--help)
+                    echo -e "${GREEN}know llm${NC} - LLM integration for graph manipulation"
+                    echo
+                    echo "Commands:"
+                    echo "  query       - Send direct query to LLM"
+                    echo "  vision      - Process vision statement"
+                    echo "  questions   - Generate questions for exploration"
+                    echo "  expand      - Expand question with MC/recommendations"
+                    echo "  extract     - Extract entities/connections from text"
+                    echo "  update-vision - Update vision with priorities"
+                    echo "  pair        - Pair requirements with objectives"
+                    echo "  infer       - Infer actions from objectives"
+                    echo "  workpath    - Analyze workpath completion"
+                    echo "  test        - Test provider connectivity"
+                    echo "  providers   - List available providers"
+                    echo "  config      - Manage LLM configuration"
+                    echo "  config set  - Set configuration values"
+                    echo "  config models - List available models"
+                    echo "  mock        - Generate mock responses"
+                    echo
+                    echo "Environment Variables:"
+                    echo "  LLM_PROVIDER    - Default provider (mock, anthropic, lm_studio)"
+                    echo "  LLM_MODEL       - Default model name"
+                    echo "  LLM_MAX_TOKENS  - Default max tokens"
+                    echo "  LLM_TEMPERATURE - Default temperature"
+                    echo "  ANTHROPIC_API_KEY - API key for Anthropic"
+                    echo "  LM_STUDIO_URL   - URL for LM Studio server"
+                    echo
+                    echo "Examples:"
+                    echo "  know llm query 'Explain quantum computing' anthropic"
+                    echo "  know llm vision 'Build a task management app'"
+                    echo "  know llm test anthropic"
+                    echo "  LLM_PROVIDER=mock know llm questions 'project context'"
+                    ;;
+                *)
+                    error "Unknown LLM subcommand: $subcommand. Use 'know llm help' for usage."
+                    ;;
+            esac
             ;;
         *)
             error "Unknown command: $command. Use 'know --help' for usage."

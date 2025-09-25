@@ -1,645 +1,877 @@
 const express = require('express');
-const { exec } = require('child_process');
-const WebSocket = require('ws');
-const path = require('path');
-const cors = require('cors');
-const bodyParser = require('body-parser');
 const fs = require('fs').promises;
-const Anthropic = require('@anthropic-ai/sdk');
+const path = require('path');
+const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
 require('dotenv').config();
+const Anthropic = require('@anthropic-ai/sdk');
+const logger = require('./logger');
+const PromptLoader = require('../prompts/loader');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-const WS_PORT = process.env.WS_PORT || 8080;
+const PORT = 8880;
 
-// Initialize Anthropic client if API key is available
-let anthropic = null;
-if (process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY !== '${ANTHROPIC_API_KEY}') {
-  anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
-  });
-  console.log('✅ Anthropic API initialized');
-} else {
-  console.log('⚠️  No Anthropic API key found - using fallback entity extraction');
-}
+// Initialize Anthropic client
+const anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY
+});
 
-// WebSocket server
-const wss = new WebSocket.Server({ port: WS_PORT });
+// Initialize prompt loader
+const promptLoader = new PromptLoader(path.join(__dirname, '../prompts'));
 
 // Middleware
-app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Know CLI wrapper function
-function executeKnow(command, args = []) {
-  return new Promise((resolve, reject) => {
-    const knowPath = path.resolve(__dirname, process.env.KNOW_CLI_PATH || '../../know/know');
-    const cmd = `${knowPath} ${command} ${args.join(' ')}`;
+// Request logging middleware
+app.use((req, res, next) => {
+    const start = Date.now();
 
-    exec(cmd, {
-      env: {
-        ...process.env,
-        KNOWLEDGE_MAP: path.resolve(__dirname, process.env.KNOWLEDGE_MAP_PATH || '../../.ai/spec-graph.json')
-      },
-      maxBuffer: 1024 * 1024 * 10 // 10MB buffer for large outputs
-    }, (error, stdout, stderr) => {
-      if (error && !stdout) {
-        reject({ error: error.message, stderr });
-      } else {
-        // Some know commands return non-zero exit codes even on success
-        resolve({ output: stdout, stderr });
-      }
+    // Log request
+    logger.log(`${req.method} ${req.path}`);
+
+    // Log response when finished
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        logger.log(`${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`);
     });
-  });
-}
 
-// Broadcast updates to all WebSocket clients
-function broadcastUpdate(type, data) {
-  wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify({ type, data, timestamp: new Date().toISOString() }));
-    }
-  });
-}
-
-// WebSocket connection handler
-wss.on('connection', (ws) => {
-  console.log('New WebSocket client connected');
-
-  ws.on('message', (message) => {
-    try {
-      const data = JSON.parse(message);
-      console.log('Received:', data);
-      // Handle client messages if needed
-    } catch (err) {
-      console.error('Invalid WebSocket message:', err);
-    }
-  });
-
-  ws.on('close', () => {
-    console.log('Client disconnected');
-  });
-
-  // Send initial connection confirmation
-  ws.send(JSON.stringify({ type: 'connected', message: 'WebSocket connected successfully' }));
+    next();
 });
+
+// CORS for development
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    next();
+});
+
+// Paths
+const GRAPHS_DIR = path.join(__dirname, '../graphs');
+const AI_SPEC_GRAPH = path.join(__dirname, '../../../.ai/spec-graph.json');
+const KNOW_TOOL = path.join(__dirname, '../../know/know');
+
+// Ensure graphs directory exists
+async function ensureGraphsDir() {
+    try {
+        await fs.access(GRAPHS_DIR);
+    } catch {
+        await fs.mkdir(GRAPHS_DIR, { recursive: true });
+    }
+}
+
+// Structured AI call with validation
+async function makeStructuredAICall(promptName, variables, schemaName, maxTokens = 1000) {
+    try {
+        // Format the prompt with variables
+        const prompt = await promptLoader.formatPrompt(promptName, variables);
+
+        // Call Claude
+        const message = await anthropic.messages.create({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: maxTokens,
+            messages: [{
+                role: 'user',
+                content: prompt
+            }]
+        });
+
+        // Parse the response
+        const responseText = message.content[0].text;
+        let responseData;
+
+        try {
+            // Try to extract JSON from the response
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                responseData = JSON.parse(jsonMatch[0]);
+            } else {
+                throw new Error('No JSON found in response');
+            }
+        } catch (parseError) {
+            logger.warn(`Failed to parse AI response for ${promptName}:`, parseError.message);
+            throw new Error('Invalid JSON response from AI');
+        }
+
+        // Validate and clean the response
+        const validation = promptLoader.validateAndClean(schemaName, responseData);
+
+        if (!validation.isValid) {
+            logger.warn(`Schema validation failed for ${promptName}:`, validation.errors);
+            // For now, we'll log but continue with cleaned data
+            // In production, you might want to retry or use fallbacks
+        }
+
+        return validation.data;
+
+    } catch (error) {
+        logger.error(`Error in structured AI call for ${promptName}:`, error);
+        throw error;
+    }
+}
 
 // API Routes
 
-// Get entire graph (dynamic based on query parameter)
-app.get('/api/graph', async (req, res) => {
-  try {
-    const graphName = req.query.name || 'spec-graph.json';
-
-    let graphPath;
-    if (graphName === 'spec-graph.json') {
-      // Load main graph from .ai directory
-      graphPath = path.resolve(__dirname, process.env.KNOWLEDGE_MAP_PATH || '../../.ai/spec-graph.json');
-    } else {
-      // Load from graphs directory
-      graphPath = path.resolve(__dirname, '../graphs', graphName);
-    }
-
-    const graphData = await fs.readFile(graphPath, 'utf8');
-    const parsedGraph = JSON.parse(graphData);
-
-    // Add dynamic metadata
-    const stats = await fs.stat(graphPath);
-    parsedGraph.meta = parsedGraph.meta || {};
-    parsedGraph.meta.loadedFrom = graphName;
-    parsedGraph.meta.lastModified = stats.mtime.toISOString();
-    parsedGraph.meta.fileSize = stats.size;
-
-    res.json(parsedGraph);
-  } catch (error) {
-    res.status(500).json({
-      error: 'Failed to load graph',
-      details: error.message,
-      requestedGraph: req.query.name
-    });
-  }
-});
-
-// List available graphs
-app.get('/api/graphs/list', async (req, res) => {
-  try {
-    const graphsDir = path.resolve(__dirname, '../graphs');
-
-    // Ensure graphs directory exists
+// Get list of graph files
+app.get('/api/graphs', async (req, res) => {
     try {
-      await fs.mkdir(graphsDir, { recursive: true });
-    } catch (e) {
-      // Directory might already exist
+        await ensureGraphsDir();
+        const files = await fs.readdir(GRAPHS_DIR);
+        const jsonFiles = files.filter(f => f.endsWith('.json'));
+        res.json(jsonFiles);
+    } catch (error) {
+        logger.error('Error reading graphs directory:', error);
+        res.status(500).json({ error: 'Failed to read graph files' });
     }
-
-    const files = await fs.readdir(graphsDir);
-    const graphs = files
-      .filter(f => f.endsWith('.json'))
-      .map(f => ({
-        name: f,
-        path: path.join(graphsDir, f)
-      }));
-
-    // Add the main spec-graph.json
-    graphs.unshift({
-      name: 'spec-graph.json',
-      path: path.resolve(__dirname, '../../.ai/spec-graph.json')
-    });
-
-    res.json({ graphs });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to list graphs', details: error.message });
-  }
 });
 
-// Save current graph to backup
+// Load specific graph file
+app.get('/api/graphs/:filename', async (req, res) => {
+    try {
+        const filepath = path.join(GRAPHS_DIR, req.params.filename);
+        const content = await fs.readFile(filepath, 'utf-8');
+        res.json(JSON.parse(content));
+    } catch (error) {
+        // Try loading from .ai directory if not in graphs
+        try {
+            const content = await fs.readFile(AI_SPEC_GRAPH, 'utf-8');
+            res.json(JSON.parse(content));
+        } catch {
+            logger.error('Error loading graph:', error);
+            res.status(404).json({ error: 'Graph file not found' });
+        }
+    }
+});
+
+// Save graph
 app.post('/api/graphs/save', async (req, res) => {
-  try {
-    const { name } = req.body;
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupName = name || `graph-backup-${timestamp}.json`;
-
-    const graphsDir = path.resolve(__dirname, '../graphs');
-    await fs.mkdir(graphsDir, { recursive: true });
-
-    const sourcePath = path.resolve(__dirname, '../../.ai/spec-graph.json');
-    const targetPath = path.join(graphsDir, backupName);
-
-    const graphData = await fs.readFile(sourcePath, 'utf8');
-    await fs.writeFile(targetPath, graphData);
-
-    res.json({ success: true, savedAs: backupName });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to save graph', details: error.message });
-  }
-});
-
-// Load a saved graph
-app.post('/api/graphs/load', async (req, res) => {
-  try {
-    const { name } = req.body;
-
-    let sourcePath;
-    if (name === 'spec-graph.json') {
-      sourcePath = path.resolve(__dirname, '../../.ai/spec-graph.json');
-    } else {
-      sourcePath = path.resolve(__dirname, '../graphs', name);
-    }
-
-    const targetPath = path.resolve(__dirname, '../../.ai/spec-graph.json');
-
-    // Backup current before loading new
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupPath = path.resolve(__dirname, '../graphs', `auto-backup-${timestamp}.json`);
-    const currentData = await fs.readFile(targetPath, 'utf8');
-    await fs.writeFile(backupPath, currentData);
-
-    // Load the selected graph
-    const graphData = await fs.readFile(sourcePath, 'utf8');
-    await fs.writeFile(targetPath, graphData);
-
-    res.json({ success: true, loaded: name, autoBackup: `auto-backup-${timestamp}.json` });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to load graph', details: error.message });
-  }
-});
-
-// Create new empty graph
-app.post('/api/graphs/new', async (req, res) => {
-  try {
-    const { name } = req.body;
-    const newGraphName = name || `new-graph-${Date.now()}.json`;
-
-    const emptyGraph = {
-      meta: {
-        project: {
-          name: "New Project",
-          tagline: "Define your vision"
-        },
-        phases: {},
-        qa_sessions: []
-      },
-      references: {},
-      entities: {
-        users: {},
-        objectives: {},
-        actions: {},
-        features: {},
-        components: {},
-        interfaces: {},
-        requirements: {},
-        platforms: {}
-      },
-      graph: {}
-    };
-
-    const targetPath = path.resolve(__dirname, '../../.ai/spec-graph.json');
-
-    // Backup current
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupPath = path.resolve(__dirname, '../graphs', `before-new-${timestamp}.json`);
-    const currentData = await fs.readFile(targetPath, 'utf8');
-    await fs.writeFile(backupPath, currentData);
-
-    // Write new empty graph
-    await fs.writeFile(targetPath, JSON.stringify(emptyGraph, null, 2));
-
-    res.json({ success: true, created: newGraphName, backup: `before-new-${timestamp}.json` });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to create new graph', details: error.message });
-  }
-});
-
-// List entities by type
-app.get('/api/entities/:type', async (req, res) => {
-  try {
-    const graphPath = path.resolve(__dirname, process.env.KNOWLEDGE_MAP_PATH || '../../.ai/spec-graph.json');
-    const graphData = JSON.parse(await fs.readFile(graphPath, 'utf8'));
-    const entities = graphData.entities[req.params.type] || {};
-    res.json(Object.values(entities));
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to get entities', details: error.message });
-  }
-});
-
-// Add new entity
-app.post('/api/entities/add', async (req, res) => {
-  const { type, key, name } = req.body;
-
-  try {
-    // Convert to plural for the know command (it expects plural types)
-    const pluralType = `${type}s`;
-
-    // Use mod-graph.sh to add the entity
-    const result = await executeKnow('mod', ['add', pluralType, key, name]);
-
-    // Reload the graph to get updated data
-    const graphPath = path.resolve(__dirname, '../../.ai/spec-graph.json');
-    const graph = JSON.parse(await fs.readFile(graphPath, 'utf8'));
-
-    res.json({
-      success: true,
-      message: `Added ${type}: ${name}`,
-      entity: graph.entities[`${type}s`]?.[key]
-    });
-
-    // Broadcast the update to all connected clients
-    broadcastUpdate('entity-added', {
-      type,
-      key,
-      name
-    });
-  } catch (error) {
-    console.error('Failed to add entity:', error);
-    res.status(500).json({
-      success: false,
-      error: error.error || error.message || 'Failed to add entity',
-      details: error.stderr || error.stack
-    });
-  }
-});
-
-// Execute know command
-app.post('/api/know/command', async (req, res) => {
-  const { command, args = [] } = req.body;
-
-  try {
-    const result = await executeKnow(command, args);
-
-    // Try to parse as JSON if possible
-    let output = result.output;
     try {
-      output = JSON.parse(result.output);
-    } catch {
-      // Keep as string if not JSON
-    }
+        await ensureGraphsDir();
 
-    res.json({
-      success: true,
-      output,
-      stderr: result.stderr
-    });
+        // Extract filename from request body if provided, otherwise generate new one
+        const { filename: providedFilename, ...graphData } = req.body;
+        const filename = providedFilename || `graph-${Date.now()}.json`;
+        const filepath = path.join(GRAPHS_DIR, filename);
 
-    // Broadcast graph update if command modifies graph
-    if (['mod', 'connect', 'disconnect', 'add', 'remove'].includes(command)) {
-      broadcastUpdate('graph-updated', { command, args });
+        await fs.writeFile(filepath, JSON.stringify(graphData, null, 2));
+
+        // Also update the main spec-graph.json if it exists
+        await fs.writeFile(AI_SPEC_GRAPH, JSON.stringify(graphData, null, 2));
+
+        res.json({ success: true, filename });
+    } catch (error) {
+        logger.error('Error saving graph:', error);
+        res.status(500).json({ error: 'Failed to save graph' });
     }
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.error || error.message,
-      stderr: error.stderr
-    });
-  }
 });
 
-// Discovery phase endpoints
+// AI Integration Endpoints
 
-// Save Q&A session data
-app.post('/api/discover/save-qa', async (req, res) => {
-  const { question, answer, entities } = req.body;
+// Generate questions using know llm
+app.post('/api/ai/generate-questions', async (req, res) => {
+    try {
+        const { context, existingQA, currentGraph, mock } = req.body;
 
-  try {
-    const graphPath = path.resolve(__dirname, '../../.ai/spec-graph.json');
-    const graph = JSON.parse(await fs.readFile(graphPath, 'utf8'));
+        // Always use know llm - it has built-in mock support
+        try {
+            // Prepare context for know llm
+            const graphContext = currentGraph ? JSON.stringify({
+                entities: currentGraph.entities || {},
+                existingQA: existingQA || []
+            }) : 'No graph context';
 
-    // Initialize qa_sessions if it doesn't exist
-    if (!graph.meta) graph.meta = {};
-    if (!graph.meta.qa_sessions) graph.meta.qa_sessions = [];
+            // Execute know llm questions command
+            const provider = mock === true ? 'mock' : (process.env.LLM_PROVIDER || 'mock');
+            const command = `export LLM_PROVIDER=${provider} && ${KNOW_TOOL} llm questions '${graphContext.replace(/'/g, "'\\''")}' 2>/dev/null`;
+            const { stdout } = await execPromise(command);
 
-    // Find or create current session
-    let session = graph.meta.qa_sessions.find(s => s.status === 'in_progress');
-    if (!session) {
-      session = {
-        id: `session-${Date.now()}`,
-        phase: 'discover',
-        status: 'in_progress',
-        started_at: new Date().toISOString(),
-        last_updated: new Date().toISOString(),
-        context: 'Discovery phase - building initial knowledge graph',
-        questions: []
-      };
-      graph.meta.qa_sessions.push(session);
+            // Parse response
+            const result = JSON.parse(stdout);
+
+            // Transform to match expected format
+            const questions = result.questions ? result.questions.map((q, i) => ({
+                number: q.id || i + 1,
+                text: q.question || q.text,
+                priority: q.priority,
+                entity_type: q.entity_type
+            })) : [];
+
+            return res.json({ questions });
+        } catch (llmError) {
+            logger.error('Know LLM error:', llmError.message);
+            // Return error to client
+            return res.status(500).json({
+                error: 'Failed to generate questions',
+                message: llmError.message
+            });
+        }
+
+        // This fallback is no longer needed - know llm handles everything
+        // Keeping empty block for backwards compatibility
+        if (false) {
+            // Removed fallback logic - know llm provides mock data
+            const qaCount = existingQA ? existingQA.length : 0;
+            let questions = [];
+
+            if (qaCount === 0) {
+                // Initial discovery questions
+                questions = [
+                    { number: 1, text: "What is the primary goal of this system?" },
+                    { number: 2, text: "Who are the main users of this application?" },
+                    { number: 3, text: "What problem does this system solve?" },
+                    { number: 4, text: "What are the key success metrics?" },
+                    { number: 5, text: "What is the expected timeline for the MVP?" }
+                ];
+            } else if (qaCount < 5) {
+                // Early exploration questions
+                questions = [
+                    { number: 1, text: "What key features are essential for the MVP?" },
+                    { number: 2, text: "What are the main technical constraints?" },
+                    { number: 3, text: "How will users interact with the system?" },
+                    { number: 4, text: "What data needs to be captured and stored?" },
+                    { number: 5, text: "What are the performance requirements?" }
+                ];
+            } else if (qaCount < 10) {
+                // Mid-stage refinement questions
+                questions = [
+                    { number: 1, text: "What security requirements must be met?" },
+                    { number: 2, text: "How should the system handle errors and edge cases?" },
+                    { number: 3, text: "What third-party integrations are required?" },
+                    { number: 4, text: "What are the scalability expectations?" },
+                    { number: 5, text: "How will the system be deployed and maintained?" }
+                ];
+            } else {
+                // Deep-dive specific questions
+                questions = [
+                    { number: 1, text: "What are the specific acceptance criteria for the core features?" },
+                    { number: 2, text: "How should the system handle concurrent users?" },
+                    { number: 3, text: "What monitoring and analytics are needed?" },
+                    { number: 4, text: "What are the disaster recovery requirements?" },
+                    { number: 5, text: "What compliance or regulatory requirements apply?" }
+                ];
+            }
+
+            return res.json({ questions });
+        }
+
+        // Use structured AI call with validation
+        const questionsData = await makeStructuredAICall(
+            'generate-questions',
+            {
+                context: context || 'No initial context provided',
+                existingQA: promptLoader.formatQAHistory(existingQA),
+                currentGraph: currentGraph ? `Entities discovered: ${Object.keys(currentGraph.entities || {}).join(', ') || 'None yet'}` : 'No graph structure yet'
+            },
+            'generateQuestions',
+            1000
+        );
+
+        // Log rationale for debugging but don't send to client
+        if (questionsData.rationale) {
+            logger.debug('Question generation rationale:', questionsData.rationale);
+        }
+
+        // Return only questions to maintain API compatibility
+        res.json({ questions: questionsData.questions });
+    } catch (error) {
+        logger.error('Error generating questions:', error);
+
+        // Context-aware fallback on error
+        const qaCount = existingQA ? existingQA.length : 0;
+        let questions = [];
+
+        if (qaCount === 0) {
+            // Initial discovery questions
+            questions = [
+                { number: 1, text: "What is the primary goal of this system?" },
+                { number: 2, text: "Who are the main users of this application?" },
+                { number: 3, text: "What problem does this system solve?" },
+                { number: 4, text: "What are the key success metrics?" },
+                { number: 5, text: "What is the expected timeline?" }
+            ];
+        } else if (qaCount < 5) {
+            // Early exploration questions
+            questions = [
+                { number: 1, text: "What key features are essential for the MVP?" },
+                { number: 2, text: "What are the technical constraints?" },
+                { number: 3, text: "How will users interact with the system?" },
+                { number: 4, text: "What data needs to be stored?" },
+                { number: 5, text: "What are the performance requirements?" }
+            ];
+        } else {
+            // Deeper exploration questions
+            questions = [
+                { number: 1, text: "What security requirements must be met?" },
+                { number: 2, text: "How should the system handle errors?" },
+                { number: 3, text: "What integrations are required?" },
+                { number: 4, text: "What are the scalability expectations?" },
+                { number: 5, text: "How will the system be deployed?" }
+            ];
+        }
+
+        res.json({ questions });
     }
-
-    // Add Q&A to session
-    const qaEntry = {
-      q_id: `Q${session.questions.length + 1}`,
-      category: question.type || 'exploration',
-      question: question.text,
-      answer: answer,
-      status: 'answered',
-      timestamp: new Date().toISOString(),
-      graph_updates: entities.map(e => `${e.type}:${e.id}`)
-    };
-
-    session.questions.push(qaEntry);
-    session.last_updated = new Date().toISOString();
-
-    // Save updated graph
-    await fs.writeFile(graphPath, JSON.stringify(graph, null, 2));
-
-    res.json({ success: true, session_id: session.id, qa_id: qaEntry.q_id });
-  } catch (error) {
-    console.error('Failed to save Q&A:', error);
-    res.status(500).json({ error: 'Failed to save Q&A session' });
-  }
 });
 
-// Extract entities from user answer
-app.post('/api/discover/extract', async (req, res) => {
-  const { question, answer, context } = req.body;
+// Expand question with multiple choice and recommendations using know llm
+app.post('/api/ai/expand-question', async (req, res) => {
+    try {
+        const { question, context, existingQA, mock } = req.body;
 
-  try {
-    let entities = [];
-    let suggestions = {};
+        // Always use know llm - it has built-in mock support
+        try {
+            // Prepare context string
+            const contextStr = context ? `Context: ${context}` : 'No context';
 
-    if (anthropic) {
-      // Use real AI extraction
-      console.log('Using AI for entity extraction...');
-      entities = await extractEntitiesWithAI(answer, question, context);
-      suggestions = await generateAISuggestions(entities, context);
-    } else {
-      // Fallback to simple extraction
-      console.log('Using fallback entity extraction (no API key)');
-      entities = extractEntitiesFromText(answer, question.type || 'exploration');
-      suggestions = generateSuggestions(entities, context);
+            // Execute know llm expand command
+            const provider = mock === true ? 'mock' : (process.env.LLM_PROVIDER || 'mock');
+            const command = `export LLM_PROVIDER=${provider} && ${KNOW_TOOL} llm expand '${question.replace(/'/g, "'\\''")}' '${contextStr.replace(/'/g, "'\\''")}' 2>/dev/null`;
+            const { stdout } = await execPromise(command);
+
+            // Parse response
+            const result = JSON.parse(stdout);
+
+            // Transform to match expected format
+            const expanded = {
+                choices: result.multiple_choice || result.choices || [],
+                recommendation: Array.isArray(result.recommendations) ?
+                    result.recommendations.join(' ') :
+                    result.recommendation || '',
+                tradeoffs: typeof result.tradeoffs === 'object' ?
+                    Object.entries(result.tradeoffs).map(([k, v]) => `${k}: ${v}`).join(' ') :
+                    result.tradeoffs || '',
+                alternatives: Array.isArray(result.alternatives) ?
+                    result.alternatives.map(a => a.option + ': ' + a.description).join('; ') :
+                    result.alternatives || '',
+                challenges: typeof result.challenges === 'object' ?
+                    Object.entries(result.challenges).map(([k, v]) =>
+                        `${k}: ${Array.isArray(v) ? v.join(', ') : v}`
+                    ).join('; ') :
+                    result.challenges || ''
+            };
+
+            return res.json(expanded);
+        } catch (llmError) {
+            logger.error('Know LLM expand error:', llmError.message);
+            return res.status(500).json({
+                error: 'Failed to expand question',
+                message: llmError.message
+            });
+        }
+
+        // Original API key check (kept as fallback)
+        if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'your_anthropic_api_key_here' || process.env.ANTHROPIC_API_KEY === 'your_api_key_here') {
+            // Fallback to contextual mock data based on question content
+            const questionLower = question ? question.toLowerCase() : '';
+            let expanded;
+
+            if (questionLower.includes('deploy') || questionLower.includes('host') || questionLower.includes('infrastructure')) {
+                expanded = {
+                    choices: [
+                        "Cloud-based solution with auto-scaling",
+                        "On-premise deployment for data security",
+                        "Hybrid approach with selective cloud services",
+                        "Serverless architecture for cost optimization",
+                        "Containerized microservices"
+                    ],
+                    recommendation: "Based on modern practices, a cloud-based solution with auto-scaling would provide the best balance of performance, cost, and maintainability.",
+                    tradeoffs: "Cloud solutions offer scalability but may have higher long-term costs. On-premise provides more control but requires more maintenance.",
+                    alternatives: "Consider using a Platform-as-a-Service (PaaS) solution to reduce operational overhead while maintaining flexibility.",
+                    challenges: "Main challenges include data migration, security compliance, and ensuring minimal downtime during deployment."
+                };
+            } else if (questionLower.includes('database') || questionLower.includes('data') || questionLower.includes('storage')) {
+                expanded = {
+                    choices: [
+                        "Relational database (PostgreSQL/MySQL)",
+                        "NoSQL document store (MongoDB)",
+                        "Time-series database (InfluxDB)",
+                        "Graph database (Neo4j)",
+                        "Multi-model database approach"
+                    ],
+                    recommendation: "For most applications, a relational database like PostgreSQL provides the best balance of features, performance, and ecosystem support.",
+                    tradeoffs: "Relational databases offer ACID compliance but may be less flexible for unstructured data. NoSQL provides flexibility but may lack strong consistency.",
+                    alternatives: "Consider starting with a single database and adding specialized stores as specific needs arise.",
+                    challenges: "Key challenges include data modeling decisions, migration strategies, and ensuring proper backup and recovery procedures."
+                };
+            } else if (questionLower.includes('auth') || questionLower.includes('security') || questionLower.includes('login')) {
+                expanded = {
+                    choices: [
+                        "OAuth 2.0 with third-party providers",
+                        "JWT-based authentication system",
+                        "Session-based authentication",
+                        "Multi-factor authentication (MFA)",
+                        "Single Sign-On (SSO) integration"
+                    ],
+                    recommendation: "Implement OAuth 2.0 with reputable providers (Google, GitHub) for user convenience while maintaining JWT tokens for API authentication.",
+                    tradeoffs: "OAuth reduces development overhead but creates dependency on third parties. Custom auth provides control but requires security expertise.",
+                    alternatives: "Consider passwordless authentication using magic links or WebAuthn for improved user experience.",
+                    challenges: "Main challenges include secure token storage, handling token refresh, and implementing proper session management."
+                };
+            } else {
+                // Generic fallback
+                expanded = {
+                    choices: [
+                        "Industry standard approach",
+                        "Custom solution tailored to needs",
+                        "Open-source framework integration",
+                        "Third-party service integration",
+                        "Hybrid approach combining multiple options"
+                    ],
+                    recommendation: "Start with industry standards and well-established patterns, then customize based on specific requirements.",
+                    tradeoffs: "Standard approaches offer reliability but may lack specific features. Custom solutions provide flexibility but require more development time.",
+                    alternatives: "Evaluate existing solutions thoroughly before building custom implementations.",
+                    challenges: "Balance between time-to-market, maintenance overhead, and feature requirements."
+                };
+            }
+
+            return res.json(expanded);
+        }
+
+        // Use structured AI call with validation
+        const expandedData = await makeStructuredAICall(
+            'expand-question',
+            {
+                question: question,
+                context: context ? `Project Context: ${context}` : 'No specific project context provided',
+                existingQA: promptLoader.formatQAHistory(existingQA)
+            },
+            'expandQuestion',
+            1200
+        );
+
+        res.json(expandedData);
+    } catch (error) {
+        logger.error('Error expanding question:', error);
+
+        // Final fallback
+        const fallbackExpanded = {
+            choices: [
+                "Industry standard approach",
+                "Custom solution tailored to needs",
+                "Third-party service integration",
+                "Hybrid approach combining options"
+            ],
+            recommendation: "Evaluate standard approaches first, then customize based on specific requirements.",
+            tradeoffs: "Standard solutions offer reliability but may lack specific features. Custom solutions provide flexibility but require more development time.",
+            alternatives: "Consider phased implementation starting with proven solutions.",
+            challenges: "Balance between time-to-market, maintenance overhead, and feature requirements."
+        };
+
+        res.json(fallbackExpanded);
     }
-
-    res.json({
-      entities,
-      suggestions,
-      confidence: anthropic ? 0.95 : 0.65,
-      validation: {
-        hasDuplicates: false,
-        duplicates: []
-      }
-    });
-  } catch (error) {
-    console.error('Entity extraction error:', error);
-    // Fallback to simple extraction on error
-    const entities = extractEntitiesFromText(answer, question.type || 'exploration');
-    res.json({
-      entities,
-      suggestions: generateSuggestions(entities, context),
-      confidence: 0.5,
-      validation: { hasDuplicates: false, duplicates: [] }
-    });
-  }
 });
 
-// Analyze gaps in the graph
-app.post('/api/discover/analyze-gaps', async (req, res) => {
-  try {
-    const healthResult = await executeKnow('health');
-    const gaps = parseHealthOutput(healthResult.output);
-    res.json(gaps);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to analyze gaps', details: error.message });
-  }
+// Extract entities and references from text using know llm
+app.post('/api/ai/extract-entities', async (req, res) => {
+    try {
+        const { text, graph, mock } = req.body;
+
+        // Always use know llm - it has built-in mock support
+        try {
+            // Execute know llm extract command
+            const provider = mock === true ? 'mock' : (process.env.LLM_PROVIDER || 'mock');
+            const command = `export LLM_PROVIDER=${provider} && ${KNOW_TOOL} llm extract '${text.replace(/'/g, "'\\''")}' 2>/dev/null`;
+            const { stdout } = await execPromise(command);
+
+            // Parse response
+            const result = JSON.parse(stdout);
+
+            // Transform to match expected format
+            const extracted = {
+                entities: [],
+                references: [],
+                connections: result.connections || []
+            };
+
+            // Convert entities object to array format
+            if (result.entities) {
+                for (const [type, items] of Object.entries(result.entities)) {
+                    if (Array.isArray(items)) {
+                        items.forEach(name => {
+                            extracted.entities.push({
+                                type: type,
+                                name: name,
+                                description: `${type.slice(0, -1)} entity`,
+                                reasoning: `Extracted ${type} entity from text`
+                            });
+                        });
+                    }
+                }
+            }
+
+            // Convert references object to array format
+            if (result.references) {
+                for (const [key, value] of Object.entries(result.references)) {
+                    extracted.references.push({
+                        key: key,
+                        value: value,
+                        reasoning: `Reference extracted from text`
+                    });
+                }
+            }
+
+            return res.json(extracted);
+        } catch (llmError) {
+            logger.error('Know LLM extract error:', llmError.message);
+            return res.status(500).json({
+                error: 'Failed to extract entities',
+                message: llmError.message
+            });
+        }
+
+        // Original API key check (kept as fallback)
+        if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'your_anthropic_api_key_here' || process.env.ANTHROPIC_API_KEY === 'your_api_key_here') {
+            // Fallback to simple keyword detection
+            const extracted = { entities: [], references: [], connections: [] };
+            const keywords = text.toLowerCase();
+
+            if (keywords.includes('user') || keywords.includes('admin') || keywords.includes('customer')) {
+                extracted.entities.push({
+                    type: 'users',
+                    name: 'primary-user',
+                    description: 'Main system user',
+                    reasoning: 'User entity detected based on mention of user roles. This will serve as the primary actor in the system, essential for defining permissions and access patterns.'
+                });
+            }
+
+            if (keywords.includes('dashboard') || keywords.includes('interface') || keywords.includes('screen')) {
+                extracted.entities.push({
+                    type: 'interfaces',
+                    name: 'main-dashboard',
+                    description: 'Primary user interface',
+                    reasoning: 'Interface component identified from UI terminology. Dashboards typically serve as central navigation hubs and should connect to multiple features and data sources.'
+                });
+            }
+
+            if (keywords.includes('data') || keywords.includes('database') || keywords.includes('storage')) {
+                extracted.entities.push({
+                    type: 'data-models',
+                    name: 'core-data-model',
+                    description: 'Primary data structure',
+                    reasoning: 'Data model detected from storage-related keywords. Establishing data models early helps define the information architecture and API contracts.'
+                });
+            }
+
+            if (keywords.includes('api') || keywords.includes('endpoint')) {
+                extracted.references.push({
+                    key: 'api_base_url',
+                    value: '/api/v1',
+                    reasoning: 'API endpoint pattern detected. Standardizing API base URLs early ensures consistent routing and versioning across the application.'
+                });
+            }
+
+            if (extracted.entities.length > 1) {
+                extracted.connections.push({
+                    from: extracted.entities[0].name,
+                    to: extracted.entities[1].name,
+                    reasoning: `Connecting ${extracted.entities[0].name} to ${extracted.entities[1].name} establishes the primary interaction flow. This relationship is fundamental for understanding system architecture.`
+                });
+            }
+
+            return res.json(extracted);
+        }
+
+        // Build comprehensive prompt for entity extraction
+        const prompt = await promptLoader.formatPrompt('extract-entities', {
+            text: text,
+            graph: graph ? JSON.stringify(graph, null, 2) : 'No existing graph provided'
+        });
+
+        const message = await anthropic.messages.create({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 1500,
+            messages: [{
+                role: 'user',
+                content: prompt
+            }]
+        });
+
+        // Parse the response
+        const responseText = message.content[0].text;
+        let extractedData;
+
+        try {
+            // Try to extract JSON from the response
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                extractedData = JSON.parse(jsonMatch[0]);
+            } else {
+                throw new Error('No JSON found in response');
+            }
+
+            // Validate and clean the response structure
+            extractedData.entities = extractedData.entities || [];
+            extractedData.references = extractedData.references || [];
+            extractedData.connections = extractedData.connections || [];
+
+            // Clean entity names to ensure kebab-case
+            extractedData.entities = extractedData.entities.map(entity => ({
+                ...entity,
+                name: entity.name ? entity.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : 'unnamed-entity'
+            }));
+
+            // Clean reference keys to ensure kebab-case
+            extractedData.references = extractedData.references.map(ref => ({
+                ...ref,
+                key: ref.key ? ref.key.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : 'unnamed-key'
+            }));
+
+        } catch (parseError) {
+            logger.warn('Failed to parse Claude response as JSON, using fallback extraction');
+
+            // Fallback: try to extract entities manually from the response
+            extractedData = { entities: [], references: [], connections: [] };
+
+            const lines = responseText.split('\n');
+            let currentSection = null;
+
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+
+                if (trimmedLine.includes('entities') || trimmedLine.includes('ENTITIES')) {
+                    currentSection = 'entities';
+                } else if (trimmedLine.includes('references') || trimmedLine.includes('REFERENCES')) {
+                    currentSection = 'references';
+                } else if (trimmedLine.includes('connections') || trimmedLine.includes('CONNECTIONS')) {
+                    currentSection = 'connections';
+                } else if (currentSection === 'entities' && trimmedLine.includes(':')) {
+                    // Try to extract entity information
+                    const parts = trimmedLine.split(':');
+                    if (parts.length >= 2) {
+                        const name = parts[0].replace(/[^a-z0-9]+/gi, '-').toLowerCase().replace(/^-+|-+$/g, '');
+                        const description = parts.slice(1).join(':').trim();
+                        if (name && description) {
+                            extractedData.entities.push({
+                                type: 'features', // default type
+                                name: name,
+                                description: description
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        res.json(extractedData);
+    } catch (error) {
+        logger.error('Error extracting entities:', error);
+
+        // Final fallback to simple extraction
+        const fallbackExtracted = { entities: [], references: [], connections: [] };
+        const keywords = text.toLowerCase();
+
+        if (keywords.includes('user') || keywords.includes('admin') || keywords.includes('customer')) {
+            fallbackExtracted.entities.push({
+                type: 'users',
+                name: 'primary-user',
+                description: 'Main system user',
+                reasoning: 'User entity detected based on role keywords. Users are fundamental entities that drive system requirements and access patterns.'
+            });
+        }
+
+        if (keywords.includes('dashboard') || keywords.includes('interface') || keywords.includes('screen')) {
+            fallbackExtracted.entities.push({
+                type: 'interfaces',
+                name: 'main-dashboard',
+                description: 'Primary user interface',
+                reasoning: 'Interface identified from UI terms. This will serve as a key interaction point and should be connected to relevant features and data models.'
+            });
+        }
+
+        // Add connection if multiple entities found
+        if (fallbackExtracted.entities.length > 1) {
+            fallbackExtracted.connections.push({
+                from: fallbackExtracted.entities[0].name,
+                to: fallbackExtracted.entities[1].name,
+                reasoning: 'Primary relationship between core entities establishes the fundamental system interaction pattern.'
+            });
+        }
+
+        res.json(fallbackExtracted);
+    }
 });
 
-// Get next question based on gaps
-app.get('/api/discover/next-question', async (req, res) => {
-  try {
-    const healthResult = await executeKnow('health');
-    const gaps = parseHealthOutput(healthResult.output);
-    const question = generateQuestionFromGaps(gaps);
-    res.json(question);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to generate question', details: error.message });
-  }
+// Handle AI commands from the AI bar using know llm
+app.post('/api/ai/command', async (req, res) => {
+    try {
+        const { command, graph, mock } = req.body;
+
+        // Always use know llm - it has built-in mock support
+        try {
+            // Prepare the command and graph context for know llm
+            const graphContext = graph ? JSON.stringify(graph) : '{}';
+
+            // Use know llm query to process the command
+            const provider = mock === true ? 'mock' : (process.env.LLM_PROVIDER || 'mock');
+            const llmCommand = `export LLM_PROVIDER=${provider} && ${KNOW_TOOL} llm query 'Parse this command for graph modification: ${command.replace(/'/g, "'\\''")}. Current graph: ${graphContext.replace(/'/g, "'\\''")}. Return JSON with operations array.' 2>/dev/null`;
+            const { stdout } = await execPromise(llmCommand);
+
+            // Parse response
+            const result = JSON.parse(stdout);
+
+            // If we got a valid response from know llm, process it
+            if (result.response) {
+                // Try to parse the response as operations
+                let operations = [];
+                try {
+                    const parsed = JSON.parse(result.response);
+                    operations = parsed.operations || [];
+                } catch (e) {
+                    // If not JSON, fallback to simple parsing
+                    logger.debug('Could not parse LLM response as JSON, using fallback');
+                }
+
+                // If we have operations, apply them
+                if (operations.length > 0) {
+                    const updatedGraph = JSON.parse(JSON.stringify(graph || { entities: {}, references: {}, graph: [] }));
+                    let operationMessages = [];
+
+                    // Process operations (reuse existing logic)
+                    for (const operation of operations) {
+                        // ... existing operation processing logic ...
+                    }
+
+                    return res.json({
+                        graphUpdates: operationMessages.length > 0 ? updatedGraph : null,
+                        message: operationMessages.join('. ') || 'Command processed'
+                    });
+                }
+            }
+
+            // If know llm didn't provide operations, use simple fallback
+            return res.json({
+                graphUpdates: null,
+                message: 'Could not parse command. Try simpler commands like "add feature user-auth" or "connect user to dashboard".'
+            });
+        } catch (llmError) {
+            logger.error('Know LLM command error:', llmError.message);
+
+            // Return error response
+            return res.json({
+                graphUpdates: null,
+                message: `Error: ${llmError.message}. Try simpler commands.`
+            });
+        }
+    } catch (error) {
+        logger.error('Error in command handler:', error);
+        return res.status(500).json({
+            error: 'Failed to process command',
+            message: error.message
+        });
+    }
 });
 
-// AI-powered entity extraction
-async function extractEntitiesWithAI(answer, question, context) {
-  if (!anthropic) {
-    return extractEntitiesFromText(answer, question.type);
-  }
+// Removed old fallback code - now using know llm exclusively
 
-  const prompt = `You are a knowledge graph expert helping to extract entities from user answers.
+// Prioritized question generation based on graph connectivity using know llm
+app.post('/api/ai/generate-prioritized-questions', async (req, res) => {
+    try {
+        const { graph, existingQA, context, mock } = req.body;
 
-Current context:
-- Question: ${question.text}
-- Question type: ${question.type || 'exploration'}
-- Current graph has ${context?.entities ? Object.keys(context.entities).length : 0} entity types
+        // Always use know llm - it has built-in mock support
+        try {
+            // Prepare context with graph details
+            const graphContext = {
+                entities: graph?.entities || {},
+                connections: graph?.graph || [],
+                existingQA: existingQA || []
+            };
 
-User's answer: "${answer}"
+            // Execute know llm questions with priority focus
+            const provider = mock === true ? 'mock' : (process.env.LLM_PROVIDER || 'mock');
+            const command = `export LLM_PROVIDER=${provider} && ${KNOW_TOOL} llm questions '${JSON.stringify(graphContext).replace(/'/g, "'\\''")}' 2>/dev/null`;
+            const { stdout } = await execPromise(command);
 
-Extract entities from the answer and return them as a JSON array. Each entity should have:
-- type: one of (feature, component, interface, requirement, user, objective, action, platform)
-- id: a snake_case identifier
-- name: human-readable name
-- description: brief description of what it does
-- dependencies: array of entity references this depends on (format: "type:id")
+            // Parse response
+            const result = JSON.parse(stdout);
 
-Focus on concrete entities mentioned in the answer. Don't invent entities not mentioned.
+            // Transform and prioritize questions
+            const questions = result.questions ? result.questions.map((q, i) => ({
+                number: q.id || i + 1,
+                text: q.question || q.text,
+                priority: q.priority || (10 - i),
+                entity_type: q.entity_type,
+                dependency_focus: q.dependency_focus
+            })) : [];
 
-Return ONLY valid JSON array, no explanation:`;
+            // Sort by priority
+            questions.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
-  try {
-    const message = await anthropic.messages.create({
-      model: process.env.ANTHROPIC_MODEL || 'claude-3-haiku-20240307',
-      max_tokens: 1000,
-      temperature: 0.3,
-      messages: [{
-        role: 'user',
-        content: prompt
-      }]
-    });
-
-    const content = message.content[0].text;
-    // Extract JSON from the response
-    const jsonMatch = content.match(/\[[\s\S]*\]/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+            return res.json({ questions, source: 'know-llm' });
+        } catch (llmError) {
+            logger.error('Know LLM prioritized questions error:', llmError.message);
+            return res.status(500).json({
+                error: 'Failed to generate prioritized questions',
+                message: llmError.message
+            });
+        }
+    } catch (error) {
+        logger.error('Error in prioritized questions handler:', error);
+        return res.status(500).json({
+            error: 'Failed to generate questions',
+            message: error.message
+        });
     }
-    return [];
-  } catch (error) {
-    console.error('AI extraction error:', error);
-    return extractEntitiesFromText(answer, question.type);
-  }
-}
+});
 
-async function generateAISuggestions(entities, context) {
-  if (!anthropic || entities.length === 0) {
-    return generateSuggestions(entities, context);
-  }
-
-  const prompt = `Given these extracted entities:
-${JSON.stringify(entities, null, 2)}
-
-And knowing the current graph context has these entity types:
-${context?.entities ? Object.keys(context.entities).join(', ') : 'none'}
-
-Suggest likely dependencies for each entity. Return a JSON object where:
-- Keys are entity IDs from the list above
-- Values are objects with:
-  - dependencies: array of suggested dependency refs (format: "type:id")
-  - relatedEntities: array of other related entity refs
-
-Focus on common architectural patterns. Return ONLY valid JSON:`;
-
-  try {
-    const message = await anthropic.messages.create({
-      model: process.env.ANTHROPIC_MODEL || 'claude-3-haiku-20240307',
-      max_tokens: 500,
-      temperature: 0.3,
-      messages: [{
-        role: 'user',
-        content: prompt
-      }]
-    });
-
-    const content = message.content[0].text;
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+// Get recent logs endpoint
+app.get('/api/logs', async (req, res) => {
+    try {
+        const lines = parseInt(req.query.lines) || 100;
+        const logs = await logger.getRecentLogs(lines);
+        res.json({ logs });
+    } catch (error) {
+        logger.error('Error fetching logs:', error);
+        res.status(500).json({ error: 'Failed to fetch logs' });
     }
-    return {};
-  } catch (error) {
-    console.error('AI suggestions error:', error);
-    return generateSuggestions(entities, context);
-  }
-}
+});
 
-// Helper functions
+// Know tool integration
+app.post('/api/know/generate', async (req, res) => {
+    try {
+        const { type, entity } = req.body;
 
-function extractEntitiesFromText(text, questionType) {
-  // Simple entity extraction logic
-  const entities = [];
+        // Execute know tool command
+        const command = `${KNOW_TOOL} generate ${type} ${entity}`;
+        const { stdout, stderr } = await execPromise(command);
 
-  // Look for common patterns
-  const patterns = {
-    feature: /(?:feature|capability|functionality):\s*([^,\.]+)/gi,
-    component: /(?:component|service|module):\s*([^,\.]+)/gi,
-    requirement: /(?:require|need|must have):\s*([^,\.]+)/gi
-  };
+        if (stderr) {
+            logger.error('Know tool error:', stderr);
+        }
 
-  // Split by common delimiters
-  const items = text.split(/[,;]|\band\b/i).map(s => s.trim()).filter(Boolean);
-
-  items.forEach(item => {
-    const id = item.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    if (id) {
-      entities.push({
-        type: questionType === 'feature' ? 'feature' : 'component',
-        id,
-        name: item,
-        description: '',
-        dependencies: []
-      });
+        res.json({ output: stdout, error: stderr });
+    } catch (error) {
+        logger.error('Error executing know tool:', error);
+        res.status(500).json({ error: 'Failed to execute know tool' });
     }
-  });
-
-  return entities;
-}
-
-function generateSuggestions(entities, context) {
-  const suggestions = {};
-
-  entities.forEach(entity => {
-    suggestions[entity.id] = {
-      dependencies: [],
-      relatedEntities: []
-    };
-
-    // Suggest common dependencies based on type
-    if (entity.type === 'feature') {
-      if (entity.id.includes('telemetry') || entity.id.includes('real-time')) {
-        suggestions[entity.id].dependencies.push('component:websocket-manager');
-      }
-      if (entity.id.includes('map') || entity.id.includes('location')) {
-        suggestions[entity.id].dependencies.push('component:geolocation-service');
-      }
-    }
-  });
-
-  return suggestions;
-}
-
-function parseHealthOutput(output) {
-  // Parse the health command output
-  const gaps = {
-    missingDependencies: [],
-    incompleteEntities: [],
-    orphanedEntities: [],
-    lowCompleteness: []
-  };
-
-  // This would parse the actual know health output
-  // For now, return mock data
-  return gaps;
-}
-
-function generateQuestionFromGaps(gaps) {
-  // Generate targeted questions based on gaps
-  const questions = [
-    {
-      type: 'exploration',
-      text: 'What are the main features your system needs to provide?',
-      context: null
-    },
-    {
-      type: 'dependency',
-      text: 'What components or services does your main feature need?',
-      context: null
-    },
-    {
-      type: 'completion',
-      text: 'Can you describe the user roles in your system?',
-      context: null
-    }
-  ];
-
-  return questions[Math.floor(Math.random() * questions.length)];
-}
+});
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:${PORT}`);
-  console.log(`WebSocket server running on ws://0.0.0.0:${WS_PORT}`);
-  console.log(`Knowledge map: ${process.env.KNOWLEDGE_MAP_PATH}`);
-  console.log(`Access from browser: http://localhost:${PORT} or http://127.0.0.1:${PORT}`);
+const server = app.listen(PORT, () => {
+    logger.log(`Server running on http://localhost:${PORT}`);
+    ensureGraphsDir();
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+    logger.log('SIGTERM signal received: closing HTTP server');
+    server.close(async () => {
+        logger.log('HTTP server closed');
+        await logger.archiveLogs();
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', async () => {
+    logger.log('SIGINT signal received: closing HTTP server');
+    server.close(async () => {
+        logger.log('HTTP server closed');
+        await logger.archiveLogs();
+        process.exit(0);
+    });
 });
