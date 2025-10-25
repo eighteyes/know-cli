@@ -6,7 +6,7 @@
 DEBUG=${DEBUG:-false}
 
 # Path to dependency rules
-DEPENDENCY_RULES="${LIB_DIR:-$(dirname "${BASH_SOURCE[0]}")}/dependency-rules.json"
+DEPENDENCY_RULES="${LIB_DIR:-$(dirname "${BASH_SOURCE[0]}")}/../config/dependency-rules.json"
 
 # No longer need external jq utilities - functionality integrated
 

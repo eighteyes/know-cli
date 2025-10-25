@@ -237,7 +237,7 @@ done
 
 # 12. Check entity types against dependency-rules.json
 info "Checking entity type descriptions..."
-DEPENDENCY_RULES_FILE="./know/lib/dependency-rules.json"
+DEPENDENCY_RULES_FILE="./know/lib/../config/dependency-rules.json"
 if [[ -f "$DEPENDENCY_RULES_FILE" ]]; then
     entity_types=$(jq -r '.entities | keys[]' "$GRAPH_FILE" 2>/dev/null)
     missing_descriptions=0

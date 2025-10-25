@@ -1,0 +1,97 @@
+{
+  "allowed_dependencies": {
+    "project": ["requirement", "user"],
+    "requirement": ["interface", "component"],
+    "interface": ["feature"],
+    "feature": ["action"],
+    "action": ["component"],
+    "component": ["operation"],
+    "user": ["objective", "requirement"],
+    "objective": ["action", "feature"]
+  },
+  "reference_descriptions": {
+    "technical_architecture": "Infrastructure components and system architecture elements",
+    "endpoints": "API endpoint definitions",
+    "libraries": "Code libraries",
+    "protocols": "Communication protocols",
+    "data-models": "Detailed model schemas",
+    "platforms": "Platform specifications for cloud infrastructure, mobile, and web platforms",
+    "business_logic": "Detailed workflows and rules for system operations and processes",
+    "acceptance_criteria": "Success criteria for features with functional, performance, and integration requirements",
+    "state_mutations": "State change specifications for critical operations",
+    "events": "Event definitions for system actions and user interactions",
+    "content": "Complete sentences for communicating with user. Branding and taglines.",
+    "labels": "Specific text labels for buttons, fields, and UI elements",
+    "styles": "Specific CSS styles for UI elements and components",
+    "colors": "Color values with semantic names for theming",
+    "layouts": "Specific layout styles and grid configurations",
+    "patterns": "Specific UI patterns and interaction behaviors",
+    "spacing": "Spacing arrays for micro, component, and layout spacing",
+    "typography": "Font stack, sizes array, and weights array",
+    "breakpoints": "Responsive design breakpoints for different screen sizes",
+    "z-index": "Z-index layers for consistent stacking of UI elements",
+    "transitions": "Animation timings and transition durations",
+    "assets": "Visual assets including images, icons, and media files for UI components and content",
+    "api_contracts": "Detailed request/response schemas, error codes, rate limits for all API endpoints",
+    "validation_rules": "Field-level and cross-field validation specifications for data integrity",
+    "error_states": "Error messages, recovery actions, and fallback behaviors for user-facing errors",
+    "performance_specs": "Response time SLAs, data limits, concurrency requirements, and load specifications",
+    "notifications": "Alert rules, message templates, delivery channels, and notification triggers",
+    "configuration": "Feature toggles, environment configs, deployment settings, and runtime parameters",
+    "metrics": "Analytics events, KPIs, success metrics, and tracking requirements for product insights",
+    "examples": "Sample inputs/outputs, edge cases, test scenarios, and happy path demonstrations",
+    "constraints": "Business rules, system-wide invariants, and resource limits that must always hold",
+    "terminology": "Domain-specific terms, abbreviations, and naming conventions",
+    "sequences": "Order of operations, initialization sequences, shutdown procedures, and event cascades",
+    "mappings": "Transformations between representations, status codes to messages, and field mappings",
+    "defaults": "System-wide default values, fallback behaviors, and initial states for entities",
+    "asset": "Visual or media resource used in the system"
+  },
+  "reference_notes": {
+    "purpose": "References are terminal graph nodes used for template generation and detailed specifications",
+    "schema": "Each reference category uses a flat, but flexible schema tailored to its specific needs",
+    "naming": "Reference keys use plaintext naming (not key_object_notation) for final nodes",
+    "usage": "'How'Entities in the graph can reference these nodes for implementation details and specifications",
+    "design_keys": [
+      "colors-css",
+      "typography-css",
+      "spacing-css",
+      "styles-css",
+      "layouts-css",
+      "patterns-css",
+      "breakpoints-css",
+      "z-index-css",
+      "transitions-css"
+    ]
+  },
+  "meta_descriptions": {
+    "workflows": "Collections of Operations that form complete processes",
+    "assumptions": "Explicit list of technical and business assumptions underlying the design",
+    "phases": "Project implementation phases with dependencies and parallelization information",
+    "out_of_scope": "Features and capabilities explicitly excluded from the project",
+    "deployment": "Current deployment status and rollout information for different features",
+    "project": "High-level project information including name, tagline, and brand promise",
+    "decisions": "Architecture and design decisions with rationale, alternatives considered, and trade-offs",
+    "qa_sessions": "Ordered list of questions to refine the project"
+  },
+  "entity_descriptions": {
+    "project": "Top-level container representing the entire software project or system",
+    "requirement": "Functional or non-functional specification that the system must satisfy",
+    "interface": "User interface screen or page in the application",
+    "feature": "Distinct functionality or capability provided to users",
+    "component": "Reusable building block of the system architecture",
+    "operation": "Logic and state management for component interactions",
+    "user": "Actor or role that interacts with the system",
+    "objective": "High-level goal or outcome that users want to achieve",
+    "action": "Specific user action connected to an objective"
+  },
+  "entity_notes": {
+    "schema": "Entities only have name & description keys."
+  },
+  "notes":{
+    "names": "reference and entity keys use snake case, use - for keys, not _",
+    "schema": "Do not use id, the parent key is the unique identifier",
+    "what": ["project","user","objective","action"],
+    "how": ["project","requirement","interface","feature","action","component","operation"]
+  }
+}

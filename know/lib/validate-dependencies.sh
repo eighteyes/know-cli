@@ -7,7 +7,7 @@ set -euo pipefail
 
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-RULES_FILE="${SCRIPT_DIR}/dependency-rules.json"
+RULES_FILE="${SCRIPT_DIR}/../config/dependency-rules.json"
 
 # Colors for output
 RED='\033[0;31m'

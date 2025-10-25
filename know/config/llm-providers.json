@@ -1,0 +1,154 @@
+{
+  "providers": {
+    "anthropic": {
+      "name": "Anthropic Claude",
+      "type": "remote",
+      "base_url": "https://api.anthropic.com/v1/messages",
+      "models": [
+        {
+          "id": "claude-3-5-sonnet-20241022",
+          "name": "Claude 3.5 Sonnet",
+          "max_tokens": 8192,
+          "input_cost_per_million": 3.0,
+          "output_cost_per_million": 15.0
+        },
+        {
+          "id": "claude-3-haiku-20240307",
+          "name": "Claude 3 Haiku",
+          "max_tokens": 4096,
+          "input_cost_per_million": 0.25,
+          "output_cost_per_million": 1.25
+        }
+      ],
+      "headers": {
+        "Content-Type": "application/json",
+        "anthropic-version": "2023-06-01",
+        "x-api-key": "${API_KEY}"
+      },
+      "request_format": "anthropic",
+      "response_path": ".content[0].text",
+      "usage_path": ".usage",
+      "stream_support": true,
+      "auth_env_var": "ANTHROPIC_API_KEY"
+    },
+    "lmstudio": {
+      "name": "LM Studio Local",
+      "type": "local",
+      "base_url": "http://localhost:1234/v1/chat/completions",
+      "models": [
+        {
+          "id": "local-model",
+          "name": "Local Model",
+          "max_tokens": 4096,
+          "input_cost_per_million": 0,
+          "output_cost_per_million": 0
+        }
+      ],
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "request_format": "openai",
+      "response_path": ".choices[0].message.content",
+      "usage_path": ".usage",
+      "stream_support": false,
+      "auth_env_var": null
+    },
+    "openai": {
+      "name": "OpenAI GPT",
+      "type": "remote",
+      "base_url": "https://api.openai.com/v1/chat/completions",
+      "models": [
+        {
+          "id": "gpt-4-turbo-preview",
+          "name": "GPT-4 Turbo",
+          "max_tokens": 4096,
+          "input_cost_per_million": 10.0,
+          "output_cost_per_million": 30.0
+        },
+        {
+          "id": "gpt-3.5-turbo",
+          "name": "GPT-3.5 Turbo",
+          "max_tokens": 4096,
+          "input_cost_per_million": 0.5,
+          "output_cost_per_million": 1.5
+        }
+      ],
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer ${API_KEY}"
+      },
+      "request_format": "openai",
+      "response_path": ".choices[0].message.content",
+      "usage_path": ".usage",
+      "stream_support": true,
+      "auth_env_var": "OPENAI_API_KEY"
+    },
+    "mock": {
+      "name": "Mock Provider",
+      "type": "mock",
+      "base_url": null,
+      "models": [
+        {
+          "id": "mock-model",
+          "name": "Mock Model",
+          "max_tokens": 4096,
+          "input_cost_per_million": 0,
+          "output_cost_per_million": 0
+        }
+      ],
+      "headers": {},
+      "request_format": "mock",
+      "response_path": null,
+      "usage_path": null,
+      "stream_support": false,
+      "auth_env_var": null,
+      "mock_responses": {
+        "default": "This is a mock response for testing purposes.",
+        "graph_query": "{\"entities\": {\"user\": {\"owner\": {\"description\": \"System owner\"}}}, \"graph\": {}}",
+        "entity_extraction": "{\"type\": \"feature\", \"key\": \"test-feature\", \"description\": \"A test feature\"}"
+      }
+    }
+  },
+  "request_formats": {
+    "anthropic": {
+      "template": {
+        "model": "${MODEL}",
+        "max_tokens": "${MAX_TOKENS}",
+        "temperature": "${TEMPERATURE}",
+        "messages": [
+          {
+            "role": "user",
+            "content": "${PROMPT}"
+          }
+        ]
+      }
+    },
+    "openai": {
+      "template": {
+        "model": "${MODEL}",
+        "max_tokens": "${MAX_TOKENS}",
+        "temperature": "${TEMPERATURE}",
+        "messages": [
+          {
+            "role": "user",
+            "content": "${PROMPT}"
+          }
+        ]
+      }
+    },
+    "mock": {
+      "template": {
+        "prompt": "${PROMPT}"
+      }
+    }
+  },
+  "defaults": {
+    "provider": "anthropic",
+    "model": "claude-3-5-sonnet-20241022",
+    "max_tokens": 4096,
+    "temperature": 0.7,
+    "retry_count": 3,
+    "retry_delay": 2,
+    "timeout": 30
+  }
+}

@@ -66,3 +66,4 @@ Validate the graph after every change with `npm run validate-graph`.
 # WWW Rules
 Do NOT refer to AI, graph, entities or references in the visible text.
 - www is on 8880
+- @know/config/dependency-rules.json @.ai/spec-graph.json

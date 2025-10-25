@@ -1,0 +1,244 @@
+{
+  "workflows": {
+    "vision_statement": {
+      "name": "Vision Statement Processor",
+      "description": "Processes initial project vision to extract core entities and objectives",
+      "input_schema": {
+        "vision": "string",
+        "context": "object?"
+      },
+      "output_schema": {
+        "project_name": "string",
+        "objectives": "array",
+        "users": "array",
+        "initial_features": "array",
+        "requirements": "array"
+      },
+      "prompt_template": "Analyze this project vision and extract structured information:\n\nVision: ${vision}\n\nExtract:\n1. Project name\n2. Primary objectives (3-5 high-level goals)\n3. User types/roles\n4. Initial feature ideas\n5. Core requirements\n\nReturn as JSON with keys: project_name, objectives, users, initial_features, requirements",
+      "model_preferences": {
+        "temperature": 0.5,
+        "max_tokens": 2048
+      }
+    },
+    "question_generation": {
+      "name": "Question Generation/Expansion",
+      "description": "Generates discovery questions based on current graph state",
+      "input_schema": {
+        "graph_context": "object",
+        "focus_area": "string?",
+        "existing_questions": "array?"
+      },
+      "output_schema": {
+        "questions": [
+          {
+            "id": "string",
+            "text": "string",
+            "category": "string",
+            "priority": "number",
+            "expected_entities": "array"
+          }
+        ]
+      },
+      "prompt_template": "Based on the current project graph:\n${graph_context}\n\nGenerate ${count} discovery questions focusing on ${focus_area}.\n\nAvoid these existing questions:\n${existing_questions}\n\nFor each question provide:\n- Unique ID\n- Question text\n- Category (user/objective/feature/requirement/action)\n- Priority (1-5)\n- Expected entity types that might be discovered\n\nReturn as JSON array.",
+      "model_preferences": {
+        "temperature": 0.7,
+        "max_tokens": 3000
+      },
+      "batch_config": {
+        "max_questions_per_batch": 10,
+        "min_questions_per_batch": 3
+      }
+    },
+    "node_extraction": {
+      "name": "Node/Entity Extractor",
+      "description": "Extracts entities and references from Q&A responses",
+      "input_schema": {
+        "question": "string",
+        "answer": "string",
+        "graph_context": "object?"
+      },
+      "output_schema": {
+        "entities": [
+          {
+            "type": "string",
+            "key": "string",
+            "description": "string",
+            "confidence": "number"
+          }
+        ],
+        "references": [
+          {
+            "key": "string",
+            "value": "string",
+            "category": "string"
+          }
+        ],
+        "connections": [
+          {
+            "from": "string",
+            "to": "string",
+            "type": "depends_on"
+          }
+        ]
+      },
+      "prompt_template": "Extract graph entities from this Q&A:\n\nQuestion: ${question}\nAnswer: ${answer}\n\nCurrent graph context:\n${graph_context}\n\nIdentify:\n1. New entities (type, key, description)\n2. References (reusable values)\n3. Dependencies between entities\n\nFollow naming conventions:\n- Use granular keys (e.g., 'user-manager' not 'users')\n- Don't reuse parent names\n- Dependencies go in connections, not entity attributes\n\nReturn as JSON with entities, references, and connections arrays.",
+      "model_preferences": {
+        "temperature": 0.3,
+        "max_tokens": 2048
+      }
+    },
+    "requirements_objectives_pairing": {
+      "name": "Requirements-Objectives Mapper",
+      "description": "Maps requirements to objectives and identifies gaps",
+      "input_schema": {
+        "requirements": "array",
+        "objectives": "array",
+        "existing_mappings": "object?"
+      },
+      "output_schema": {
+        "mappings": [
+          {
+            "requirement": "string",
+            "objectives": "array",
+            "strength": "number"
+          }
+        ],
+        "gaps": [
+          {
+            "type": "string",
+            "description": "string",
+            "suggested_entity": "object?"
+          }
+        ]
+      },
+      "prompt_template": "Map requirements to objectives:\n\nRequirements:\n${requirements}\n\nObjectives:\n${objectives}\n\nFor each requirement:\n1. Identify related objectives\n2. Rate connection strength (0-1)\n3. Identify gaps where requirements don't align with objectives\n\nReturn JSON with mappings and gaps.",
+      "model_preferences": {
+        "temperature": 0.4,
+        "max_tokens": 2048
+      }
+    },
+    "action_inference": {
+      "name": "Action Inference Engine",
+      "description": "Infers user actions from objectives and features",
+      "input_schema": {
+        "objectives": "array",
+        "features": "array",
+        "users": "array"
+      },
+      "output_schema": {
+        "actions": [
+          {
+            "key": "string",
+            "description": "string",
+            "user": "string",
+            "objective": "string",
+            "features_used": "array"
+          }
+        ]
+      },
+      "prompt_template": "Infer user actions from objectives and features:\n\nUsers: ${users}\nObjectives: ${objectives}\nFeatures: ${features}\n\nFor each objective, identify concrete actions users would take.\nEach action should:\n- Have a specific key (verb-noun format)\n- Link to one user type\n- Support one objective\n- Use one or more features\n\nReturn JSON with actions array.",
+      "model_preferences": {
+        "temperature": 0.6,
+        "max_tokens": 2048
+      }
+    },
+    "workpath_completion": {
+      "name": "Workpath Completer",
+      "description": "Completes partial workflow paths in the graph",
+      "input_schema": {
+        "partial_path": "array",
+        "available_nodes": "object",
+        "target_type": "string?"
+      },
+      "output_schema": {
+        "completed_paths": [
+          {
+            "path": "array",
+            "confidence": "number",
+            "missing_nodes": "array"
+          }
+        ]
+      },
+      "prompt_template": "Complete this workflow path:\n\nPartial path: ${partial_path}\nAvailable nodes: ${available_nodes}\nTarget: ${target_type}\n\nSuggest:\n1. Missing intermediate steps\n2. Required connections\n3. New nodes if needed\n\nReturn JSON with completed_paths including confidence scores.",
+      "model_preferences": {
+        "temperature": 0.5,
+        "max_tokens": 2048
+      }
+    },
+    "dependency_chain": {
+      "name": "Dependency Chain Builder",
+      "description": "Builds complete dependency chains for features",
+      "input_schema": {
+        "feature": "string",
+        "components": "array",
+        "behaviors": "array",
+        "data_models": "array"
+      },
+      "output_schema": {
+        "chains": [
+          {
+            "feature": "string",
+            "dependencies": [
+              {
+                "type": "string",
+                "key": "string",
+                "level": "number"
+              }
+            ]
+          }
+        ]
+      },
+      "prompt_template": "Build dependency chain for feature:\n\nFeature: ${feature}\nComponents: ${components}\nBehaviors: ${behaviors}\nData Models: ${data_models}\n\nCreate dependency hierarchy following:\nFeature → Component → (Behaviors + Presentation + Data Models)\n\nReturn JSON with complete dependency chains.",
+      "model_preferences": {
+        "temperature": 0.3,
+        "max_tokens": 2048
+      }
+    },
+    "consistency_validator": {
+      "name": "Graph Consistency Validator",
+      "description": "Validates graph consistency and suggests fixes",
+      "input_schema": {
+        "graph": "object",
+        "rules": "object?"
+      },
+      "output_schema": {
+        "issues": [
+          {
+            "type": "string",
+            "severity": "string",
+            "location": "string",
+            "description": "string",
+            "suggested_fix": "object?"
+          }
+        ],
+        "valid": "boolean"
+      },
+      "prompt_template": "Validate graph consistency:\n\n${graph}\n\nCheck for:\n1. Circular dependencies\n2. Orphaned nodes\n3. Missing references\n4. Naming convention violations\n5. Invalid entity types\n\nReturn JSON with issues array and overall validity.",
+      "model_preferences": {
+        "temperature": 0.2,
+        "max_tokens": 3000
+      }
+    }
+  },
+  "batch_processing": {
+    "max_concurrent": 3,
+    "timeout_seconds": 30,
+    "retry_on_failure": true,
+    "cache_responses": true,
+    "cache_ttl_seconds": 3600
+  },
+  "workflow_chains": {
+    "discovery_session": [
+      "vision_statement",
+      "question_generation",
+      "node_extraction",
+      "requirements_objectives_pairing"
+    ],
+    "graph_completion": [
+      "action_inference",
+      "workpath_completion",
+      "dependency_chain",
+      "consistency_validator"
+    ]
+  }
+}
