@@ -1,5 +1,5 @@
 {
-  "name": "@lb-project/know",
+  "name": "know-cli",
   "version": "0.0.1",
   "description": "Product / development graph management tool",
   "bin": {
@@ -14,9 +14,10 @@
     "graph",
     "specification",
     "knowledge-graph",
-    "project-management"
+    "project-management",
+    "software-development"
   ],
-  "author": "LB Project",
+  "author": "Sean Canton",
   "license": "MIT",
   "repository": {
     "type": "git",
