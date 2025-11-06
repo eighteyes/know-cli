@@ -52,7 +52,7 @@ sudo make install
 # Manual installation
 sudo mkdir -p /usr/local/lib/know
 sudo cp -r know_lib /usr/local/lib/know/
-sudo cp know_minimal.py /usr/local/lib/know/know.py
+sudo cp know.py /usr/local/lib/know/know.py
 sudo tee /usr/local/bin/know > /dev/null << 'EOF'
 #!/usr/bin/env bash
 exec python3 /usr/local/lib/know/know.py "$@"
@@ -73,7 +73,7 @@ make user-install
 # Manual installation
 mkdir -p ~/.local/lib/know ~/.local/bin
 cp -r know_lib ~/.local/lib/know/
-cp know_minimal.py ~/.local/lib/know/know.py
+cp know.py ~/.local/lib/know/know.py
 cat > ~/.local/bin/know << 'EOF'
 #!/usr/bin/env bash
 exec python3 ~/.local/lib/know/know.py "$@"
@@ -355,7 +355,7 @@ The tool works without these, but they enhance functionality:
 
 ```bash
 # Full feature set (when pip available)
-pip install click pydantic networkx rich
+pip install click pydantic networkx rich aiofiles python-dotenv
 
 # Development dependencies
 pip install pytest pytest-cov black mypy

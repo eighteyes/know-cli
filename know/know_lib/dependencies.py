@@ -30,8 +30,8 @@ class DependencyManager:
             self.rules = json.load(f)
 
         self.allowed_deps = self.rules.get('allowed_dependencies', {})
-        self.entity_descriptions = self.rules.get('entity_descriptions', {})
-        self.reference_descriptions = self.rules.get('reference_descriptions', {})
+        self.entity_description = self.rules.get('entity_description', {})
+        self.reference_description = self.rules.get('reference_description', {})
 
     def is_valid_dependency(self, from_type: str, to_type: str) -> bool:
         """
@@ -44,17 +44,9 @@ class DependencyManager:
         Returns:
             True if dependency is allowed
         """
-        # Normalize plurals
-        from_type = from_type.rstrip('s')
-        to_type = to_type.rstrip('s')
-
-        # Re-pluralize for lookup (rules use plural forms)
-        from_type_plural = from_type + 's' if not from_type.endswith('s') else from_type
-
-        allowed = self.allowed_deps.get(from_type_plural, [])
-
-        # Check both singular and plural forms
-        return to_type in allowed or (to_type + 's') in allowed
+        # Rules use singular forms - use types as-is
+        allowed = self.allowed_deps.get(from_type, [])
+        return to_type in allowed
 
     def get_allowed_targets(self, entity_type: str) -> List[str]:
         """
@@ -66,9 +58,8 @@ class DependencyManager:
         Returns:
             List of allowed target entity types
         """
-        # Normalize to plural form
-        entity_type_plural = entity_type + 's' if not entity_type.endswith('s') else entity_type
-        return self.allowed_deps.get(entity_type_plural, [])
+        # Rules use singular forms - use type as-is
+        return self.allowed_deps.get(entity_type, [])
 
     def get_dependencies(self, entity_id: str) -> List[str]:
         """
@@ -191,7 +182,7 @@ class DependencyManager:
                 dep_type = dep_id.split(':')[0] if ':' in dep_id else dep_id
 
                 # Skip reference dependencies (they're always valid)
-                if dep_type in self.reference_descriptions:
+                if dep_type in self.reference_description:
                     continue
 
                 if not self.is_valid_dependency(entity_type, dep_type):
@@ -284,7 +275,8 @@ class DependencyManager:
         Get a topological ordering of all entities in the graph.
 
         Returns:
-            List of entity IDs in dependency order (dependencies before dependents)
+            List of entity IDs in dependency order (dependencies before dependents),
+            or empty list if graph has cycles
         """
         data = self.graph.get_graph()
         graph = data.get('graph', {})
@@ -312,6 +304,10 @@ class DependencyManager:
                 if in_degree[dependent] == 0:
                     queue.append(dependent)
 
+        # If we didn't process all nodes, there are cycles
+        if len(result) != len(graph):
+            return []
+
         return result
 
     def add_dependency(self, from_id: str, to_id: str, validate: bool = True) -> Tuple[bool, Optional[str]]:
@@ -332,7 +328,7 @@ class DependencyManager:
             to_type = to_id.split(':')[0] if ':' in to_id else to_id
 
             # Allow references always
-            if to_type not in self.reference_descriptions:
+            if to_type not in self.reference_description:
                 if not self.is_valid_dependency(from_type, to_type):
                     allowed = self.get_allowed_targets(from_type)
                     return False, f"{from_type} can only depend on: {', '.join(allowed)}"

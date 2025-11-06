@@ -18,19 +18,70 @@ class GraphValidator:
 
         Args:
             graph_manager: GraphManager instance
-            rules_path: Path to dependency-rules.json
+            rules_path: Path to dependency-rules.json (overrides all auto-detection)
         """
         self.graph = graph_manager
 
-        # Load dependency rules
+        # Load dependency rules with fallback logic
         if rules_path is None:
-            rules_path = Path(__file__).parent.parent / "config" / "dependency-rules.json"
+            rules_path = self._resolve_dependency_rules()
 
         with open(rules_path, 'r') as f:
             self.rules = json.load(f)
 
-        self.entity_descriptions = self.rules.get('entity_descriptions', {})
-        self.reference_descriptions = self.rules.get('reference_descriptions', {})
+        self.entity_description = self.rules.get('entity_description', {})
+        self.reference_description = self.rules.get('reference_description', {})
+
+        # Extract allowed metadata from entity_note
+        entity_note = self.rules.get('entity_note', {})
+        self.allowed_metadata = set(entity_note.get('allowed_metadata', []))
+
+    def _resolve_dependency_rules(self) -> Path:
+        """
+        Resolve which dependency rules file to use.
+
+        Priority:
+        1. Explicit meta.dependency_rules.file in graph
+        2. Format-based default from known formats
+        3. Ultimate fallback to dependency-rules.json
+
+        Returns:
+            Path to dependency rules file
+        """
+        data = self.graph.load()
+        meta = data.get('meta', {})
+
+        # Check for explicit reference in meta.dependency_rules
+        dep_rules_config = meta.get('dependency_rules', {})
+        if isinstance(dep_rules_config, dict):
+            explicit_file = dep_rules_config.get('file')
+            if explicit_file:
+                # Resolve relative to graph file location
+                graph_path = Path(self.graph.graph_path)
+                rules_path = graph_path.parent / explicit_file
+
+                if rules_path.exists():
+                    return rules_path
+                else:
+                    # Warn but continue to fallback
+                    print(f"Warning: Specified rules file not found: {rules_path}")
+
+        # Fall back to format-based defaults
+        graph_format = meta.get('format', '')
+
+        format_to_rules = {
+            'json-graph': 'dependency-rules.json',
+            'code-dependency-graph': 'code-dependency-rules.json',
+        }
+
+        rules_file = format_to_rules.get(graph_format, 'dependency-rules.json')
+        default_path = Path(__file__).parent.parent / "config" / rules_file
+
+        if default_path.exists():
+            return default_path
+
+        # Ultimate fallback
+        return Path(__file__).parent.parent / "config" / "dependency-rules.json"
 
     def validate_all(self) -> Tuple[bool, Dict[str, List[str]]]:
         """
@@ -138,9 +189,10 @@ class GraphValidator:
                     results['warnings'].append(f"Entity {entity_id} missing 'description' field")
 
                 # Warn about unexpected fields (entities should only have name & description)
+                # But allow metadata fields defined in dependency-rules.json
                 expected_fields = {'name', 'description'}
                 actual_fields = set(entity_data.keys())
-                unexpected = actual_fields - expected_fields
+                unexpected = actual_fields - expected_fields - self.allowed_metadata
 
                 if unexpected:
                     # Check if these are actually relationships that should be in graph
@@ -270,13 +322,13 @@ class GraphValidator:
 
         # Check if all entity types are documented in rules
         for entity_type in entities.keys():
-            if entity_type not in self.entity_descriptions:
+            if entity_type not in self.entity_description:
                 results['warnings'].append(
                     f"Entity type '{entity_type}' not documented in dependency-rules.json"
                 )
 
         # Check if there are documented entity types not used
-        for entity_type in self.entity_descriptions.keys():
+        for entity_type in self.entity_description.keys():
             if entity_type not in entities:
                 results['info'].append(
                     f"Documented entity type '{entity_type}' not used in graph"

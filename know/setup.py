@@ -20,7 +20,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/yourproject/know",
     packages=find_packages(exclude=["tests", "tests.*"]),
-    py_modules=["know_minimal"],
+    py_modules=["know"],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",
@@ -41,14 +41,13 @@ setup(
     install_requires=[
         "click>=8.0",
         "rich>=13.0",
+        "pydantic>=2.0",
+        "networkx>=3.0",
+        "aiofiles>=0.8",
+        "python-dotenv>=0.19",
     ],
     extras_require={
-        "full": [
-            "pydantic>=2.0",
-            "networkx>=3.0",
-            "aiofiles>=0.8",
-            "python-dotenv>=0.19",
-        ],
+        "full": [],
         "dev": [
             "pytest>=7.0",
             "pytest-asyncio>=0.21",

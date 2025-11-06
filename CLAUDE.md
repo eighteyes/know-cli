@@ -1,4 +1,3 @@
-Graph File : `.ai/spec-graph.json`
 
 # Graph TOP LEVEL
 ```
@@ -38,8 +37,6 @@ Entity/Reference[*] = Nodes
 # GRAPH SCRIPTS
 Use these to modify / query / analyze the graph file. Utilize these instead of `jq`, when using bash & when writing other scripts.
 
-Query: !`./know/lib/query-graph.sh -h`
-Modify: !`./know/lib/mod-graph.sh -h`
 Know Tool: !`./know/know`
 
 # WWW_v2 Map

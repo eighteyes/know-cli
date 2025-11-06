@@ -9,49 +9,82 @@
     "user": ["objective", "requirement"],
     "objective": ["action", "feature"]
   },
-  "reference_descriptions": {
-    "technical_architecture": "Infrastructure components and system architecture elements",
-    "endpoints": "API endpoint definitions",
-    "libraries": "Code libraries",
-    "protocols": "Communication protocols",
-    "data-models": "Detailed model schemas",
-    "platforms": "Platform specifications for cloud infrastructure, mobile, and web platforms",
-    "business_logic": "Detailed workflows and rules for system operations and processes",
-    "acceptance_criteria": "Success criteria for features with functional, performance, and integration requirements",
-    "state_mutations": "State change specifications for critical operations",
-    "events": "Event definitions for system actions and user interactions",
-    "content": "Complete sentences for communicating with user. Branding and taglines.",
-    "labels": "Specific text labels for buttons, fields, and UI elements",
-    "styles": "Specific CSS styles for UI elements and components",
-    "colors": "Color values with semantic names for theming",
-    "layouts": "Specific layout styles and grid configurations",
-    "patterns": "Specific UI patterns and interaction behaviors",
-    "spacing": "Spacing arrays for micro, component, and layout spacing",
-    "typography": "Font stack, sizes array, and weights array",
-    "breakpoints": "Responsive design breakpoints for different screen sizes",
-    "z-index": "Z-index layers for consistent stacking of UI elements",
-    "transitions": "Animation timings and transition durations",
-    "assets": "Visual assets including images, icons, and media files for UI components and content",
-    "api_contracts": "Detailed request/response schemas, error codes, rate limits for all API endpoints",
-    "validation_rules": "Field-level and cross-field validation specifications for data integrity",
-    "error_states": "Error messages, recovery actions, and fallback behaviors for user-facing errors",
-    "performance_specs": "Response time SLAs, data limits, concurrency requirements, and load specifications",
-    "notifications": "Alert rules, message templates, delivery channels, and notification triggers",
-    "configuration": "Feature toggles, environment configs, deployment settings, and runtime parameters",
-    "metrics": "Analytics events, KPIs, success metrics, and tracking requirements for product insights",
-    "examples": "Sample inputs/outputs, edge cases, test scenarios, and happy path demonstrations",
-    "constraints": "Business rules, system-wide invariants, and resource limits that must always hold",
-    "terminology": "Domain-specific terms, abbreviations, and naming conventions",
-    "sequences": "Order of operations, initialization sequences, shutdown procedures, and event cascades",
-    "mappings": "Transformations between representations, status codes to messages, and field mappings",
-    "defaults": "System-wide default values, fallback behaviors, and initial states for entities",
-    "asset": "Visual or media resource used in the system"
+  "reference_dependency_rule": {
+    "description": "References (terminal nodes) can be dependencies of ANY entity type",
+    "applies_to": "all_entities",
+    "reference_types": [
+      "technical_architecture", "endpoint", "library", "protocol", "data-model",
+      "platform", "business_logic", "acceptance_criterion", "state_mutation",
+      "event", "content", "label", "style", "color", "layout", "pattern",
+      "spacing", "typography", "breakpoint", "z-index", "transition", "asset",
+      "api_contract", "validation_rule", "error_state", "performance_spec",
+      "notification", "configuration", "metric", "example", "constraint",
+      "terminology", "sequence", "mapping", "default",
+      "source-file", "external-dep", "api-surface", "product-component",
+      "execution-trace", "call-graph", "control-flow", "data-flow",
+      "side-effect", "error-path", "code-module"
+    ],
+    "validation": "References are always valid dependencies and bypass entity-to-entity dependency rules",
+    "examples": [
+      "feature:analytics can depend on data-model:analytics-model",
+      "component:auth-form can depend on business_logic:login-workflow",
+      "action:export can depend on api_contract:export-endpoint"
+    ]
   },
-  "reference_notes": {
+  "reference_description": {
+    "technical_architecture": "Infrastructure components and system architecture elements",
+    "endpoint": "API endpoint definitions",
+    "library": "Code libraries",
+    "protocol": "Communication protocols",
+    "data-model": "Detailed model schemas",
+    "platform": "Platform specifications for cloud infrastructure, mobile, and web platforms",
+    "business_logic": "Detailed workflows and rules for system operations and processes",
+    "acceptance_criterion": "Success criteria for features with functional, performance, and integration requirements",
+    "state_mutation": "State change specifications for critical operations",
+    "event": "Event definitions for system actions and user interactions",
+    "content": "Complete sentences for communicating with users. Branding and taglines.",
+    "label": "Specific text labels for buttons, fields, and UI elements",
+    "style": "Specific CSS styles for UI elements and components",
+    "color": "Color values with semantic names for theming",
+    "layout": "Specific layout styles and grid configurations",
+    "pattern": "Specific UI patterns and interaction behaviors",
+    "spacing": "Spacing arrays for micro, component, and layout spacing",
+    "typography": "Font stacks, size arrays, and weight arrays",
+    "breakpoint": "Responsive design breakpoints for different screen sizes",
+    "z-index": "Z-index layers for consistent stacking of UI elements",
+    "transition": "Animation timings and transition durations",
+    "asset": "Visual assets including images, icons, and media files for UI components and content",
+    "api_contract": "Detailed request/response schemas, error codes, rate limits for all API endpoints",
+    "validation_rule": "Field-level and cross-field validation specifications for data integrity",
+    "error_state": "Error messages, recovery actions, and fallback behaviors for user-facing errors",
+    "performance_spec": "Response time SLAs, data limits, concurrency requirements, and load specifications",
+    "notification": "Alert rules, message templates, delivery channels, and notification triggers",
+    "configuration": "Feature toggles, environment configs, deployment settings, and runtime parameters",
+    "metric": "Analytics events, KPIs, success metrics, and tracking requirements for product insights",
+    "example": "Sample inputs/outputs, edge cases, test scenarios, and happy path demonstrations",
+    "constraint": "Business rules, system-wide invariants, and resource limits that must always hold",
+    "terminology": "Domain-specific terms, abbreviations, and naming conventions",
+    "sequence": "Orders of operations, initialization sequences, shutdown procedures, and event cascades",
+    "mapping": "Transformations between representations, status codes to messages, and field mappings",
+    "default": "System-wide default values, fallback behaviors, and initial states for entities",
+    "source-file": "Source code file implementations with file path and module details",
+    "external-dep": "External package dependencies from npm, pip, or other package managers",
+    "api-surface": "Public API definitions including exported functions, classes, and modules",
+    "product-component": "Cross-reference to product-level components in spec-graph.json",
+    "execution-trace": "Step-by-step execution path through module functions with call details",
+    "call-graph": "Function call relationships showing what calls what with call types",
+    "control-flow": "Conditional logic, branches, loops, and decision points in code",
+    "data-flow": "Data transformations and how data moves through the system",
+    "side-effect": "Observable effects beyond return values: file I/O, state changes, process spawning",
+    "error-path": "Exception handling, error propagation, and recovery strategies",
+    "code-module": "Cross-reference to code-level modules in code-graph.json"
+  },
+  "reference_note": {
     "purpose": "References are terminal graph nodes used for template generation and detailed specifications",
     "schema": "Each reference category uses a flat, but flexible schema tailored to its specific needs",
     "naming": "Reference keys use plaintext naming (not key_object_notation) for final nodes",
-    "usage": "'How'Entities in the graph can reference these nodes for implementation details and specifications",
+    "usage": "'How' entities in the graph can reference these nodes for implementation details and specifications",
+    "dependency_rule": "References can be dependencies of ANY entity type (see reference_dependency_rule)",
     "design_keys": [
       "colors-css",
       "typography-css",
@@ -64,17 +97,110 @@
       "transitions-css"
     ]
   },
-  "meta_descriptions": {
-    "workflows": "Collections of Operations that form complete processes",
-    "assumptions": "Explicit list of technical and business assumptions underlying the design",
-    "phases": "Project implementation phases with dependencies and parallelization information",
+  "meta_description": {
+    "workflow": "Collections of operations that form complete processes",
+    "assumption": "Explicit lists of technical and business assumptions underlying the design",
+    "phase": "Project implementation phases with dependencies and parallelization information",
     "out_of_scope": "Features and capabilities explicitly excluded from the project",
     "deployment": "Current deployment status and rollout information for different features",
     "project": "High-level project information including name, tagline, and brand promise",
-    "decisions": "Architecture and design decisions with rationale, alternatives considered, and trade-offs",
-    "qa_sessions": "Ordered list of questions to refine the project"
+    "decision": "Architecture and design decisions with rationale, alternatives considered, and trade-offs",
+    "qa_session": "Ordered lists of questions to refine the project"
   },
-  "entity_descriptions": {
+  "meta_schema": {
+    "top_level": {
+      "version": "STRING - Semantic version of graph format",
+      "format": "STRING - Format identifier (e.g., 'json-graph')",
+      "description": "STRING - Human-readable description of this knowledge graph",
+      "generated_at": "ISO8601_TIMESTAMP - When this graph was generated or last updated",
+      "project_root": "PATH_STRING - Absolute path to project root directory",
+      "source": "PATH_STRING - Relative path to source requirements document"
+    },
+    "project": {
+      "name": "STRING - Full project name",
+      "abbreviation": "STRING - Short abbreviation or acronym",
+      "tagline": "STRING - Marketing tagline or brief pitch",
+      "brand_promise": "STRING - Core value proposition or brand commitment",
+      "deployment": "OBJECT<STRING:STRING|NUMBER> - Feature names mapped to deployment status or counts",
+      "out_of_scope": "ARRAY<STRING> - Explicitly excluded features or capabilities",
+      "phases": "ARRAY<PHASE_OBJECT> - See phases schema below"
+    },
+    "phase": {
+      "schema": "ARRAY<PHASE_OBJECT>",
+      "phase_object": {
+        "id": "STRING - Unique phase identifier (e.g., '1_foundation')",
+        "name": "STRING - Human-readable phase name",
+        "description": "STRING - What this phase accomplishes",
+        "parallelizable": "BOOLEAN - Whether tasks in this phase can run in parallel",
+        "requirements": "ARRAY<STRING> - Entity paths that must be completed (e.g., 'requirement:system-reliability')"
+      }
+    },
+    "qa_session": {
+      "schema": "ARRAY<QA_SESSION_OBJECT>",
+      "qa_session_object": {
+        "round": "INTEGER - Sequential round number",
+        "timestamp": "ISO8601_TIMESTAMP - When this Q&A session occurred",
+        "questions": "ARRAY<STRING> - Questions asked to refine understanding",
+        "answers": "ARRAY<STRING> - Responses provided",
+        "entities_added": "ARRAY<STRING> - Entity paths added as result of this session",
+        "notes": "STRING - Optional notes or insights from session"
+      },
+      "note": "Often starts as empty array and grows during iterative refinement"
+    },
+    "assumption": {
+      "schema": "ARRAY<STRING>",
+      "examples": [
+        "Users have basic technical knowledge",
+        "Internet connectivity is reliable",
+        "Mobile devices support WebRTC"
+      ]
+    },
+    "decision": {
+      "schema": "ARRAY<DECISION_OBJECT>",
+      "decision_object": {
+        "id": "STRING - Unique decision identifier",
+        "title": "STRING - Decision title",
+        "context": "STRING - Why this decision was needed",
+        "decision": "STRING - What was decided",
+        "rationale": "STRING - Why this choice was made",
+        "alternatives": "ARRAY<STRING> - Other options considered",
+        "tradeoffs": "STRING - Pros and cons of the decision",
+        "date": "ISO8601_DATE - When decision was made"
+      }
+    },
+    "workflow": {
+      "schema": "ARRAY<WORKFLOW_OBJECT>",
+      "workflow_object": {
+        "id": "STRING - Unique workflow identifier",
+        "name": "STRING - Workflow name",
+        "description": "STRING - What this workflow accomplishes",
+        "operations": "ARRAY<STRING> - Operation entity paths in execution order",
+        "triggers": "ARRAY<STRING> - What initiates this workflow"
+      }
+    },
+    "deployment": {
+      "schema": "OBJECT<STRING:STRING|NUMBER|OBJECT>",
+      "note": "Flexible structure mapping feature/component names to deployment status",
+      "examples": {
+        "feature_name": "active|in_development|planned|deprecated",
+        "robot_count": 1000,
+        "release_info": {
+          "version": "1.2.0",
+          "date": "2025-01-15"
+        }
+      }
+    },
+    "out_of_scope": {
+      "schema": "ARRAY<STRING>",
+      "note": "Clear list of what is NOT included in project scope",
+      "examples": [
+        "mobile_app_development",
+        "hardware_manufacturing",
+        "third_party_integrations"
+      ]
+    }
+  },
+  "entity_description": {
     "project": "Top-level container representing the entire software project or system",
     "requirement": "Functional or non-functional specification that the system must satisfy",
     "interface": "User interface screen or page in the application",
@@ -85,13 +211,15 @@
     "objective": "High-level goal or outcome that users want to achieve",
     "action": "Specific user action connected to an objective"
   },
-  "entity_notes": {
-    "schema": "Entities only have name & description keys."
+  "entity_note": {
+    "purpose": "provide containers for references and relationship structure",
+    "schema": "Entities only have name & description keys.",
+    "allowed_metadata": ["id", "type", "path", "status", "tags", "metadata", "notes"]
   },
   "notes":{
     "names": "reference and entity keys use snake case, use - for keys, not _",
     "schema": "Do not use id, the parent key is the unique identifier",
     "what": ["project","user","objective","action"],
-    "how": ["project","requirement","interface","feature","action","component","operation"]
+    "how": ["project","requirement","interface","feature","component","operation"]
   }
 }

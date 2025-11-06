@@ -1,0 +1,104 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.pyc
+venv/
+env/
+ENV/
+.venv
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.hypothesis/
+test_report.txt
+test-graph.json
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+.npm
+
+# Logs
+*.log
+logs/
+*.log.*
+.ai/tf/logs/
+
+# Backups
+*.backup
+*.backup-*
+*.bak
+*~
+
+# Temporary files
+.ai/tmp/*
+*.tmp
+*.temp
+.ai/spec-graph.json.backup-*
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~.nib
+*.sublime-*
+.vs/
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.lnk
+
+# Environment
+.env
+.env.local
+.env.*.local
+*.env
+
+# Build outputs
+*.d.ts.map
+*.js.map
+*.mjs.map
+
+# Graph snapshots during development (keep production graph)
+graphs/graph-*.json
+
+# Session files
+www/sessions/
+www/node_modules/
+know-cli

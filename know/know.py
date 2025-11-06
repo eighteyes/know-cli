@@ -418,14 +418,19 @@ def health(ctx):
     # Cycles
     cycles = ctx.obj['deps'].detect_cycles()
 
-    # Disconnected subgraphs
+    # Disconnected subgraphs (informational only)
     disconnected = ctx.obj['validator'].find_disconnected_subgraphs()
 
     # Summary
     console.print("[bold cyan]Health Summary:[/bold cyan]\n")
 
-    if is_valid and not cycles and not disconnected:
+    # Critical issues (cause failure)
+    has_critical_issues = not is_valid or cycles
+
+    if not has_critical_issues and not results['warnings']:
         console.print("[green]✓ Graph is healthy![/green]")
+        if disconnected:
+            console.print(f"\n[cyan]ℹ {len(disconnected)} disconnected subgraphs (expected for initial graphs)[/cyan]")
         return
 
     if not is_valid:
@@ -435,13 +440,16 @@ def health(ctx):
         console.print(f"[red]✗ {len(cycles)} circular dependencies[/red]")
 
     if disconnected:
-        console.print(f"[yellow]⚠ {len(disconnected)} disconnected subgraphs[/yellow]")
+        console.print(f"[cyan]ℹ {len(disconnected)} disconnected subgraphs (expected for initial/incremental graphs)[/cyan]")
 
     if results['warnings']:
         console.print(f"[yellow]⚠ {len(results['warnings'])} warnings[/yellow]")
 
     console.print("\n[dim]Run 'know validate' for detailed results[/dim]")
-    sys.exit(1)
+
+    # Only exit with error if there are critical issues
+    if has_critical_issues:
+        sys.exit(1)
 
 
 @cli.command()
@@ -814,6 +822,247 @@ def ref_suggest(ctx, max):
 
     for ref_id, entity_id, score in suggestions:
         console.print(f"[cyan]{ref_id}[/cyan] → [green]{entity_id}[/green] ({score}%)")
+
+
+# Rules command group
+@cli.group()
+def rules():
+    """Query dependency rules and graph structure"""
+    pass
+
+
+def _load_rules():
+    """Load dependency rules from config file"""
+    rules_path = Path(__file__).parent / "config" / "dependency-rules.json"
+    with open(rules_path, 'r') as f:
+        return json.load(f)
+
+
+@rules.command(name='describe')
+@click.argument('type_name')
+def rules_describe(type_name):
+    """Describe entity, reference, or meta type, or list all types
+
+    Examples:
+        know rules describe feature
+        know rules describe business_logic
+        know rules describe phases
+        know rules describe entities       # List all entity types
+        know rules describe references     # List all reference types
+        know rules describe meta           # List all meta sections
+    """
+    rules = _load_rules()
+    type_lower = type_name.lower()
+
+    # Handle list commands
+    if type_lower in ['entities', 'entity']:
+        console.print("\n[bold cyan]Available Entity Types:[/bold cyan]\n")
+        for entity_type in sorted(rules.get('entity_description', {}).keys()):
+            console.print(f"  • [green]{entity_type}[/green]")
+        console.print("\n[dim]Use: know rules describe <type> for details[/dim]")
+        return
+
+    if type_lower in ['references', 'reference', 'refs']:
+        console.print("\n[bold cyan]Available Reference Types:[/bold cyan]\n")
+        for ref_type in sorted(rules.get('reference_description', {}).keys()):
+            console.print(f"  • [green]{ref_type}[/green]")
+        console.print("\n[dim]Use: know rules describe <type> for details[/dim]")
+        return
+
+    if type_lower == 'meta':
+        console.print("\n[bold cyan]Available Meta Sections:[/bold cyan]\n")
+        for meta_section in sorted(rules.get('meta_description', {}).keys()):
+            console.print(f"  • [green]{meta_section}[/green]")
+        console.print("\n[dim]Use: know rules describe <section> for details[/dim]")
+        return
+
+    # Try to find in entities
+    if type_lower in rules.get('entity_description', {}):
+        desc = rules['entity_description'][type_lower]
+        console.print(f"\n[bold cyan]Entity Type: {type_lower}[/bold cyan]\n")
+        console.print(f"[green]{desc}[/green]\n")
+
+        # Show allowed dependencies
+        allowed = rules.get('allowed_dependencies', {}).get(type_lower, [])
+        if allowed:
+            console.print(f"[bold]Can depend on:[/bold] {', '.join(allowed)}")
+        else:
+            console.print("[dim]No dependencies allowed[/dim]")
+
+        # Show what can depend on this
+        dependents = [k for k, v in rules.get('allowed_dependencies', {}).items()
+                     if type_lower in v]
+        if dependents:
+            console.print(f"[bold]Can be depended on by:[/bold] {', '.join(dependents)}")
+
+        # Show schema note
+        entity_note = rules.get('entity_note', {})
+        if 'schema' in entity_note:
+            console.print(f"\n[dim]Schema: {entity_note['schema']}[/dim]")
+
+        return
+
+    # Try to find in references
+    if type_lower in rules.get('reference_description', {}):
+        desc = rules['reference_description'][type_lower]
+        console.print(f"\n[bold cyan]Reference Type: {type_lower}[/bold cyan]\n")
+        console.print(f"[green]{desc}[/green]\n")
+
+        ref_note = rules.get('reference_note', {})
+        console.print(f"[bold]Purpose:[/bold] {ref_note.get('purpose', 'N/A')}")
+        console.print(f"[bold]Schema:[/bold] {ref_note.get('schema', 'Flexible')}")
+        console.print(f"[bold]Naming:[/bold] {ref_note.get('naming', 'N/A')}")
+
+        return
+
+    # Try to find in meta
+    if type_lower in rules.get('meta_description', {}):
+        desc = rules['meta_description'][type_lower]
+        console.print(f"\n[bold cyan]Meta Section: {type_lower}[/bold cyan]\n")
+        console.print(f"[green]{desc}[/green]\n")
+
+        # Show schema if available
+        meta_schema = rules.get('meta_schema', {})
+        if type_lower in meta_schema:
+            schema = meta_schema[type_lower]
+            console.print("[bold]Schema:[/bold]")
+
+            if isinstance(schema, dict):
+                for key, value in schema.items():
+                    if key == 'schema':
+                        console.print(f"  [yellow]Type:[/yellow] {value}")
+                    elif key == 'note':
+                        console.print(f"  [dim]{value}[/dim]")
+                    elif key == 'examples':
+                        console.print(f"  [yellow]Examples:[/yellow]")
+                        if isinstance(value, list):
+                            for ex in value[:3]:  # Show first 3 examples
+                                console.print(f"    • {ex}")
+                        elif isinstance(value, dict):
+                            for k, v in list(value.items())[:3]:
+                                console.print(f"    • {k}: {v}")
+                    else:
+                        console.print(f"  [yellow]{key}:[/yellow] {value}")
+            else:
+                console.print(f"  {schema}")
+
+        return
+
+    # Not found
+    console.print(f"[red]✗ Type '{type_name}' not found[/red]")
+    console.print("\n[dim]Try: entity types (feature, component, etc.), "
+                 "reference types (business_logic, data-models, etc.), "
+                 "or meta sections (project, phases, etc.)[/dim]")
+
+
+@rules.command(name='before')
+@click.argument('entity_type')
+def rules_before(entity_type):
+    """Show what entity types can come before this type in dependency graph
+
+    Example:
+        know rules before component
+        # Shows: action, component
+    """
+    rules = _load_rules()
+    type_lower = entity_type.lower()
+
+    # Find entity types that can depend on this type
+    allowed_deps = rules.get('allowed_dependencies', {})
+    predecessors = [k for k, v in allowed_deps.items() if type_lower in v]
+
+    if not predecessors:
+        console.print(f"[yellow]No entity types can depend on '{entity_type}'[/yellow]")
+        return
+
+    console.print(f"\n[bold cyan]Entity types that can depend on {entity_type}:[/bold cyan]\n")
+    for pred in sorted(predecessors):
+        console.print(f"  • [green]{pred}[/green]")
+
+    console.print(f"\n[dim]Meaning: These types can have {entity_type} as a dependency[/dim]")
+
+
+@rules.command(name='after')
+@click.argument('entity_type')
+def rules_after(entity_type):
+    """Show what entity types can come after this type in dependency graph
+
+    Example:
+        know rules after feature
+        # Shows: action
+    """
+    rules = _load_rules()
+    type_lower = entity_type.lower()
+
+    allowed_deps = rules.get('allowed_dependencies', {})
+    successors = allowed_deps.get(type_lower, [])
+
+    if not successors:
+        console.print(f"[yellow]'{entity_type}' cannot depend on other entities[/yellow]")
+        return
+
+    console.print(f"\n[bold cyan]{entity_type} can depend on:[/bold cyan]\n")
+    for succ in sorted(successors):
+        console.print(f"  • [green]{succ}[/green]")
+
+    console.print(f"\n[dim]Meaning: {entity_type} entities can list these types as dependencies[/dim]")
+
+
+@rules.command(name='graph')
+def rules_graph():
+    """Visualize the high-level dependency graph structure"""
+    rules = _load_rules()
+
+    console.print("\n[bold cyan]Dependency Graph Structure[/bold cyan]\n")
+
+    # Show WHAT chain
+    console.print("[bold yellow]WHAT Chain (User Intent → Actions):[/bold yellow]")
+    what_chain = rules.get('notes', {}).get('what', [])
+    console.print("  " + " → ".join(what_chain))
+    console.print()
+
+    # Show HOW chain
+    console.print("[bold yellow]HOW Chain (Implementation):[/bold yellow]")
+    how_chain = rules.get('notes', {}).get('how', [])
+    console.print("  " + " → ".join(how_chain))
+    console.print()
+
+    # Show dependency rules as graph (non-redundant)
+    console.print("[bold yellow]Entity Relationships:[/bold yellow]\n")
+
+    allowed = rules.get('allowed_dependencies', {})
+
+    # Build reverse lookup: what depends on each type
+    depended_on_by = {}
+    for entity_type, deps in allowed.items():
+        for dep in deps:
+            if dep not in depended_on_by:
+                depended_on_by[dep] = []
+            depended_on_by[dep].append(entity_type)
+
+    # Get all entity types (both as sources and targets)
+    all_types = set(allowed.keys()) | set(depended_on_by.keys())
+
+    # Print each entity type once with both relationships
+    for entity_type in sorted(all_types):
+        deps = allowed.get(entity_type, [])
+        dependents = depended_on_by.get(entity_type, [])
+
+        # Build the line
+        line = f"[cyan]{entity_type}[/cyan]"
+
+        if deps:
+            line += f" → [green]{', '.join(deps)}[/green]"
+
+        if dependents:
+            line += f" [dim](← {', '.join(dependents)})[/dim]"
+
+        if not deps and not dependents:
+            line += " [dim](isolated)[/dim]"
+
+        console.print(f"  {line}")
+
+    console.print("\n[dim]Legend: → depends on | ← depended on by[/dim]")
 
 
 if __name__ == '__main__':

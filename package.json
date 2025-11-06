@@ -1,0 +1,45 @@
+{
+  "name": "@lb-project/know",
+  "version": "1.0.0",
+  "description": "High-performance specification graph management tool",
+  "main": "index.js",
+  "bin": {
+    "know": "./bin/know.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js",
+    "test": "cd know && python -m pytest tests/",
+    "validate-graph": "node www/validate-graph.js"
+  },
+  "keywords": [
+    "cli",
+    "graph",
+    "specification",
+    "knowledge-graph",
+    "project-management"
+  ],
+  "author": "LB Project",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourproject/know-cli.git"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "python": ">=3.8"
+  },
+  "files": [
+    "know/",
+    "bin/",
+    "scripts/",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {},
+  "devDependencies": {},
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ]
+}

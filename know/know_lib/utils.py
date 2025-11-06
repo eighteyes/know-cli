@@ -42,26 +42,20 @@ def format_entity_id(entity_type: str, entity_name: str) -> str:
     return f"{entity_type}:{entity_name}"
 
 
-def normalize_entity_type(entity_type: str, pluralize: bool = False) -> str:
+def normalize_entity_type(entity_type: str) -> str:
     """
-    Normalize entity type (handle singular/plural forms).
+    Normalize entity type to lowercase.
+
+    NOTE: All entity types in the system use singular forms.
+    The dependency rules use singular forms like 'feature', 'action', 'component'.
 
     Args:
         entity_type: Entity type to normalize
-        pluralize: If True, ensure plural form; if False, ensure singular
 
     Returns:
-        Normalized entity type
+        Normalized entity type (lowercase, no plural conversion)
     """
-    # Simple pluralization rules
-    if pluralize:
-        if not entity_type.endswith('s'):
-            return entity_type + 's'
-        return entity_type
-    else:
-        if entity_type.endswith('s'):
-            return entity_type[:-1]
-        return entity_type
+    return entity_type.lower()
 
 
 def snake_to_kebab(text: str) -> str:

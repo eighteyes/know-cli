@@ -2,25 +2,32 @@
 Entity CRUD operations for graph management
 """
 
-from typing import Dict, List, Any, Optional
+import json
+from pathlib import Path
+from typing import Dict, List, Any, Optional, Set
 from .graph import GraphManager
 
 
 class EntityManager:
     """Manages entity operations in the graph"""
 
-    # Valid entity types (from dependency rules)
-    VALID_ENTITY_TYPES = {
-        'user', 'requirement', 'objective', 'interface', 'feature',
-        'component', 'behavior', 'presentation', 'data-model',
-        'action', 'asset', 'platform', 'test-entity'
-    }
-
-    # Required fields for entities
-    REQUIRED_FIELDS = {'name', 'description'}
-
-    def __init__(self, graph_manager: GraphManager):
+    def __init__(self, graph_manager: GraphManager, rules_path: Optional[str] = None):
         self.graph = graph_manager
+
+        # Load dependency rules to get valid entity types
+        if rules_path is None:
+            rules_path = Path(__file__).parent.parent / "config" / "dependency-rules.json"
+
+        with open(rules_path, 'r') as f:
+            self.rules = json.load(f)
+
+        # Extract valid entity types from entity_description
+        self.VALID_ENTITY_TYPES = set(self.rules.get('entity_description', {}).keys())
+
+        # Extract required fields and allowed metadata from entity_note
+        entity_note = self.rules.get('entity_note', {})
+        self.REQUIRED_FIELDS = {'name', 'description'}
+        self.ALLOWED_METADATA = set(entity_note.get('allowed_metadata', []))
 
     def list_entities(self, entity_type: Optional[str] = None) -> List[str]:
         """List all entities or entities of a specific type"""
