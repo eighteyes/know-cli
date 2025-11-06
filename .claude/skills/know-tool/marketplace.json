@@ -1,0 +1,148 @@
+{
+  "name": "know-tool",
+  "displayName": "Know Tool - Specification Graph Mastery",
+  "version": "1.0.0",
+  "author": {
+    "name": "god",
+    "url": "https://github.com/god/know-cli"
+  },
+  "description": "Master the know CLI tool for managing specification graphs. Use when working with spec-graph.json, understanding graph structure, querying entities/references/meta, managing dependencies, or learning graph architecture.",
+  "longDescription": "A comprehensive skill for working with directed acyclic graph (DAG) representations of software systems. The specification graph uses explicit dependencies between nodes to model both user intent (WHAT chain) and implementation details (HOW chain). This skill teaches dependency rules, entity types, reference categories, meta sections, and all graph operations.",
+  "category": "development-tools",
+  "tags": [
+    "graph",
+    "specification",
+    "dependencies",
+    "dag",
+    "architecture",
+    "modeling",
+    "cli-tool",
+    "requirements",
+    "entities",
+    "references"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/god/know-cli"
+  },
+  "skillType": "managed",
+  "requirements": {
+    "tools": [
+      "know CLI tool"
+    ],
+    "files": [
+      ".ai/spec-graph.json"
+    ],
+    "platform": "any"
+  },
+  "features": [
+    "Understand specification graph structure (entities, references, meta)",
+    "Learn dependency rules and the DAG architecture",
+    "Query and explore graph nodes with know commands",
+    "Add/modify entities and dependencies safely",
+    "Validate graph integrity and detect cycles",
+    "Perform gap analysis and build ordering",
+    "Reference detailed guides for entity types, references, and workflows"
+  ],
+  "useCases": [
+    "Working with spec-graph.json files",
+    "Understanding graph structure and relationships",
+    "Querying entities, references, and meta sections",
+    "Managing dependencies between nodes",
+    "Learning graph architecture principles",
+    "Validating specification completeness",
+    "Planning feature implementations"
+  ],
+  "commands": {
+    "discovery": [
+      "know list",
+      "know list-type [type]",
+      "know get [type:key]",
+      "know deps [type:key]",
+      "know dependents [type:key]"
+    ],
+    "modification": [
+      "know add [type] [key] [json]",
+      "know add-dep [type:key] [type:key]",
+      "know remove-dep [type:key] [type:key]"
+    ],
+    "validation": [
+      "know validate",
+      "know health",
+      "know cycles"
+    ],
+    "analysis": [
+      "know gap-analysis [type:key]",
+      "know gap-summary",
+      "know ref-orphans",
+      "know build-order"
+    ],
+    "rules": [
+      "know rules describe [type]",
+      "know rules before [type]",
+      "know rules after [type]",
+      "know rules graph"
+    ]
+  },
+  "mentalModels": {
+    "chains": {
+      "what": "project → user → objective → action",
+      "how": "project → requirement → interface → feature → action → component → operation",
+      "integration": "Action connects both chains - what users DO and how the system implements it"
+    },
+    "nodeTypes": {
+      "entities": "Structural nodes that participate in dependencies",
+      "references": "Terminal nodes with implementation details",
+      "meta": "Project metadata (phases, assumptions, decisions, qa_sessions)"
+    }
+  },
+  "criticalRules": [
+    "Always validate after modifications with 'know validate'",
+    "Respect entity vs reference distinction - entities participate in dependencies, references don't",
+    "Follow dependency rules - use 'know rules' to check before adding dependencies",
+    "Maintain DAG properties - no cycles allowed, check with 'know cycles'",
+    "Use full paths - always use 'type:key' format (e.g., 'feature:real-time-telemetry')",
+    "Never add dependencies to entity objects - only in the 'graph' section",
+    "Check completeness - use 'know gap-analysis' to ensure full dependency chains"
+  ],
+  "referenceGuides": [
+    {
+      "file": "references/entity-types.md",
+      "description": "Deep dive on all entity types and their roles"
+    },
+    {
+      "file": "references/references-guide.md",
+      "description": "Understanding reference categories and when to use them"
+    },
+    {
+      "file": "references/meta-sections.md",
+      "description": "Meta section structures and schemas"
+    },
+    {
+      "file": "references/commands-reference.md",
+      "description": "Complete command listing with examples"
+    },
+    {
+      "file": "references/workflows.md",
+      "description": "Common patterns: adding features, connecting actions, validation"
+    },
+    {
+      "file": "references/troubleshooting.md",
+      "description": "Debugging and fixing graph issues"
+    }
+  ],
+  "quickStart": {
+    "workflow": [
+      "Understand the type: know rules describe feature",
+      "Add the entity: know add feature new-feature '{\"name\":\"...\", \"description\":\"...\"}'",
+      "Check what it can depend on: know rules after feature",
+      "Connect dependencies: know add-dep feature:new-feature action:trigger-action",
+      "Validate: know validate && know deps feature:new-feature --recursive"
+    ]
+  },
+  "installation": {
+    "path": "/Users/god/projects/know-cli/know/know",
+    "note": "See project INSTALL.md for setup if know command is not found"
+  }
+}

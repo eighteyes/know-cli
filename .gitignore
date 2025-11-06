@@ -102,3 +102,4 @@ graphs/graph-*.json
 www/sessions/
 www/node_modules/
 know-cli
+.vscode/

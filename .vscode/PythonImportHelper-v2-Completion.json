@@ -402,38 +402,6 @@
         "documentation": {}
     },
     {
-        "label": "Path",
-        "importPath": "pathlib",
-        "description": "pathlib",
-        "isExtraImport": true,
-        "detail": "pathlib",
-        "documentation": {}
-    },
-    {
-        "label": "Path",
-        "importPath": "pathlib",
-        "description": "pathlib",
-        "isExtraImport": true,
-        "detail": "pathlib",
-        "documentation": {}
-    },
-    {
-        "label": "Path",
-        "importPath": "pathlib",
-        "description": "pathlib",
-        "isExtraImport": true,
-        "detail": "pathlib",
-        "documentation": {}
-    },
-    {
-        "label": "Path",
-        "importPath": "pathlib",
-        "description": "pathlib",
-        "isExtraImport": true,
-        "detail": "pathlib",
-        "documentation": {}
-    },
-    {
         "label": "Dict",
         "importPath": "typing",
         "description": "typing",
@@ -1283,206 +1251,6 @@
     },
     {
         "label": "Any",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "List",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Set",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Dict",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Any",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Optional",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Dict",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Any",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "List",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Optional",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Tuple",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Dict",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Any",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Optional",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Any",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "List",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Dict",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Any",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Optional",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Set",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Dict",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "List",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Any",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Optional",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Set",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Tuple",
         "importPath": "typing",
         "description": "typing",
         "isExtraImport": true,
@@ -1756,22 +1524,6 @@
         "documentation": {}
     },
     {
-        "label": "datetime",
-        "importPath": "datetime",
-        "description": "datetime",
-        "isExtraImport": true,
-        "detail": "datetime",
-        "documentation": {}
-    },
-    {
-        "label": "datetime",
-        "importPath": "datetime",
-        "description": "datetime",
-        "isExtraImport": true,
-        "detail": "datetime",
-        "documentation": {}
-    },
-    {
         "label": "defaultdict",
         "importPath": "collections",
         "description": "collections",
@@ -1813,46 +1565,6 @@
     },
     {
         "label": "defaultdict",
-        "importPath": "collections",
-        "description": "collections",
-        "isExtraImport": true,
-        "detail": "collections",
-        "documentation": {}
-    },
-    {
-        "label": "defaultdict",
-        "importPath": "collections",
-        "description": "collections",
-        "isExtraImport": true,
-        "detail": "collections",
-        "documentation": {}
-    },
-    {
-        "label": "deque",
-        "importPath": "collections",
-        "description": "collections",
-        "isExtraImport": true,
-        "detail": "collections",
-        "documentation": {}
-    },
-    {
-        "label": "defaultdict",
-        "importPath": "collections",
-        "description": "collections",
-        "isExtraImport": true,
-        "detail": "collections",
-        "documentation": {}
-    },
-    {
-        "label": "defaultdict",
-        "importPath": "collections",
-        "description": "collections",
-        "isExtraImport": true,
-        "detail": "collections",
-        "documentation": {}
-    },
-    {
-        "label": "deque",
         "importPath": "collections",
         "description": "collections",
         "isExtraImport": true,
@@ -2522,14 +2234,6 @@
         "documentation": {}
     },
     {
-        "label": "KnowledgeGraph",
-        "importPath": "know_lib.graph",
-        "description": "know_lib.graph",
-        "isExtraImport": true,
-        "detail": "know_lib.graph",
-        "documentation": {}
-    },
-    {
         "label": "parse_entity_id",
         "importPath": "know_lib.utils",
         "description": "know_lib.utils",
@@ -2667,46 +2371,6 @@
     },
     {
         "label": "kebab_to_snake",
-        "importPath": "know_lib.utils",
-        "description": "know_lib.utils",
-        "isExtraImport": true,
-        "detail": "know_lib.utils",
-        "documentation": {}
-    },
-    {
-        "label": "Colors",
-        "importPath": "know_lib.utils",
-        "description": "know_lib.utils",
-        "isExtraImport": true,
-        "detail": "know_lib.utils",
-        "documentation": {}
-    },
-    {
-        "label": "error",
-        "importPath": "know_lib.utils",
-        "description": "know_lib.utils",
-        "isExtraImport": true,
-        "detail": "know_lib.utils",
-        "documentation": {}
-    },
-    {
-        "label": "info",
-        "importPath": "know_lib.utils",
-        "description": "know_lib.utils",
-        "isExtraImport": true,
-        "detail": "know_lib.utils",
-        "documentation": {}
-    },
-    {
-        "label": "success",
-        "importPath": "know_lib.utils",
-        "description": "know_lib.utils",
-        "isExtraImport": true,
-        "detail": "know_lib.utils",
-        "documentation": {}
-    },
-    {
-        "label": "warning",
         "importPath": "know_lib.utils",
         "description": "know_lib.utils",
         "isExtraImport": true,
@@ -2903,35 +2567,11 @@
         "documentation": {}
     },
     {
-        "label": "EntityManager",
-        "importPath": "know_lib.entities",
-        "description": "know_lib.entities",
-        "isExtraImport": true,
-        "detail": "know_lib.entities",
-        "documentation": {}
-    },
-    {
         "label": "DependencyManager",
         "importPath": "know_lib.dependencies",
         "description": "know_lib.dependencies",
         "isExtraImport": true,
         "detail": "know_lib.dependencies",
-        "documentation": {}
-    },
-    {
-        "label": "DependencyManager",
-        "importPath": "know_lib.dependencies",
-        "description": "know_lib.dependencies",
-        "isExtraImport": true,
-        "detail": "know_lib.dependencies",
-        "documentation": {}
-    },
-    {
-        "label": "GraphValidator",
-        "importPath": "know_lib.validation",
-        "description": "know_lib.validation",
-        "isExtraImport": true,
-        "detail": "know_lib.validation",
         "documentation": {}
     },
     {
@@ -6396,96 +6036,6 @@
         "description": "know-cli.old.cleanup-2025-10-08.know.know",
         "peekOfCode": "class KnowCLI:\n    \"\"\"Main CLI interface for the Know tool\"\"\"\n    def __init__(self):\n        self.script_dir = Path(__file__).parent.resolve()\n        self.project_root = self.script_dir.parent\n        # Determine knowledge map file location\n        if (Path.cwd() / \".ai/spec-graph.json\").exists():\n            self.knowledge_map = Path.cwd() / \".ai/spec-graph.json\"\n        else:\n            self.knowledge_map = self.project_root / \".ai/spec-graph.json\"",
         "detail": "know-cli.old.cleanup-2025-10-08.know.know",
-        "documentation": {}
-    },
-    {
-        "label": "DependencyManager",
-        "kind": 6,
-        "importPath": "old.cleanup-2025-10-08.know.know_lib.dependencies",
-        "description": "old.cleanup-2025-10-08.know.know_lib.dependencies",
-        "peekOfCode": "class DependencyManager:\n    \"\"\"Manages dependencies and graph connections\"\"\"\n    def __init__(self, graph, rules_file: Optional[Path] = None):\n        self.graph = graph\n        self.rules = {}\n        if rules_file and rules_file.exists():\n            with open(rules_file, 'r') as f:\n                self.rules = json.load(f)\n    def get_dependencies(self, entity_ref: str) -> List[str]:\n        \"\"\"Get all entities that the given entity depends on\"\"\"",
-        "detail": "old.cleanup-2025-10-08.know.know_lib.dependencies",
-        "documentation": {}
-    },
-    {
-        "label": "EntityManager",
-        "kind": 6,
-        "importPath": "old.cleanup-2025-10-08.know.know_lib.entities",
-        "description": "old.cleanup-2025-10-08.know.know_lib.entities",
-        "peekOfCode": "class EntityManager:\n    \"\"\"Manages entity operations\"\"\"\n    def __init__(self, graph):\n        self.graph = graph\n    def list_type(self, entity_type: str) -> Dict[str, Any]:\n        \"\"\"List all entities of a given type\"\"\"\n        return self.graph.get_entities(entity_type)\n    def get_entity(self, entity_type: str, entity_id: str) -> Optional[Dict[str, Any]]:\n        \"\"\"Get a specific entity\"\"\"\n        entities = self.graph.get_entities(entity_type)",
-        "detail": "old.cleanup-2025-10-08.know.know_lib.entities",
-        "documentation": {}
-    },
-    {
-        "label": "KnowledgeGraph",
-        "kind": 6,
-        "importPath": "old.cleanup-2025-10-08.know.know_lib.graph",
-        "description": "old.cleanup-2025-10-08.know.know_lib.graph",
-        "peekOfCode": "class KnowledgeGraph:\n    \"\"\"Main class for managing the knowledge graph\"\"\"\n    def __init__(self, graph_file: Path):\n        self.graph_file = graph_file\n        self.data = {}\n        self._last_modified = 0\n        self._cache_valid = False\n        self.backup_dir = Path(\".backup-temp\")\n        self.load()\n    def load(self):",
-        "detail": "old.cleanup-2025-10-08.know.know_lib.graph",
-        "documentation": {}
-    },
-    {
-        "label": "Colors",
-        "kind": 6,
-        "importPath": "old.cleanup-2025-10-08.know.know_lib.utils",
-        "description": "old.cleanup-2025-10-08.know.know_lib.utils",
-        "peekOfCode": "class Colors:\n    \"\"\"Terminal color codes\"\"\"\n    RED = '\\033[0;31m'\n    GREEN = '\\033[0;32m'\n    YELLOW = '\\033[1;33m'\n    BLUE = '\\033[0;34m'\n    PURPLE = '\\033[0;35m'\n    CYAN = '\\033[0;36m'\n    BOLD = '\\033[1m'\n    DIM = '\\033[2m'",
-        "detail": "old.cleanup-2025-10-08.know.know_lib.utils",
-        "documentation": {}
-    },
-    {
-        "label": "error",
-        "kind": 2,
-        "importPath": "old.cleanup-2025-10-08.know.know_lib.utils",
-        "description": "old.cleanup-2025-10-08.know.know_lib.utils",
-        "peekOfCode": "def error(message: str):\n    \"\"\"Print error message\"\"\"\n    print(f\"{Colors.RED}Error: {message}{Colors.NC}\", file=sys.stderr)\ndef info(message: str):\n    \"\"\"Print info message\"\"\"\n    print(f\"{Colors.BLUE}{message}{Colors.NC}\", file=sys.stderr)\ndef success(message: str):\n    \"\"\"Print success message\"\"\"\n    print(f\"{Colors.GREEN}{message}{Colors.NC}\", file=sys.stderr)\ndef warning(message: str):",
-        "detail": "old.cleanup-2025-10-08.know.know_lib.utils",
-        "documentation": {}
-    },
-    {
-        "label": "info",
-        "kind": 2,
-        "importPath": "old.cleanup-2025-10-08.know.know_lib.utils",
-        "description": "old.cleanup-2025-10-08.know.know_lib.utils",
-        "peekOfCode": "def info(message: str):\n    \"\"\"Print info message\"\"\"\n    print(f\"{Colors.BLUE}{message}{Colors.NC}\", file=sys.stderr)\ndef success(message: str):\n    \"\"\"Print success message\"\"\"\n    print(f\"{Colors.GREEN}{message}{Colors.NC}\", file=sys.stderr)\ndef warning(message: str):\n    \"\"\"Print warning message\"\"\"\n    print(f\"{Colors.YELLOW}{message}{Colors.NC}\", file=sys.stderr)",
-        "detail": "old.cleanup-2025-10-08.know.know_lib.utils",
-        "documentation": {}
-    },
-    {
-        "label": "success",
-        "kind": 2,
-        "importPath": "old.cleanup-2025-10-08.know.know_lib.utils",
-        "description": "old.cleanup-2025-10-08.know.know_lib.utils",
-        "peekOfCode": "def success(message: str):\n    \"\"\"Print success message\"\"\"\n    print(f\"{Colors.GREEN}{message}{Colors.NC}\", file=sys.stderr)\ndef warning(message: str):\n    \"\"\"Print warning message\"\"\"\n    print(f\"{Colors.YELLOW}{message}{Colors.NC}\", file=sys.stderr)",
-        "detail": "old.cleanup-2025-10-08.know.know_lib.utils",
-        "documentation": {}
-    },
-    {
-        "label": "warning",
-        "kind": 2,
-        "importPath": "old.cleanup-2025-10-08.know.know_lib.utils",
-        "description": "old.cleanup-2025-10-08.know.know_lib.utils",
-        "peekOfCode": "def warning(message: str):\n    \"\"\"Print warning message\"\"\"\n    print(f\"{Colors.YELLOW}{message}{Colors.NC}\", file=sys.stderr)",
-        "detail": "old.cleanup-2025-10-08.know.know_lib.utils",
-        "documentation": {}
-    },
-    {
-        "label": "GraphValidator",
-        "kind": 6,
-        "importPath": "old.cleanup-2025-10-08.know.know_lib.validation",
-        "description": "old.cleanup-2025-10-08.know.know_lib.validation",
-        "peekOfCode": "class GraphValidator:\n    \"\"\"Validates graph structure and dependencies\"\"\"\n    def __init__(self, graph, rules_file: Optional[Path] = None):\n        self.graph = graph\n        self.rules = {}\n        if rules_file and rules_file.exists():\n            with open(rules_file, 'r') as f:\n                self.rules = json.load(f)\n    def validate_all(self) -> List[str]:\n        \"\"\"Run all validation checks and return list of issues\"\"\"",
-        "detail": "old.cleanup-2025-10-08.know.know_lib.validation",
-        "documentation": {}
-    },
-    {
-        "label": "KnowCLI",
-        "kind": 6,
-        "importPath": "old.cleanup-2025-10-08.know.know",
-        "description": "old.cleanup-2025-10-08.know.know",
-        "peekOfCode": "class KnowCLI:\n    \"\"\"Main CLI interface for the Know tool\"\"\"\n    def __init__(self):\n        self.script_dir = Path(__file__).parent.resolve()\n        self.project_root = self.script_dir.parent\n        # Determine knowledge map file location\n        if (Path.cwd() / \".ai/spec-graph.json\").exists():\n            self.knowledge_map = Path.cwd() / \".ai/spec-graph.json\"\n        else:\n            self.knowledge_map = self.project_root / \".ai/spec-graph.json\"",
-        "detail": "old.cleanup-2025-10-08.know.know",
         "documentation": {}
     }
 ]
