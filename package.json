@@ -1,7 +1,7 @@
 {
   "name": "@lb-project/know",
-  "version": "1.0.0",
-  "description": "High-performance specification graph management tool",
+  "version": "0.0.1",
+  "description": "Product / development graph management tool",
   "main": "index.js",
   "bin": {
     "know": "./bin/know.js"
