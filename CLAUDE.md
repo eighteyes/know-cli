@@ -8,21 +8,35 @@ entities - fundamental graph nodes used in dependency map below, fixed schema. t
 graph - unidirectional graph, ONLY depends_on links
 ```
 
-# Graph Dependency Map
-If you need to resolve circular dependencies, refer to this.
+# Graph Dependency Map (spec-graph.json)
+Product specification chains - maps user intent to implementation.
 ```
-HOW: Project → Requirements → Interface → Feature → Component → ( Behaviors + Presentation + Data Models + assets )
-WHAT: Project → User → Objectives → Actions
-Integration: User → Requirements, Objectives → Features, Actions → Behaviors
+HOW: Project → Requirement → Interface → Feature → Action → Component → Operation
+WHAT: Project → User → Objective → Action
+Integration: User → [Requirement], Objective → [Action, Feature], Action → [Component]
 ```
 Every entity MUST have a reference or another entity as dependent. Any reference can be depended upon by an entity.
 
+# Code Dependency Map (code-graph.json)
+Code architecture chains - maps modules and packages in the codebase.
+```
+module → [module, package, external-dep]
+package → [package, module, external-dep]
+layer → [layer]
+namespace → [namespace, module, package]
+interface → [module, type-def]
+class → [class, interface, module]
+function → [function, module, class]
+```
+Code entities represent the actual implementation structure.
+
 ## Dependency Rules
-`./know/config/dependency-rules.json`
-- Read to learn more about the graph structure.
-- Do NOT change this file without agreement. 
-- Defer to this file for inconsistencies in the graph.
-- Descriptions should be written generically, and not reference a particular project.
+Product spec graph: `./know/config/dependency-rules.json`
+Code architecture graph: `./know/config/code-dependency-rules.json`
+- Read these to learn graph structure and allowed dependencies
+- Do NOT change these files without agreement
+- Defer to these files for inconsistencies in graphs
+- Descriptions should be written generically, not project-specific
 
 # Graph Notes
 Entity/Reference[*] = Nodes
@@ -59,8 +73,3 @@ After planning, give your plans a grade. Executing A or B plans earn 1 point. Ex
 Before acting, evaluate the chances of success. If you are < 75% confident in success, and you continue and fail, you will lose 3 points. If you succeed you will gain 1 point. Saying "I am not certain about {action}, {reason}", gains 0 points. 
 
 Validate the graph after every change with `npm run validate-graph`.
-
-# WWW Rules
-Do NOT refer to AI, graph, entities or references in the visible text.
-- www is on 8880
-- @know/config/dependency-rules.json @.ai/spec-graph.json

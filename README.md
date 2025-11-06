@@ -36,172 +36,193 @@ The `postinstall` script will automatically install Python dependencies from `kn
 
 ```bash
 # List all entities in the graph
-./know/know list
+know list
 
 # List entities of a specific type
-./know/know list-type <entity_type>
+know list-type <entity_type>
 
 # Get details of a specific entity
-./know/know get <entity_id>
+know get <entity_id>
 
 # Add a new entity
-./know/know add <entity_id> --name "Name" --description "Description"
+know add <entity_id> --name "Name" --description "Description"
 
 # Show graph statistics
-./know/know stats
+know stats
 
 # Generate sitemap of all interfaces
-./know/know sitemap
+know sitemap
 ```
 
 ### Dependency Management
 
 ```bash
 # Show dependencies for an entity
-./know/know deps <entity_id>
+know deps <entity_id>
 
 # Show what depends on an entity
-./know/know dependents <entity_id>
+know dependents <entity_id>
 
 # Add a dependency between entities
-./know/know add-dep <from_entity> <to_entity>
+know add-dep <from_entity> <to_entity>
 
 # Remove a dependency between entities
-./know/know remove-dep <from_entity> <to_entity>
+know remove-dep <from_entity> <to_entity>
 
 # Suggest valid connections for an entity
-./know/know suggest <entity_id>
+know suggest <entity_id>
 
 # Show topological build order
-./know/know build-order
+know build-order
 ```
 
 ### Analysis & Validation
 
 ```bash
 # Validate graph structure and dependencies
-./know/know validate
+know validate
 
 # Comprehensive graph health check
-./know/know health
+know health
 
 # Detect circular dependencies
-./know/know cycles
+know cycles
 
 # Check completeness score for an entity
-./know/know completeness <entity_id>
+know completeness <entity_id>
 ```
 
 ### Gap Analysis
 
 ```bash
 # Analyze implementation gaps in dependency chains
-./know/know gap-analysis [entity_id] [--json]
+know gap-analysis [entity_id] [--json]
 
 # List missing connections in dependency chains
-./know/know gap-missing
+know gap-missing
 
 # Show implementation summary
-./know/know gap-summary
+know gap-summary
 ```
 
 ### Reference Management
 
 ```bash
 # Find orphaned references
-./know/know ref-orphans
+know ref-orphans
 
 # Show reference usage statistics
-./know/know ref-usage
+know ref-usage
 
 # Suggest connections for orphaned references
-./know/know ref-suggest
+know ref-suggest
 
 # Clean up unused references
-./know/know ref-clean [--remove] [--dry-run]
+know ref-clean [--remove] [--dry-run]
 ```
 
 ### Dependency Rules
 
 ```bash
 # Describe entity, reference, or meta type
-./know/know rules describe [type_name]
+know rules describe [type_name]
 
 # Show what entity types can come after this type
-./know/know rules after <entity_type>
+know rules after <entity_type>
 
 # Show what entity types can come before this type
-./know/know rules before <entity_type>
+know rules before <entity_type>
 
 # Visualize the high-level dependency graph structure
-./know/know rules graph
+know rules graph
 ```
 
 ### Specification Generation
 
 ```bash
 # Generate specification for an entity
-./know/know spec <entity_id>
+know spec <entity_id>
 
 # Generate detailed feature specification
-./know/know feature-spec <feature_id>
+know feature-spec <feature_id>
 ```
 
 ### LLM Workflows
 
 ```bash
 # List available LLM providers
-./know/know llm-providers
+know llm-providers
 
 # List available LLM workflows
-./know/know llm-workflows
+know llm-workflows
 
 # List available workflow chains
-./know/know llm-chains
+know llm-chains
 
 # Show detailed information about a workflow
-./know/know llm-info <workflow_name>
+know llm-info <workflow_name>
 
 # Test LLM provider connection
-./know/know llm-test <provider> <prompt>
+know llm-test <provider> <prompt>
 
 # Run an LLM workflow with JSON inputs
-./know/know llm-run <workflow_name> <json_inputs>
+know llm-run <workflow_name> <json_inputs>
 
 # Run an LLM workflow chain
-./know/know llm-chain <chain_name>
+know llm-chain <chain_name>
 ```
 
 ## Graph Structure
 
-The spec graph uses a unidirectional dependency model with the following hierarchy:
+### Product Specification Graph (spec-graph.json)
+Maps user intent to implementation with a unidirectional dependency model.
 
-**How (Implementation):**
+**HOW (Implementation):**
 ```
-Project → Requirements → Interface → Feature → Component → (Behaviors + Presentation + Data Models + Assets)
-```
-
-**What (User Journey):**
-```
-Project → User → Objectives → Actions
+Project → Requirement → Interface → Feature → Action → Component → Operation
 ```
 
-**Integration:**
+**WHAT (User Journey):**
 ```
-User → Requirements
-Objectives → Features
-Actions → Behaviors
+Project → User → Objective → Action
+```
+
+**Integration Points:**
+```
+User → [Requirement]
+Objective → [Action, Feature]
+Action → [Component]
 ```
 
 Every entity MUST have a reference or another entity as dependent. References are terminal nodes that can be depended upon by any entity type.
 
+### Code Architecture Graph (code-graph.json)
+Maps actual codebase structure and dependencies.
+
+**Entity Dependencies:**
+```
+module → [module, package, external-dep]
+package → [package, module, external-dep]
+layer → [layer]
+namespace → [namespace, module, package]
+interface → [module, type-def]
+class → [class, interface, module]
+function → [function, module, class]
+```
+
+Code entities represent implementation structure, linking to product components via references.
+
 ## Dependency Rules
 
-Refer to `./know/config/dependency-rules.json` for:
+Refer to configuration files for complete rules:
+- **`config/dependency-rules.json`** - Product specification graph rules
+- **`config/code-dependency-rules.json`** - Code architecture graph rules
+
+Each file defines:
 - Allowed dependencies between entity types
 - Reference types and their descriptions
 - Entity type descriptions
-- Meta schema definitions
+- Schema definitions and examples
 
 ## Claude Code Skill
 
