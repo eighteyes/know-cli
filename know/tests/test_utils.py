@@ -3,7 +3,7 @@ Tests for utility functions.
 """
 
 import pytest
-from know_lib.utils import (
+from src.utils import (
     parse_entity_id,
     format_entity_id,
     normalize_entity_type,

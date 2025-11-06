@@ -7,7 +7,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from know_lib import GraphManager, DependencyManager
+from src import GraphManager, DependencyManager
 
 
 @pytest.fixture

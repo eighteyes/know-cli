@@ -6,7 +6,7 @@ import json
 import tempfile
 import pytest
 from pathlib import Path
-from know_lib import GraphManager, EntityManager
+from src import GraphManager, EntityManager
 
 
 @pytest.fixture

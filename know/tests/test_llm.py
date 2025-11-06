@@ -6,7 +6,7 @@ import pytest
 import json
 from pathlib import Path
 
-from know_lib import LLMManager, MockProvider
+from src import LLMManager, MockProvider
 
 
 def test_llm_manager_initialization():

@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from click.testing import CliRunner
 from know import cli
-from know_lib.graph import GraphManager
+from src.graph import GraphManager
 
 
 @pytest.fixture

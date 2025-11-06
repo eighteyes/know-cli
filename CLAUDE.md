@@ -18,7 +18,7 @@ Integration: User → Requirements, Objectives → Features, Actions → Behavio
 Every entity MUST have a reference or another entity as dependent. Any reference can be depended upon by an entity.
 
 ## Dependency Rules
-`./know/lib/dependency-rules.json`
+`./know/config/dependency-rules.json`
 - Read to learn more about the graph structure.
 - Do NOT change this file without agreement. 
 - Defer to this file for inconsistencies in the graph.

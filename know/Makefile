@@ -54,7 +54,7 @@ install: check-python check-root
 	@mkdir -p $(COMPLETIONDIR_BASH)
 
 	# Copy library files
-	@cp -r know_lib $(LIBDIR)/
+	@cp -r src $(LIBDIR)/
 	@cp know.py $(LIBDIR)/know.py
 
 	# Create executable
@@ -82,7 +82,7 @@ user-install: check-python
 	@~/.local/venvs/know/bin/pip install --quiet click pydantic networkx rich aiofiles python-dotenv 2>/dev/null || true
 
 	# Copy files
-	@cp -r know_lib ~/.local/lib/know/
+	@cp -r src ~/.local/lib/know/
 	@cp know.py ~/.local/lib/know/know.py
 
 	# Create user executable that uses the venv
@@ -143,7 +143,7 @@ clean:
 	@rm -rf venv
 	@rm -f know-dev
 	@rm -rf __pycache__
-	@rm -rf know_lib/__pycache__
+	@rm -rf src/__pycache__
 	@rm -rf tests/__pycache__
 	@rm -rf .pytest_cache
 	@find . -name "*.pyc" -delete
@@ -153,7 +153,7 @@ clean:
 package:
 	@echo "Creating distribution package..."
 	@tar -czf know-tool.tar.gz \
-		know_lib/ \
+		src/ \
 		tests/ \
 		know.py \
 		requirements.txt \

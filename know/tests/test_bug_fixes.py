@@ -13,7 +13,7 @@ import pytest
 import json
 import tempfile
 from pathlib import Path
-from know_lib import GraphManager, EntityManager, DependencyManager, GraphValidator
+from src import GraphManager, EntityManager, DependencyManager, GraphValidator
 
 
 class TestEntityTypeLoading:

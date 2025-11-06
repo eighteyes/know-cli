@@ -7,7 +7,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from know_lib import GraphManager, GraphValidator
+from src import GraphManager, GraphValidator
 
 
 @pytest.fixture

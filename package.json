@@ -8,8 +8,7 @@
   },
   "scripts": {
     "postinstall": "node scripts/postinstall.js",
-    "test": "cd know && python -m pytest tests/",
-    "validate-graph": "node www/validate-graph.js"
+    "test": "cd know && python -m pytest tests/"
   },
   "keywords": [
     "cli",
@@ -22,7 +21,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourproject/know-cli.git"
+    "url": "https://github.com/eighteyes/know-cli.git"
   },
   "engines": {
     "node": ">=14.0.0",

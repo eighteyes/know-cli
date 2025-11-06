@@ -13,7 +13,7 @@ from rich.table import Table
 from rich.tree import Tree
 from rich import print as rprint
 
-from know_lib import (
+from src import (
     GraphManager, EntityManager, DependencyManager,
     GraphValidator, SpecGenerator, LLMManager, get_graph_stats
 )
@@ -642,7 +642,7 @@ def llm_test(ctx, provider_name):
 @click.pass_context
 def gap_analysis(ctx, entity_id, json_output):
     """Analyze implementation gaps in dependency chains"""
-    from know_lib.gap_analysis import GapAnalyzer, ChainStatus
+    from src.gap_analysis import GapAnalyzer, ChainStatus
 
     analyzer = GapAnalyzer(ctx.obj['graph'], ctx.obj['entities'], ctx.obj['deps'])
 
@@ -690,7 +690,7 @@ def gap_analysis(ctx, entity_id, json_output):
 @click.pass_context
 def gap_missing(ctx):
     """List missing connections in dependency chains"""
-    from know_lib.gap_analysis import GapAnalyzer
+    from src.gap_analysis import GapAnalyzer
 
     analyzer = GapAnalyzer(ctx.obj['graph'], ctx.obj['entities'], ctx.obj['deps'])
     missing = analyzer.list_missing_connections()
@@ -710,7 +710,7 @@ def gap_missing(ctx):
 @click.pass_context
 def gap_summary(ctx):
     """Show implementation summary"""
-    from know_lib.gap_analysis import GapAnalyzer
+    from src.gap_analysis import GapAnalyzer
 
     analyzer = GapAnalyzer(ctx.obj['graph'], ctx.obj['entities'], ctx.obj['deps'])
     summary = analyzer.get_implementation_summary()
@@ -734,7 +734,7 @@ def gap_summary(ctx):
 @click.pass_context
 def ref_orphans(ctx):
     """Find orphaned references"""
-    from know_lib.reference_tools import ReferenceManager
+    from src.reference_tools import ReferenceManager
 
     ref_mgr = ReferenceManager(ctx.obj['graph'], ctx.obj['entities'], ctx.obj['deps'])
     orphaned = ref_mgr.check_reference_parents()
@@ -760,7 +760,7 @@ def ref_orphans(ctx):
 @click.pass_context
 def ref_usage(ctx):
     """Show reference usage statistics"""
-    from know_lib.reference_tools import ReferenceManager
+    from src.reference_tools import ReferenceManager
 
     ref_mgr = ReferenceManager(ctx.obj['graph'], ctx.obj['entities'], ctx.obj['deps'])
     usage = ref_mgr.get_reference_usage()
@@ -784,7 +784,7 @@ def ref_usage(ctx):
 @click.pass_context
 def ref_clean(ctx, remove, dry_run):
     """Clean up unused references"""
-    from know_lib.reference_tools import ReferenceManager
+    from src.reference_tools import ReferenceManager
 
     ref_mgr = ReferenceManager(ctx.obj['graph'], ctx.obj['entities'], ctx.obj['deps'])
     results = ref_mgr.clean_references(remove_unused=remove, dry_run=dry_run)
@@ -809,7 +809,7 @@ def ref_clean(ctx, remove, dry_run):
 @click.pass_context
 def ref_suggest(ctx, max):
     """Suggest connections for orphaned references"""
-    from know_lib.reference_tools import ReferenceManager
+    from src.reference_tools import ReferenceManager
 
     ref_mgr = ReferenceManager(ctx.obj['graph'], ctx.obj['entities'], ctx.obj['deps'])
     suggestions = ref_mgr.suggest_reference_connections(max_suggestions=max)

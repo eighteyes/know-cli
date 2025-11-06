@@ -8,10 +8,10 @@ import json
 import tempfile
 from pathlib import Path
 
-# Add parent directory to path so we can import know_lib
+# Add parent directory to path so we can import src
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from know_lib import GraphManager, EntityManager, DependencyManager, GraphValidator
+from src import GraphManager, EntityManager, DependencyManager, GraphValidator
 
 
 def run_test(test_name, test_func):

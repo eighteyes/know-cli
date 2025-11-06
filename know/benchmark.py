@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Callable, Dict, Any
 
 try:
-    from know_lib import GraphManager, EntityManager, DependencyManager, GraphValidator
+    from src import GraphManager, EntityManager, DependencyManager, GraphValidator
     HAS_FULL = True
 except ImportError:
     from know_minimal import GraphManager, EntityManager

@@ -103,8 +103,8 @@ Flattened references to granular, specific items:
    - Clearer what each reference represents
 
 ### Implementation
-- Created `know/lib/ref-usage-simple.sh` for usage analysis
-- Added `ref-usage` command to query-graph.sh
+- Created `know/lib/ref-usage-simple.sh` for usage analysis *(legacy bash - replaced by Python implementation in know/src/)*
+- Added `ref-usage` command to query-graph.sh *(migrated to Python know CLI)*
 - Used grep-based counting instead of complex jq queries for performance
 - Temp file approach for dependency lookup to avoid blocking
 
