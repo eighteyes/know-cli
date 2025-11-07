@@ -1,5 +1,5 @@
 # KNOW CLI - v 0.0.1
-An opinionated graph knowledgebase for product driven software development.
+An opinionated graph knowledgebase for product driven software development. 
 
 Intended primarily for automated access.
 
@@ -22,13 +22,17 @@ This is a work in progress. There are two primary intents with `know`:
  
 Generally speaking, this is not designed for human use, as the ergonomics are somewhere between `tar` and `aws-cli`. That being said, a skill is provided for use `.claude/skills/know-tool/marketplace.json`, give it a spin.
 
+## Results
+I get considerably better plans made with `know` then with  other tools used by generalist agents. Instead of assuming my intent, the plans intuit where I want to go. I spend less time guiding the agent when it has a prepared knowledgebase that understands both the codebase and how it connects to features. [
+
 ## Installation
 
 ```bash
-npm install
+npm install -g know-cli
 ```
 
-The `postinstall` script will automatically install Python dependencies from `know/requirements.txt`.
+## Usage
+`know` is ideally used via an LLM, examine [tx](https://github.com/eighteyes/tx) for an immediately useful implementation. 
 
 ## Commands Reference
 
