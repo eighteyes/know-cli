@@ -75,10 +75,43 @@
     "function": "Set of all functions/methods/procedures that perform operations"
   },
   "entity_note": {
-    "schema": "Entities have name & description. References have detailed schemas.",
+    "schema": "Entities have name & description. Module/package entities may include path/package/layer for practical navigation.",
     "instances": "module:auth, package:api, class:User are instances within entity sets",
     "granularity": "Choose entity granularity based on what you want to track and validate",
-    "flexibility": "Not all entity types required - use what makes sense for your architecture"
+    "flexibility": "Not all entity types required - use what makes sense for your architecture",
+    "allowed_metadata": ["path", "package", "layer"]
+  },
+  "entity_schema": {
+    "module": {
+      "required": ["name", "description"],
+      "optional": ["path", "package", "layer"],
+      "notes": "path/package/layer allow quick navigation without needing separate source-file references"
+    },
+    "package": {
+      "required": ["name", "description"],
+      "optional": ["layer"],
+      "notes": "layer indicates architectural positioning"
+    },
+    "layer": {
+      "required": ["name", "description"],
+      "optional": []
+    },
+    "namespace": {
+      "required": ["name", "description"],
+      "optional": []
+    },
+    "interface": {
+      "required": ["name", "description"],
+      "optional": []
+    },
+    "class": {
+      "required": ["name", "description"],
+      "optional": []
+    },
+    "function": {
+      "required": ["name", "description"],
+      "optional": []
+    }
   },
   "source_file_schema": {
     "description": "Implementation details for a source code file",
@@ -93,36 +126,6 @@
       "loc": "INTEGER - Lines of code (excluding comments and whitespace)",
       "last_modified": "ISO8601_TIMESTAMP - Last modification time",
       "hash": "STRING - Content hash for change detection"
-    },
-    "examples": {
-      "javascript": {
-        "file_path": "lib/logger.js",
-        "language": "javascript",
-        "exports": ["Logger"],
-        "imports_internal": [],
-        "imports_external": ["external-dep:fs-extra"],
-        "layer": 0,
-        "category": "infrastructure",
-        "loc": 87
-      },
-      "python": {
-        "file_path": "src/core/auth.py",
-        "language": "python",
-        "exports": ["AuthService", "hash_password", "verify_token"],
-        "imports_internal": ["module:database", "module:crypto"],
-        "imports_external": ["external-dep:bcrypt", "external-dep:jwt"],
-        "layer": "domain",
-        "category": "service"
-      },
-      "go": {
-        "file_path": "pkg/server/handler.go",
-        "language": "go",
-        "exports": ["Handler", "NewHandler", "ServeHTTP"],
-        "imports_internal": ["module:auth", "module:storage"],
-        "imports_external": ["external-dep:net/http"],
-        "layer": "application",
-        "category": "controller"
-      }
     }
   },
   "external_dep_schema": {
@@ -135,31 +138,6 @@
       "usage_count": "INTEGER - Number of modules that import this",
       "license": "STRING - License identifier (MIT, Apache-2.0, etc)",
       "security_issues": "INTEGER - Known CVEs or security advisories"
-    },
-    "examples": {
-      "javascript_npm": {
-        "identifier": "npm:express",
-        "version": "^4.18.0",
-        "type": "npm",
-        "purpose": "HTTP server framework",
-        "usage_count": 3,
-        "license": "MIT"
-      },
-      "python_stdlib": {
-        "identifier": "python:pathlib",
-        "version": "stdlib",
-        "type": "builtin",
-        "purpose": "Path manipulation utilities",
-        "usage_count": 15
-      },
-      "rust_crate": {
-        "identifier": "crates:tokio",
-        "version": "1.35.0",
-        "type": "cargo",
-        "purpose": "Async runtime for Rust",
-        "usage_count": 8,
-        "license": "MIT"
-      }
     }
   },
   "api_surface_schema": {

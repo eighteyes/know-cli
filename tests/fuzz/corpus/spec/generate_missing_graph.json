@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    }
+  },
+  "entities": {
+    "users": {
+      "owner": {
+        "name": "Owner",
+        "description": "Test"
+      }
+    }
+  },
+  "references": {}
+}

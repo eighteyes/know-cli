@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    },
+    "phases": []
+  },
+  "entities": {
+    "users": {
+      "owner": {
+        "name": "Owner",
+        "description": "Test"
+      }
+    },
+    "objectives": {
+      "goal": {
+        "name": "Goal",
+        "description": "Test"
+      }
+    },
+    "actions": {
+      "perform": {
+        "name": "Perform",
+        "description": "Test"
+      }
+    },
+    "components": {
+      "service": {
+        "name": "Service",
+        "description": "Test"
+      }
+    }
+  },
+  "references": {},
+  "graph": {
+    "users:owner": {
+      "depends_on": [
+        "objectives:goal"
+      ]
+    },
+    "objectives:goal": {
+      "depends_on": [
+        "actions:perform"
+      ]
+    },
+    "actions:perform": {
+      "depends_on": [
+        "components:service"
+      ]
+    },
+    "components:service": {
+      "depends_on": []
+    }
+  }
+}

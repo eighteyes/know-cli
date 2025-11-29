@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    }
+  },
+  "entities": {
+    "modules": {
+      "auth": {
+        "name": "Auth",
+        "description": "Auth module"
+      }
+    },
+    "classes": {
+      "User": {
+        "name": "User",
+        "description": "User class"
+      }
+    },
+    "users": {
+      "owner": {
+        "name": "Owner",
+        "description": "Invalid type"
+      }
+    }
+  },
+  "references": {},
+  "graph": {
+    "modules:auth": {
+      "depends_on": [
+        "users:owner"
+      ]
+    }
+  }
+}

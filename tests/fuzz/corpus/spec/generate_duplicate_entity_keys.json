@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    },
+    "phases": []
+  },
+  "entities": {
+    "users": {
+      "owner": {
+        "name": "Owner",
+        "description": "Second"
+      }
+    }
+  },
+  "references": {},
+  "graph": {}
+}

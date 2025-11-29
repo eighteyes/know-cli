@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    },
+    "phases": []
+  },
+  "entities": {
+    "users": {
+      "owner": {
+        "name": "Owner",
+        "description": "System owner"
+      }
+    },
+    "components": {
+      "auth": {
+        "name": "Auth",
+        "description": "Authentication"
+      }
+    }
+  },
+  "references": {},
+  "graph": {
+    "users:owner": {
+      "depends_on": []
+    },
+    "components:auth": {
+      "depends_on": [
+        "users:owner"
+      ]
+    }
+  }
+}

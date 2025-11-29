@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    },
+    "phases": []
+  },
+  "entities": {
+    "components": {
+      "auth": {
+        "name": "Auth",
+        "description": "Test"
+      }
+    },
+    "actions": {
+      "login": {
+        "name": "Login",
+        "description": "Test"
+      }
+    },
+    "features": {
+      "security": {
+        "name": "Security",
+        "description": "Test"
+      }
+    }
+  },
+  "references": {},
+  "graph": {
+    "components:auth": {
+      "depends_on": [
+        "actions:login"
+      ]
+    },
+    "actions:login": {
+      "depends_on": [
+        "features:security"
+      ]
+    }
+  }
+}

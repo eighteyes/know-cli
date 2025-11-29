@@ -76,32 +76,32 @@ know rules before component
 ### 2. Add the Dependency
 
 ```bash
-know add-dep <from-entity> <to-entity>
+know link <from-entity> <to-entity>
 ```
 
 **Examples:**
 ```bash
 # Feature depends on action
-know add-dep feature:analytics-dashboard action:export-data
+know link feature:analytics-dashboard action:export-data
 
 # Action depends on component
-know add-dep action:export-data component:data-exporter
+know link action:export-data component:data-exporter
 
 # Component depends on component (allowed!)
-know add-dep component:data-exporter component:file-writer
+know link component:data-exporter component:file-writer
 ```
 
 ### 3. Verify Dependency
 
 ```bash
 # See direct dependencies
-know deps feature:analytics-dashboard
+know uses feature:analytics-dashboard
 
 # See full dependency tree
-know deps feature:analytics-dashboard --recursive
+know uses feature:analytics-dashboard --recursive
 
 # See what depends on an entity
-know dependents component:data-exporter
+know used-by component:data-exporter
 ```
 
 ## Working with References
@@ -219,13 +219,13 @@ know list-type action       # See existing actions
 know add action analyze-data '{"name": "Analyze Data", "description": "Run ML analysis"}'
 
 # 6. Connect feature to action
-know add-dep feature:new-analytics action:analyze-data
+know link feature:new-analytics action:analyze-data
 
 # 7. Add components
 know add component ml-engine '{"name": "ML Engine", "description": "Runs ML models"}'
 
 # 8. Connect action to component
-know add-dep action:analyze-data component:ml-engine
+know link action:analyze-data component:ml-engine
 
 # 9. Add business logic reference (edit spec-graph.json)
 # Add to references.business_logic.analyze_data_logic
@@ -234,7 +234,7 @@ know add-dep action:analyze-data component:ml-engine
 # Update action:analyze-data description to mention business_logic:analyze_data_logic
 
 # 11. Verify complete chain
-know deps feature:new-analytics --recursive
+know uses feature:new-analytics --recursive
 
 # 12. Validate
 know validate
@@ -260,7 +260,7 @@ Entities are modified by editing `.ai/spec-graph.json` directly:
 ## Removing Dependencies
 
 ```bash
-know remove-dep feature:old-feature action:obsolete-action
+know unlink feature:old-feature action:obsolete-action
 ```
 
 ## Removing Entities
@@ -289,7 +289,7 @@ know ref-suggest
 
 1. **Always check rules first**: Use `know rules describe` before adding entities
 2. **Validate incrementally**: Run `know validate` after each change
-3. **Follow dependency chains**: Use `know deps --recursive` to see full context
+3. **Follow dependency chains**: Use `know uses --recursive` to see full context
 4. **Use meaningful keys**: Descriptive kebab-case keys (real-time-telemetry, not rtt)
 5. **Reference details**: Put implementation details in references, not entity descriptions
 6. **Check completeness**: Use `know gap-analysis` to find missing connections

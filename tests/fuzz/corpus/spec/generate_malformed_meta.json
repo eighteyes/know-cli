@@ -1,0 +1,17 @@
+{
+  "meta": "not a dict",
+  "entities": {
+    "users": {
+      "owner": {
+        "name": "Owner",
+        "description": "Test"
+      }
+    }
+  },
+  "references": {},
+  "graph": {
+    "users:owner": {
+      "depends_on": []
+    }
+  }
+}

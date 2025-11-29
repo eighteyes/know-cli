@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    },
+    "phases": []
+  },
+  "entities": {
+    "features": {
+      "feature_a": {
+        "name": "Feature A",
+        "description": "Test"
+      },
+      "feature_b": {
+        "name": "Feature B",
+        "description": "Test"
+      },
+      "feature_c": {
+        "name": "Feature C",
+        "description": "Test"
+      }
+    }
+  },
+  "references": {},
+  "graph": {
+    "features:feature_a": {
+      "depends_on": [
+        "features:feature_b"
+      ]
+    },
+    "features:feature_b": {
+      "depends_on": [
+        "features:feature_c"
+      ]
+    },
+    "features:feature_c": {
+      "depends_on": [
+        "features:feature_a"
+      ]
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    },
+    "phases": []
+  },
+  "entities": {
+    "users": {
+      "owner": {
+        "name": "Owner",
+        "description": "In graph"
+      },
+      "admin": {
+        "name": "Admin",
+        "description": "Not in graph"
+      }
+    }
+  },
+  "references": {},
+  "graph": {
+    "users:owner": {
+      "depends_on": []
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    }
+  },
+  "entities": {
+    "users": {
+      "owner_\ud83d\ude80_test": {
+        "name": "\ud83d\ude80 Owner",
+        "description": "Unicode test"
+      },
+      "admin_\u4f60\u597d": {
+        "name": "Admin \u4f60\u597d",
+        "description": "Chinese characters"
+      },
+      "user_\u00f1": {
+        "name": "User \u00f1",
+        "description": "Accented characters"
+      }
+    }
+  },
+  "references": {},
+  "graph": {
+    "users:owner_\ud83d\ude80_test": {
+      "depends_on": []
+    },
+    "users:admin_\u4f60\u597d": {
+      "depends_on": []
+    },
+    "users:user_\u00f1": {
+      "depends_on": []
+    }
+  }
+}

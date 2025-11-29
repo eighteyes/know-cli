@@ -59,13 +59,14 @@
       "know list",
       "know list-type [type]",
       "know get [type:key]",
-      "know deps [type:key]",
-      "know dependents [type:key]"
+      "know uses [type:key] (or: down)",
+      "know used-by [type:key] (or: up)",
+      "know trace [entity] -c [code-graph] -s [spec-graph]"
     ],
     "modification": [
       "know add [type] [key] [json]",
-      "know add-dep [type:key] [type:key]",
-      "know remove-dep [type:key] [type:key]"
+      "know link [type:key] [type:key]",
+      "know unlink [type:key] [type:key]"
     ],
     "validation": [
       "know validate",
@@ -91,6 +92,12 @@
       "solution": "Single source of truth mapping user intent to implementation",
       "benefit": "LLMs get token-efficient, consistent product-code understanding without repetitive analysis"
     },
+    "dualGraphSystem": {
+      "specGraph": "Maps user intent: user → objective → feature → component (WHAT users want)",
+      "codeGraph": "Maps implementation: module → package → external-dep (HOW it's built)",
+      "integration": "product-component references link code modules to spec components",
+      "discovery": "Use 'know -g <graph-path> rules graph' to see valid relationships for each graph type"
+    },
     "twoChains": {
       "what": "project → user → objective → action (what users want to accomplish)",
       "how": "project → requirement → interface → feature → action → component → operation (how system delivers it)",
@@ -103,9 +110,12 @@
     }
   },
   "criticalRules": [
+    "Use 'know -g <graph-path> rules graph' to see valid entity relationships for each graph type",
+    "Different graphs have different rules: spec-graph (user→objective→feature→component) vs code-graph (module→package→external-dep)",
+    "Use 'know trace' to traverse the product-code boundary and see full upstream/downstream chains",
     "Always validate after modifications - ensures product-code consistency",
     "Map user objectives to actual components - close the intent-to-implementation gap",
-    "Use 'know rules' before changes - maintains structural integrity",
+    "Run 'know -g <graph> rules describe <entity-type>' to understand what an entity type can depend on",
     "Run gap-analysis regularly - catches incomplete product specifications",
     "Keep relationships explicit in graph section - no implied dependencies",
     "Reference detailed specs without duplication - single source of truth principle",
@@ -142,13 +152,13 @@
       "Understand how to map your concept: know rules describe feature",
       "Add the product requirement: know add feature new-feature '{\"name\":\"...\", \"description\":\"...\"}'",
       "Check what implementation pieces it needs: know rules after feature",
-      "Connect to user objectives and components: know add-dep feature:new-feature action:user-action",
+      "Connect to user objectives and components: know link feature:new-feature action:user-action",
       "Validate product-code alignment: know validate && know gap-analysis feature:new-feature"
     ],
     "philosophy": "Start with user objectives, map to features, connect to components. The graph enforces traceability."
   },
   "installation": {
-    "path": "/Users/god/projects/know-cli/know/know",
-    "note": "See project INSTALL.md for setup if know command is not found"
+    "command": "know",
+    "note": "Requires know CLI to be installed globally. Install with: npm install -g know-cli"
   }
 }

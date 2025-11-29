@@ -1,0 +1,13 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    }
+  },
+  "entities": [
+    "users",
+    "objectives"
+  ],
+  "references": {},
+  "graph": {}
+}

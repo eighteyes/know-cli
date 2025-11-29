@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    }
+  },
+  "entities": {
+    "layers": {
+      "presentation": {
+        "name": "Presentation",
+        "description": "UI layer"
+      },
+      "business": {
+        "name": "Business",
+        "description": "Business logic"
+      }
+    }
+  },
+  "references": {},
+  "graph": {
+    "layers:presentation": {
+      "depends_on": [
+        "layers:business"
+      ]
+    },
+    "layers:business": {
+      "depends_on": [
+        "layers:presentation"
+      ]
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    }
+  },
+  "entities": {
+    "modules": {
+      "auth": {
+        "name": "Auth",
+        "description": "Implements auth"
+      }
+    }
+  },
+  "references": {},
+  "graph": {
+    "modules:auth": {
+      "depends_on": []
+    }
+  }
+}

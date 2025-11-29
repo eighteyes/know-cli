@@ -1,0 +1,82 @@
+{
+  "timestamp": "2025-11-27T05:41:46Z",
+  "total_tests": 53,
+  "passed": 53,
+  "failed": 0,
+  "crashed": 0,
+  "timed_out": 0,
+  "summary_by_type": {
+    "code": {
+      "passed": 9,
+      "failed": 0,
+      "crashed": 0,
+      "timed_out": 0
+    },
+    "cross": {
+      "passed": 10,
+      "failed": 0,
+      "crashed": 0,
+      "timed_out": 0
+    },
+    "spec": {
+      "passed": 34,
+      "failed": 0,
+      "crashed": 0,
+      "timed_out": 0
+    }
+  },
+  "error_categories": {},
+  "slowest_tests": [
+    {
+      "mutation": "generate_missing_product_component_mapping",
+      "duration": 0.3298182487487793,
+      "exit_code": 0
+    },
+    {
+      "mutation": "generate_orphaned_entities",
+      "duration": 0.2562098503112793,
+      "exit_code": 0
+    },
+    {
+      "mutation": "generate_orphaned_code_module",
+      "duration": 0.24239015579223633,
+      "exit_code": 0
+    },
+    {
+      "mutation": "generate_reference_to_nonexistent_entity",
+      "duration": 0.23979711532592773,
+      "exit_code": 0
+    },
+    {
+      "mutation": "generate_null_values_in_entity",
+      "duration": 0.20388078689575195,
+      "exit_code": 0
+    },
+    {
+      "mutation": "generate_missing_product_component_mapping",
+      "duration": 0.19415688514709473,
+      "exit_code": 0
+    },
+    {
+      "mutation": "generate_empty_depends_on_array",
+      "duration": 0.18553686141967773,
+      "exit_code": 0
+    },
+    {
+      "mutation": "generate_circular_dependencies",
+      "duration": 0.18329191207885742,
+      "exit_code": 0
+    },
+    {
+      "mutation": "generate_special_characters_names",
+      "duration": 0.1774599552154541,
+      "exit_code": 0
+    },
+    {
+      "mutation": "generate_self_referencing",
+      "duration": 0.1755199432373047,
+      "exit_code": 0
+    }
+  ],
+  "interesting_failures": []
+}

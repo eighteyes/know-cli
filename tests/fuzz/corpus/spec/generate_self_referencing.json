@@ -1,0 +1,24 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    },
+    "phases": []
+  },
+  "entities": {
+    "features": {
+      "recursive": {
+        "name": "Recursive",
+        "description": "Self-referencing"
+      }
+    }
+  },
+  "references": {},
+  "graph": {
+    "features:recursive": {
+      "depends_on": [
+        "features:recursive"
+      ]
+    }
+  }
+}

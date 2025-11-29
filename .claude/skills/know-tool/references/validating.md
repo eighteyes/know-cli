@@ -75,7 +75,7 @@ know cycles
 
 **To fix cycles:**
 1. Identify the cycle path
-2. Remove one dependency to break the cycle: `know remove-dep entity:x entity:y`
+2. Remove one dependency to break the cycle: `know unlink entity:x entity:y`
 3. Re-validate: `know cycles`
 
 ## Completeness Checking
@@ -144,16 +144,16 @@ know rules before component
 
 ```bash
 # See what entity depends on
-know deps feature:analytics-dashboard
+know uses feature:analytics-dashboard
 
 # See dependency tree
-know deps feature:analytics-dashboard --recursive
+know uses feature:analytics-dashboard --recursive
 
 # See what depends on this entity
-know dependents component:data-exporter
+know used-by component:data-exporter
 
 # See full dependent tree
-know dependents component:data-exporter --recursive
+know used-by component:data-exporter --recursive
 ```
 
 ### Suggest Valid Connections
@@ -247,12 +247,12 @@ Shows entities in dependency order (dependencies first, then dependents).
 know rules after feature
 
 # Remove invalid dependency
-know remove-dep feature:x component:y
+know unlink feature:x component:y
 
 # Add correct intermediate entity
 know add action trigger-y '{"name": "...", "description": "..."}'
-know add-dep feature:x action:trigger-y
-know add-dep action:trigger-y component:y
+know link feature:x action:trigger-y
+know link action:trigger-y component:y
 
 # Validate
 know validate
@@ -267,11 +267,11 @@ know validate
 **Fix:**
 ```bash
 # Analyze the cycle - one dependency is probably wrong
-know deps entity:a
-know deps entity:b
+know uses entity:a
+know uses entity:b
 
 # Remove the incorrect dependency
-know remove-dep entity:c entity:a
+know unlink entity:c entity:a
 
 # Validate
 know cycles
@@ -313,7 +313,7 @@ know rules after action
 know add component csv-exporter '{"name": "CSV Exporter", "description": "..."}'
 
 # Connect action to component
-know add-dep action:export-data component:csv-exporter
+know link action:export-data component:csv-exporter
 
 # Validate
 know completeness action:export-data
@@ -397,4 +397,4 @@ know gap-analysis feature:critical-feature
 - [ ] `know ref-orphans` shows no (or minimal) orphaned references
 - [ ] `know build-order` produces sensible order
 - [ ] Critical features pass `know completeness`
-- [ ] Dependency chains are complete: `know deps --recursive`
+- [ ] Dependency chains are complete: `know uses --recursive`

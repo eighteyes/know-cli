@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    }
+  },
+  "entities": {
+    "users": {
+      "user_with_quotes": {
+        "name": "User with \"quotes\"",
+        "description": "Test"
+      },
+      "user_with_newline": {
+        "name": "User with newline",
+        "description": "Test"
+      },
+      "user_with_tab": {
+        "name": "User with tab",
+        "description": "Test"
+      },
+      "user_with_backslash": {
+        "name": "User with backslash",
+        "description": "Test"
+      }
+    }
+  },
+  "references": {},
+  "graph": {
+    "users:user_with_quotes": {
+      "depends_on": []
+    },
+    "users:user_with_newline": {
+      "depends_on": []
+    },
+    "users:user_with_tab": {
+      "depends_on": []
+    },
+    "users:user_with_backslash": {
+      "depends_on": []
+    }
+  }
+}

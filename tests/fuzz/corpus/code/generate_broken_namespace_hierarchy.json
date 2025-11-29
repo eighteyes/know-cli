@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    }
+  },
+  "entities": {
+    "namespaces": {
+      "deep_child": {
+        "name": "Deep Child",
+        "description": "No parent"
+      }
+    }
+  },
+  "references": {},
+  "graph": {
+    "namespaces:deep_child": {
+      "depends_on": []
+    }
+  }
+}

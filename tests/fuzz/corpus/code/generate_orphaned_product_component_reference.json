@@ -1,0 +1,30 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    }
+  },
+  "entities": {
+    "modules": {
+      "handler": {
+        "name": "Handler",
+        "description": "Test"
+      }
+    }
+  },
+  "references": {
+    "product-component": {
+      "handler": {
+        "component": "component:nonexistent-component",
+        "graph_path": "spec-graph.json"
+      }
+    }
+  },
+  "graph": {
+    "modules:handler": {
+      "depends_on": [
+        "product-component:handler"
+      ]
+    }
+  }
+}

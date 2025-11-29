@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    },
+    "phases": []
+  },
+  "entities": {
+    "users": {
+      "test_owner": {
+        "name": "Test Owner",
+        "description": "Uses underscore"
+      },
+      "admin_user": {
+        "name": "Admin User",
+        "description": "Uses underscore"
+      }
+    }
+  },
+  "references": {},
+  "graph": {
+    "users:test_owner": {
+      "depends_on": []
+    },
+    "users:admin_user": {
+      "depends_on": []
+    }
+  }
+}

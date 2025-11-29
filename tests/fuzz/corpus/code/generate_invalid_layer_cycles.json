@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    }
+  },
+  "entities": {
+    "layers": {
+      "layer_a": {
+        "name": "Layer A",
+        "description": "Test"
+      },
+      "layer_b": {
+        "name": "Layer B",
+        "description": "Test"
+      },
+      "layer_c": {
+        "name": "Layer C",
+        "description": "Test"
+      }
+    }
+  },
+  "references": {},
+  "graph": {
+    "layers:layer_a": {
+      "depends_on": [
+        "layers:layer_b"
+      ]
+    },
+    "layers:layer_b": {
+      "depends_on": [
+        "layers:layer_c"
+      ]
+    },
+    "layers:layer_c": {
+      "depends_on": [
+        "layers:layer_a"
+      ]
+    }
+  }
+}

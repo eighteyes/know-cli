@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    },
+    "phases": []
+  },
+  "entities": {
+    "users": {
+      "testOwner": {
+        "name": "Test Owner",
+        "description": "Uses camelCase"
+      },
+      "adminUser": {
+        "name": "Admin User",
+        "description": "Uses camelCase"
+      }
+    }
+  },
+  "references": {},
+  "graph": {
+    "users:testOwner": {
+      "depends_on": []
+    },
+    "users:adminUser": {
+      "depends_on": []
+    }
+  }
+}

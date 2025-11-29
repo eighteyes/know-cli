@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    }
+  },
+  "entities": {
+    "modules": {
+      "service": {
+        "name": "Service",
+        "description": "Test"
+      },
+      "orphan": {
+        "name": "Orphan",
+        "description": "No purpose"
+      }
+    }
+  },
+  "references": {
+    "product-component": {
+      "service": {
+        "component": "component:service",
+        "graph_path": "spec-graph.json"
+      }
+    }
+  },
+  "graph": {
+    "modules:service": {
+      "depends_on": [
+        "product-component:service"
+      ]
+    },
+    "modules:orphan": {
+      "depends_on": []
+    }
+  }
+}

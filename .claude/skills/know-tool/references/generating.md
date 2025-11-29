@@ -127,10 +127,10 @@ know get feature:analytics-dashboard
 
 ```bash
 # See what entity depends on
-know deps feature:analytics-dashboard
+know uses feature:analytics-dashboard
 
 # See full dependency tree
-know deps feature:analytics-dashboard --recursive
+know uses feature:analytics-dashboard --recursive
 ```
 
 ### 4. Verify Completeness
@@ -239,7 +239,7 @@ know list-type interface | grep api
 know spec interface:user-auth-api
 
 # Include dependencies
-know deps interface:user-auth-api --recursive
+know uses interface:user-auth-api --recursive
 ```
 
 ### Extract API References
@@ -316,7 +316,7 @@ cat .ai/spec-graph.json
 jq '.entities.feature."analytics-dashboard"' .ai/spec-graph.json
 
 # With dependencies
-know deps feature:analytics --recursive | jq -R . | jq -s .
+know uses feature:analytics --recursive | jq -R . | jq -s .
 ```
 
 ## Integration with LLM Workflows
@@ -338,7 +338,7 @@ know rules after requirement
 know spec requirement:low-latency-teleoperation
 
 # 5. See what implements it
-know dependents requirement:low-latency-teleoperation --recursive
+know used-by requirement:low-latency-teleoperation --recursive
 ```
 
 ### Generating Implementation Plans
@@ -357,7 +357,7 @@ know gap-analysis feature:new-feature
 know build-order | grep new-feature
 
 # 5. Generate specs for each dependency
-know deps feature:new-feature --recursive | while read dep; do
+know uses feature:new-feature --recursive | while read dep; do
   know spec $dep
 done
 ```
@@ -396,7 +396,7 @@ Shows:
 Generated specs can be customized by:
 
 1. Examining entity structure: `know get entity:path`
-2. Checking dependencies: `know deps --recursive`
+2. Checking dependencies: `know uses --recursive`
 3. Extracting references from descriptions
 4. Combining with reference details
 5. Building custom output format

@@ -1,0 +1,30 @@
+{
+  "meta": {
+    "project": {
+      "name": "Test"
+    }
+  },
+  "entities": {
+    "modules": {
+      "auth": {
+        "name": "Auth",
+        "description": "Implements something"
+      }
+    }
+  },
+  "references": {
+    "product-component": {
+      "auth": {
+        "component": "component:other-service",
+        "graph_path": "spec-graph.json"
+      }
+    }
+  },
+  "graph": {
+    "modules:auth": {
+      "depends_on": [
+        "product-component:auth"
+      ]
+    }
+  }
+}

@@ -342,25 +342,25 @@ class TestAddCommand:
         # Verify addition
 
 
-class TestAddDepCommand:
-    """Test the add-dep command"""
+class TestLinkCommand:
+    """Test the link command"""
 
     def test_add_dependency(self, runner, test_graph_path):
         """Test adding a dependency"""
         result = runner.invoke(
             cli,
-            ['-g', test_graph_path, 'add-dep', 'component:chart', 'user:owner']
+            ['-g', test_graph_path, 'link', 'component:chart', 'user:owner']
         )
         # Verify dependency was added
 
 
-class TestRemoveDepCommand:
-    """Test the remove-dep command"""
+class TestUnlinkCommand:
+    """Test the unlink command"""
 
     def test_remove_dependency(self, runner, test_graph_path):
         """Test removing a dependency"""
         result = runner.invoke(
             cli,
-            ['-g', test_graph_path, 'remove-dep', 'feature:analytics', 'acceptance_criteria:analytics']
+            ['-g', test_graph_path, 'unlink', 'feature:analytics', 'acceptance_criteria:analytics']
         )
         # Verify dependency was removed

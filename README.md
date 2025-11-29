@@ -32,9 +32,37 @@ npm install -g know-cli
 ```
 
 ## Usage
-`know` is ideally used via an LLM, examine [tx](https://github.com/eighteyes/tx) for an immediately useful implementation. 
+`know` is ideally used via an LLM, examine [tx](https://github.com/eighteyes/tx) for an immediately useful implementation.
+
+## Dual Graph System
+
+Know supports two types of graphs with separate validation rules:
+
+1. **Spec Graph** (`.ai/spec-graph.json`): Maps user intent to features
+   - Entity types: user, objective, feature, component, action, operation, etc.
+   - Rules: `config/dependency-rules.json`
+
+2. **Code Graph** (`.ai/code-graph.json`): Maps codebase architecture
+   - Entity types: module, package, class, function, layer, interface, etc.
+   - Rules: `config/code-dependency-rules.json`
+
+**Auto-detection**: The CLI automatically selects the correct rules based on graph filename:
+```bash
+# Spec graph - auto-uses dependency-rules.json
+know -g .ai/spec-graph.json add user developer '{"name":"Developer","description":"..."}'
+
+# Code graph - auto-uses code-dependency-rules.json
+know -g .ai/code-graph.json add module auth '{"name":"Auth Module","description":"..."}'
+```
+
+**Manual override**: Use `-r` to specify custom rules:
+```bash
+know -g custom-graph.json -r my-rules.json add entity-type key '{"name":"...","description":"..."}'
+```
 
 ## Commands Reference
+
+**Note**: Most commands accept `-g/--graph-path` to specify which graph to operate on. The `-r/--rules-path` flag is optional as rules are auto-detected from the graph filename.
 
 ### Core Graph Operations
 
@@ -48,8 +76,14 @@ know list-type <entity_type>
 # Get details of a specific entity
 know get <entity_id>
 
-# Add a new entity
-know add <entity_id> --name "Name" --description "Description"
+# Add a new entity (entity_type and entity_key are separate arguments)
+know add <entity_type> <entity_key> '{"name":"Name","description":"Description"}'
+
+# Example: Add a code module
+know -g .ai/code-graph.json add module auth-handler '{"name":"Auth Handler","description":"Handles authentication"}'
+
+# Example: Add a spec feature
+know -g .ai/spec-graph.json add feature user-login '{"name":"User Login","description":"User authentication flow"}'
 
 # Show graph statistics
 know stats
@@ -61,23 +95,29 @@ know sitemap
 ### Dependency Management
 
 ```bash
-# Show dependencies for an entity
-know deps <entity_id>
+# Show what an entity uses (its dependencies)
+know uses <entity_id>
+know down <entity_id>  # Alias for 'uses'
 
-# Show what depends on an entity
-know dependents <entity_id>
+# Show what uses an entity (its dependents)
+know used-by <entity_id>
+know up <entity_id>  # Alias for 'used-by'
 
 # Add a dependency between entities
-know add-dep <from_entity> <to_entity>
+know link <from_entity> <to_entity>
 
 # Remove a dependency between entities
-know remove-dep <from_entity> <to_entity>
+know unlink <from_entity> <to_entity>
 
 # Suggest valid connections for an entity
 know suggest <entity_id>
 
 # Show topological build order
 know build-order
+
+# Trace entity across product-code boundary
+know -g .ai/spec-graph.json trace component:cli-commands -c .ai/code-graph.json
+know -g .ai/code-graph.json trace module:auth-handler -s .ai/spec-graph.json
 ```
 
 ### Analysis & Validation
@@ -149,6 +189,70 @@ know spec <entity_id>
 
 # Generate detailed feature specification
 know feature-spec <feature_id>
+```
+
+### User-Friendly Workflow
+
+Know provides a workflow system for managing features with linked documentation and graph integration.
+
+```bash
+# Initialize know workflow in a project (one-time setup)
+know init
+
+# This creates:
+# - .claude/commands/know/ with slash commands
+# - .ai/know/ directory structure
+# - .ai/know/project.md template
+```
+
+Once initialized, use these Claude slash commands:
+
+```bash
+# Start a new feature
+/know-add <feature-name>
+# Creates .ai/know/<feature-name>/{proposal,todo,plan,spec}.md
+# Adds stub graph entries immediately
+
+# List all features (planned, in-progress, completed)
+/know-list
+
+# Complete and archive a feature
+/know-done <feature-name>
+# Moves feature to .ai/know/archive/
+```
+
+**Workflow Example:**
+
+```bash
+# 1. Initialize (one time)
+know init
+
+# 2. Start a feature
+/know-add user-authentication
+
+# 3. Fill out overview, todo, and plan files
+
+# 4. Generate specs for each component
+know spec feature:login-form >> .ai/know/user-authentication/spec.md
+know spec component:auth-button >> .ai/know/user-authentication/spec.md
+know spec action:submit-credentials >> .ai/know/user-authentication/spec.md
+
+# 5. Complete the feature
+/know-done user-authentication
+```
+
+**File Structure:**
+
+```
+.ai/know/
+├── project.md                    # Project context
+├── user-auth/                    # Active feature
+│   ├── overview.md              # User request + requirements
+│   ├── todo.md                  # Checklist → [links to plan]
+│   ├── plan.md                  # Implementation → [links to spec]
+│   └── spec.md                  # Generated via know spec
+└── archive/                     # Completed features
+    └── initial-setup/
 ```
 
 ### LLM Workflows

@@ -12,6 +12,7 @@ from .validation import GraphValidator
 from .generators import SpecGenerator
 from .llm import LLMManager, LLMProvider, MockProvider
 from .async_graph import AsyncGraphManager, AsyncGraphPool, get_graph
+from .diff import GraphDiff
 from .utils import (
     parse_entity_id,
     format_entity_id,
@@ -33,6 +34,7 @@ __all__ = [
     "AsyncGraphManager",
     "AsyncGraphPool",
     "get_graph",
+    "GraphDiff",
     "parse_entity_id",
     "format_entity_id",
     "normalize_entity_type",
