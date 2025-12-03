@@ -1562,5 +1562,140 @@ def diff(graph1, graph2, verbose, format):
         sys.exit(1)
 
 
+@cli.command()
+@click.pass_context
+def phases(ctx):
+    """Show all phases with their entities grouped by phase"""
+    import re
+    from pathlib import Path
+
+    graph_data = ctx.obj['graph'].load()
+
+    if 'meta' not in graph_data or 'phases' not in graph_data['meta']:
+        console.print("[yellow]No phases defined in meta.phases[/yellow]")
+        return
+
+    phases_data = graph_data['meta']['phases']
+    phases_metadata = graph_data['meta'].get('phases_metadata', {})
+
+    if not phases_data:
+        console.print("[yellow]No phases defined[/yellow]")
+        return
+
+    def count_todos(entity_id):
+        """Count completed/total todos for an entity"""
+        # Extract feature name from entity_id (e.g., "feature:auth" -> "auth")
+        if ':' not in entity_id:
+            return None, None
+
+        entity_type, entity_name = entity_id.split(':', 1)
+
+        # Only features have todo files in .ai/know/
+        if entity_type != 'feature':
+            return None, None
+
+        # Try to read todo.md
+        todo_path = Path('.ai/know') / entity_name / 'todo.md'
+        if not todo_path.exists():
+            return None, None
+
+        try:
+            content = todo_path.read_text()
+            completed = len(re.findall(r'- \[x\]', content, re.IGNORECASE))
+            total = len(re.findall(r'- \[[x ]\]', content, re.IGNORECASE))
+            return completed, total
+        except Exception:
+            return None, None
+
+    def get_status_icon(status):
+        """Get emoji icon for status"""
+        status_map = {
+            'complete': '✅',
+            'done': '✅',
+            'in-progress': '🔄',
+            'review-ready': '🔄',
+            'incomplete': '📋',
+            'pending': '📋',
+            'planned': '📋'
+        }
+        return status_map.get(status, '⚪')
+
+    # Collect stats
+    total_features = 0
+    total_completed = 0
+    total_tasks = 0
+
+    # Print each phase
+    for phase_key, phase_entities in phases_data.items():
+        # Skip phases_metadata if it somehow ended up in phases dict
+        if phase_key == 'phases_metadata':
+            continue
+
+        if not phase_entities:
+            continue
+
+        # Get phase metadata
+        phase_meta = phases_metadata.get(phase_key, {})
+        phase_name = phase_meta.get('name', phase_key)
+        phase_desc = phase_meta.get('description', '')
+
+        # Count features in this phase
+        feature_count = len(phase_entities)
+        total_features += feature_count
+
+        # Print phase header
+        console.print(f"\n[bold cyan]{'━' * 80}[/bold cyan]")
+        header = f"Phase {phase_key}: {phase_name} ({feature_count} features)"
+        if phase_desc:
+            header += f" - {phase_desc}"
+        console.print(f"[bold cyan]{header}[/bold cyan]")
+        console.print(f"[bold cyan]{'━' * 80}[/bold cyan]")
+
+        # Print each entity
+        for entity_id, entity_meta in phase_entities.items():
+            # Extract entity type and name
+            if ':' in entity_id:
+                entity_type, entity_name = entity_id.split(':', 1)
+            else:
+                entity_type = "unknown"
+                entity_name = entity_id
+
+            # Get status
+            status = entity_meta.get('status', 'planned')
+            icon = get_status_icon(status)
+
+            # Look up entity details
+            entity_details = None
+            if 'entities' in graph_data and entity_type in graph_data['entities']:
+                entity_details = graph_data['entities'][entity_type].get(entity_name, {})
+
+            # Get name (truncate if too long)
+            name = entity_details.get('name', entity_name) if entity_details else entity_name
+            if len(name) > 40:
+                name = name[:37] + "..."
+
+            # Count todos
+            completed, total = count_todos(entity_id)
+
+            if completed is not None and total is not None:
+                total_completed += completed
+                total_tasks += total
+                task_display = f"({completed}/{total})"
+            else:
+                task_display = ""
+
+            # Print feature line
+            console.print(f"  {icon} {name:<45} {task_display}")
+
+    # Print summary
+    console.print(f"\n[bold cyan]{'━' * 80}[/bold cyan]")
+    if total_tasks > 0:
+        pct = int((total_completed / total_tasks) * 100)
+        console.print(f"[bold]Total: {total_features} features, {total_completed}/{total_tasks} tasks ({pct}% complete)[/bold]")
+    else:
+        console.print(f"[bold]Total: {total_features} features[/bold]")
+    console.print(f"[dim]Legend: ✅ completed  🔄 in-progress  📋 planned  ⚪ no status[/dim]")
+
+
 if __name__ == '__main__':
     cli()

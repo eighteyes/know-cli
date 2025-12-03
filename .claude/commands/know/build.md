@@ -145,31 +145,75 @@ ELSE (inline feature description or non-existent feature):
 
 ### Phase 5: Implementation
 
-**Goal**: Build the feature following chosen architecture
+**Goal**: Build the feature following chosen architecture in a git worktree
 
-**Steps**:
+**Git Worktree Setup**:
+1. **Detect current location and worktree status**:
+   ```bash
+   MAIN_WORKTREE=$(git worktree list | head -1 | awk '{print $1}')
+   CURRENT_TOPLEVEL=$(git rev-parse --show-toplevel)
+   CURRENT_BRANCH=$(git branch --show-current)
+   ```
+2. **Intelligent worktree handling**:
+   - **If in main repo**: Proceed to step 3
+   - **If in a worktree**:
+     - Extract feature name from target (e.g., "user-auth" from `/know:build user-auth`)
+     - Check if current branch matches `feature/<feature-name>`
+     - **If match**: Reuse current worktree (already in the right place!)
+     - **If no match**: Switch to main repo automatically, then proceed to step 3
+       ```bash
+       cd $MAIN_WORKTREE
+       ```
+3. **Detect main repository location**: Get absolute path to main repo (e.g., `/path/to/abc/`)
+4. **Determine worktree path**: Sibling directory with pattern `<repo-name>-<feature-name>/`
+   - Example: Main repo at `/path/to/abc/` → Worktree at `/path/to/abc-user-auth/`
+5. **Create or reuse git worktree**:
+   ```bash
+   # Check if worktree already exists
+   if git worktree list | grep -q "feature/$FEATURE_NAME"; then
+     # Worktree exists - switch to it
+     cd ../<repo-name>-<feature-name>
+   else
+     # Create new worktree
+     git worktree add ../<repo-name>-<feature-name> -b feature/<feature-name>
+     cd ../<repo-name>-<feature-name>
+   fi
+   ```
+6. **Copy .ai/ directory** to worktree if not already present:
+   ```bash
+   if [ ! -d ".ai" ]; then
+     cp -r $MAIN_WORKTREE/.ai .
+   fi
+   ```
+
+**Implementation Steps**:
 1. **Require explicit user approval**: "Ready to implement? [Yes/No]"
-2. Read all relevant files from exploration phase
-3. Follow chosen architecture strictly
-4. **Track and update todo items as you work**:
+2. **Create and switch to worktree** (see Git Worktree Setup above)
+3. Read all relevant files from exploration phase
+4. Follow chosen architecture strictly
+5. **Track and update todo items as you work**:
    - Before starting each task: Read `.ai/know/<feature>/todo.md` to see current checklist
    - Identify which checkbox corresponds to the work you're about to do
    - As you complete each task, edit todo.md to mark it complete
    - Format: Change `- [ ] Task name` to `- [x] Task name`
    - Example: `- [ ] 1. Implement auth handler` becomes `- [x] 1. Implement auth handler`
    - Update immediately after completing each task (don't batch updates)
-5. Update phase status in spec-graph: `"status": "in-progress"` (using **haiku agent**)
-6. As code is written, link modules to spec-graph components:
+6. Update phase status in spec-graph: `"status": "in-progress"` (using **haiku agent**)
+7. As code is written, link modules to spec-graph components:
    - Add to code-graph: `know -g .ai/code-graph.json add module <name> {...}`
    - Link via product-component references
-7. Track implementation in `.ai/know/<feature>/implementation.md`
+8. Track implementation in `.ai/know/<feature>/implementation.md`
+9. Commit changes as you go in the worktree branch
 
 **Outputs**:
-- Implemented code files
+- Git worktree created at `../<repo-name>-<feature-name>/`
+- Feature branch: `feature/<feature-name>`
+- Implemented code files (in worktree)
 - Updated `.ai/know/<feature>/todo.md` with progress
 - Updated `.ai/know/<feature>/implementation.md` with notes
 - Updated code-graph with new modules
 - Phase status: "in-progress" in spec-graph
+- Git commits in feature branch
 
 ---
 
@@ -201,7 +245,7 @@ ELSE (inline feature description or non-existent feature):
 
 ### Phase 7: Summary
 
-**Goal**: Document completion and update tracking
+**Goal**: Document completion and prepare for review
 
 **Steps**:
 1. Document accomplishments
@@ -220,19 +264,39 @@ ELSE (inline feature description or non-existent feature):
      - Acceptance criteria (clear pass/fail)
    - Use checkbox format for tracking during `/know:review`
 6. **Update spec-graph** (using **haiku agents**):
-   - Mark feature phase as "complete" (or move to "done" if fully deployed)
+   - Mark feature status as **"review-ready"** (not "complete" or "done")
    - Update code-graph with all new modules
    - Validate both graphs
    - Run gap-summary: `know -g .ai/spec-graph.json gap-summary`
 7. Save summary to `.ai/know/<feature>/summary.md`
-8. **Inform user**: "Feature complete. Run `/know:review <feature>` to test, or `/know:done` to archive."
+8. **Sync .ai/ directory back to main repo**:
+   - Copy updated `.ai/` from worktree to main repo
+   - This preserves all documentation and graph updates
+9. **Stay in worktree** - Don't switch back to main repo yet
+10. **Inform user**: "Feature ready for review in worktree. Run `/know:review <feature>` to test, or `/know:done` after review to merge and archive."
 
 **Outputs**:
 - `.ai/know/<feature>/summary.md` - Completion summary
 - `.ai/know/<feature>/QA_STEPS.md` - End-user test instructions
-- Updated spec-graph (feature marked complete/done)
+- Updated spec-graph (feature marked **"review-ready"**)
 - Validated graphs
+- Worktree remains active with feature branch
+- .ai/ directory synced to main repo
 - Ready for `/know:review` or `/know:done`
+
+**Phase Status Lifecycle**:
+```
+incomplete → in-progress → review-ready → [/know:done] → done
+```
+
+**Notes**:
+- **review-ready** is the terminal state for /know:build
+- Feature stays in worktree for review/testing
+- Use `/know:done` after successful review to:
+  - Merge feature branch
+  - Remove worktree
+  - Move phase status to "done"
+  - Archive feature directory
 
 ---
 
@@ -319,4 +383,10 @@ Assistant: Feature not found in .ai/know/
 - **User approval required** at key decision points (architecture, implementation)
 - **Resumable** - Can pause and resume at any phase
 - **Documentation-driven** - All decisions captured in `.ai/know/<feature>/`
+- **Git worktree handling**:
+  - Can run from main repo OR from any worktree
+  - If in wrong worktree, auto-switches to main and creates new worktree
+  - If in correct worktree (matching feature branch), reuses it
+  - Each feature gets its own worktree at `../<repo-name>-<feature>/`
+  - Worktrees are cleaned up by `/know:done` after merge
 - When complete, use `/know:done` to archive and mark in "done" phase

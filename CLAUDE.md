@@ -69,6 +69,7 @@ function → [function, module, class]
 # Graph Structure (both graphs)
 ```
 meta - all project level concerns, phases, name, out of scope
+meta.phases_metadata - phase definitions (shortname, name, description)
 meta.phases - ONLY location for planning / temporal information
 references - terminal graph nodes, flexible schema (external-dep, product-component, etc.)
 entities - fundamental graph nodes, fixed schema per graph type
@@ -76,6 +77,39 @@ graph - unidirectional graph, ONLY depends_on links
 ```
 
 Every entity MUST have a reference or another entity as dependent. Any reference can be depended upon by an entity.
+
+## Phase Management
+
+**phases_metadata** defines phase properties:
+```json
+"meta": {
+  "phases_metadata": {
+    "I": {"name": "Foundation", "description": "Core architecture and setup"},
+    "II": {"name": "Features", "description": "Main feature implementation"},
+    "III": {"name": "Polish", "description": "Optimizations and refinements"},
+    "in-progress": {"name": "In Progress", "description": "Currently being worked on"},
+    "review-ready": {"name": "Review Ready", "description": "Awaiting user testing"},
+    "done": {"name": "Done", "description": "Completed and deployed"}
+  }
+}
+```
+
+**phases** assigns entities to phases with status:
+```json
+"meta": {
+  "phases": {
+    "I": {
+      "feature:auth": {"status": "in-progress"}
+    },
+    "done": {
+      "feature:onboarding": {"status": "complete"}
+    }
+  }
+}
+```
+
+**Viewing phases**: Use `know phases` to display grouped features with task completion counts.
+Each feature's task count comes from `.ai/know/<feature>/todo.md` checkbox counting.
 
 # Using Know with Dual Graphs
 

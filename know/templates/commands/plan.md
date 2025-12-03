@@ -277,6 +277,14 @@ Each mode follows this pattern:
   - `.ai/know/file-index.md` - Proposed file structure
 
 - Spec-graph updates (WITH CONFIRMATION):
+  - Populate `meta.phases_metadata` with phase definitions:
+    ```json
+    "phases_metadata": {
+      "I": {"name": "Foundation", "description": "Core architecture"},
+      "II": {"name": "Features", "description": "Main functionality"},
+      "III": {"name": "Polish", "description": "Optimizations"}
+    }
+    ```
   - Populate `meta.phases` with I, II, III phases
   - Assign features to phases with status "incomplete"
   - Verify all features have dependencies
