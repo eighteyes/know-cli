@@ -12,6 +12,13 @@ Guide feature development through a structured 7-phase workflow adapted from Cla
 **Prerequisites**
 - Activate the know-tool skill for graph operations
 
+**Exploration Strategy**
+- **Use parallel agents** throughout this workflow for speed and depth
+- **Explore agent**: Discovers codebase nuances, patterns, and perspectives (use `thoroughness: "medium"` or `"very thorough"`)
+- **Custom Task agents**: Create specialized agents with specific objectives
+- **Launch in parallel**: Use SINGLE message with multiple Task tool calls to run agents concurrently
+- Phases 2, 4, and 6 explicitly require parallel agent launches
+
 **Entry Points**
 
 1. **Existing feature**: `/know:build existing-feature` (directory exists at `.ai/know/existing-feature/`)
@@ -65,12 +72,16 @@ ELSE (inline feature description or non-existent feature):
 
 **Goal**: Understand existing implementation patterns and architecture
 
+**CRITICAL: Use parallel exploration for speed and depth**
+
 **Steps**:
-1. Launch 2-3 `code-explorer` agents in parallel (Task tool):
-   - Explore similar features in codebase
-   - Identify architecture patterns
-   - Find UI/UX conventions
-   - Trace data flows
+1. **Launch multiple agents in parallel** (single message with multiple Task tool calls):
+   - **Explore agent (thoroughness: "medium")**: Discover codebase nuances, patterns, and conventions
+   - **Custom Task agents** (2-3 specialized agents):
+     - Agent 1: "Find similar features and trace their data flows"
+     - Agent 2: "Identify architecture patterns and component boundaries"
+     - Agent 3: "Map UI/UX conventions and existing abstractions"
+   - Launch ALL agents in a single message for true parallelism
 2. **Know-enhanced exploration** (using **haiku agents**):
    - Query code-graph: `know -g .ai/code-graph.json list-type module`
    - Find related components via product-component references
@@ -79,8 +90,16 @@ ELSE (inline feature description or non-existent feature):
    - Query related actions: `know -g .ai/spec-graph.json list-type action`
    - Find component dependencies
    - Check data-model references
-4. Consolidate findings from all explorers
+4. **Consolidate findings** from all explorers (Explore + custom Task agents)
 5. Save to `.ai/know/<feature>/exploration.md`
+
+**Example parallel launch**:
+```
+Send SINGLE message with:
+- Task(subagent_type="Explore", thoroughness="medium", prompt="Explore authentication patterns...")
+- Task(subagent_type="general-purpose", prompt="Trace data flow for user sessions...")
+- Task(subagent_type="general-purpose", prompt="Identify security middleware patterns...")
+```
 
 **Outputs**:
 - `.ai/know/<feature>/exploration.md` - Consolidated codebase understanding
@@ -115,18 +134,22 @@ ELSE (inline feature description or non-existent feature):
 
 **Goal**: Design implementation approach with trade-off analysis
 
+**CRITICAL: Launch custom Task agents in parallel for multiple perspectives**
+
 **Steps**:
-1. Launch 3 `code-architect` agents in parallel (Task tool):
-   - **Agent 1**: Minimal changes approach
-   - **Agent 2**: Clean architecture approach
-   - **Agent 3**: Pragmatic balance approach
+1. **Launch 3 custom Task agents in parallel** (single message with 3 Task tool calls):
+   - **Agent 1 (Minimal changes)**: "Design architecture minimizing changes to existing code. Reuse components, avoid refactors. What's the quickest path?"
+   - **Agent 2 (Clean architecture)**: "Design ideal architecture ignoring existing code. What's the cleanest, most maintainable approach?"
+   - **Agent 3 (Pragmatic balance)**: "Design architecture balancing new patterns with existing code. What's the best trade-off?"
+   - Each agent should consult spec-graph and code-graph
+   - Launch ALL 3 in a single message for true parallelism
 2. **Know-enhanced architecture** - Each agent consults:
    - Spec-graph component dependencies (using **haiku agents**)
    - Data model references from spec-graph
    - Interface definitions
    - Existing component contracts
-3. Consolidate 3 proposals with trade-off analysis
-4. Present recommendation to user
+3. **Consolidate 3 proposals** with trade-off analysis (cost, risk, maintainability, time)
+4. **Present recommendation** to user with clear pros/cons
 5. **Wait for explicit approval** before proceeding
 6. Save chosen architecture to `.ai/know/<feature>/architecture/chosen.md`
 7. Save alternatives to `.ai/know/<feature>/architecture/alternatives.md`
@@ -177,12 +200,14 @@ ELSE (inline feature description or non-existent feature):
 
 **Goal**: Validate correctness, quality, and integration
 
+**CRITICAL: Launch custom Task agents in parallel for comprehensive review**
+
 **Steps**:
-1. Launch 3 `code-reviewer` agents in parallel (Task tool):
-   - **Reviewer 1**: Simplicity/DRY/elegance focus
-   - **Reviewer 2**: Bugs/correctness focus
-   - **Reviewer 3**: Conventions/abstractions focus
-   - Report only high-confidence issues (≥80% confidence)
+1. **Launch 3 custom Task agents in parallel** (single message with 3 Task tool calls):
+   - **Reviewer 1 (Simplicity)**: "Review for simplicity, DRY violations, over-engineering. Report only high-confidence issues (≥80%)."
+   - **Reviewer 2 (Bugs)**: "Review for bugs, edge cases, error handling gaps. Report only high-confidence issues (≥80%)."
+   - **Reviewer 3 (Conventions)**: "Review for consistency with existing patterns, naming conventions, architectural violations. Report only high-confidence issues (≥80%)."
+   - Launch ALL 3 in a single message for true parallelism
 2. **Know-enhanced validation** (using **haiku agents**):
    - Gap analysis: `know -g .ai/spec-graph.json gap-analysis feature:<name>`
    - Verify all component dependencies satisfied
@@ -263,7 +288,7 @@ Task tool with:
 ```
 .ai/know/<feature>/
 ├── overview.md              # Requirements (from /know:add)
-├── todo.md                  # Task checklist (from /know:add)
+├── todo.md                  # Task checklist (updated by /know:review with bugs/changes)
 ├── plan.md                  # Implementation plan (from /know:add)
 ├── qa/
 │   ├── discovery.md         # Phase 1 Q&A
@@ -277,7 +302,14 @@ Task tool with:
 ├── summary.md               # Phase 7 completion summary
 ├── QA_STEPS.md              # Phase 7 end-user test steps
 ├── review-results.md        # From /know:review (test execution)
-└── review-feedback.md       # From /know:review (issues found)
+├── review-feedback.md       # From /know:review (summary of issues)
+├── bugs/                    # From /know:review (structured bug tracking)
+│   ├── 001-description.md
+│   └── 002-description.md
+├── changes/                 # From /know:review (structured change requests)
+│   └── 001-description.md
+└── plans/                   # From /know:review (implementation plans for fixes)
+    └── review-fixes-YYYYMMDD.md
 ```
 
 ---

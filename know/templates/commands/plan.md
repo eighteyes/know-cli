@@ -12,6 +12,13 @@ Guide user through interactive QA sessions to build a complete product vision wi
 **Prerequisites**
 - Activate the know-tool skill for graph operations
 
+**Exploration Strategy**
+When existing code is found, use parallel exploration to understand the codebase:
+- **Explore agent**: Discovers codebase nuances, patterns, and architecture (use `thoroughness: "medium"`)
+- **Custom Task agents**: Create specialized agents for specific analysis tasks
+- **Launch in parallel**: Use SINGLE message with multiple Task tool calls for speed
+- The `/know:prepare` command should leverage parallel exploration extensively
+
 **Maturity Assessment**
 
 Before starting, assess project maturity to determine which modes to run:

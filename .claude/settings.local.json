@@ -1,32 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git remote:*)",
-      "Bash(gh repo create:*)",
-      "Bash(git branch:*)",
-      "Bash(./know/know:*)",
-      "Bash(git rm:*)",
-      "Bash(find:*)",
-      "Bash(wc:*)",
-      "Bash(cat:*)",
-      "Bash(head:*)",
-      "Bash(git add:*)",
-      "Bash(ls:*)",
-      "SlashCommand(/know:add test-phase-feature)",
-      "Skill(know-tool)",
-      "Bash(mkdir:*)",
-      "Bash(cp:*)",
-      "Bash(know -g:*)",
-      "Bash(/Users/god/projects/know-cli/know/know -g .ai/code-graph.json validate:*)",
-      "mcp__sequential-thinking__sequentialthinking",
-      "Bash(chmod:*)",
-      "Bash(. know/venv/bin/activate)",
-      "Bash(python tests/fuzz/generator.py:*)",
-      "Bash(. venv/bin/activate)",
-      "Bash(python:*)",
-      "Bash(pip install:*)",
-      "Bash(/dev/null)",
-      "Bash(tree:*)"
+      "Bash(then echo \"✓ Mentions using skill\" else echo \"⚠ May not explicitly mention using skill in workflow\" fi echo done)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

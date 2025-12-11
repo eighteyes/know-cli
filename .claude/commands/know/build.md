@@ -12,15 +12,22 @@ Guide feature development through a structured 7-phase workflow adapted from Cla
 **Prerequisites**
 - Activate the know-tool skill for graph operations
 
+**Exploration Strategy**
+- **Use parallel agents** throughout this workflow for speed and depth
+- **Explore agent**: Discovers codebase nuances, patterns, and perspectives (use `thoroughness: "medium"` or `"very thorough"`)
+- **Custom Task agents**: Create specialized agents with specific objectives
+- **Launch in parallel**: Use SINGLE message with multiple Task tool calls to run agents concurrently
+- Phases 2, 4, and 6 explicitly require parallel agent launches
+
 **Entry Points**
 
-1. **Existing feature**: `/know:build existing-feature` (directory exists at `.ai/know/existing-feature/`)
+1. **Existing feature**: `/know:build existing-feature` (directory exists at `.ai/know/features/existing-feature/`)
 2. **Inline feature**: `/know:build "Add user authentication"` (no directory yet)
 
 **Initialization Logic**
 
 ```
-IF feature directory exists (.ai/know/<feature>/):
+IF feature directory exists (.ai/know/features/<feature>/):
   → Load context from overview.md, todo.md, plan.md
   → Verify feature exists in spec-graph.json
   → Update meta.phases status to "in-progress"
@@ -42,22 +49,22 @@ ELSE (inline feature description or non-existent feature):
 **Goal**: Clarify requirements and constraints
 
 **Steps**:
-1. Read `.ai/know/<feature>/overview.md` if exists
+1. Read `.ai/know/features/<feature>/overview.md` if exists
 2. Ask clarifying questions:
    - What are the success criteria?
    - What constraints exist?
    - What is out of scope?
    - Who are the users of this feature?
    - What are the edge cases?
-3. Update `.ai/know/<feature>/qa/discovery.md` with Q&A
+3. Update `.ai/know/features/<feature>/qa/discovery.md` with Q&A
 4. Query spec-graph (using **haiku agents**):
    - `know -g .ai/spec-graph.json deps feature:<name>` - What does this feature depend on?
    - `know -g .ai/spec-graph.json used-by feature:<name>` - What depends on this feature?
-5. Update `.ai/know/<feature>/overview.md` with refined requirements
+5. Update `.ai/know/features/<feature>/overview.md` with refined requirements
 
 **Outputs**:
-- `.ai/know/<feature>/qa/discovery.md` - Discovery Q&A session
-- Updated `.ai/know/<feature>/overview.md`
+- `.ai/know/features/<feature>/qa/discovery.md` - Discovery Q&A session
+- Updated `.ai/know/features/<feature>/overview.md`
 
 ---
 
@@ -65,12 +72,16 @@ ELSE (inline feature description or non-existent feature):
 
 **Goal**: Understand existing implementation patterns and architecture
 
+**CRITICAL: Use parallel exploration for speed and depth**
+
 **Steps**:
-1. Launch 2-3 `code-explorer` agents in parallel (Task tool):
-   - Explore similar features in codebase
-   - Identify architecture patterns
-   - Find UI/UX conventions
-   - Trace data flows
+1. **Launch multiple agents in parallel** (single message with multiple Task tool calls):
+   - **Explore agent (thoroughness: "medium")**: Discover codebase nuances, patterns, and conventions
+   - **Custom Task agents** (2-3 specialized agents):
+     - Agent 1: "Find similar features and trace their data flows"
+     - Agent 2: "Identify architecture patterns and component boundaries"
+     - Agent 3: "Map UI/UX conventions and existing abstractions"
+   - Launch ALL agents in a single message for true parallelism
 2. **Know-enhanced exploration** (using **haiku agents**):
    - Query code-graph: `know -g .ai/code-graph.json list-type module`
    - Find related components via product-component references
@@ -79,11 +90,19 @@ ELSE (inline feature description or non-existent feature):
    - Query related actions: `know -g .ai/spec-graph.json list-type action`
    - Find component dependencies
    - Check data-model references
-4. Consolidate findings from all explorers
-5. Save to `.ai/know/<feature>/exploration.md`
+4. **Consolidate findings** from all explorers (Explore + custom Task agents)
+5. Save to `.ai/know/features/<feature>/exploration.md`
+
+**Example parallel launch**:
+```
+Send SINGLE message with:
+- Task(subagent_type="Explore", thoroughness="medium", prompt="Explore authentication patterns...")
+- Task(subagent_type="general-purpose", prompt="Trace data flow for user sessions...")
+- Task(subagent_type="general-purpose", prompt="Identify security middleware patterns...")
+```
 
 **Outputs**:
-- `.ai/know/<feature>/exploration.md` - Consolidated codebase understanding
+- `.ai/know/features/<feature>/exploration.md` - Consolidated codebase understanding
 - List of files to reference during implementation
 
 ---
@@ -100,13 +119,13 @@ ELSE (inline feature description or non-existent feature):
    - Performance/security considerations
 2. Present organized list of questions to user
 3. Collect explicit answers (no assumptions)
-4. Save to `.ai/know/<feature>/qa/clarification.md`
+4. Save to `.ai/know/features/<feature>/qa/clarification.md`
 5. Update spec-graph if new requirements discovered (using **haiku agents**):
    - Add requirement entities if needed
    - Update feature description
 
 **Outputs**:
-- `.ai/know/<feature>/qa/clarification.md` - Clarification Q&A
+- `.ai/know/features/<feature>/qa/clarification.md` - Clarification Q&A
 - Updated spec-graph entities (if needed)
 
 ---
@@ -115,30 +134,39 @@ ELSE (inline feature description or non-existent feature):
 
 **Goal**: Design implementation approach with trade-off analysis
 
+**CRITICAL: Launch custom Task agents in parallel for multiple perspectives**
+
 **Steps**:
-1. Launch 3 `code-architect` agents in parallel (Task tool):
-   - **Agent 1**: Minimal changes approach
-   - **Agent 2**: Clean architecture approach
-   - **Agent 3**: Pragmatic balance approach
+1. **Launch 3 custom Task agents in parallel** (single message with 3 Task tool calls):
+   - **Agent 1 (Minimal changes)**: "Design architecture minimizing changes to existing code. Reuse components, avoid refactors. What's the quickest path?"
+   - **Agent 2 (Clean architecture)**: "Design ideal architecture ignoring existing code. What's the cleanest, most maintainable approach?"
+   - **Agent 3 (Pragmatic balance)**: "Design architecture balancing new patterns with existing code. What's the best trade-off?"
+   - Each agent should consult spec-graph and code-graph
+   - Launch ALL 3 in a single message for true parallelism
 2. **Know-enhanced architecture** - Each agent consults:
    - Spec-graph component dependencies (using **haiku agents**)
    - Data model references from spec-graph
    - Interface definitions
    - Existing component contracts
-3. Consolidate 3 proposals with trade-off analysis
-4. Present recommendation to user
+3. **Consolidate 3 proposals** with trade-off analysis (cost, risk, maintainability, time)
+4. **Present recommendation** to user with clear pros/cons
 5. **Wait for explicit approval** before proceeding
-6. Save chosen architecture to `.ai/know/<feature>/architecture/chosen.md`
-7. Save alternatives to `.ai/know/<feature>/architecture/alternatives.md`
-8. **Update spec-graph** with architecture (using **haiku agents**, WITH CONFIRMATION):
+6. **Create ADR for architectural decision** in `.ai/know/features/<feature>/adrs.md`:
+   - Create file if it doesn't exist
+   - Add ADR-001 with:
+     - **Context**: Why architecture decision needed
+     - **Decision**: Chosen approach (from 3 proposals)
+     - **Consequences**: Trade-offs, pros/cons
+     - **Alternatives**: Other 2 proposals considered and why rejected
+   - Include date and status (Accepted)
+7. **Update spec-graph** with architecture (using **haiku agents**, WITH CONFIRMATION):
    - Add/update component entities
    - Add operation entities
    - Link dependencies (feature → action → component → operation)
    - Add references (business_logic, data-models, tech-decisions)
 
 **Outputs**:
-- `.ai/know/<feature>/architecture/chosen.md` - Approved architecture
-- `.ai/know/<feature>/architecture/alternatives.md` - Other options considered
+- `.ai/know/features/<feature>/adrs.md` - Architecture Decision Records (starting with ADR-001)
 - Updated spec-graph with architectural entities
 
 ---
@@ -148,72 +176,71 @@ ELSE (inline feature description or non-existent feature):
 **Goal**: Build the feature following chosen architecture in a git worktree
 
 **Git Worktree Setup**:
-1. **Detect current location and worktree status**:
-   ```bash
-   MAIN_WORKTREE=$(git worktree list | head -1 | awk '{print $1}')
-   CURRENT_TOPLEVEL=$(git rev-parse --show-toplevel)
-   CURRENT_BRANCH=$(git branch --show-current)
-   ```
-2. **Intelligent worktree handling**:
-   - **If in main repo**: Proceed to step 3
-   - **If in a worktree**:
-     - Extract feature name from target (e.g., "user-auth" from `/know:build user-auth`)
-     - Check if current branch matches `feature/<feature-name>`
-     - **If match**: Reuse current worktree (already in the right place!)
-     - **If no match**: Switch to main repo automatically, then proceed to step 3
-       ```bash
-       cd $MAIN_WORKTREE
-       ```
-3. **Detect main repository location**: Get absolute path to main repo (e.g., `/path/to/abc/`)
-4. **Determine worktree path**: Sibling directory with pattern `<repo-name>-<feature-name>/`
+1. **Detect main repository location**: Get absolute path to current repo (e.g., `/path/to/abc/`)
+2. **Determine worktree path**: Sibling directory with pattern `<repo-name>-<feature-name>/`
    - Example: Main repo at `/path/to/abc/` → Worktree at `/path/to/abc-user-auth/`
-5. **Create or reuse git worktree**:
+3. **Create git worktree**:
    ```bash
-   # Check if worktree already exists
-   if git worktree list | grep -q "feature/$FEATURE_NAME"; then
-     # Worktree exists - switch to it
-     cd ../<repo-name>-<feature-name>
-   else
-     # Create new worktree
-     git worktree add ../<repo-name>-<feature-name> -b feature/<feature-name>
-     cd ../<repo-name>-<feature-name>
-   fi
+   git worktree add ../abc-<feature-name> -b feature/<feature-name>
    ```
-6. **Copy .ai/ directory** to worktree if not already present:
-   ```bash
-   if [ ! -d ".ai" ]; then
-     cp -r $MAIN_WORKTREE/.ai .
-   fi
-   ```
+4. **Switch to worktree**: All subsequent work happens inside the worktree
+5. **Copy .ai/ directory** to worktree for context access
 
 **Implementation Steps**:
 1. **Require explicit user approval**: "Ready to implement? [Yes/No]"
 2. **Create and switch to worktree** (see Git Worktree Setup above)
 3. Read all relevant files from exploration phase
 4. Follow chosen architecture strictly
-5. **Track and update todo items as you work**:
-   - Before starting each task: Read `.ai/know/<feature>/todo.md` to see current checklist
-   - Identify which checkbox corresponds to the work you're about to do
-   - As you complete each task, edit todo.md to mark it complete
-   - Format: Change `- [ ] Task name` to `- [x] Task name`
-   - Example: `- [ ] 1. Implement auth handler` becomes `- [x] 1. Implement auth handler`
-   - Update immediately after completing each task (don't batch updates)
+5. **Update feature files continuously as you work**:
+
+   **todo.md updates** (after completing each task):
+   - Read `.ai/know/features/<feature>/todo.md` before starting each task
+   - Mark task as complete immediately after finishing
+   - Format: `- [ ] Task name` → `- [x] Task name`
+   - Update after EACH completed task (one at a time)
+
+   **implementation.md updates** (as you write code):
+   - Add entry for each significant change/addition
+   - Document decisions made during implementation
+   - Note deviations from original architecture (with rationale)
+   - Track file changes: "Created `auth/handler.ts` with JWT validation"
+   - Format:
+     ```markdown
+     ## [Timestamp] Component Name
+     - Created/Updated: `file/path.ts`
+     - What: Brief description of change
+     - Why: Reason for approach chosen
+     - Notes: Any important details
+     ```
+
+   **overview.md updates** (when requirements evolve):
+   - If user clarifies/changes requirements during implementation
+   - Add to "Requirements Refinements" section
+   - Document what changed and when
+
+   **adrs.md updates** (for architectural decisions):
+   - Add Architecture Decision Record (ADR) for each significant choice
+   - Format: ADR-NNN: [Decision Title]
+   - Include: Date, Status, Context, Decision, Consequences, Alternatives considered
+   - Update when pivoting from original architecture
+
 6. Update phase status in spec-graph: `"status": "in-progress"` (using **haiku agent**)
 7. As code is written, link modules to spec-graph components:
    - Add to code-graph: `know -g .ai/code-graph.json add module <name> {...}`
    - Link via product-component references
-8. Track implementation in `.ai/know/<feature>/implementation.md`
-9. Commit changes as you go in the worktree branch
+8. Commit changes as you go in the worktree branch (include updated .ai/ files)
+9. **Sync pattern**: After each meaningful milestone, sync .ai/ to main repo
 
 **Outputs**:
 - Git worktree created at `../<repo-name>-<feature-name>/`
 - Feature branch: `feature/<feature-name>`
 - Implemented code files (in worktree)
-- Updated `.ai/know/<feature>/todo.md` with progress
-- Updated `.ai/know/<feature>/implementation.md` with notes
+- Updated `.ai/know/features/<feature>/todo.md` with progress
+- Updated `.ai/know/features/<feature>/implementation.md` with notes
 - Updated code-graph with new modules
 - Phase status: "in-progress" in spec-graph
 - Git commits in feature branch
+- Phase status: "in-progress" in spec-graph
 
 ---
 
@@ -221,12 +248,14 @@ ELSE (inline feature description or non-existent feature):
 
 **Goal**: Validate correctness, quality, and integration
 
+**CRITICAL: Launch custom Task agents in parallel for comprehensive review**
+
 **Steps**:
-1. Launch 3 `code-reviewer` agents in parallel (Task tool):
-   - **Reviewer 1**: Simplicity/DRY/elegance focus
-   - **Reviewer 2**: Bugs/correctness focus
-   - **Reviewer 3**: Conventions/abstractions focus
-   - Report only high-confidence issues (≥80% confidence)
+1. **Launch 3 custom Task agents in parallel** (single message with 3 Task tool calls):
+   - **Reviewer 1 (Simplicity)**: "Review for simplicity, DRY violations, over-engineering. Report only high-confidence issues (≥80%)."
+   - **Reviewer 2 (Bugs)**: "Review for bugs, edge cases, error handling gaps. Report only high-confidence issues (≥80%)."
+   - **Reviewer 3 (Conventions)**: "Review for consistency with existing patterns, naming conventions, architectural violations. Report only high-confidence issues (≥80%)."
+   - Launch ALL 3 in a single message for true parallelism
 2. **Know-enhanced validation** (using **haiku agents**):
    - Gap analysis: `know -g .ai/spec-graph.json gap-analysis feature:<name>`
    - Verify all component dependencies satisfied
@@ -234,10 +263,10 @@ ELSE (inline feature description or non-existent feature):
    - Validate both graphs: `know validate`
 3. Present issues to user with confidence levels
 4. User chooses: "Fix now", "Fix later", or "Proceed"
-5. Save review to `.ai/know/<feature>/review.md`
+5. Save review to `.ai/know/features/<feature>/review.md`
 
 **Outputs**:
-- `.ai/know/<feature>/review.md` - Quality review findings
+- `.ai/know/features/<feature>/review.md` - Quality review findings
 - Fixed issues (if "Fix now" chosen)
 - Graph validation results
 
@@ -245,7 +274,7 @@ ELSE (inline feature description or non-existent feature):
 
 ### Phase 7: Summary
 
-**Goal**: Document completion and prepare for review
+**Goal**: Document completion and update tracking
 
 **Steps**:
 1. Document accomplishments
@@ -257,7 +286,7 @@ ELSE (inline feature description or non-existent feature):
    - Read architecture/chosen.md (what was built)
    - Read implementation.md (how it works)
    - Translate technical implementation into user-facing test steps
-   - Create `.ai/know/<feature>/QA_STEPS.md` with:
+   - Create `.ai/know/features/<feature>/QA_STEPS.md` with:
      - Objective (user perspective)
      - Prerequisites (setup needed)
      - Numbered test steps with expected outcomes
@@ -268,35 +297,33 @@ ELSE (inline feature description or non-existent feature):
    - Update code-graph with all new modules
    - Validate both graphs
    - Run gap-summary: `know -g .ai/spec-graph.json gap-summary`
-7. Save summary to `.ai/know/<feature>/summary.md`
-8. **Sync .ai/ directory back to main repo**:
+7. Save summary to `.ai/know/features/<feature>/summary.md`
+8. **Update todo.md with final status**:
+   - Read `.ai/know/features/<feature>/todo.md`
+   - Verify all implementation tasks are checked
+   - Add final completion note at bottom:
+     ```markdown
+     ## Build Complete
+     - [x] Implementation finished (Phase 5)
+     - [x] Quality review passed (Phase 6)
+     - [x] Summary and QA steps generated (Phase 7)
+     - [ ] User testing (run `/know:review <feature>`)
+     - [ ] Merge and archive (run `/know:done <feature>`)
+     ```
+9. **Sync .ai/ directory back to main repo**:
    - Copy updated `.ai/` from worktree to main repo
    - This preserves all documentation and graph updates
-9. **Stay in worktree** - Don't switch back to main repo yet
-10. **Inform user**: "Feature ready for review in worktree. Run `/know:review <feature>` to test, or `/know:done` after review to merge and archive."
+10. **Stay in worktree** - remain here until user runs `/know:done`
+11. **Inform user**: "Feature ready for review in worktree. Run `/know:review <feature>` to test, or `/know:done` to merge and archive."
 
 **Outputs**:
-- `.ai/know/<feature>/summary.md` - Completion summary
-- `.ai/know/<feature>/QA_STEPS.md` - End-user test instructions
+- `.ai/know/features/<feature>/summary.md` - Completion summary
+- `.ai/know/features/<feature>/QA_STEPS.md` - End-user test instructions
+- Updated `.ai/know/features/<feature>/todo.md` - Final status with next steps
 - Updated spec-graph (feature marked **"review-ready"**)
 - Validated graphs
 - Worktree remains active with feature branch
 - .ai/ directory synced to main repo
-- Ready for `/know:review` or `/know:done`
-
-**Phase Status Lifecycle**:
-```
-incomplete → in-progress → review-ready → [/know:done] → done
-```
-
-**Notes**:
-- **review-ready** is the terminal state for /know:build
-- Feature stays in worktree for review/testing
-- Use `/know:done` after successful review to:
-  - Merge feature branch
-  - Remove worktree
-  - Move phase status to "done"
-  - Archive feature directory
 
 ---
 
@@ -325,23 +352,28 @@ Task tool with:
 ## File Structure Created
 
 ```
-.ai/know/<feature>/
-├── overview.md              # Requirements (from /know:add)
-├── todo.md                  # Task checklist (from /know:add)
+.ai/know/features/<feature>/
+├── overview.md              # Requirements (from /know:add, updated during Phase 5)
+├── todo.md                  # Task checklist (updated continuously, final status in Phase 7)
 ├── plan.md                  # Implementation plan (from /know:add)
 ├── qa/
 │   ├── discovery.md         # Phase 1 Q&A
 │   └── clarification.md     # Phase 3 Q&A
 ├── exploration.md           # Phase 2 findings
-├── architecture/
-│   ├── chosen.md            # Phase 4 approved design
-│   └── alternatives.md      # Phase 4 other options
-├── implementation.md        # Phase 5 implementation notes
+├── adrs.md                  # Phase 4+ Architecture Decision Records
+├── implementation.md        # Phase 5 implementation notes (updated continuously)
 ├── review.md                # Phase 6 quality findings
 ├── summary.md               # Phase 7 completion summary
 ├── QA_STEPS.md              # Phase 7 end-user test steps
 ├── review-results.md        # From /know:review (test execution)
-└── review-feedback.md       # From /know:review (issues found)
+├── review-feedback.md       # From /know:review (summary of issues)
+├── bugs/                    # From /know:review (structured bug tracking)
+│   ├── 001-description.md
+│   └── 002-description.md
+├── changes/                 # From /know:review (structured change requests)
+│   └── 001-description.md
+└── plans/                   # From /know:review (implementation plans for fixes)
+    └── review-fixes-YYYYMMDD.md
 ```
 
 ---
@@ -377,16 +409,10 @@ Assistant: Feature not found in .ai/know/
 
 ## Notes
 
-- **Structured workflow** prevents jumping to code prematurely
+- **Structured workflow** ensures exploration before implementation
 - **Know integration** ensures spec-graph and code-graph stay synchronized
 - **Haiku agents** keep graph queries fast and cost-effective
 - **User approval required** at key decision points (architecture, implementation)
 - **Resumable** - Can pause and resume at any phase
-- **Documentation-driven** - All decisions captured in `.ai/know/<feature>/`
-- **Git worktree handling**:
-  - Can run from main repo OR from any worktree
-  - If in wrong worktree, auto-switches to main and creates new worktree
-  - If in correct worktree (matching feature branch), reuses it
-  - Each feature gets its own worktree at `../<repo-name>-<feature>/`
-  - Worktrees are cleaned up by `/know:done` after merge
+- **Documentation-driven** - All decisions captured in `.ai/know/features/<feature>/`
 - When complete, use `/know:done` to archive and mark in "done" phase

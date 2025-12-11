@@ -1,0 +1,214 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "phases": {
+      "I": {
+        "feature:auth": {
+          "status": "in-progress"
+        },
+        "feature:database": {
+          "status": "in-progress"
+        }
+      },
+      "II": {
+        "feature:api": {
+          "status": "planned"
+        },
+        "feature:ui": {
+          "status": "planned"
+        }
+      },
+      "done": {
+        "feature:test-phase-feature": {
+          "status": "complete"
+        }
+      }
+    },
+    "phases_metadata": {
+      "pending": {
+        "name": "Pending",
+        "description": "Not yet started"
+      },
+      "I": {
+        "name": "Foundation",
+        "description": "Core architecture and setup"
+      },
+      "II": {
+        "name": "Features",
+        "description": "Main feature implementation"
+      },
+      "III": {
+        "name": "Polish",
+        "description": "Optimizations and refinements"
+      },
+      "in-progress": {
+        "name": "In Progress",
+        "description": "Currently being worked on"
+      },
+      "review-ready": {
+        "name": "Review Ready",
+        "description": "Awaiting user acceptance testing"
+      },
+      "done": {
+        "name": "Done",
+        "description": "Completed and deployed"
+      }
+    }
+  },
+  "references": {},
+  "entities": {
+    "user": {
+      "ai-assistant": {
+        "name": "AI Assistant",
+        "description": "LLM-based coding assistant managing project specs"
+      },
+      "developer": {
+        "name": "Software Developer",
+        "description": "Developer using know to manage product specs"
+      }
+    },
+    "objective": {
+      "query-graph": {
+        "name": "Query Graph",
+        "description": "Query product and code structure efficiently"
+      },
+      "manage-specs": {
+        "name": "Manage Specifications",
+        "description": "Create and update spec graphs"
+      },
+      "analyze-gaps": {
+        "name": "Analyze Gaps",
+        "description": "Identify implementation gaps"
+      },
+      "generate-docs": {
+        "name": "Generate Documentation",
+        "description": "Generate spec documents from graph"
+      }
+    },
+    "feature": {
+      "cli-operations": {
+        "name": "CLI Operations",
+        "description": "Command-line graph management"
+      },
+      "graph-validation": {
+        "name": "Graph Validation",
+        "description": "Validate graph structure and dependencies"
+      },
+      "gap-detection": {
+        "name": "Gap Detection",
+        "description": "Detect missing implementations"
+      },
+      "spec-generation": {
+        "name": "Spec Generation",
+        "description": "Generate markdown specs from graph"
+      },
+      "llm-workflows": {
+        "name": "LLM Workflows",
+        "description": "AI-assisted graph operations"
+      },
+      "test-phase-feature": {
+        "name": "Test Phase Feature",
+        "description": "Test feature for phase tracking functionality"
+      },
+      "auth": {
+        "name": "User Authentication",
+        "description": "Secure login and session management"
+      },
+      "database": {
+        "name": "Database Schema",
+        "description": "Core data models and migrations"
+      },
+      "api": {
+        "name": "REST API",
+        "description": "RESTful API endpoints"
+      },
+      "ui": {
+        "name": "User Interface",
+        "description": "Frontend components and views"
+      }
+    },
+    "component": {
+      "cli-commands": {
+        "name": "CLI Commands",
+        "description": "Command handlers for all CLI operations"
+      },
+      "graph-operations": {
+        "name": "Graph Operations",
+        "description": "Core graph CRUD and query operations"
+      },
+      "validation-engine": {
+        "name": "Validation Engine",
+        "description": "Rule-based graph validation"
+      },
+      "spec-templates": {
+        "name": "Spec Templates",
+        "description": "Template-based spec generation"
+      },
+      "llm-integration": {
+        "name": "LLM Integration",
+        "description": "LLM provider and workflow management"
+      }
+    }
+  },
+  "graph": {
+    "user:ai-assistant": {
+      "depends_on": [
+        "objective:query-graph",
+        "objective:analyze-gaps"
+      ]
+    },
+    "user:developer": {
+      "depends_on": [
+        "objective:manage-specs",
+        "objective:generate-docs"
+      ]
+    },
+    "objective:query-graph": {
+      "depends_on": [
+        "feature:cli-operations"
+      ]
+    },
+    "objective:manage-specs": {
+      "depends_on": [
+        "feature:cli-operations",
+        "feature:graph-validation"
+      ]
+    },
+    "objective:analyze-gaps": {
+      "depends_on": [
+        "feature:gap-detection"
+      ]
+    },
+    "objective:generate-docs": {
+      "depends_on": [
+        "feature:spec-generation"
+      ]
+    },
+    "feature:cli-operations": {
+      "depends_on": [
+        "component:cli-commands",
+        "component:graph-operations"
+      ]
+    },
+    "feature:graph-validation": {
+      "depends_on": [
+        "component:validation-engine"
+      ]
+    },
+    "feature:gap-detection": {
+      "depends_on": [
+        "component:graph-operations"
+      ]
+    },
+    "feature:spec-generation": {
+      "depends_on": [
+        "component:spec-templates"
+      ]
+    },
+    "feature:llm-workflows": {
+      "depends_on": [
+        "component:llm-integration"
+      ]
+    }
+  }
+}

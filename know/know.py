@@ -1235,9 +1235,10 @@ def init(project_dir):
     This command:
     1. Copies slash commands to .claude/commands/know/
     2. Copies know-tool skill to .claude/skills/know-tool/
-    3. Creates .ai/know/ directory structure
-    4. Initializes project.md with template
-    5. Creates initial graphs if they don't exist
+    3. Copies agents to .claude/agents/
+    4. Creates .ai/know/ directory structure
+    5. Initializes project.md with template
+    6. Creates initial graphs if they don't exist
     """
     project_path = Path(project_dir).resolve()
 
@@ -1279,6 +1280,26 @@ def init(project_dir):
             console.print(f"[green]✓[/green] Installed know-tool skill")
     else:
         console.print(f"[yellow]⚠[/yellow] know-tool skill not found at {skill_source}")
+
+    # 2a. Copy agents
+    agents_templates_dir = Path(__file__).parent / "templates" / "agents"
+    agents_dest_dir = project_path / ".claude" / "agents"
+
+    if agents_templates_dir.exists():
+        agents_dest_dir.mkdir(parents=True, exist_ok=True)
+        copied_agents = []
+        for agent_file in agents_templates_dir.glob("*.md"):
+            dest_file = agents_dest_dir / agent_file.name
+            if dest_file.exists():
+                console.print(f"[yellow]⚠[/yellow] Agent {agent_file.stem} already exists")
+            else:
+                shutil.copy2(agent_file, dest_file)
+                copied_agents.append(agent_file.stem)
+
+        if copied_agents:
+            console.print(f"[green]✓[/green] Installed agents: {', '.join(copied_agents)}")
+    else:
+        console.print(f"[dim]  No agents to install[/dim]")
 
     # 3. Create .ai/know/ directory structure
     know_dir = project_path / ".ai" / "know"

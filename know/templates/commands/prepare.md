@@ -23,11 +23,26 @@ The graph is the **SOURCE OF TRUTH** - build it first, then derive documentation
 3. Derive project.md FROM graph queries
 4. Graph is the foundation, project.md is the derived documentation
 
+**Exploration Strategy**
+
+**CRITICAL: Use parallel exploration to understand the codebase before building graphs**
+
+1. **Launch Explore agent + custom Task agents in parallel** (single message with multiple Task calls):
+   - **Explore agent (thoroughness: "very thorough")**: "Discover codebase architecture, patterns, dependencies, and organization"
+   - **Task agent 1**: "Analyze package.json, README, docs to understand project purpose and users"
+   - **Task agent 2**: "Scan imports/requires across codebase to map actual module dependencies"
+   - **Task agent 3**: "Identify main features and their corresponding code modules"
+   - Launch ALL agents in parallel for comprehensive understanding
+
+2. **Consolidate findings** before creating graph entities
+
 **Workflow**
 
 1. Activate the know-tool skill to get access to graph operations
 
-2. **Create graph files** if they don't exist:
+2. **Explore codebase in parallel** (see Exploration Strategy above)
+
+3. **Create graph files** if they don't exist:
    - Create `.ai/spec-graph.json` with basic structure (meta, references, entities, graph)
    - Create `.ai/code-graph.json` with basic structure (meta, references, entities, graph)
 
