@@ -1,0 +1,352 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "project": {
+      "name": "know-cli",
+      "language": "python",
+      "architecture": "cli-tool"
+    },
+    "phases": {}
+  },
+  "references": {
+    "external-dep": {
+      "click": {
+        "identifier": "pypi:click",
+        "version": ">=8.0",
+        "type": "pypi",
+        "purpose": "CLI framework for command-line interface"
+      },
+      "pydantic": {
+        "identifier": "pypi:pydantic",
+        "version": ">=2.0",
+        "type": "pypi",
+        "purpose": "Data validation and settings management"
+      },
+      "networkx": {
+        "identifier": "pypi:networkx",
+        "version": ">=3.0",
+        "type": "pypi",
+        "purpose": "Graph algorithms and topological sorting"
+      },
+      "aiofiles": {
+        "identifier": "pypi:aiofiles",
+        "version": ">=0.8",
+        "type": "pypi",
+        "purpose": "Async file operations"
+      },
+      "python-dotenv": {
+        "identifier": "pypi:python-dotenv",
+        "version": ">=0.19",
+        "type": "pypi",
+        "purpose": "Environment variable management"
+      },
+      "rich": {
+        "identifier": "pypi:rich",
+        "version": ">=13.0",
+        "type": "pypi",
+        "purpose": "Beautiful CLI output with tables and formatting"
+      },
+      "pytest": {
+        "identifier": "pypi:pytest",
+        "version": ">=7.0",
+        "type": "pypi",
+        "purpose": "Testing framework for unit and integration tests"
+      },
+      "pytest-asyncio": {
+        "identifier": "pypi:pytest-asyncio",
+        "version": ">=0.21",
+        "type": "pypi",
+        "purpose": "Async test support"
+      },
+      "pytest-cov": {
+        "identifier": "pypi:pytest-cov",
+        "version": ">=4.0",
+        "type": "pypi",
+        "purpose": "Coverage reporting"
+      },
+      "black": {
+        "identifier": "pypi:black",
+        "version": ">=23.0",
+        "type": "pypi",
+        "purpose": "Code formatting"
+      },
+      "mypy": {
+        "identifier": "pypi:mypy",
+        "version": ">=1.0",
+        "type": "pypi",
+        "purpose": "Type checking"
+      }
+    },
+    "product-component": {
+      "know-cli": {
+        "component": "component:cli-commands",
+        "graph_path": "spec-graph.json",
+        "feature": "feature:cli-operations"
+      },
+      "graph": {
+        "component": "component:graph-operations",
+        "graph_path": "spec-graph.json",
+        "feature": "feature:cli-operations"
+      },
+      "entities": {
+        "component": "component:graph-operations",
+        "graph_path": "spec-graph.json"
+      },
+      "dependencies": {
+        "component": "component:graph-operations",
+        "graph_path": "spec-graph.json"
+      },
+      "validation": {
+        "component": "component:validation-engine",
+        "graph_path": "spec-graph.json",
+        "feature": "feature:graph-validation"
+      },
+      "generators": {
+        "component": "component:spec-templates",
+        "graph_path": "spec-graph.json",
+        "feature": "feature:spec-generation"
+      },
+      "llm": {
+        "component": "component:llm-integration",
+        "graph_path": "spec-graph.json",
+        "feature": "feature:llm-workflows"
+      },
+      "gap-analysis": {
+        "component": "component:graph-operations",
+        "graph_path": "spec-graph.json",
+        "feature": "feature:gap-detection"
+      }
+    }
+  },
+  "entities": {
+    "package": {
+      "src": {
+        "name": "Source Package",
+        "description": "Core library implementation with all graph operations"
+      },
+      "tests": {
+        "name": "Test Package",
+        "description": "Comprehensive test suite with pytest"
+      },
+      "config": {
+        "name": "Config Package",
+        "description": "Dependency rules configuration for both graph types"
+      },
+      "templates": {
+        "name": "Templates Package",
+        "description": "File templates for init command"
+      }
+    },
+    "module": {
+      "know-cli": {
+        "name": "Know CLI Entry Point",
+        "description": "Main CLI entry point and command dispatcher using Click framework (know.py)"
+      },
+      "benchmark": {
+        "name": "Benchmark Module",
+        "description": "Performance benchmarking utilities"
+      },
+      "graph": {
+        "name": "Graph Manager",
+        "description": "Core graph operations and NetworkX integration for efficient graph algorithms"
+      },
+      "cache": {
+        "name": "Graph Cache",
+        "description": "In-memory caching with file synchronization and atomic writes"
+      },
+      "entities": {
+        "name": "Entity Manager",
+        "description": "CRUD operations for entities with validation against dependency rules"
+      },
+      "dependencies": {
+        "name": "Dependency Manager",
+        "description": "Dependency relationship management and validation"
+      },
+      "validation": {
+        "name": "Graph Validator",
+        "description": "Graph structure and rule validation against dependency rules"
+      },
+      "generators": {
+        "name": "Spec Generator",
+        "description": "Template-based specification document generation from graph data"
+      },
+      "llm": {
+        "name": "LLM Manager",
+        "description": "LLM provider integration and workflow management"
+      },
+      "gap-analysis": {
+        "name": "Gap Analysis",
+        "description": "Implementation gap detection and dependency chain analysis"
+      },
+      "reference-tools": {
+        "name": "Reference Tools",
+        "description": "Reference management, orphan detection, and cleanup utilities"
+      },
+      "async-graph": {
+        "name": "Async Graph Operations",
+        "description": "Asynchronous graph operations for concurrent access"
+      },
+      "utils": {
+        "name": "Utilities",
+        "description": "Common utility functions and helpers"
+      },
+      "test-graph": {
+        "name": "Graph Tests",
+        "description": "Unit tests for graph operations"
+      },
+      "test-entities": {
+        "name": "Entity Tests",
+        "description": "Unit tests for entity management"
+      },
+      "test-dependencies": {
+        "name": "Dependency Tests",
+        "description": "Unit tests for dependency management"
+      },
+      "test-validation": {
+        "name": "Validation Tests",
+        "description": "Unit tests for validation engine"
+      },
+      "test-commands": {
+        "name": "Command Tests",
+        "description": "Integration tests for CLI commands"
+      },
+      "test-llm": {
+        "name": "LLM Tests",
+        "description": "Unit tests for LLM integration"
+      },
+      "test-utils": {
+        "name": "Utils Tests",
+        "description": "Unit tests for utility functions"
+      },
+      "test-bug-fixes": {
+        "name": "Bug Fix Tests",
+        "description": "Regression tests for bug fixes"
+      }
+    }
+  },
+  "graph": {
+    "module:know-cli": {
+      "depends_on": [
+        "module:graph",
+        "module:entities",
+        "module:dependencies",
+        "module:validation",
+        "module:generators",
+        "module:llm",
+        "external-dep:click",
+        "external-dep:rich"
+      ]
+    },
+    "module:graph": {
+      "depends_on": [
+        "module:cache",
+        "external-dep:networkx"
+      ]
+    },
+    "module:entities": {
+      "depends_on": [
+        "module:graph"
+      ]
+    },
+    "module:dependencies": {
+      "depends_on": [
+        "module:graph"
+      ]
+    },
+    "module:validation": {
+      "depends_on": [
+        "module:graph"
+      ]
+    },
+    "module:generators": {
+      "depends_on": [
+        "module:graph",
+        "module:entities"
+      ]
+    },
+    "module:llm": {
+      "depends_on": [
+        "external-dep:pydantic"
+      ]
+    },
+    "module:gap-analysis": {
+      "depends_on": [
+        "module:graph"
+      ]
+    },
+    "module:reference-tools": {
+      "depends_on": [
+        "module:graph"
+      ]
+    },
+    "module:async-graph": {
+      "depends_on": [
+        "external-dep:aiofiles",
+        "external-dep:networkx"
+      ]
+    },
+    "package:src": {
+      "depends_on": [
+        "external-dep:networkx",
+        "external-dep:pydantic",
+        "external-dep:click",
+        "external-dep:rich"
+      ]
+    },
+    "package:tests": {
+      "depends_on": [
+        "package:src",
+        "external-dep:pytest",
+        "external-dep:pytest-asyncio",
+        "external-dep:pytest-cov"
+      ]
+    },
+    "module:test-graph": {
+      "depends_on": [
+        "module:graph",
+        "external-dep:pytest"
+      ]
+    },
+    "module:test-entities": {
+      "depends_on": [
+        "module:entities",
+        "external-dep:pytest"
+      ]
+    },
+    "module:test-dependencies": {
+      "depends_on": [
+        "module:dependencies",
+        "external-dep:pytest"
+      ]
+    },
+    "module:test-validation": {
+      "depends_on": [
+        "module:validation",
+        "external-dep:pytest"
+      ]
+    },
+    "module:test-commands": {
+      "depends_on": [
+        "module:know-cli",
+        "external-dep:pytest"
+      ]
+    },
+    "module:test-llm": {
+      "depends_on": [
+        "module:llm",
+        "external-dep:pytest"
+      ]
+    },
+    "module:test-utils": {
+      "depends_on": [
+        "module:utils",
+        "external-dep:pytest"
+      ]
+    },
+    "module:test-bug-fixes": {
+      "depends_on": [
+        "external-dep:pytest"
+      ]
+    }
+  }
+}

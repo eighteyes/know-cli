@@ -189,7 +189,8 @@ class DependencyManager:
                     allowed = self.get_allowed_targets(entity_type)
                     errors.append(
                         f"Invalid dependency: {entity_id} → {dep_id}. "
-                        f"{entity_type} can only depend on: {', '.join(allowed)}"
+                        f"{entity_type} can only depend on: {', '.join(allowed)}\n"
+                        f"    Fix: know unlink {entity_id} {dep_id}"
                     )
 
         return len(errors) == 0, errors

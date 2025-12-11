@@ -136,6 +136,23 @@ class GraphValidator:
             if 'phases' not in meta:
                 results['warnings'].append("Missing 'phases' in meta")
 
+            # Validate phases structure
+            if 'phases' in meta:
+                phases = meta['phases']
+                if isinstance(phases, list):
+                    results['errors'].append(
+                        "meta.phases must be a dict, not a list. "
+                        "Expected format: {\"pending\": {\"feature:x\": {\"status\": \"incomplete\"}}}"
+                    )
+                elif not isinstance(phases, dict):
+                    results['errors'].append("meta.phases must be a dict")
+
+            # Validate phases_metadata structure if present
+            if 'phases_metadata' in meta:
+                phases_meta = meta['phases_metadata']
+                if not isinstance(phases_meta, dict):
+                    results['errors'].append("meta.phases_metadata must be a dict")
+
         # Check entities structure
         if 'entities' in data:
             if not isinstance(data['entities'], dict):

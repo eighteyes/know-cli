@@ -1,0 +1,14 @@
+{
+  "running": true,
+  "mode": "serve",
+  "username": "guest",
+  "pairingCode": "ideal-jewel-cloud",
+  "connections": [
+    {
+      "remoteName": "host",
+      "phrase": "lemon-ghost-zones",
+      "connectedAt": 1765090834251,
+      "connected": true
+    }
+  ]
+}

@@ -14,6 +14,9 @@ console.log('📦 Installing Python dependencies for @lb-project/know...');
 // Find requirements.txt
 const packageRoot = path.resolve(__dirname, '..');
 const requirementsPath = path.join(packageRoot, 'know', 'requirements.txt');
+const venvPath = path.join(packageRoot, 'know', 'venv');
+const venvPython = path.join(venvPath, 'bin', 'python3');
+const venvPip = path.join(venvPath, 'bin', 'pip');
 
 if (!fs.existsSync(requirementsPath)) {
   console.warn('⚠️  requirements.txt not found at:', requirementsPath);
@@ -22,35 +25,32 @@ if (!fs.existsSync(requirementsPath)) {
 }
 
 try {
-  // Check if pip is available
-  try {
-    execSync('pip3 --version', { stdio: 'ignore' });
-  } catch (err) {
-    console.warn('⚠️  pip3 not found, trying pip...');
-    execSync('pip --version', { stdio: 'ignore' });
+  // Create venv if it doesn't exist
+  if (!fs.existsSync(venvPath)) {
+    console.log('🔨 Creating Python virtual environment...');
+    execSync('python3 -m venv know/venv', {
+      stdio: 'inherit',
+      cwd: packageRoot
+    });
+    console.log('✅ Virtual environment created at know/venv');
+  } else {
+    console.log('✓ Using existing virtual environment at know/venv');
   }
 
-  // Install Python dependencies
+  // Install Python dependencies into venv
   console.log('   Installing from:', requirementsPath);
 
-  try {
-    execSync(`pip3 install -r "${requirementsPath}"`, {
-      stdio: 'inherit',
-      cwd: packageRoot
-    });
-  } catch (err) {
-    // Try with pip if pip3 failed
-    execSync(`pip install -r "${requirementsPath}"`, {
-      stdio: 'inherit',
-      cwd: packageRoot
-    });
-  }
+  execSync(`"${venvPip}" install -r "${requirementsPath}"`, {
+    stdio: 'inherit',
+    cwd: packageRoot
+  });
 
   console.log('✅ Python dependencies installed successfully');
 } catch (error) {
   console.error('❌ Failed to install Python dependencies');
   console.error('   You may need to install them manually:');
-  console.error(`   pip install -r ${requirementsPath}`);
+  console.error(`   python3 -m venv know/venv`);
+  console.error(`   know/venv/bin/pip install -r ${requirementsPath}`);
   console.error('');
   console.error('   Error:', error.message);
 
