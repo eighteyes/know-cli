@@ -10,9 +10,9 @@ tags: [know, review, qa, testing, acceptance]
 Guide user through interactive end-user acceptance testing of a completed feature using the generated QA_STEPS.md, recording results and updating feature status based on approval.
 
 **CRITICAL: ACTIVE TESTING WORKFLOW**
-This is NOT just a code review. The assistant should:
-1. **Test what can be automated**: Run CLI commands, execute scripts, check file outputs, verify logs
-2. **Guide user to validate the rest**: UI behavior, visual elements, user experience, edge cases requiring judgment
+Execute tests and validate results - this is hands-on acceptance testing:
+1. **Automate testable items**: Run CLI commands, execute scripts, check file outputs, verify logs
+2. **Guide user validation**: UI behavior, visual elements, user experience, edge cases requiring judgment
 
 **Testing Responsibilities**:
 - **AI tests**: CLI output, file generation, data validation, error handling, API responses, calculations
@@ -25,8 +25,9 @@ This is NOT just a code review. The assistant should:
 - Record all results (Pass/Fail/Skip) and collect failure details
 
 **Prerequisites**
+- Activate the know-tool skill for graph operations
 - Feature must have completed `/know:build` (status: "complete" or "review-ready")
-- `.ai/know/<feature>/QA_STEPS.md` must exist
+- `.ai/know/features/<feature>/QA_STEPS.md` must exist
 - **Application must be running and ready to test**
 
 **Usage**
@@ -40,7 +41,7 @@ This is NOT just a code review. The assistant should:
 ### 1. Initialization
 
 **Steps**:
-1. Verify feature directory exists at `.ai/know/<feature>/`
+1. Verify feature directory exists at `.ai/know/features/<feature>/`
 2. Check that `QA_STEPS.md` exists (if not, inform user to run `/know:build` Phase 7 first)
 3. Check spec-graph status (using **haiku agent**):
    - `know -g .ai/spec-graph.json show feature:<name>`
@@ -138,8 +139,8 @@ Step 1: [PASS/FAIL/SKIP]
    - Options: Critical / High / Medium / Low
 3. **Create structured tracking files**:
    - Create directories if they don't exist:
-     - `.ai/know/<feature>/bugs/`
-     - `.ai/know/<feature>/changes/`
+     - `.ai/know/features/<feature>/bugs/`
+     - `.ai/know/features/<feature>/changes/`
    - For each bug: Create `bugs/NNN-slug.md` (numbered sequentially)
    - For each change: Create `changes/NNN-slug.md`
 4. **Update todo.md** with new unchecked items:
@@ -151,9 +152,9 @@ Step 1: [PASS/FAIL/SKIP]
      ```
 5. **Offer to create implementation plan**:
    - If 3+ bugs/changes, ask: "Create implementation plan for these fixes? [Yes/No]"
-   - If Yes: Create `.ai/know/<feature>/plans/review-fixes-YYYYMMDD.md`
+   - If Yes: Create `.ai/know/features/<feature>/plans/review-fixes-YYYYMMDD.md`
 
-**Bug file template** (`.ai/know/<feature>/bugs/001-description.md`):
+**Bug file template** (`.ai/know/features/<feature>/bugs/001-description.md`):
 ```markdown
 # Bug #001: [Title from test step]
 
@@ -178,7 +179,7 @@ Step 1: [PASS/FAIL/SKIP]
 - [ ] Fix bug #001: [Description] (in todo.md)
 ```
 
-**Change file template** (`.ai/know/<feature>/changes/001-description.md`):
+**Change file template** (`.ai/know/features/<feature>/changes/001-description.md`):
 ```markdown
 # Change #001: [Title]
 
@@ -206,7 +207,7 @@ Step 1: [PASS/FAIL/SKIP]
 ### 6. Generate Review Artifacts
 
 **Always create**:
-- `.ai/know/<feature>/review-results.md`:
+- `.ai/know/features/<feature>/review-results.md`:
   ```markdown
   # Review Results: <Feature Name>
   Date: YYYY-MM-DD
@@ -237,7 +238,7 @@ Step 1: [PASS/FAIL/SKIP]
   ```
 
 **If "Needs Work" selected**:
-- `.ai/know/<feature>/review-feedback.md`:
+- `.ai/know/features/<feature>/review-feedback.md`:
   ```markdown
   # Review Feedback: <Feature Name>
   Date: YYYY-MM-DD
@@ -271,9 +272,9 @@ Step 1: [PASS/FAIL/SKIP]
   3. Re-run `/know:review <feature>` after fixes
   ```
 - Structured bug/change files in:
-  - `.ai/know/<feature>/bugs/NNN-description.md`
-  - `.ai/know/<feature>/changes/NNN-description.md`
-- Updated `.ai/know/<feature>/todo.md` with new unchecked items
+  - `.ai/know/features/<feature>/bugs/NNN-description.md`
+  - `.ai/know/features/<feature>/changes/NNN-description.md`
+- Updated `.ai/know/features/<feature>/todo.md` with new unchecked items
 
 ### 7. Update Spec-Graph
 
@@ -287,12 +288,12 @@ Step 1: [PASS/FAIL/SKIP]
   - No status change
 
 **Outputs**:
-- `.ai/know/<feature>/review-results.md` - Test execution results
-- `.ai/know/<feature>/review-feedback.md` - Summary of issues (if Needs Work)
-- `.ai/know/<feature>/bugs/NNN-*.md` - Structured bug tracking files (if bugs found)
-- `.ai/know/<feature>/changes/NNN-*.md` - Structured change requests (if changes needed)
-- `.ai/know/<feature>/plans/review-fixes-*.md` - Implementation plan (if 3+ issues)
-- Updated `.ai/know/<feature>/todo.md` - New unchecked items for bugs/changes
+- `.ai/know/features/<feature>/review-results.md` - Test execution results
+- `.ai/know/features/<feature>/review-feedback.md` - Summary of issues (if Needs Work)
+- `.ai/know/features/<feature>/bugs/NNN-*.md` - Structured bug tracking files (if bugs found)
+- `.ai/know/features/<feature>/changes/NNN-*.md` - Structured change requests (if changes needed)
+- `.ai/know/features/<feature>/plans/review-fixes-*.md` - Implementation plan (if 3+ issues)
+- Updated `.ai/know/features/<feature>/todo.md` - New unchecked items for bugs/changes
 - Updated spec-graph status (if Approved)
 - Optional: Feature ready for `/know:done` archival (if Approved)
 
@@ -360,6 +361,6 @@ Assistant: Created review-results.md and review-feedback.md
 - Update spec-graph only on "Approve" decision
 - **Worktree compatibility**:
   - Can run from feature worktree (recommended - test in isolation)
-  - Can run from main repo (also works - reads `.ai/know/<feature>/`)
+  - Can run from main repo (also works - reads `.ai/know/features/<feature>/`)
   - Can run from any location with access to `.ai/` directory
   - Feature remains in worktree until `/know:done` is run

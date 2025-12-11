@@ -5,13 +5,16 @@ category: Know
 tags: [know, list, status]
 ---
 
+**Prerequisites**
+- Activate the know-tool skill for graph operations
+
 **Objective**
 
 Display all features grouped by phase with task completion counts.
 
 **Implementation**
 
-Run the `know phases` command:
+Use the know-tool skill to run the `know phases` command:
 
 ```bash
 ./know/know phases

@@ -337,12 +337,12 @@ Each mode follows this pattern:
 
 ## Key Principles
 
-- **No time estimates** - Focus on what, not when
+- **Deliverables over timelines** - Focus on what, omit time estimates
 - **Graph is source of truth** - Files document, graph defines relationships
-- **Confirmation before graph writes** - User reviews entities before adding
-- **Iterative and resumable** - Can stop/resume at any mode
-- **Quality over speed** - Better to ask more questions than make wrong assumptions
-- **Delegate to /know:prepare** - Don't duplicate code analysis work
+- **Confirm before graph writes** - User reviews entities before adding
+- **Iterative and resumable** - Pause/resume at any mode
+- **Depth over speed** - Ask more questions to avoid wrong assumptions
+- **Delegate to /know:prepare** - Reuse code analysis work
 
 ## Example Usage
 
