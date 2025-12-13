@@ -364,3 +364,6 @@ Assistant: Assessing project maturity...
 - Populates spec-graph.json progressively
 - Suitable for greenfield planning or refining existing projects
 - Can skip modes based on maturity assessment
+
+---
+`r1`

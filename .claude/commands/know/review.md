@@ -280,10 +280,11 @@ Step 1: [PASS/FAIL/SKIP]
 
 **Using haiku agent**:
 - If Approved:
-  - `know -g .ai/spec-graph.json update feature:<name> '{"status": "done"}'` (or similar update)
-  - Add review completion date to meta if possible
+  - Update `meta.phases` to move feature to "done" phase
+  - Update `meta.feature_specs.<feature>.status` to "complete"
+  - **Validate graph**: `know validate`
 - If Needs Work:
-  - Keep status as "in-progress"
+  - Keep status as "in-progress" in `meta.feature_specs`
 - If Deferred:
   - No status change
 
@@ -364,3 +365,6 @@ Assistant: Created review-results.md and review-feedback.md
   - Can run from main repo (also works - reads `.ai/know/features/<feature>/`)
   - Can run from any location with access to `.ai/` directory
   - Feature remains in worktree until `/know:done` is run
+
+---
+`r1`

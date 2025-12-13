@@ -17,7 +17,7 @@ Display all features grouped by phase with task completion counts.
 Use the know-tool skill to run the `know phases` command:
 
 ```bash
-./know/know phases
+know phases
 ```
 
 This command displays features grouped by phase (I, II, III, in-progress, review-ready, done) with:
@@ -26,3 +26,6 @@ This command displays features grouped by phase (I, II, III, in-progress, review
 - Task completion counts from todo.md (e.g., "3/13")
 - Status icons (✅ completed, 🔄 in-progress, 📋 planned)
 - Summary footer with totals
+
+---
+`r1`

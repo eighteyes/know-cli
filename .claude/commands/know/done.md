@@ -74,9 +74,10 @@ tags: [know, archive, complete]
 ### 6. Update Spec-Graph
 
 **Steps**:
-1. Update phase status to "done" (using **haiku agent**)
-2. Validate both spec-graph and code-graph
-3. Confirm graphs are consistent
+1. Update phase status to "done" in `meta.phases` (using **haiku agent**)
+2. Update `meta.feature_specs.<feature>.status` to "complete"
+3. **Validate both graphs**: `know validate`
+4. Confirm graphs are consistent (no validation errors)
 
 **Example Usage**
 ```
@@ -99,3 +100,6 @@ Assistant: Checks completion, moves to archive, confirms success
   - Merges feature branch using `--no-ff` for clear history
   - Removes worktree after successful merge
   - Can run from main repo or any worktree (auto-navigates as needed)
+
+---
+`r1`

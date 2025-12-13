@@ -1682,7 +1682,11 @@ def phases(ctx):
                 entity_name = entity_id
 
             # Get status
-            status = entity_meta.get('status', 'planned')
+            if isinstance(entity_meta, dict):
+                status = entity_meta.get('status', 'planned')
+            else:
+                # If entity_meta is a string, treat it as the status
+                status = entity_meta if isinstance(entity_meta, str) else 'planned'
             icon = get_status_icon(status)
 
             # Look up entity details

@@ -18,8 +18,13 @@ tags: [know, feature, overview]
    - `plan.md` - Implementation steps (links to spec.md)
    - `spec.md` - Empty file for `know spec` output
 4. Replace `{feature_name}` placeholder in all templates with the actual feature name
-5. Use know-tool skill to create stub graph entries in `spec-graph.json` for the feature (add placeholder entities/references)
-6. Guide the user to:
+5. **Create stub graph entries** in `spec-graph.json`:
+   - Add `feature:<name>` entity with name and description
+   - Add initial `component:<name>` entities for known components
+   - Add `meta.feature_specs.<name>` stub with status: "planned"
+   - Link feature → components in graph section
+6. **Validate graph**: Run `know validate` to confirm structure
+7. Guide the user to:
    - Fill out `overview.md` with requirements
    - Update `todo.md` with implementation tasks
    - Create implementation plan in `plan.md`
@@ -36,3 +41,6 @@ Assistant: Creates .ai/know/features/user-authentication/ with all workflow file
 - Verify uniqueness in `.ai/know/features/` before creating
 - Add stub entities immediately to spec-graph.json
 - Validate graph after creating stubs
+
+---
+`r1`

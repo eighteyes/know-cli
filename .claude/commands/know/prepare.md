@@ -196,3 +196,6 @@ fd -g "*test*" -t d                        # Test directories
 - Focus on actionable, specific information over generic templates
 - Cross-reference graph entities with actual codebase structure
 - Always validate the graph after populating it
+
+---
+`r1`

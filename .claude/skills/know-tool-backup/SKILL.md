@@ -146,7 +146,7 @@ know deps feature:new-feature --recursive
 
 ## Installation Note
 
-If `know` command is not found, the tool is at `/Users/god/projects/know-cli/know/know`. See project INSTALL.md for setup.
+If `know` command is not found, run `python3 know/know.py` from the project root. See project INSTALL.md for setup.
 
 ---
 

@@ -148,7 +148,8 @@
     "philosophy": "Start with user objectives, map to features, connect to components. The graph enforces traceability."
   },
   "installation": {
-    "path": "/Users/god/projects/know-cli/know/know",
+    "path": "know",
+    "fallback": "python3 know/know.py",
     "note": "See project INSTALL.md for setup if know command is not found"
   }
 }

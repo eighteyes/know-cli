@@ -1,22 +1,3 @@
-<!-- OPENSPEC:START -->
-# OpenSpec Instructions
-
-These instructions are for AI assistants working in this project.
-
-Always open `@/openspec/AGENTS.md` when the request:
-- Mentions planning or proposals (words like proposal, spec, change, plan)
-- Introduces new capabilities, breaking changes, architecture shifts, or big performance/security work
-- Sounds ambiguous and you need the authoritative spec before coding
-
-Use `@/openspec/AGENTS.md` to learn:
-- How to create and apply change proposals
-- Spec format and conventions
-- Project structure and guidelines
-
-Keep this managed block so 'openspec update' can refresh the instructions.
-
-<!-- OPENSPEC:END -->
-
 
 # Dual Graph System
 
@@ -154,7 +135,7 @@ Entity/Reference[*] = Nodes
 # GRAPH SCRIPTS
 Use these to modify / query / analyze the graph file. Utilize these instead of `jq`, when using bash & when writing other scripts.
 
-Know Tool: `./know/know`
+Know Tool: `know`
 
 **Key Commands:**
 - `uses <entity>` / `down <entity>` - Show what an entity uses (dependencies)
@@ -184,3 +165,5 @@ After planning, give your plans a grade. Executing A or B plans earn 1 point. Ex
 Before acting, evaluate the chances of success. If you are < 75% confident in success, and you continue and fail, you will lose 3 points. If you succeed you will gain 1 point. Saying "I am not certain about {action}, {reason}", gains 0 points. 
 
 Validate the graph after every change with `npm run validate-graph`.
+
+When modifying know commands, increment the revision counter at the bottom.

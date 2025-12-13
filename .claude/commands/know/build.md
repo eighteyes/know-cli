@@ -11,6 +11,10 @@ Guide feature development through a structured 7-phase workflow adapted from Cla
 
 **Prerequisites**
 - Activate the know-tool skill for graph operations
+- **Clean git state required**: Check `git status` before proceeding
+  - If uncommitted changes exist, ask user: "Uncommitted changes detected. Commit before starting build? [Yes/No]"
+  - If Yes: Help user commit (use `/lb:commit` or manual commit)
+  - If No: Warn that worktree will not include uncommitted changes, proceed only with explicit confirmation
 
 **Exploration Strategy**
 - **Use parallel agents** throughout this workflow for speed and depth
@@ -18,6 +22,12 @@ Guide feature development through a structured 7-phase workflow adapted from Cla
 - **Custom Task agents**: Create specialized agents with specific objectives
 - **Launch in parallel**: Use SINGLE message with multiple Task tool calls to run agents concurrently
 - Phases 2, 4, and 6 explicitly require parallel agent launches
+
+**Documentation Strategy**
+- **Update feature docs continuously** throughout the workflow
+- After completing work in each phase, immediately update the corresponding feature file
+- Keep documentation in sync with actual progress—never batch updates
+- Each phase has specific docs to update (see phase outputs)
 
 **Entry Points**
 
@@ -56,11 +66,17 @@ ELSE (inline feature description or non-existent feature):
    - What is out of scope?
    - Who are the users of this feature?
    - What are the edge cases?
-3. Update `.ai/know/features/<feature>/qa/discovery.md` with Q&A
+3. **Update docs immediately**:
+   - Save Q&A to `.ai/know/features/<feature>/qa/discovery.md` (create if missing)
+   - Format: Question → Answer → Implications
 4. Query spec-graph (using **haiku agents**):
    - `know -g .ai/spec-graph.json deps feature:<name>` - What does this feature depend on?
    - `know -g .ai/spec-graph.json used-by feature:<name>` - What depends on this feature?
-5. Update `.ai/know/features/<feature>/overview.md` with refined requirements
+5. **Update overview.md immediately**:
+   - Add "Success Criteria" section if discovered
+   - Add "Constraints" section with limits
+   - Add "Out of Scope" section with exclusions
+   - Refine existing requirements based on clarifications
 
 **Outputs**:
 - `.ai/know/features/<feature>/qa/discovery.md` - Discovery Q&A session
@@ -91,7 +107,12 @@ ELSE (inline feature description or non-existent feature):
    - Find component dependencies
    - Check data-model references
 4. **Consolidate findings** from all explorers (Explore + custom Task agents)
-5. Save to `.ai/know/features/<feature>/exploration.md`
+5. **Update exploration.md immediately**:
+   - Document all patterns discovered
+   - List relevant files with descriptions
+   - Note architectural conventions
+   - Identify similar features and their approaches
+   - Save consolidated findings to `.ai/know/features/<feature>/exploration.md`
 
 **Example parallel launch**:
 ```
@@ -119,10 +140,14 @@ Send SINGLE message with:
    - Performance/security considerations
 2. Present organized list of questions to user
 3. Collect explicit answers (no assumptions)
-4. Save to `.ai/know/features/<feature>/qa/clarification.md`
-5. Update spec-graph if new requirements discovered (using **haiku agents**):
+4. **Update docs immediately**:
+   - Save Q&A to `.ai/know/features/<feature>/qa/clarification.md` (create if missing)
+   - Format: Question → Answer → Decision Made
+   - Include which alternative approaches were rejected and why
+5. **Update spec-graph if new requirements discovered** (using **haiku agents**):
    - Add requirement entities if needed
    - Update feature description
+   - Link new requirements to feature in graph
 
 **Outputs**:
 - `.ai/know/features/<feature>/qa/clarification.md` - Clarification Q&A
@@ -151,23 +176,35 @@ Send SINGLE message with:
 3. **Consolidate 3 proposals** with trade-off analysis (cost, risk, maintainability, time)
 4. **Present recommendation** to user with clear pros/cons
 5. **Wait for explicit approval** before proceeding
-6. **Create ADR for architectural decision** in `.ai/know/features/<feature>/adrs.md`:
+6. **Update ADR immediately** after approval in `.ai/know/features/<feature>/adrs.md`:
    - Create file if it doesn't exist
-   - Add ADR-001 with:
+   - Add ADR-001 (or next number) with:
      - **Context**: Why architecture decision needed
      - **Decision**: Chosen approach (from 3 proposals)
      - **Consequences**: Trade-offs, pros/cons
      - **Alternatives**: Other 2 proposals considered and why rejected
    - Include date and status (Accepted)
-7. **Update spec-graph** with architecture (using **haiku agents**, WITH CONFIRMATION):
-   - Add/update component entities
-   - Add operation entities
-   - Link dependencies (feature → action → component → operation)
-   - Add references (business_logic, data-models, tech-decisions)
+7. **Update spec-graph immediately** with architecture (using **haiku agents**, WITH CONFIRMATION):
+   - Add/update component entities with name and description
+   - Add operation entities for each component's operations
+   - Add `source-file:<name>` references with file paths
+   - Add `signature:<name>` references with params[] and returns
+   - Add `data-model:<name>` references with TypeScript schemas
+   - Add `api-schema:<name>` references for public APIs
+   - Add `business-logic:<name>` references for execution flows
+   - Link dependencies in graph:
+     - `feature → component`
+     - `component → operation`
+     - `component → source-file`
+     - `operation → signature`
+     - `operation → data-model`
+     - `feature → business-logic`
+8. **Validate graph**: Run `know validate` to confirm structure
 
 **Outputs**:
 - `.ai/know/features/<feature>/adrs.md` - Architecture Decision Records (starting with ADR-001)
-- Updated spec-graph with architectural entities
+- Updated spec-graph with entities, operations, and references
+- Validated graph (no errors)
 
 ---
 
@@ -191,7 +228,7 @@ Send SINGLE message with:
 2. **Create and switch to worktree** (see Git Worktree Setup above)
 3. Read all relevant files from exploration phase
 4. Follow chosen architecture strictly
-5. **Update feature files continuously as you work**:
+5. **CRITICAL: Update feature files continuously as you work** (not at the end!):
 
    **todo.md updates** (after completing each task):
    - Read `.ai/know/features/<feature>/todo.md` before starting each task
@@ -261,9 +298,17 @@ Send SINGLE message with:
    - Verify all component dependencies satisfied
    - Check code-graph completeness
    - Validate both graphs: `know validate`
-3. Present issues to user with confidence levels
-4. User chooses: "Fix now", "Fix later", or "Proceed"
-5. Save review to `.ai/know/features/<feature>/review.md`
+3. **Update review.md immediately** with findings:
+   - Document all issues found by each reviewer
+   - Include confidence levels (≥80% only)
+   - Categorize: Simplicity, Bugs, Conventions
+   - Save to `.ai/know/features/<feature>/review.md`
+4. Present issues to user with confidence levels
+5. User chooses: "Fix now", "Fix later", or "Proceed"
+6. **Update review.md with resolutions**:
+   - Mark which issues were fixed
+   - Note which are deferred
+   - Update with validation results
 
 **Outputs**:
 - `.ai/know/features/<feature>/review.md` - Quality review findings
@@ -277,28 +322,42 @@ Send SINGLE message with:
 **Goal**: Document completion and update tracking
 
 **Steps**:
-1. Document accomplishments
-2. List modified files
-3. Note integration points
-4. Suggest follow-up tasks
-5. **Generate QA_STEPS.md** for end-user testing:
+1. **Update summary.md immediately**:
+   - Document accomplishments
+   - List modified files with descriptions
+   - Note integration points
+   - Identify follow-up tasks
+   - Save to `.ai/know/features/<feature>/summary.md`
+2. **Generate QA_STEPS.md immediately** for end-user testing:
    - Read overview.md (what was requested)
-   - Read architecture/chosen.md (what was built)
+   - Read adrs.md (architectural decisions)
    - Read implementation.md (how it works)
    - Translate technical implementation into user-facing test steps
+   - **CRITICAL: Human-only steps**:
+     - Include ONLY tests requiring human judgment (UX, visual, usability, edge cases)
+     - EXCLUDE machine-testable items (unit tests, API responses, function outputs)
+     - Focus on user experience, visual correctness, workflow completeness
    - Create `.ai/know/features/<feature>/QA_STEPS.md` with:
      - Objective (user perspective)
      - Prerequisites (setup needed)
-     - Numbered test steps with expected outcomes
-     - Acceptance criteria (clear pass/fail)
+     - Numbered test steps with expected outcomes (human evaluation required)
+     - Acceptance criteria (clear pass/fail from user perspective)
    - Use checkbox format for tracking during `/know:review`
-6. **Update spec-graph** (using **haiku agents**):
-   - Mark feature status as **"review-ready"** (not "complete" or "done")
+3. **Update spec-graph immediately** (using **haiku agents**):
+   - Mark feature status as **"review-ready"** in `meta.phases`
+   - **Populate `meta.feature_specs.<feature>`** with:
+     - `status`: "review-ready"
+     - `phase`: Current phase (e.g., "Phase I (Foundation)")
+     - `priority`: Feature priority (P0-P3)
+     - `use_cases[]`: Array of use case objects with name, description, config
+     - `testing{}`: Object with unit[], integration[], performance[] arrays
+     - `security[]`: Array of security/privacy requirements
+     - `monitoring[]`: Array of observability requirements
+     - `performance{}`: Object with latency, cost, quality characteristics
    - Update code-graph with all new modules
-   - Validate both graphs
+   - **Validate both graphs**: `know validate`
    - Run gap-summary: `know -g .ai/spec-graph.json gap-summary`
-7. Save summary to `.ai/know/features/<feature>/summary.md`
-8. **Update todo.md with final status**:
+4. **Update todo.md immediately with final status**:
    - Read `.ai/know/features/<feature>/todo.md`
    - Verify all implementation tasks are checked
    - Add final completion note at bottom:
@@ -310,11 +369,12 @@ Send SINGLE message with:
      - [ ] User testing (run `/know:review <feature>`)
      - [ ] Merge and archive (run `/know:done <feature>`)
      ```
-9. **Sync .ai/ directory back to main repo**:
+5. **Sync .ai/ directory back to main repo immediately**:
    - Copy updated `.ai/` from worktree to main repo
    - This preserves all documentation and graph updates
-10. **Stay in worktree** - remain here until user runs `/know:done`
-11. **Inform user**: "Feature ready for review in worktree. Run `/know:review <feature>` to test, or `/know:done` to merge and archive."
+   - Ensures main repo has latest feature docs
+6. **Stay in worktree** - remain here until user runs `/know:done`
+7. **Inform user**: "Feature ready for review in worktree. Run `/know:review <feature>` to test, or `/know:done` to merge and archive."
 
 **Outputs**:
 - `.ai/know/features/<feature>/summary.md` - Completion summary
@@ -378,6 +438,32 @@ Task tool with:
 
 ---
 
+## Continuous Documentation Updates
+
+**CRITICAL RULE**: Update feature docs IMMEDIATELY after completing work in each phase. Never batch updates or defer documentation.
+
+| Phase | When | What to Update | How |
+|-------|------|----------------|-----|
+| **1: Discovery** | After Q&A complete | `qa/discovery.md`, `overview.md` | Add Q&A with implications; refine requirements with success criteria, constraints, out-of-scope |
+| **2: Exploration** | After agent consolidation | `exploration.md` | Document patterns, list files, note conventions, identify similar features |
+| **3: Clarification** | After answers collected | `qa/clarification.md`, spec-graph | Add Q&A with decisions; update graph if new requirements discovered |
+| **4: Architecture** | After user approval | `adrs.md`, spec-graph | Create ADR-NNN with decision, alternatives, consequences; add components/operations/references to graph |
+| **5: Implementation** | After EACH task/file | `todo.md`, `implementation.md`, `overview.md`, `adrs.md` | Mark todos complete one-by-one; log each code change; update requirements if evolved; add ADRs for pivots |
+| **6: Review** | After agents report findings | `review.md` | Document issues by category with confidence; mark resolutions after user decides |
+| **7: Summary** | After consolidating | `summary.md`, `QA_STEPS.md`, `todo.md`, spec-graph | Write accomplishments; generate human-only test steps (UX/visual/usability); add final status; update graph to review-ready |
+
+**Key Principles**:
+- ✅ Update immediately after completing work
+- ✅ One task → one todo update (not batched)
+- ✅ Each code change → implementation.md entry
+- ✅ Each decision → ADR or Q&A entry
+- ✅ Sync .ai/ to main repo at phase boundaries
+- ❌ Never batch documentation updates
+- ❌ Never defer "I'll document later"
+- ❌ Never skip intermediate updates
+
+---
+
 ## Example Usage
 
 **Existing feature:**
@@ -416,3 +502,6 @@ Assistant: Feature not found in .ai/know/
 - **Resumable** - Can pause and resume at any phase
 - **Documentation-driven** - All decisions captured in `.ai/know/features/<feature>/`
 - When complete, use `/know:done` to archive and mark in "done" phase
+
+---
+`r3`

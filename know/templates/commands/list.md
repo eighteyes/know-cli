@@ -14,7 +14,7 @@ Display all features grouped by phase with task completion counts.
 Run the `know phases` command:
 
 ```bash
-./know/know phases
+know phases
 ```
 
 This command displays features grouped by phase (I, II, III, in-progress, review-ready, done) with:
