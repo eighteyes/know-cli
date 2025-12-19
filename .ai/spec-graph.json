@@ -83,6 +83,10 @@
       "generate-docs": {
         "name": "Generate Documentation",
         "description": "Generate spec documents from graph"
+      },
+      "manage-tasks": {
+        "name": "Manage Development Tasks",
+        "description": "Track and organize development tasks using Beads or native task system"
       }
     },
     "feature": {
@@ -218,6 +222,108 @@
         "name": "Manage Tasks",
         "description": "Create, list, update, and complete tasks with feature linking and auto-ready detection"
       }
+    },
+    "operation": {
+      "is_bd_available": {
+        "name": "Check Beads Availability",
+        "description": "Check if bd executable is available in PATH"
+      },
+      "init_beads": {
+        "name": "Initialize Beads",
+        "description": "Create .ai/beads directory and symlink to .beads"
+      },
+      "call_bd": {
+        "name": "Call Beads Command",
+        "description": "Execute bd subprocess command and parse output"
+      },
+      "parse_beads_jsonl": {
+        "name": "Parse Beads JSONL",
+        "description": "Read and parse tasks from .ai/beads/tasks.jsonl"
+      },
+      "create_task_for_feature": {
+        "name": "Create Task for Feature",
+        "description": "Create a new Beads task linked to a feature"
+      },
+      "add_task": {
+        "name": "Add Task",
+        "description": "Create a new task in native JSONL system"
+      },
+      "list_tasks": {
+        "name": "List Tasks",
+        "description": "List tasks with optional filters for feature, status, or ready-only"
+      },
+      "mark_done": {
+        "name": "Mark Task Done",
+        "description": "Mark a task as completed"
+      },
+      "block_task": {
+        "name": "Block Task",
+        "description": "Add blocking dependency between tasks"
+      },
+      "find_ready": {
+        "name": "Find Ready Tasks",
+        "description": "Auto-detect tasks with no blocking dependencies"
+      },
+      "generate_hash_id": {
+        "name": "Generate Hash ID",
+        "description": "Generate SHA256-based task ID from title and timestamp"
+      },
+      "import_beads_tasks": {
+        "name": "Import Beads Tasks",
+        "description": "Import all tasks from Beads JSONL to spec-graph references"
+      },
+      "link_task_to_feature": {
+        "name": "Link Task to Feature",
+        "description": "Create reference link between task and feature"
+      },
+      "get_feature_tasks": {
+        "name": "Get Feature Tasks",
+        "description": "Retrieve all tasks linked to a specific feature"
+      },
+      "sync_status": {
+        "name": "Sync Task Status",
+        "description": "Sync task status from Beads to spec-graph (Beads-first strategy)"
+      },
+      "bd_init": {
+        "name": "BD Init Command",
+        "description": "CLI command: know bd init - Initialize Beads integration"
+      },
+      "bd_list": {
+        "name": "BD List Command",
+        "description": "CLI command: know bd list - List Beads tasks"
+      },
+      "bd_add": {
+        "name": "BD Add Command",
+        "description": "CLI command: know bd add - Create Beads task"
+      },
+      "bd_sync": {
+        "name": "BD Sync Command",
+        "description": "CLI command: know bd sync - Sync Beads tasks to graph"
+      },
+      "task_init": {
+        "name": "Task Init Command",
+        "description": "CLI command: know task init - Initialize native task system"
+      },
+      "task_add": {
+        "name": "Task Add Command",
+        "description": "CLI command: know task add - Create native task"
+      },
+      "task_list": {
+        "name": "Task List Command",
+        "description": "CLI command: know task list - List native tasks"
+      },
+      "task_done": {
+        "name": "Task Done Command",
+        "description": "CLI command: know task done - Mark task as completed"
+      },
+      "task_ready": {
+        "name": "Task Ready Command",
+        "description": "CLI command: know task ready - List ready tasks"
+      },
+      "task_block": {
+        "name": "Task Block Command",
+        "description": "CLI command: know task block - Add blocking dependency"
+      }
     }
   },
   "graph": {
@@ -230,7 +336,8 @@
     "user:developer": {
       "depends_on": [
         "objective:manage-specs",
-        "objective:generate-docs"
+        "objective:generate-docs",
+        "objective:manage-tasks"
       ]
     },
     "objective:query-graph": {
@@ -258,32 +365,6 @@
       "depends_on": [
         "feature:spec-generation",
         "feature:schema-agnostic-know"
-      ]
-    },
-    "feature:cli-operations": {
-      "depends_on": [
-        "component:cli-commands",
-        "component:graph-operations"
-      ]
-    },
-    "feature:graph-validation": {
-      "depends_on": [
-        "component:validation-engine"
-      ]
-    },
-    "feature:gap-detection": {
-      "depends_on": [
-        "component:graph-operations"
-      ]
-    },
-    "feature:spec-generation": {
-      "depends_on": [
-        "component:spec-templates"
-      ]
-    },
-    "feature:llm-workflows": {
-      "depends_on": [
-        "component:llm-integration"
       ]
     },
     "feature:schema-agnostic-know": {
@@ -353,6 +434,52 @@
       "depends_on": [
         "component:task-manager",
         "component:task-cli"
+      ]
+    },
+    "component:beads-bridge": {
+      "depends_on": [
+        "operation:is_bd_available",
+        "operation:init_beads",
+        "operation:call_bd",
+        "operation:parse_beads_jsonl",
+        "operation:create_task_for_feature"
+      ]
+    },
+    "component:task-manager": {
+      "depends_on": [
+        "operation:add_task",
+        "operation:list_tasks",
+        "operation:mark_done",
+        "operation:block_task",
+        "operation:find_ready",
+        "operation:generate_hash_id"
+      ]
+    },
+    "component:task-sync": {
+      "depends_on": [
+        "operation:import_beads_tasks",
+        "operation:link_task_to_feature",
+        "operation:get_feature_tasks",
+        "operation:sync_status"
+      ]
+    },
+    "component:task-cli": {
+      "depends_on": [
+        "operation:bd_init",
+        "operation:bd_list",
+        "operation:bd_add",
+        "operation:bd_sync",
+        "operation:task_init",
+        "operation:task_add",
+        "operation:task_list",
+        "operation:task_done",
+        "operation:task_ready",
+        "operation:task_block"
+      ]
+    },
+    "objective:manage-tasks": {
+      "depends_on": [
+        "feature:beads-integration"
       ]
     }
   }

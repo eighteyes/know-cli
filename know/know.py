@@ -1996,5 +1996,332 @@ def phases_remove(ctx, entity_id):
         sys.exit(1)
 
 
+# Beads integration command group
+@cli.group(name='bd')
+@click.pass_context
+def bd(ctx):
+    """Beads task management integration (bd CLI wrapper)"""
+    from src.tasks import BeadsBridge, TaskSync
+
+    # Initialize managers
+    if 'beads' not in ctx.obj:
+        ctx.obj['beads'] = BeadsBridge()
+    if 'task_sync' not in ctx.obj:
+        ctx.obj['task_sync'] = TaskSync(
+            graph_path=str(ctx.obj['graph'].cache.graph_path)
+        )
+
+
+@bd.command(name='init')
+@click.option('--path', default='.ai/beads', help='Beads directory path')
+@click.option('--stealth', is_flag=True, help='Run bd init in stealth mode')
+@click.pass_context
+def bd_init(ctx, path, stealth):
+    """Initialize Beads integration"""
+    from src.tasks import BeadsBridge
+
+    bridge = BeadsBridge(path)
+
+    console.print(f"[cyan]Initializing Beads integration at {path}...[/cyan]")
+
+    success, error = bridge.init_beads(stealth=stealth)
+
+    if success:
+        console.print(f"[green]✓ Beads initialized successfully[/green]")
+        console.print(f"[green]  Directory: {path}[/green]")
+        console.print(f"[green]  Symlink: .beads → {path}[/green]")
+    else:
+        console.print(f"[red]✗ Failed to initialize Beads:[/red]")
+        console.print(f"[red]  {error}[/red]")
+        sys.exit(1)
+
+
+@bd.command(name='list')
+@click.option('--ready', is_flag=True, help='Show only ready tasks')
+@click.option('--feature', help='Filter by feature ID')
+@click.pass_context
+def bd_list(ctx, ready, feature):
+    """List Beads tasks"""
+    bridge = ctx.obj['beads']
+
+    if not bridge.is_bd_available():
+        console.print("[red]✗ bd not found. Install Beads first:[/red]")
+        console.print("  https://github.com/steveyegge/beads")
+        sys.exit(1)
+
+    tasks = bridge.list_tasks(ready_only=ready)
+
+    # Filter by feature if specified
+    if feature:
+        tasks = [t for t in tasks if t.get('feature') == feature]
+
+    if not tasks:
+        console.print("[yellow]No tasks found[/yellow]")
+        return
+
+    table = Table(title="Beads Tasks", show_header=True, header_style="bold magenta")
+    table.add_column("ID", style="cyan")
+    table.add_column("Title", style="green")
+    table.add_column("Status", style="yellow")
+    table.add_column("Feature", style="blue")
+
+    for task in tasks:
+        task_id = task.get('id', '')
+        title = task.get('title', '')
+        status = task.get('status', 'unknown')
+        feature_id = task.get('feature', '-')
+
+        table.add_row(task_id, title, status, feature_id)
+
+    console.print(table)
+    console.print(f"\n[cyan]Total: {len(tasks)} task(s)[/cyan]")
+
+
+@bd.command(name='add')
+@click.argument('title')
+@click.option('--feature', help='Link to feature ID (e.g., feature:auth)')
+@click.option('--description', default='', help='Task description')
+@click.pass_context
+def bd_add(ctx, title, feature, description):
+    """Create a new Beads task"""
+    bridge = ctx.obj['beads']
+
+    if not bridge.is_bd_available():
+        console.print("[red]✗ bd not found. Install Beads first:[/red]")
+        console.print("  https://github.com/steveyegge/beads")
+        sys.exit(1)
+
+    console.print(f"[cyan]Creating Beads task: {title}...[/cyan]")
+
+    task_id = bridge.create_task_for_feature(title, feature or '', description)
+
+    if task_id:
+        console.print(f"[green]✓ Task created: {task_id}[/green]")
+
+        # If feature is specified, link it
+        if feature:
+            sync = ctx.obj['task_sync']
+            success, error = sync.link_task_to_feature(task_id, feature, task_system='beads')
+
+            if success:
+                console.print(f"[green]  Linked to {feature}[/green]")
+            else:
+                console.print(f"[yellow]  Warning: Could not link to feature: {error}[/yellow]")
+    else:
+        console.print("[red]✗ Failed to create task[/red]")
+        sys.exit(1)
+
+
+@bd.command(name='sync')
+@click.pass_context
+def bd_sync(ctx):
+    """Sync Beads tasks to spec-graph"""
+    sync = ctx.obj['task_sync']
+
+    console.print("[cyan]Syncing Beads tasks to spec-graph...[/cyan]")
+
+    # Import Beads tasks
+    count, error = sync.import_beads_tasks()
+
+    if error:
+        console.print(f"[red]✗ Sync failed: {error}[/red]")
+        sys.exit(1)
+
+    console.print(f"[green]✓ Synced {count} Beads task(s) to spec-graph[/green]")
+
+    # Show stats
+    stats = sync.get_stats()
+    beads_stats = stats.get('beads', {})
+
+    console.print(f"[cyan]Total Beads tasks: {beads_stats.get('total', 0)}[/cyan]")
+    console.print(f"[cyan]Linked to features: {beads_stats.get('linked_to_features', 0)}[/cyan]")
+
+
+# Native task management command group
+@cli.group(name='task')
+@click.pass_context
+def task(ctx):
+    """Native JSONL task management"""
+    from src.tasks import TaskManager, TaskSync
+
+    # Initialize managers
+    if 'task_manager' not in ctx.obj:
+        ctx.obj['task_manager'] = TaskManager()
+    if 'task_sync' not in ctx.obj:
+        ctx.obj['task_sync'] = TaskSync(
+            graph_path=str(ctx.obj['graph'].cache.graph_path)
+        )
+
+
+@task.command(name='init')
+@click.option('--path', default='.ai/tasks', help='Tasks directory path')
+@click.pass_context
+def task_init(ctx, path):
+    """Initialize native task system"""
+    from src.tasks import TaskManager
+
+    manager = TaskManager(path)
+
+    console.print(f"[cyan]Initializing native task system at {path}...[/cyan]")
+
+    success, error = manager.init_tasks()
+
+    if success:
+        console.print(f"[green]✓ Task system initialized successfully[/green]")
+        console.print(f"[green]  Directory: {path}[/green]")
+        console.print(f"[green]  JSONL file: {path}/tasks.jsonl[/green]")
+    else:
+        console.print(f"[red]✗ Failed to initialize tasks:[/red]")
+        console.print(f"[red]  {error}[/red]")
+        sys.exit(1)
+
+
+@task.command(name='add')
+@click.argument('title')
+@click.option('--feature', help='Link to feature ID (e.g., feature:auth)')
+@click.option('--description', default='', help='Task description')
+@click.option('--status', default='ready', help='Initial status (default: ready)')
+@click.pass_context
+def task_add(ctx, title, feature, description, status):
+    """Create a new native task"""
+    manager = ctx.obj['task_manager']
+
+    console.print(f"[cyan]Creating task: {title}...[/cyan]")
+
+    task_id = manager.add_task(title, feature=feature, description=description, status=status)
+
+    console.print(f"[green]✓ Task created: {task_id}[/green]")
+
+    if feature:
+        console.print(f"[green]  Linked to {feature}[/green]")
+
+
+@task.command(name='list')
+@click.option('--ready', is_flag=True, help='Show only ready tasks')
+@click.option('--feature', help='Filter by feature ID')
+@click.option('--status', help='Filter by status')
+@click.pass_context
+def task_list(ctx, ready, feature, status):
+    """List native tasks"""
+    manager = ctx.obj['task_manager']
+
+    tasks = manager.list_tasks(feature=feature, status=status, ready_only=ready)
+
+    if not tasks:
+        console.print("[yellow]No tasks found[/yellow]")
+        return
+
+    table = Table(title="Native Tasks", show_header=True, header_style="bold magenta")
+    table.add_column("ID", style="cyan")
+    table.add_column("Title", style="green")
+    table.add_column("Status", style="yellow")
+    table.add_column("Feature", style="blue")
+    table.add_column("Blocks", style="red")
+
+    for task in tasks:
+        task_id = task.get('id', '')
+        title = task.get('title', '')
+        task_status = task.get('status', 'unknown')
+        feature_id = task.get('feature', '-')
+        blocked_by = task.get('blocked_by', [])
+
+        blocks_str = f"{len(blocked_by)} blocker(s)" if blocked_by else "-"
+
+        table.add_row(task_id, title, task_status, feature_id, blocks_str)
+
+    console.print(table)
+    console.print(f"\n[cyan]Total: {len(tasks)} task(s)[/cyan]")
+
+
+@task.command(name='done')
+@click.argument('task_id')
+@click.pass_context
+def task_done(ctx, task_id):
+    """Mark a task as complete"""
+    manager = ctx.obj['task_manager']
+
+    console.print(f"[cyan]Marking task {task_id} as done...[/cyan]")
+
+    success, message = manager.mark_done(task_id)
+
+    if success:
+        console.print(f"[green]✓ {message}[/green]")
+    else:
+        console.print(f"[red]✗ {message}[/red]")
+        sys.exit(1)
+
+
+@task.command(name='ready')
+@click.pass_context
+def task_ready(ctx):
+    """Show all ready tasks (auto-detect tasks with no blockers)"""
+    manager = ctx.obj['task_manager']
+
+    ready_tasks = manager.find_ready()
+
+    if not ready_tasks:
+        console.print("[yellow]No ready tasks found[/yellow]")
+        return
+
+    table = Table(title="Ready Tasks", show_header=True, header_style="bold magenta")
+    table.add_column("ID", style="cyan")
+    table.add_column("Title", style="green")
+    table.add_column("Feature", style="blue")
+
+    for task in ready_tasks:
+        task_id = task.get('id', '')
+        title = task.get('title', '')
+        feature_id = task.get('feature', '-')
+
+        table.add_row(task_id, title, feature_id)
+
+    console.print(table)
+    console.print(f"\n[cyan]Total: {len(ready_tasks)} ready task(s)[/cyan]")
+
+
+@task.command(name='block')
+@click.argument('task_id')
+@click.option('--on', 'blocker_id', required=True, help='Task ID that blocks this task')
+@click.pass_context
+def task_block(ctx, task_id, blocker_id):
+    """Add blocking dependency between tasks"""
+    manager = ctx.obj['task_manager']
+
+    console.print(f"[cyan]Adding dependency: {task_id} blocked by {blocker_id}...[/cyan]")
+
+    success, message = manager.block_task(task_id, blocker_id)
+
+    if success:
+        console.print(f"[green]✓ {message}[/green]")
+    else:
+        console.print(f"[red]✗ {message}[/red]")
+        sys.exit(1)
+
+
+@task.command(name='sync')
+@click.pass_context
+def task_sync(ctx):
+    """Sync native tasks to spec-graph"""
+    sync = ctx.obj['task_sync']
+
+    console.print("[cyan]Syncing native tasks to spec-graph...[/cyan]")
+
+    # Import native tasks
+    count, error = sync.import_native_tasks()
+
+    if error:
+        console.print(f"[red]✗ Sync failed: {error}[/red]")
+        sys.exit(1)
+
+    console.print(f"[green]✓ Synced {count} native task(s) to spec-graph[/green]")
+
+    # Show stats
+    stats = sync.get_stats()
+    task_stats = stats.get('task', {})
+
+    console.print(f"[cyan]Total native tasks: {task_stats.get('total', 0)}[/cyan]")
+    console.print(f"[cyan]Linked to features: {task_stats.get('linked_to_features', 0)}[/cyan]")
+
+
 if __name__ == '__main__':
     cli()
