@@ -2,26 +2,26 @@
   "meta": {
     "version": "1.0.0",
     "phases": {
-      "I": {
-        "feature:auth": {
-          "status": "in-progress"
+      "pending": {
+        "feature:schema-agnostic-know": {
+          "status": "incomplete"
         },
-        "feature:database": {
-          "status": "in-progress"
-        }
-      },
-      "II": {
-        "feature:api": {
-          "status": "planned"
+        "feature:graph-embeddings": {
+          "status": "incomplete"
         },
-        "feature:ui": {
+        "feature:beads-integration": {
           "status": "planned"
         }
-      },
-      "done": {
-        "feature:test-phase-feature": {
-          "status": "complete"
-        }
+      }
+    },
+    "feature_specs": {
+      "graph-embeddings": {
+        "status": "planned",
+        "use_cases": [],
+        "testing": {},
+        "security": [],
+        "monitoring": [],
+        "performance": {}
       }
     },
     "phases_metadata": {
@@ -106,25 +106,17 @@
         "name": "LLM Workflows",
         "description": "AI-assisted graph operations"
       },
-      "test-phase-feature": {
-        "name": "Test Phase Feature",
-        "description": "Test feature for phase tracking functionality"
+      "schema-agnostic-know": {
+        "name": "Schema-Agnostic Know",
+        "description": "Enable know to validate against custom LLM-defined schemas instead of hardcoded dependency rules"
       },
-      "auth": {
-        "name": "User Authentication",
-        "description": "Secure login and session management"
+      "graph-embeddings": {
+        "name": "Graph Embeddings",
+        "description": "Semantic search layer over spec-graph using vector embeddings for natural language queries and auto-suggestions"
       },
-      "database": {
-        "name": "Database Schema",
-        "description": "Core data models and migrations"
-      },
-      "api": {
-        "name": "REST API",
-        "description": "RESTful API endpoints"
-      },
-      "ui": {
-        "name": "User Interface",
-        "description": "Frontend components and views"
+      "beads-integration": {
+        "name": "Beads Integration",
+        "description": "Seamless integration with Beads task management system, with native JSONL alternative for users who prefer built-in task tracking"
       }
     },
     "component": {
@@ -147,6 +139,84 @@
       "llm-integration": {
         "name": "LLM Integration",
         "description": "LLM provider and workflow management"
+      },
+      "schema-loader": {
+        "name": "Schema Loader",
+        "description": "Loads and normalizes schemas from both new and legacy formats"
+      },
+      "field-validator": {
+        "name": "Field Validator",
+        "description": "Validates entity fields against schema requirements (required/optional fields)"
+      },
+      "schema-detector": {
+        "name": "Schema Detector",
+        "description": "Auto-detects schema path from graph metadata or uses legacy auto-detection"
+      },
+      "embedding-generator": {
+        "name": "Embedding Generator",
+        "description": "Generates vector embeddings from graph node text using sentence-transformers MiniLM model"
+      },
+      "similarity-search": {
+        "name": "Similarity Search",
+        "description": "Performs cosine similarity lookups against embedded vectors to find semantically related nodes"
+      },
+      "auto-embed-hook": {
+        "name": "Auto Embed Hook",
+        "description": "Triggers incremental embedding regeneration when graph is modified via add/link/unlink commands"
+      },
+      "beads-bridge": {
+        "name": "Beads Bridge",
+        "description": "Integration layer between know CLI and Beads bd commands, handling initialization, passthrough, and JSONL parsing"
+      },
+      "task-manager": {
+        "name": "Task Manager",
+        "description": "Native JSONL-based task system with hash IDs, dependency tracking, and auto-ready detection as Beads alternative"
+      },
+      "task-sync": {
+        "name": "Task Sync",
+        "description": "Bidirectional sync engine between Beads/native tasks and spec-graph feature entities"
+      },
+      "task-cli": {
+        "name": "Task CLI",
+        "description": "CLI commands for task management: know beads/task subcommands with feature linking"
+      }
+    },
+    "action": {
+      "load-custom-schema": {
+        "name": "Load Custom Schema",
+        "description": "Load and normalize schema from file (new or legacy format)"
+      },
+      "validate-entity-fields": {
+        "name": "Validate Entity Fields",
+        "description": "Validate entity has required fields and no unknown fields per schema"
+      },
+      "detect-schema-path": {
+        "name": "Detect Schema Path",
+        "description": "Auto-detect schema path from graph metadata or fall back to legacy rules"
+      },
+      "embed-graph": {
+        "name": "Embed Graph",
+        "description": "Generate vector embeddings for all graph nodes and store in embeddings file"
+      },
+      "semantic-search": {
+        "name": "Semantic Search",
+        "description": "Query graph nodes using natural language and return semantically similar results"
+      },
+      "suggest-dependencies": {
+        "name": "Suggest Dependencies",
+        "description": "Recommend potential dependencies for a node based on semantic similarity"
+      },
+      "initialize-beads": {
+        "name": "Initialize Beads",
+        "description": "Set up Beads integration in .ai/beads/ with symlink to .beads for bd CLI compatibility"
+      },
+      "sync-tasks": {
+        "name": "Sync Tasks",
+        "description": "Bidirectionally sync tasks between Beads/native system and spec-graph features"
+      },
+      "manage-tasks": {
+        "name": "Manage Tasks",
+        "description": "Create, list, update, and complete tasks with feature linking and auto-ready detection"
       }
     }
   },
@@ -165,23 +235,29 @@
     },
     "objective:query-graph": {
       "depends_on": [
-        "feature:cli-operations"
+        "feature:cli-operations",
+        "feature:schema-agnostic-know",
+        "feature:graph-embeddings"
       ]
     },
     "objective:manage-specs": {
       "depends_on": [
         "feature:cli-operations",
-        "feature:graph-validation"
+        "feature:graph-validation",
+        "feature:schema-agnostic-know",
+        "feature:llm-workflows"
       ]
     },
     "objective:analyze-gaps": {
       "depends_on": [
-        "feature:gap-detection"
+        "feature:gap-detection",
+        "feature:schema-agnostic-know"
       ]
     },
     "objective:generate-docs": {
       "depends_on": [
-        "feature:spec-generation"
+        "feature:spec-generation",
+        "feature:schema-agnostic-know"
       ]
     },
     "feature:cli-operations": {
@@ -208,6 +284,75 @@
     "feature:llm-workflows": {
       "depends_on": [
         "component:llm-integration"
+      ]
+    },
+    "feature:schema-agnostic-know": {
+      "depends_on": [
+        "action:load-custom-schema",
+        "action:validate-entity-fields",
+        "action:detect-schema-path"
+      ]
+    },
+    "action:load-custom-schema": {
+      "depends_on": [
+        "component:schema-loader"
+      ]
+    },
+    "action:validate-entity-fields": {
+      "depends_on": [
+        "component:field-validator"
+      ]
+    },
+    "action:detect-schema-path": {
+      "depends_on": [
+        "component:schema-detector"
+      ]
+    },
+    "feature:graph-embeddings": {
+      "depends_on": [
+        "action:embed-graph",
+        "action:semantic-search",
+        "action:suggest-dependencies"
+      ]
+    },
+    "action:embed-graph": {
+      "depends_on": [
+        "component:embedding-generator",
+        "component:auto-embed-hook"
+      ]
+    },
+    "action:semantic-search": {
+      "depends_on": [
+        "component:similarity-search",
+        "component:embedding-generator"
+      ]
+    },
+    "action:suggest-dependencies": {
+      "depends_on": [
+        "component:similarity-search"
+      ]
+    },
+    "feature:beads-integration": {
+      "depends_on": [
+        "action:initialize-beads",
+        "action:sync-tasks",
+        "action:manage-tasks"
+      ]
+    },
+    "action:initialize-beads": {
+      "depends_on": [
+        "component:beads-bridge"
+      ]
+    },
+    "action:sync-tasks": {
+      "depends_on": [
+        "component:task-sync"
+      ]
+    },
+    "action:manage-tasks": {
+      "depends_on": [
+        "component:task-manager",
+        "component:task-cli"
       ]
     }
   }

@@ -1,0 +1,110 @@
+flowchart TD
+    user_ai_assistant["AI Assistant"]
+    class user_ai_assistant userClass
+    user_developer["Software Developer"]
+    class user_developer userClass
+    objective_query_graph["Query Graph"]
+    class objective_query_graph objectiveClass
+    objective_manage_specs["Manage Specifications"]
+    class objective_manage_specs objectiveClass
+    objective_analyze_gaps["Analyze Gaps"]
+    class objective_analyze_gaps objectiveClass
+    objective_generate_docs["Generate Documentation"]
+    class objective_generate_docs objectiveClass
+    feature_cli_operations["CLI Operations"]
+    class feature_cli_operations featureClass
+    feature_graph_validation["Graph Validation"]
+    class feature_graph_validation featureClass
+    feature_gap_detection["Gap Detection"]
+    class feature_gap_detection featureClass
+    feature_spec_generation["Spec Generation"]
+    class feature_spec_generation featureClass
+    feature_llm_workflows["LLM Workflows"]
+    class feature_llm_workflows featureClass
+    feature_test_phase_feature["Test Phase Feature"]
+    class feature_test_phase_feature featureClass
+    feature_auth["User Authentication"]
+    class feature_auth featureClass
+    feature_database["Database Schema"]
+    class feature_database featureClass
+    feature_api["REST API"]
+    class feature_api featureClass
+    feature_ui["User Interface"]
+    class feature_ui featureClass
+    feature_schema_agnostic_know["Schema-Agnostic Know"]
+    class feature_schema_agnostic_know featureClass
+    feature_graph_embeddings["Graph Embeddings"]
+    class feature_graph_embeddings featureClass
+    component_cli_commands["CLI Commands"]
+    class component_cli_commands componentClass
+    component_graph_operations["Graph Operations"]
+    class component_graph_operations componentClass
+    component_validation_engine["Validation Engine"]
+    class component_validation_engine componentClass
+    component_spec_templates["Spec Templates"]
+    class component_spec_templates componentClass
+    component_llm_integration["LLM Integration"]
+    class component_llm_integration componentClass
+    component_schema_loader["Schema Loader"]
+    class component_schema_loader componentClass
+    component_field_validator["Field Validator"]
+    class component_field_validator componentClass
+    component_schema_detector["Schema Detector"]
+    class component_schema_detector componentClass
+    component_embedding_generator["Embedding Generator"]
+    class component_embedding_generator componentClass
+    component_similarity_search["Similarity Search"]
+    class component_similarity_search componentClass
+    component_auto_embed_hook["Auto Embed Hook"]
+    class component_auto_embed_hook componentClass
+    action_load_custom_schema["Load Custom Schema"]
+    class action_load_custom_schema actionClass
+    action_validate_entity_fields["Validate Entity Fields"]
+    class action_validate_entity_fields actionClass
+    action_detect_schema_path["Detect Schema Path"]
+    class action_detect_schema_path actionClass
+    action_embed_graph["Embed Graph"]
+    class action_embed_graph actionClass
+    action_semantic_search["Semantic Search"]
+    class action_semantic_search actionClass
+    action_suggest_dependencies["Suggest Dependencies"]
+    class action_suggest_dependencies actionClass
+    user_ai_assistant --> objective_query_graph
+    user_ai_assistant --> objective_analyze_gaps
+    user_developer --> objective_manage_specs
+    user_developer --> objective_generate_docs
+    objective_query_graph --> feature_cli_operations
+    objective_manage_specs --> feature_cli_operations
+    objective_manage_specs --> feature_graph_validation
+    objective_analyze_gaps --> feature_gap_detection
+    objective_generate_docs --> feature_spec_generation
+    feature_cli_operations --> component_cli_commands
+    feature_cli_operations --> component_graph_operations
+    feature_graph_validation --> component_validation_engine
+    feature_gap_detection --> component_graph_operations
+    feature_spec_generation --> component_spec_templates
+    feature_llm_workflows --> component_llm_integration
+    feature_schema_agnostic_know --> action_load_custom_schema
+    feature_schema_agnostic_know --> action_validate_entity_fields
+    feature_schema_agnostic_know --> action_detect_schema_path
+    feature_graph_embeddings --> action_embed_graph
+    feature_graph_embeddings --> action_semantic_search
+    feature_graph_embeddings --> action_suggest_dependencies
+    action_load_custom_schema --> component_schema_loader
+    action_validate_entity_fields --> component_field_validator
+    action_detect_schema_path --> component_schema_detector
+    action_embed_graph --> component_embedding_generator
+    action_embed_graph --> component_auto_embed_hook
+    action_semantic_search --> component_similarity_search
+    action_semantic_search --> component_embedding_generator
+    action_suggest_dependencies --> component_similarity_search
+
+    %% Styling
+    classDef featureClass fill:#e1f5ff,stroke:#0288d1,stroke-width:2px,color:#000
+    classDef actionClass fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#000
+    classDef componentClass fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+    classDef userClass fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#000
+    classDef objectiveClass fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    classDef requirementClass fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000
+    classDef interfaceClass fill:#e0f2f1,stroke:#00695c,stroke-width:2px,color:#000
+    classDef operationClass fill:#f1f8e9,stroke:#558b2f,stroke-width:2px,color:#000

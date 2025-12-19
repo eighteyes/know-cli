@@ -26,9 +26,10 @@ Execute tests and validate results - this is hands-on acceptance testing:
 
 **Prerequisites**
 - Activate the know-tool skill for graph operations
-- Feature must have completed `/know:build` (status: "complete" or "review-ready")
-- `.ai/know/features/<feature>/QA_STEPS.md` must exist
+- Feature directory must exist at `.ai/know/features/<feature>/`
+- At minimum, `overview.md` should exist with feature requirements
 - **Application must be running and ready to test**
+- Note: If `QA_STEPS.md` doesn't exist, it will be generated automatically
 
 **Usage**
 
@@ -42,7 +43,19 @@ Execute tests and validate results - this is hands-on acceptance testing:
 
 **Steps**:
 1. Verify feature directory exists at `.ai/know/features/<feature>/`
-2. Check that `QA_STEPS.md` exists (if not, inform user to run `/know:build` Phase 7 first)
+2. Check if `QA_STEPS.md` exists:
+   - **If missing**: Generate it now before proceeding
+   - Read `overview.md`, `adrs.md`, `implementation.md` (if they exist)
+   - **CRITICAL: Human-only steps**:
+     - Include ONLY tests requiring human judgment (UX, visual, usability, edge cases)
+     - EXCLUDE machine-testable items (unit tests, API responses, function outputs)
+     - Focus on user experience, visual correctness, workflow completeness
+   - Create `.ai/know/features/<feature>/QA_STEPS.md` with:
+     - Objective (user perspective)
+     - Prerequisites (setup needed)
+     - Numbered test steps with expected outcomes (human evaluation required)
+     - Acceptance criteria (clear pass/fail from user perspective)
+   - Use checkbox format for tracking
 3. Check spec-graph status (using **haiku agent**):
    - `know -g .ai/spec-graph.json show feature:<name>`
    - Verify status is "complete", "review-ready", or "in-progress"
@@ -351,11 +364,14 @@ Assistant: Created review-results.md and review-feedback.md
 
 ## Notes
 
-- **Active testing examples**:
-  - CLI test: Run `know phases` and verify output format
-  - File test: Check that `.ai/know/feature/summary.md` was created
-  - Data test: Execute Python script and validate JSON output
-  - UI test: Ask user "Does the login button appear blue?"
+- **QA_STEPS.md scope**: Contains ONLY human-testable items (UX, visual, usability)
+  - ✅ Include: "Does the login form appear centered?", "Is the error message user-friendly?"
+  - ❌ Exclude: "Does the API return 200?", "Is the token valid?"
+  - Machine-testable items belong in automated test suites, not QA_STEPS.md
+- **Review process can still help automate**:
+  - During the review, AI can run CLI commands, check files, execute scripts
+  - This helps speed up the review even though QA_STEPS only contains human items
+  - Example: If QA step is "Check that summary.md was created", AI can verify file exists
 - Use AskUserQuestion tool for all yes/no and multi-choice prompts
 - Keep language user-facing (not technical) in QA_STEPS.md
 - Record actual vs expected for all failures
@@ -367,4 +383,4 @@ Assistant: Created review-results.md and review-feedback.md
   - Feature remains in worktree until `/know:done` is run
 
 ---
-`r1`
+`r2`

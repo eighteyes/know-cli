@@ -2,7 +2,18 @@
   "permissions": {
     "allow": [
       "Bash(then echo \"✓ Mentions using skill\" else echo \"⚠ May not explicitly mention using skill in workflow\" fi echo done)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(cat:*)",
+      "Bash(chmod:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat(know-commands): add versioning, graph population, and spec enrichment plan\n\n- Add r1/r2 version footers to all /know commands\n- Add pre-commit hook to enforce version increment on changes\n- Update commands with graph population and validation instructions\n- Add meta.feature_specs documentation requirements\n- Add clean git state check to /know:build prerequisites\n- Create spec-generation-enrichment plan for rich feature specs\n- Fix know command path from ./know/know to know\nEOF\n)\")",
+      "Bash(fd:*)",
+      "Skill(know-tool)",
+      "Bash(know --help:*)",
+      "Bash(rg:*)",
+      "Bash(know -g .ai/spec-graph.json add feature:*)",
+      "Bash(know -g .ai/spec-graph.json add component:*)",
+      "Bash(know -g:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

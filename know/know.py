@@ -276,6 +276,118 @@ def stats(ctx):
 
 
 @cli.command()
+@click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
+@click.pass_context
+def coverage(ctx, json_output):
+    """Analyze graph coverage - what % of entities are connected to root users"""
+    from collections import defaultdict, deque
+
+    graph_data = ctx.obj['graph'].load()
+    graph = graph_data.get('graph', {})
+    entities_dict = graph_data.get('entities', {})
+
+    # Find root entities (users)
+    roots = []
+    for entity_type, entities_of_type in entities_dict.items():
+        if entity_type == 'user':
+            for entity_id in entities_of_type:
+                roots.append(f"user:{entity_id}")
+
+    # If no users, find entities that nothing depends on
+    if not roots:
+        all_entities_set = set()
+        for entity_type, entities_of_type in entities_dict.items():
+            for entity_id in entities_of_type:
+                all_entities_set.add(f"{entity_type}:{entity_id}")
+
+        depended_on = set()
+        for entity_id, data in graph.items():
+            for dep in data.get('depends_on', []):
+                depended_on.add(dep)
+
+        roots = sorted(all_entities_set - depended_on)
+
+    # BFS to find all entities reachable from roots
+    reachable = set()
+    queue = deque(roots)
+
+    while queue:
+        current = queue.popleft()
+        if current in reachable:
+            continue
+        reachable.add(current)
+
+        # Add all dependencies to queue
+        if current in graph:
+            for dep in graph[current].get('depends_on', []):
+                if dep not in reachable:
+                    queue.append(dep)
+
+    # Get all entities
+    all_entities = []
+    for entity_type, entities_of_type in entities_dict.items():
+        for entity_id in entities_of_type:
+            all_entities.append(f"{entity_type}:{entity_id}")
+
+    all_entities_set = set(all_entities)
+    entities_in_graph = set(graph.keys())
+
+    # Calculate metrics
+    total_entities = len(all_entities)
+    connected_entities = len(reachable)
+    entities_with_deps = len(entities_in_graph)
+    floating_entities = all_entities_set - entities_in_graph
+    disconnected_chains = entities_in_graph - reachable
+
+    coverage_pct = (connected_entities / total_entities * 100) if total_entities > 0 else 0
+
+    results = {
+        'total_entities': total_entities,
+        'connected_to_roots': connected_entities,
+        'coverage_percentage': round(coverage_pct, 1),
+        'entities_with_dependencies': entities_with_deps,
+        'floating_entities': sorted([e for e in floating_entities]),
+        'disconnected_chains': sorted([e for e in disconnected_chains]),
+        'roots': sorted(roots)
+    }
+
+    if json_output:
+        console.print(json.dumps(results, indent=2))
+    else:
+        # Pretty print
+        graph_path = ctx.obj['graph'].cache.graph_path if hasattr(ctx.obj['graph'], 'cache') else 'spec-graph.json'
+        console.print(f"\n{'='*60}")
+        console.print(f"[bold cyan]Graph Coverage Report:[/bold cyan] {graph_path}")
+        console.print(f"{'='*60}\n")
+
+        console.print(f"[bold]Roots (users):[/bold] {len(roots)}")
+        for root in sorted(roots):
+            console.print(f"  • {root}")
+
+        console.print(f"\n[bold]Overall Metrics:[/bold]")
+        console.print(f"  Total entities:           {total_entities}")
+        console.print(f"  Connected to roots:       {connected_entities}")
+        color = 'green' if coverage_pct >= 80 else 'yellow' if coverage_pct >= 50 else 'red'
+        console.print(f"  Coverage percentage:      [bold {color}]{coverage_pct:.1f}%[/bold {color}]")
+
+        console.print(f"\n[bold]Disconnected Analysis:[/bold]")
+        console.print(f"  Entities with no deps:    {len(floating_entities)}")
+        console.print(f"  Disconnected chains:      {len(disconnected_chains)}")
+
+        if floating_entities:
+            console.print(f"\n  [dim]Floating entities (no dependencies defined):[/dim]")
+            for entity in sorted(floating_entities):
+                console.print(f"    • {entity}")
+
+        if disconnected_chains:
+            console.print(f"\n  [yellow]Disconnected chains (have deps but not reachable from roots):[/yellow]")
+            for entity in sorted(disconnected_chains):
+                console.print(f"    • {entity}")
+
+        console.print(f"\n{'='*60}\n")
+
+
+@cli.command()
 @click.argument('entity_type')
 @click.argument('entity_key')
 @click.argument('data', required=False)
@@ -1583,9 +1695,16 @@ def diff(graph1, graph2, verbose, format):
         sys.exit(1)
 
 
-@cli.command()
+@cli.group()
 @click.pass_context
 def phases(ctx):
+    """Manage project phases and entity assignments"""
+    pass
+
+
+@phases.command(name='list')
+@click.pass_context
+def phases_list(ctx):
     """Show all phases with their entities grouped by phase"""
     import re
     from pathlib import Path
@@ -1720,6 +1839,161 @@ def phases(ctx):
     else:
         console.print(f"[bold]Total: {total_features} features[/bold]")
     console.print(f"[dim]Legend: ✅ completed  🔄 in-progress  📋 planned  ⚪ no status[/dim]")
+
+
+@phases.command(name='add')
+@click.argument('phase_id')
+@click.argument('entity_id')
+@click.option('--status', '-s', default='planned', help='Entity status (planned, in-progress, complete, etc.)')
+@click.pass_context
+def phases_add(ctx, phase_id, entity_id, status):
+    """Add an entity to a phase"""
+    graph_data = ctx.obj['graph'].load()
+
+    # Initialize meta.phases if it doesn't exist
+    if 'meta' not in graph_data:
+        graph_data['meta'] = {}
+    if 'phases' not in graph_data['meta']:
+        graph_data['meta']['phases'] = {}
+
+    # Initialize phase if it doesn't exist
+    if phase_id not in graph_data['meta']['phases']:
+        graph_data['meta']['phases'][phase_id] = {}
+
+    # Check if entity already exists in another phase
+    current_phase = None
+    for pid, entities in graph_data['meta']['phases'].items():
+        if entity_id in entities:
+            current_phase = pid
+            break
+
+    if current_phase:
+        console.print(f"[yellow]⚠ Entity '{entity_id}' already in phase '{current_phase}'[/yellow]")
+        console.print(f"[yellow]  Use 'phases move' to move between phases[/yellow]")
+        sys.exit(1)
+
+    # Add entity to phase
+    graph_data['meta']['phases'][phase_id][entity_id] = {'status': status}
+
+    # Save graph
+    if ctx.obj['graph'].save_graph(graph_data):
+        console.print(f"[green]✓ Added '{entity_id}' to phase '{phase_id}' with status '{status}'[/green]")
+    else:
+        console.print(f"[red]✗ Failed to save graph[/red]")
+        sys.exit(1)
+
+
+@phases.command(name='move')
+@click.argument('entity_id')
+@click.argument('phase_id')
+@click.option('--status', '-s', default=None, help='Update status (optional)')
+@click.pass_context
+def phases_move(ctx, entity_id, phase_id, status):
+    """Move an entity to a different phase"""
+    graph_data = ctx.obj['graph'].load()
+
+    if 'meta' not in graph_data or 'phases' not in graph_data['meta']:
+        console.print("[red]✗ No phases defined in graph[/red]")
+        sys.exit(1)
+
+    # Find current phase
+    current_phase = None
+    current_status = None
+    for pid, entities in graph_data['meta']['phases'].items():
+        if entity_id in entities:
+            current_phase = pid
+            entity_meta = entities[entity_id]
+            current_status = entity_meta.get('status', 'planned') if isinstance(entity_meta, dict) else entity_meta
+            break
+
+    if not current_phase:
+        console.print(f"[yellow]⚠ Entity '{entity_id}' not found in any phase[/yellow]")
+        console.print(f"[yellow]  Use 'phases add' to add it first[/yellow]")
+        sys.exit(1)
+
+    # Remove from current phase
+    del graph_data['meta']['phases'][current_phase][entity_id]
+
+    # Initialize target phase if it doesn't exist
+    if phase_id not in graph_data['meta']['phases']:
+        graph_data['meta']['phases'][phase_id] = {}
+
+    # Add to new phase with updated or preserved status
+    new_status = status if status else current_status
+    graph_data['meta']['phases'][phase_id][entity_id] = {'status': new_status}
+
+    # Save graph
+    if ctx.obj['graph'].save_graph(graph_data):
+        console.print(f"[green]✓ Moved '{entity_id}' from '{current_phase}' to '{phase_id}'[/green]")
+        if status:
+            console.print(f"[green]  Status updated to '{new_status}'[/green]")
+    else:
+        console.print(f"[red]✗ Failed to save graph[/red]")
+        sys.exit(1)
+
+
+@phases.command(name='status')
+@click.argument('entity_id')
+@click.argument('status_value')
+@click.pass_context
+def phases_status(ctx, entity_id, status_value):
+    """Update the status of an entity in its current phase"""
+    graph_data = ctx.obj['graph'].load()
+
+    if 'meta' not in graph_data or 'phases' not in graph_data['meta']:
+        console.print("[red]✗ No phases defined in graph[/red]")
+        sys.exit(1)
+
+    # Find entity in phases
+    found = False
+    for phase_id, entities in graph_data['meta']['phases'].items():
+        if entity_id in entities:
+            graph_data['meta']['phases'][phase_id][entity_id] = {'status': status_value}
+            found = True
+
+            if ctx.obj['graph'].save_graph(graph_data):
+                console.print(f"[green]✓ Updated '{entity_id}' status to '{status_value}' in phase '{phase_id}'[/green]")
+            else:
+                console.print(f"[red]✗ Failed to save graph[/red]")
+                sys.exit(1)
+            break
+
+    if not found:
+        console.print(f"[yellow]⚠ Entity '{entity_id}' not found in any phase[/yellow]")
+        console.print(f"[yellow]  Use 'phases add' to add it first[/yellow]")
+        sys.exit(1)
+
+
+@phases.command(name='remove')
+@click.argument('entity_id')
+@click.pass_context
+def phases_remove(ctx, entity_id):
+    """Remove an entity from all phases"""
+    graph_data = ctx.obj['graph'].load()
+
+    if 'meta' not in graph_data or 'phases' not in graph_data['meta']:
+        console.print("[red]✗ No phases defined in graph[/red]")
+        sys.exit(1)
+
+    # Find and remove entity
+    removed = False
+    removed_from = None
+    for phase_id, entities in graph_data['meta']['phases'].items():
+        if entity_id in entities:
+            del graph_data['meta']['phases'][phase_id][entity_id]
+            removed = True
+            removed_from = phase_id
+            break
+
+    if removed:
+        if ctx.obj['graph'].save_graph(graph_data):
+            console.print(f"[green]✓ Removed '{entity_id}' from phase '{removed_from}'[/green]")
+        else:
+            console.print(f"[red]✗ Failed to save graph[/red]")
+            sys.exit(1)
+    else:
+        console.print(f"[yellow]⚠ Entity '{entity_id}' not found in any phase[/yellow]")
+        sys.exit(1)
 
 
 if __name__ == '__main__':

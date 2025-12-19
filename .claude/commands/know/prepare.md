@@ -51,6 +51,13 @@ The graph is the **SOURCE OF TRUTH** - build it first, then derive documentation
    - Create user, objective, feature, component entities
    - Map dependencies: user → objective → feature → component
    - Use default spec-graph rules (auto-detected)
+   - **Assign features to phases in `meta.phases`**:
+     - Analyze feature maturity: Is it implemented? Partially done? Planned?
+     - Use `pending` for unimplemented/planned features
+     - Use `I`, `II`, `III` for prioritized implementation phases
+     - Use `done` for fully implemented features
+     - Set appropriate status: `incomplete`, `in-progress`, `review-ready`, `complete`
+     - Example: `"meta.phases.done.feature:auth": {"status": "complete"}`
 
 4. **STEP 2: Populate code-graph.json SECOND**:
    - **CRITICAL**: Use `-g .ai/code-graph.json` flag (auto-detects code rules)
@@ -157,6 +164,12 @@ The graph is the **SOURCE OF TRUTH** - build it first, then derive documentation
    - Display project.md summary
    - Confirm all files written successfully
 
+11. **Validate graph coverage**:
+   - Run `/know:connect` to check spec-graph coverage
+   - Ensure all entities are connected to root users
+   - If coverage < 100%, connect disconnected chains
+   - Guide user on next steps
+
 **Example Intelligence Gathering**
 
 ```bash
@@ -196,6 +209,7 @@ fd -g "*test*" -t d                        # Test directories
 - Focus on actionable, specific information over generic templates
 - Cross-reference graph entities with actual codebase structure
 - Always validate the graph after populating it
+- **Run `/know:connect` at the end** to ensure graph coverage and connectivity
 
 ---
-`r1`
+`r2`
