@@ -56,6 +56,42 @@ know task block <task-id> --on <blocker-id>          # Add blocking dependency
 know task sync                                       # Sync to spec-graph
 ```
 
+**Enhanced `know init` Command** (Added during review)
+```bash
+know init  # Now includes task system detection and setup
+```
+
+**Automatic Task System Setup:**
+- Detects if Beads CLI (`bd`) is installed
+- If bd found: Prompts to initialize Beads integration
+- If user declines Beads: Offers native JSONL system
+- If bd not found: Offers native system with install link
+- If user skips: Shows commands to run later manually
+
+**User Experience:**
+```bash
+$ know init
+
+Initializing know workflow...
+✓ Copied slash commands
+✓ Installed know-tool skill
+✓ Created .ai/know/
+
+Task Management Setup
+✓ Detected Beads CLI (bd) installed
+
+Beads task management is available.
+Would you like to initialize Beads integration?
+Initialize Beads? [y/n/skip]: y
+
+✓ Beads initialized at .ai/beads
+  Symlink: .beads → .ai/beads
+
+✓ Initialization complete!
+```
+
+This enhancement ensures seamless onboarding - users discover and set up task management automatically during project initialization.
+
 ### 3. Architecture Documentation
 
 **Created Documents:**
