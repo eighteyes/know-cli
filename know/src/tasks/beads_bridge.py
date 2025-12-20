@@ -35,7 +35,9 @@ class BeadsBridge:
         """
         self.beads_path = Path(beads_path)
         self.symlink_path = Path(".beads")
-        self.issues_jsonl = self.beads_path / "issues.jsonl"
+        # bd actually uses a hidden .beads directory for the database
+        self.beads_db_path = Path(".ai/.beads")
+        self.issues_jsonl = self.beads_db_path / "issues.jsonl"
 
     def is_bd_available(self) -> bool:
         """
@@ -175,8 +177,8 @@ class BeadsBridge:
             print("Error: bd not available")
             return None
 
-        # Create task via bd add command
-        args = ['add', title]
+        # Create task via bd create command
+        args = ['create', title]
         if description:
             args.extend(['--description', description])
 
@@ -187,23 +189,30 @@ class BeadsBridge:
             return None
 
         # Parse output to extract task ID
-        # bd add usually returns the task ID in stdout
+        # bd create returns the task ID in stdout (format: "Created issue: .ai-xxxx")
         output = result.get('output', '').strip()
 
-        # Extract ID from output (format may vary, but usually "Created bd-xxxx")
-        # For now, parse the last token that starts with "bd-"
-        tokens = output.split()
-        for token in reversed(tokens):
-            if token.startswith('bd-'):
-                # Clean up any trailing punctuation
-                task_id = token.rstrip('.,!?')
-                return task_id
+        # Extract ID from "Created issue: .PREFIX-HASH" format
+        import re
+        match = re.search(r'Created issue:\s+(\S+)', output)
+        if match:
+            task_id = match.group(1)
+            return task_id
 
-        # If we can't parse the ID, try reading the JSONL to find the latest task
-        tasks = self.parse_beads_jsonl()
-        if tasks:
-            # Return the last task ID (most recently created)
-            return tasks[-1].get('id')
+        # Fallback: try reading the JSONL to find the latest task
+        # Read from .ai/.beads/issues.jsonl (bd uses hidden .beads dir)
+        beads_dir = Path('.ai/.beads')
+        issues_file = beads_dir / 'issues.jsonl'
+
+        if issues_file.exists():
+            try:
+                with open(issues_file, 'r') as f:
+                    lines = f.readlines()
+                    if lines:
+                        last_issue = json.loads(lines[-1])
+                        return last_issue.get('id')
+            except (OSError, json.JSONDecodeError):
+                pass
 
         return None
 
