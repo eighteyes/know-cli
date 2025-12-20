@@ -1351,6 +1351,7 @@ def init(project_dir):
     4. Creates .ai/know/ directory structure
     5. Initializes project.md with template
     6. Creates initial graphs if they don't exist
+    7. Detects and optionally sets up task management (Beads or native)
     """
     project_path = Path(project_dir).resolve()
 
@@ -1446,11 +1447,92 @@ def init(project_dir):
     else:
         console.print(f"[dim]  code-graph.json not found (optional)[/dim]")
 
+    # 6. Task System Setup
+    console.print(f"\n[bold cyan]Task Management Setup[/bold cyan]")
+
+    from src.tasks import BeadsBridge, TaskManager
+
+    # Detect if bd CLI is available
+    bridge = BeadsBridge()
+    bd_available = bridge.is_bd_available()
+
+    if bd_available:
+        console.print(f"[green]✓[/green] Detected Beads CLI (bd) installed")
+        console.print(f"\n[cyan]Beads task management is available.[/cyan]")
+        console.print(f"Would you like to initialize Beads integration?")
+
+        # Simple yes/no prompt
+        response = click.prompt(
+            "Initialize Beads? [y/n/skip]",
+            type=click.Choice(['y', 'n', 'skip'], case_sensitive=False),
+            default='y'
+        )
+
+        if response == 'y':
+            # Initialize Beads
+            beads_path = project_path / ".ai" / "beads"
+            bridge_init = BeadsBridge(str(beads_path))
+            success, error = bridge_init.init_beads(stealth=False)
+
+            if success:
+                console.print(f"[green]✓[/green] Beads initialized at {beads_path}")
+                console.print(f"[green]  Symlink: .beads → {beads_path}[/green]")
+            else:
+                console.print(f"[red]✗ Failed to initialize Beads: {error}[/red]")
+        elif response == 'n':
+            # Offer native task system
+            console.print(f"\n[cyan]Would you like to use the native JSONL task system instead?[/cyan]")
+            native_response = click.prompt(
+                "Initialize native tasks? [y/n]",
+                type=click.Choice(['y', 'n'], case_sensitive=False),
+                default='y'
+            )
+
+            if native_response == 'y':
+                tasks_path = project_path / ".ai" / "tasks"
+                manager = TaskManager(str(tasks_path))
+                success, error = manager.init_tasks()
+
+                if success:
+                    console.print(f"[green]✓[/green] Native task system initialized at {tasks_path}")
+                else:
+                    console.print(f"[red]✗ Failed to initialize tasks: {error}[/red]")
+            else:
+                console.print(f"[dim]  Skipping task system setup[/dim]")
+        else:  # skip
+            console.print(f"[dim]  Skipping task system setup[/dim]")
+            console.print(f"[dim]  Run 'know bd init' or 'know task init' later to set up tasks[/dim]")
+    else:
+        # bd not available, offer native or skip
+        console.print(f"[yellow]⚠[/yellow] Beads CLI (bd) not detected")
+        console.print(f"\n[cyan]Would you like to use the native JSONL task system?[/cyan]")
+
+        response = click.prompt(
+            "Initialize native tasks? [y/n]",
+            type=click.Choice(['y', 'n'], case_sensitive=False),
+            default='y'
+        )
+
+        if response == 'y':
+            tasks_path = project_path / ".ai" / "tasks"
+            manager = TaskManager(str(tasks_path))
+            success, error = manager.init_tasks()
+
+            if success:
+                console.print(f"[green]✓[/green] Native task system initialized at {tasks_path}")
+            else:
+                console.print(f"[red]✗ Failed to initialize tasks: {error}[/red]")
+        else:
+            console.print(f"[dim]  Skipping task system setup[/dim]")
+            console.print(f"[dim]  Install Beads: https://github.com/steveyegge/beads[/dim]")
+            console.print(f"[dim]  Or run 'know task init' later for native tasks[/dim]")
+
     console.print(f"\n[bold green]✓ Initialization complete![/bold green]")
     console.print(f"\n[dim]Next steps:[/dim]")
     console.print(f"  • Edit {project_md} to add project context")
-    console.print(f"  • Use /know-add <feature-name> to start a new feature")
-    console.print(f"  • Use /know-list to see all features")
+    console.print(f"  • Use /know:add <feature-name> to start a new feature")
+    console.print(f"  • Use /know:list to see all features")
+    console.print(f"  • Use 'know bd --help' or 'know task --help' for task management")
 
 
 @cli.command()
