@@ -8,6 +8,9 @@
         },
         "feature:graph-embeddings": {
           "status": "incomplete"
+        },
+        "feature:spec-generation-enrichment": {
+          "status": "incomplete"
         }
       },
       "review-ready": {
@@ -123,6 +126,10 @@
       "beads-integration": {
         "name": "Beads Integration",
         "description": "Seamless integration with Beads task management system, with native JSONL alternative for users who prefer built-in task tracking"
+      },
+      "spec-generation-enrichment": {
+        "name": "Spec Generation Enrichment",
+        "description": "Enable rich spec generation with lightweight entities, reusable references, and feature-specific metadata"
       }
     },
     "component": {
@@ -354,7 +361,8 @@
         "feature:cli-operations",
         "feature:graph-validation",
         "feature:schema-agnostic-know",
-        "feature:llm-workflows"
+        "feature:llm-workflows",
+        "feature:spec-generation-enrichment"
       ]
     },
     "objective:analyze-gaps": {
@@ -366,7 +374,8 @@
     "objective:generate-docs": {
       "depends_on": [
         "feature:spec-generation",
-        "feature:schema-agnostic-know"
+        "feature:schema-agnostic-know",
+        "feature:spec-generation-enrichment"
       ]
     },
     "feature:schema-agnostic-know": {

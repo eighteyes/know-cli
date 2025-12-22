@@ -2133,6 +2133,15 @@ def bd_list(ctx, ready, feature):
 
     tasks = bridge.list_tasks(ready_only=ready)
 
+    # Extract feature from title [feature-name] format and add to task dict
+    for task in tasks:
+        title = task.get('title', '')
+        if title.startswith('[') and ']' in title:
+            feature_name = title.split(']')[0][1:]
+            task['feature'] = feature_name
+        else:
+            task['feature'] = '-'
+
     # Filter by feature if specified
     if feature:
         tasks = [t for t in tasks if t.get('feature') == feature]
