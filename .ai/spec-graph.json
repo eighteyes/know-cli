@@ -8,14 +8,16 @@
         },
         "feature:graph-embeddings": {
           "status": "incomplete"
-        },
-        "feature:spec-generation-enrichment": {
-          "status": "incomplete"
         }
       },
       "review-ready": {
         "feature:beads-integration": {
           "status": "complete"
+        }
+      },
+      "in-progress": {
+        "feature:spec-generation-enrichment": {
+          "status": "incomplete"
         }
       }
     },
