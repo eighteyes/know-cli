@@ -22,7 +22,22 @@ Enable `know spec feature:<name>` to generate rich, comprehensive specifications
 
 To be determined during `/know:build` phase.
 
+## Success Criteria
+
+1. ✅ Schema updates complete - 4 new reference types added
+2. ✅ Meta schema extended - feature_specs fully documented
+3. ✅ Generator enhanced - rich output with all new sections
+4. ✅ Example working - using existing feature (graph-embeddings)
+5. ✅ Works comprehensively for all entities
+
+## Constraints
+
+- **Backward compatible**: Graceful degradation when metadata missing
+- **Soft validation**: Warnings only, not blocking errors
+- **Optional enrichment**: Existing features work without updates
+- **Minimal changes**: Leverage existing meta.feature_specs structure
+
 ## Status
 
-- **Phase**: Pending
+- **Phase**: Phase 1 - Discovery Complete
 - **Priority**: P0 - Critical

@@ -88,27 +88,48 @@ class SpecGenerator:
 
     def generate_feature_spec(self, feature_id: str) -> str:
         """
-        Generate a detailed feature specification.
+        Generate a detailed feature specification with rich metadata.
 
         Args:
             feature_id: Feature entity ID
 
         Returns:
-            Markdown formatted feature spec
+            Markdown formatted feature spec with 11 sections
         """
         entity_data = self.entities.get_entity(feature_id)
         if not entity_data:
             return f"# Error: Feature {feature_id} not found\n"
 
+        # Extract feature name without prefix for metadata lookup
+        feature_name = feature_id.split(':', 1)[1] if ':' in feature_id else feature_id
+
         lines = []
         lines.append(f"# Feature: {entity_data.get('name', feature_id)}")
         lines.append("")
 
-        # Overview
+        # 1. Overview
         lines.append("## Overview")
         lines.append("")
         lines.append(entity_data.get('description', 'No description provided'))
         lines.append("")
+
+        # 2. Status/Phase/Priority from meta.feature_specs (NEW)
+        feature_meta = self._get_feature_spec_meta(feature_name)
+        if feature_meta:
+            status = feature_meta.get('status')
+            phase = feature_meta.get('phase')
+            priority = feature_meta.get('priority')
+
+            if status or phase or priority:
+                lines.append("## Status")
+                lines.append("")
+                if status:
+                    lines.append(f"**Status:** {status}")
+                if phase:
+                    lines.append(f"**Phase:** {phase}")
+                if priority:
+                    lines.append(f"**Priority:** {priority}")
+                lines.append("")
 
         # Dependencies breakdown
         dependencies = self.deps.get_dependencies(feature_id)
@@ -121,7 +142,7 @@ class SpecGenerator:
                 dep_by_type[dep_type] = []
             dep_by_type[dep_type].append(dep)
 
-        # Actions
+        # 3. User Actions (existing)
         if 'action' in dep_by_type:
             lines.append("## User Actions")
             lines.append("")
@@ -134,7 +155,7 @@ class SpecGenerator:
                     lines.append(action_data.get('description', ''))
                     lines.append("")
 
-        # Components
+        # 4. Components with file paths and operations (ENHANCED)
         if 'component' in dep_by_type:
             lines.append("## Components")
             lines.append("")
@@ -142,11 +163,94 @@ class SpecGenerator:
             for comp_id in components:
                 comp_data = self.entities.get_entity(comp_id)
                 if comp_data:
-                    lines.append(f"- **{comp_data.get('name', comp_id)}**: {comp_data.get('description', '')}")
-            lines.append("")
+                    comp_name = comp_data.get('name', comp_id)
+                    comp_desc = comp_data.get('description', '')
 
-        # References
-        ref_types = ['acceptance_criteria', 'business_logic', 'api_contracts', 'validation_rules']
+                    # Get file path if available
+                    file_path = self._get_component_file(comp_id)
+
+                    # Get operations
+                    operations = self._get_component_operations(comp_id)
+
+                    lines.append(f"### {comp_name}")
+                    lines.append("")
+                    lines.append(comp_desc)
+
+                    if file_path:
+                        lines.append("")
+                        lines.append(f"**File:** `{file_path}`")
+
+                    if operations:
+                        lines.append("")
+                        lines.append("**Operations:**")
+                        for op_id in operations:
+                            op_data = self.entities.get_entity(op_id)
+                            if op_data:
+                                op_name = op_data.get('name', op_id)
+                                lines.append(f"- {op_name}")
+
+                    lines.append("")
+
+        # 5. Interfaces with api-schema rendering (NEW)
+        if 'interface' in dep_by_type:
+            lines.append("## Interfaces")
+            lines.append("")
+            interfaces = dep_by_type.get('interface', [])
+            for intf_id in interfaces:
+                intf_data = self.entities.get_entity(intf_id)
+                if intf_data:
+                    lines.append(f"### {intf_data.get('name', intf_id)}")
+                    lines.append("")
+                    lines.append(intf_data.get('description', ''))
+
+                    # Check for api-schema dependencies
+                    intf_deps = self.deps.get_dependencies(intf_id)
+                    api_schemas = [d for d in intf_deps if d.startswith('api-schema:')]
+
+                    if api_schemas:
+                        lines.append("")
+                        lines.append("**API Schema:**")
+                        for schema_id in api_schemas:
+                            schema_data = self._get_reference_data(schema_id)
+                            if schema_data:
+                                lines.append("```")
+                                lines.append(str(schema_data))
+                                lines.append("```")
+
+                    lines.append("")
+
+        # 6. Data Models as TypeScript (NEW)
+        if 'data-model' in dep_by_type:
+            lines.append("## Data Models")
+            lines.append("")
+            data_models = dep_by_type.get('data-model', [])
+            for model_id in data_models:
+                model_data = self._get_reference_data(model_id)
+                if model_data:
+                    model_name = model_id.split(':', 1)[1] if ':' in model_id else model_id
+
+                    lines.append(f"### {model_name}")
+                    lines.append("")
+                    lines.append("```typescript")
+                    lines.append(self._render_data_model_typescript(model_data, model_name))
+                    lines.append("```")
+                    lines.append("")
+
+        # 7. Business Logic (existing, enhanced)
+        if 'business_logic' in dep_by_type:
+            lines.append("## Business Logic")
+            lines.append("")
+            for ref_id in dep_by_type['business_logic']:
+                ref_data = self._get_reference_data(ref_id)
+                if ref_data is not None:
+                    lines.append(f"### {ref_id}")
+                    lines.append("```")
+                    lines.append(str(ref_data))
+                    lines.append("```")
+                    lines.append("")
+
+        # Other reference types (acceptance_criteria, api_contract, validation_rule)
+        ref_types = ['acceptance_criteria', 'api_contract', 'validation_rule']
         for ref_type in ref_types:
             if ref_type in dep_by_type:
                 lines.append(f"## {ref_type.replace('_', ' ').title()}")
@@ -159,6 +263,98 @@ class SpecGenerator:
                         lines.append(str(ref_data))
                         lines.append("```")
                         lines.append("")
+
+        # 8. Use Cases from meta.feature_specs (NEW)
+        if feature_meta and 'use_cases' in feature_meta:
+            use_cases = feature_meta['use_cases']
+            if use_cases:
+                lines.append("## Use Cases")
+                lines.append("")
+                for uc in use_cases:
+                    if isinstance(uc, dict):
+                        uc_name = uc.get('name', 'Unnamed Use Case')
+                        uc_desc = uc.get('description', '')
+                        uc_config = uc.get('config', {})
+
+                        lines.append(f"### {uc_name}")
+                        lines.append("")
+                        if uc_desc:
+                            lines.append(uc_desc)
+                            lines.append("")
+                        if uc_config:
+                            lines.append("**Configuration:**")
+                            lines.append("```json")
+                            import json
+                            lines.append(json.dumps(uc_config, indent=2))
+                            lines.append("```")
+                            lines.append("")
+                    else:
+                        lines.append(f"- {uc}")
+                        lines.append("")
+
+        # 9. Testing Requirements from meta.feature_specs (NEW)
+        if feature_meta and 'testing' in feature_meta:
+            testing = feature_meta['testing']
+            if testing:
+                lines.append("## Testing Requirements")
+                lines.append("")
+
+                if 'unit' in testing and testing['unit']:
+                    lines.append("### Unit Tests")
+                    lines.append("")
+                    for test in testing['unit']:
+                        lines.append(f"- {test}")
+                    lines.append("")
+
+                if 'integration' in testing and testing['integration']:
+                    lines.append("### Integration Tests")
+                    lines.append("")
+                    for test in testing['integration']:
+                        lines.append(f"- {test}")
+                    lines.append("")
+
+                if 'performance' in testing and testing['performance']:
+                    lines.append("### Performance Tests")
+                    lines.append("")
+                    for test in testing['performance']:
+                        lines.append(f"- {test}")
+                    lines.append("")
+
+        # 10. Security & Privacy from meta.feature_specs (NEW)
+        if feature_meta and 'security' in feature_meta:
+            security = feature_meta['security']
+            if security:
+                lines.append("## Security & Privacy")
+                lines.append("")
+                for sec_req in security:
+                    lines.append(f"- {sec_req}")
+                lines.append("")
+
+        # 11. Monitoring & Observability from meta.feature_specs (NEW)
+        if feature_meta and 'monitoring' in feature_meta:
+            monitoring = feature_meta['monitoring']
+            if monitoring:
+                lines.append("## Monitoring & Observability")
+                lines.append("")
+                for metric in monitoring:
+                    lines.append(f"- {metric}")
+                lines.append("")
+
+        # Performance characteristics from meta.feature_specs
+        if feature_meta and 'performance' in feature_meta:
+            performance = feature_meta['performance']
+            if isinstance(performance, dict):
+                lines.append("## Performance Characteristics")
+                lines.append("")
+
+                if 'latency' in performance:
+                    lines.append(f"**Latency:** {performance['latency']}")
+                if 'cost' in performance:
+                    lines.append(f"**Cost:** {performance['cost']}")
+                if 'quality' in performance:
+                    lines.append(f"**Quality:** {performance['quality']}")
+
+                lines.append("")
 
         # Filter out any None values that might have slipped in
         return "\n".join(str(line) if line is not None else '' for line in lines)
@@ -376,6 +572,128 @@ class SpecGenerator:
 
         ref_type, ref_name = reference_id.split(':', 1)
         return references.get(ref_type, {}).get(ref_name)
+
+    def _get_feature_spec_meta(self, feature_name: str) -> dict:
+        """
+        Query meta.feature_specs for a feature.
+
+        Args:
+            feature_name: Feature name (without 'feature:' prefix)
+
+        Returns:
+            Dictionary of feature metadata, or empty dict if not found
+        """
+        data = self.graph.get_graph()
+        feature_specs = data.get('meta', {}).get('feature_specs', {})
+        return feature_specs.get(feature_name, {})
+
+    def _render_data_model_typescript(self, model_data: dict, model_name: str) -> str:
+        """
+        Convert data-model reference to TypeScript interface.
+
+        Args:
+            model_data: Data model reference data
+            model_name: Name for the interface
+
+        Returns:
+            TypeScript interface definition as string
+        """
+        if not isinstance(model_data, dict):
+            return str(model_data)
+
+        language = model_data.get('language', '')
+        schema = model_data.get('schema', {})
+
+        if language != 'typescript' or not schema:
+            return str(model_data)
+
+        # Build TypeScript interface
+        lines = []
+        interface_name = model_data.get('name', model_name)
+        lines.append(f"interface {interface_name} {{")
+
+        for field_name, field_type in schema.items():
+            lines.append(f"  {field_name}: {field_type};")
+
+        lines.append("}")
+
+        return "\n".join(lines)
+
+    def _render_signature(self, sig_data: dict) -> str:
+        """
+        Convert signature reference to readable function signature.
+
+        Args:
+            sig_data: Signature reference data
+
+        Returns:
+            Formatted function signature string
+        """
+        if not isinstance(sig_data, dict):
+            return str(sig_data)
+
+        func_name = sig_data.get('name', 'unknownFunction')
+        params = sig_data.get('params', [])
+        returns = sig_data.get('returns', 'void')
+
+        # Format parameters
+        param_strs = []
+        for param in params:
+            if isinstance(param, dict):
+                param_name = param.get('name', 'arg')
+                param_type = param.get('type', 'any')
+                optional = param.get('optional', False)
+
+                if optional:
+                    param_strs.append(f"{param_name}?: {param_type}")
+                else:
+                    param_strs.append(f"{param_name}: {param_type}")
+            else:
+                param_strs.append(str(param))
+
+        params_formatted = ", ".join(param_strs)
+
+        return f"function {func_name}({params_formatted}): {returns}"
+
+    def _get_component_operations(self, component_id: str) -> List[str]:
+        """
+        Query graph for operation entities linked to component.
+
+        Args:
+            component_id: Component entity ID (e.g., 'component:auth')
+
+        Returns:
+            List of operation IDs (e.g., ['operation:login', 'operation:logout'])
+        """
+        # Get dependencies of the component
+        dependencies = self.deps.get_dependencies(component_id)
+
+        # Filter for operation entities
+        operations = [dep for dep in dependencies if dep.startswith('operation:')]
+
+        return operations
+
+    def _get_component_file(self, component_id: str) -> str:
+        """
+        Query source-file reference for component.
+
+        Args:
+            component_id: Component entity ID
+
+        Returns:
+            File path from source-file reference, or empty string if not found
+        """
+        # Get dependencies of the component
+        dependencies = self.deps.get_dependencies(component_id)
+
+        # Find source-file reference
+        for dep in dependencies:
+            if dep.startswith('source-file:'):
+                ref_data = self._get_reference_data(dep)
+                if ref_data and isinstance(ref_data, dict):
+                    return ref_data.get('path', '')
+
+        return ''
 
     def generate_sitemap(self) -> str:
         """

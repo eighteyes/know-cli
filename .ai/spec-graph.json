@@ -192,6 +192,18 @@
       "task-cli": {
         "name": "Task CLI",
         "description": "CLI commands for task management: know beads/task subcommands with feature linking"
+      },
+      "spec-generator": {
+        "name": "Spec Generator",
+        "description": "Enhanced SpecGenerator class with helper methods for rich spec generation"
+      },
+      "reference-renderer": {
+        "name": "Reference Renderer",
+        "description": "Helper methods for rendering TypeScript, signatures, and other reference types"
+      },
+      "metadata-accessor": {
+        "name": "Metadata Accessor",
+        "description": "Helper for accessing meta.feature_specs and other metadata sections"
       }
     },
     "action": {
@@ -230,6 +242,10 @@
       "manage-tasks": {
         "name": "Manage Tasks",
         "description": "Create, list, update, and complete tasks with feature linking and auto-ready detection"
+      },
+      "enrich-feature-specs": {
+        "name": "Enrich Feature Specs",
+        "description": "Generate rich feature specifications with metadata, components, operations, and references"
       }
     },
     "operation": {
@@ -332,6 +348,30 @@
       "task_block": {
         "name": "Task Block Command",
         "description": "CLI command: know task block - Add blocking dependency"
+      },
+      "generate-rich-feature-spec": {
+        "name": "Generate Rich Feature Spec",
+        "description": "Enhanced feature spec generation with all new sections and metadata"
+      },
+      "render-typescript": {
+        "name": "Render TypeScript",
+        "description": "Convert data-model reference to TypeScript interface"
+      },
+      "render-signature": {
+        "name": "Render Signature",
+        "description": "Format function signature reference as readable string"
+      },
+      "get-feature-metadata": {
+        "name": "Get Feature Metadata",
+        "description": "Access meta.feature_specs for a feature with graceful degradation"
+      },
+      "get-component-operations": {
+        "name": "Get Component Operations",
+        "description": "Query graph for operations linked to a component"
+      },
+      "get-component-file": {
+        "name": "Get Component File",
+        "description": "Query source-file reference for component location"
       }
     }
   },
@@ -491,6 +531,36 @@
     "objective:manage-tasks": {
       "depends_on": [
         "feature:beads-integration"
+      ]
+    },
+    "component:spec-generator": {
+      "depends_on": [
+        "operation:generate-rich-feature-spec"
+      ]
+    },
+    "component:reference-renderer": {
+      "depends_on": [
+        "operation:render-typescript",
+        "operation:render-signature"
+      ]
+    },
+    "component:metadata-accessor": {
+      "depends_on": [
+        "operation:get-feature-metadata",
+        "operation:get-component-operations",
+        "operation:get-component-file"
+      ]
+    },
+    "feature:spec-generation-enrichment": {
+      "depends_on": [
+        "action:enrich-feature-specs"
+      ]
+    },
+    "action:enrich-feature-specs": {
+      "depends_on": [
+        "component:spec-generator",
+        "component:reference-renderer",
+        "component:metadata-accessor"
       ]
     }
   }

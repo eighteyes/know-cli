@@ -17,12 +17,12 @@
       "platform", "business_logic", "acceptance_criterion", "state_mutation",
       "event", "content", "label", "style", "color", "layout", "pattern",
       "spacing", "typography", "breakpoint", "z-index", "transition", "asset",
-      "api_contract", "validation_rule", "error_state", "performance_spec",
+      "api_contract", "api-schema", "validation_rule", "error_state", "performance_spec",
       "notification", "configuration", "metric", "example", "constraint",
-      "terminology", "sequence", "mapping", "default",
-      "source-file", "external-dep", "api-surface", "product-component",
+      "terminology", "sequence", "mapping", "default", "security-spec",
+      "source-file", "external-dep", "api-surface", "product-component", "signature",
       "execution-trace", "call-graph", "control-flow", "data-flow",
-      "side-effect", "error-path", "code-module"
+      "side-effect", "error-path", "code-module", "test-spec"
     ],
     "validation": "References are always valid dependencies and bypass entity-to-entity dependency rules",
     "examples": [
@@ -55,6 +55,7 @@
     "transition": "Animation timings and transition durations",
     "asset": "Visual assets including images, icons, and media files for UI components and content",
     "api_contract": "Detailed request/response schemas, error codes, rate limits for all API endpoints",
+    "api-schema": "TypeScript interface definitions for public APIs including request/response types",
     "validation_rule": "Field-level and cross-field validation specifications for data integrity",
     "error_state": "Error messages, recovery actions, and fallback behaviors for user-facing errors",
     "performance_spec": "Response time SLAs, data limits, concurrency requirements, and load specifications",
@@ -67,17 +68,20 @@
     "sequence": "Orders of operations, initialization sequences, shutdown procedures, and event cascades",
     "mapping": "Transformations between representations, status codes to messages, and field mappings",
     "default": "System-wide default values, fallback behaviors, and initial states for entities",
+    "security-spec": "Reusable security requirement that may apply to multiple components",
     "source-file": "Source code file implementations with file path and module details",
     "external-dep": "External package dependencies from npm, pip, or other package managers",
     "api-surface": "Public API definitions including exported functions, classes, and modules",
     "product-component": "Cross-reference to product-level components in spec-graph.json",
+    "signature": "Function or method signature with name, parameters, and return type",
     "execution-trace": "Step-by-step execution path through module functions with call details",
     "call-graph": "Function call relationships showing what calls what with call types",
     "control-flow": "Conditional logic, branches, loops, and decision points in code",
     "data-flow": "Data transformations and how data moves through the system",
     "side-effect": "Observable effects beyond return values: file I/O, state changes, process spawning",
     "error-path": "Exception handling, error propagation, and recovery strategies",
-    "code-module": "Cross-reference to code-level modules in code-graph.json"
+    "code-module": "Cross-reference to code-level modules in code-graph.json",
+    "test-spec": "Reusable test specification that may apply to multiple components"
   },
   "reference_note": {
     "purpose": "References are terminal graph nodes used for template generation and detailed specifications",
