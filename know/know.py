@@ -1399,7 +1399,10 @@ def init(project_dir):
     agents_dest_dir = project_path / ".claude" / "agents"
 
     if agents_templates_dir.exists():
-        agents_dest_dir.mkdir(parents=True, exist_ok=True)
+        if agents_dest_dir.exists() and not agents_dest_dir.is_dir():
+            console.print(f"[yellow]⚠[/yellow] {agents_dest_dir} exists as a file, skipping agents installation")
+        else:
+            agents_dest_dir.mkdir(parents=True, exist_ok=True)
         copied_agents = []
         for agent_file in agents_templates_dir.glob("*.md"):
             dest_file = agents_dest_dir / agent_file.name
@@ -1789,7 +1792,21 @@ def phases(ctx):
 def phases_list(ctx):
     """Show all phases with their entities grouped by phase"""
     import re
+    import subprocess
     from pathlib import Path
+
+    # Get current branch name if in a git repo
+    branch_name = None
+    try:
+        result = subprocess.run(
+            ['git', 'branch', '--show-current'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        branch_name = result.stdout.strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pass
 
     graph_data = ctx.obj['graph'].load()
 
@@ -1920,16 +1937,40 @@ def phases_list(ctx):
         console.print(f"[bold]Total: {total_features} features, {total_completed}/{total_tasks} tasks ({pct}% complete)[/bold]")
     else:
         console.print(f"[bold]Total: {total_features} features[/bold]")
+    if branch_name:
+        console.print(f"[dim]Branch: {branch_name}[/dim]")
     console.print(f"[dim]Legend: ✅ completed  🔄 in-progress  📋 planned  ⚪ no status[/dim]")
 
 
 @phases.command(name='add')
 @click.argument('phase_id')
 @click.argument('entity_id')
-@click.option('--status', '-s', default='planned', help='Entity status (planned, in-progress, complete, etc.)')
+@click.option('--status', '-s', default='build-ready', help='Lifecycle status (build-ready, in-progress, etc.)')
 @click.pass_context
 def phases_add(ctx, phase_id, entity_id, status):
     """Add an entity to a phase"""
+    # Validate phase - Roman numerals only
+    valid_phases = {'I', 'II', 'III', 'IV', 'V'}
+    if phase_id not in valid_phases:
+        console.print(f"[red]✗ Invalid phase: {phase_id}[/red]")
+        console.print(f"[dim]  Valid phases: {', '.join(sorted(valid_phases))}[/dim]")
+        sys.exit(1)
+
+    # Validate status - lifecycle states
+    valid_statuses = {
+        'build-ready',      # Ready to start (in phase, waiting)
+        'build-not-ready',  # Blocked/invalidated (needs re-planning)
+        'in-progress',      # /know:build active
+        'review-ready',     # /know:build complete
+        'in-review',        # /know:review started
+        'merge-ready',      # /know:review passed (human approved)
+        'complete',         # /know:done
+    }
+    if status not in valid_statuses:
+        console.print(f"[red]✗ Invalid status: {status}[/red]")
+        console.print(f"[dim]  Valid: {', '.join(sorted(valid_statuses))}[/dim]")
+        sys.exit(1)
+
     graph_data = ctx.obj['graph'].load()
 
     # Initialize meta.phases if it doesn't exist
@@ -1968,10 +2009,33 @@ def phases_add(ctx, phase_id, entity_id, status):
 @phases.command(name='move')
 @click.argument('entity_id')
 @click.argument('phase_id')
-@click.option('--status', '-s', default=None, help='Update status (optional)')
+@click.option('--status', '-s', default=None, help='Update status (pending, in-progress, complete)')
 @click.pass_context
 def phases_move(ctx, entity_id, phase_id, status):
     """Move an entity to a different phase"""
+    # Validate phase - Roman numerals only
+    valid_phases = {'I', 'II', 'III', 'IV', 'V'}
+    if phase_id not in valid_phases:
+        console.print(f"[red]✗ Invalid phase: {phase_id}[/red]")
+        console.print(f"[dim]  Valid phases: {', '.join(sorted(valid_phases))}[/dim]")
+        sys.exit(1)
+
+    # Validate status if provided - lifecycle states
+    if status:
+        valid_statuses = {
+            'build-ready',      # Ready to start (in phase, waiting)
+            'build-not-ready',  # Blocked/invalidated (needs re-planning)
+            'in-progress',      # /know:build active
+            'review-ready',     # /know:build complete
+            'in-review',        # /know:review started
+            'merge-ready',      # /know:review passed (human approved)
+            'complete',         # /know:done
+        }
+        if status not in valid_statuses:
+            console.print(f"[red]✗ Invalid status: {status}[/red]")
+            console.print(f"[dim]  Valid: {', '.join(sorted(valid_statuses))}[/dim]")
+            sys.exit(1)
+
     graph_data = ctx.obj['graph'].load()
 
     if 'meta' not in graph_data or 'phases' not in graph_data['meta']:
@@ -2009,6 +2073,17 @@ def phases_move(ctx, entity_id, phase_id, status):
         console.print(f"[green]✓ Moved '{entity_id}' from '{current_phase}' to '{phase_id}'[/green]")
         if status:
             console.print(f"[green]  Status updated to '{new_status}'[/green]")
+
+        # Auto-set baseline when feature status becomes in-progress
+        if new_status == 'in-progress' and entity_id.startswith('feature:'):
+            from src.feature_tracker import FeatureTracker
+            feature_name = entity_id.replace('feature:', '')
+            tracker = FeatureTracker(
+                spec_graph_path=str(ctx.obj['graph'].cache.graph_path)
+            )
+            created, _ = tracker.ensure_config(feature_name)
+            if tracker.set_baseline(feature_name):
+                console.print(f"[green]  Baseline set for {feature_name}[/green]")
     else:
         console.print(f"[red]✗ Failed to save graph[/red]")
         sys.exit(1)
@@ -2076,6 +2151,289 @@ def phases_remove(ctx, entity_id):
     else:
         console.print(f"[yellow]⚠ Entity '{entity_id}' not found in any phase[/yellow]")
         sys.exit(1)
+
+
+# Feature tracking commands
+@cli.command(name='validate-feature')
+@click.argument('feature_name')
+@click.option('--since', help='Override baseline (YYYY-MM-DD or commit SHA)')
+@click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
+@click.option('--code-graph', '-c', default='.ai/code-graph.json', help='Code graph path')
+@click.pass_context
+def validate_feature(ctx, feature_name, since, json_output, code_graph):
+    """Check if codebase changes warrant revisiting feature plan."""
+    from src.feature_tracker import FeatureTracker
+
+    tracker = FeatureTracker(
+        spec_graph_path=str(ctx.obj['graph'].cache.graph_path),
+        code_graph_path=code_graph if Path(code_graph).exists() else None
+    )
+
+    # Verify feature exists
+    feature_dir = tracker.get_feature_dir(feature_name)
+    if not feature_dir:
+        console.print(f"[red]✗ Feature not found: {feature_name}[/red]")
+        console.print(f"[dim]  Expected: .ai/know/features/{feature_name}/[/dim]")
+        sys.exit(1)
+
+    # Ensure config.json exists (touch it = track it)
+    created, _ = tracker.ensure_config(feature_name)
+    if created:
+        console.print(f"[dim]Created config.json for {feature_name}[/dim]")
+
+    # Get baseline info
+    baseline_ts, baseline_commit = tracker.get_feature_baseline(feature_name)
+    if not baseline_ts and not baseline_commit:
+        console.print(f"[yellow]⚠ No baseline found for {feature_name}[/yellow]")
+
+    # Get changes and risk assessment
+    changes = tracker.get_changed_files(feature_name, since)
+    risk = tracker.assess_risk(feature_name, changes)
+
+    if json_output:
+        import json as json_module
+        output = {
+            'feature': feature_name,
+            'baseline': {
+                'timestamp': baseline_ts.isoformat() if baseline_ts else None,
+                'commit': baseline_commit
+            },
+            'changes': changes,
+            'risk': risk
+        }
+        print(json_module.dumps(output, indent=2))
+    else:
+        # Rich console output
+        console.print(f"\n[bold]Feature:[/bold] {feature_name}")
+        if baseline_ts:
+            console.print(f"[bold]Baseline:[/bold] {baseline_ts.strftime('%Y-%m-%d %H:%M')}", end="")
+            if baseline_commit:
+                console.print(f" (commit: {baseline_commit[:7]})")
+            else:
+                console.print()
+        console.print()
+
+        # Risk summary
+        console.print("[bold]Risk Assessment:[/bold]")
+        counts = risk['counts']
+        console.print(f"  [red]HIGH:[/red]   {counts['HIGH']} files")
+        console.print(f"  [yellow]MEDIUM:[/yellow] {counts['MEDIUM']} files")
+        console.print(f"  [green]LOW:[/green]    {counts['LOW']} files")
+        console.print(f"  [dim]INFO:[/dim]   {counts['INFO']} files")
+        console.print()
+
+        # Changed files
+        if changes:
+            console.print("[bold]Changed Files:[/bold]")
+            for cf in changes:
+                risk_color = {'HIGH': 'red', 'MEDIUM': 'yellow', 'LOW': 'green', 'INFO': 'dim'}.get(cf['risk'], 'white')
+                console.print(f"  [{risk_color}][{cf['risk']}][/{risk_color}] {cf['file']} ({len(cf['commits'])} commits)")
+            console.print()
+
+        # Recommendation
+        console.print(f"[bold]Recommendation:[/bold] {risk['recommendation']}")
+
+
+@cli.command(name='tag-feature')
+@click.argument('feature_name')
+@click.option('--since', help='Override baseline (YYYY-MM-DD or commit SHA)')
+@click.option('--auto', 'auto_tag', is_flag=True, help='Auto-tag all matching commits without prompting')
+@click.option('--code-graph', '-c', default='.ai/code-graph.json', help='Code graph path')
+@click.pass_context
+def tag_feature(ctx, feature_name, since, auto_tag, code_graph):
+    """Tag commits related to a feature with git notes."""
+    from src.feature_tracker import FeatureTracker
+
+    tracker = FeatureTracker(
+        spec_graph_path=str(ctx.obj['graph'].cache.graph_path),
+        code_graph_path=code_graph if Path(code_graph).exists() else None
+    )
+
+    # Verify feature exists
+    feature_dir = tracker.get_feature_dir(feature_name)
+    if not feature_dir:
+        console.print(f"[red]✗ Feature not found: {feature_name}[/red]")
+        sys.exit(1)
+
+    # Ensure config.json exists (touch it = track it)
+    created, _ = tracker.ensure_config(feature_name)
+    if created:
+        console.print(f"[dim]Created config.json for {feature_name}[/dim]")
+
+    # Get commits
+    commits = tracker.get_feature_commits(feature_name, since)
+
+    if not commits:
+        console.print(f"[yellow]⚠ No commits found for {feature_name} since baseline[/yellow]")
+        sys.exit(0)
+
+    console.print(f"\n[bold]Commits related to {feature_name}:[/bold]\n")
+
+    for i, commit in enumerate(commits, 1):
+        console.print(f"  [{i}] {commit['short_sha']} - {commit['message'][:60]}")
+        if commit['files']:
+            console.print(f"      [dim]Files: {', '.join(commit['files'][:3])}{'...' if len(commit['files']) > 3 else ''}[/dim]")
+
+    console.print()
+
+    if auto_tag:
+        shas = [c['sha'] for c in commits]
+    else:
+        # Interactive selection
+        selection = click.prompt(
+            "Select commits to tag (comma-separated numbers, 'all', or 'none')",
+            default='all'
+        )
+
+        if selection.lower() == 'none':
+            console.print("[yellow]No commits tagged[/yellow]")
+            sys.exit(0)
+        elif selection.lower() == 'all':
+            shas = [c['sha'] for c in commits]
+        else:
+            try:
+                indices = [int(x.strip()) - 1 for x in selection.split(',')]
+                shas = [commits[i]['sha'] for i in indices if 0 <= i < len(commits)]
+            except (ValueError, IndexError):
+                console.print("[red]Invalid selection[/red]")
+                sys.exit(1)
+
+    if not shas:
+        console.print("[yellow]No commits selected[/yellow]")
+        sys.exit(0)
+
+    # Tag commits
+    success, error = tracker.tag_commits(feature_name, shas)
+    if not success:
+        console.print(f"[red]✗ {error}[/red]")
+        sys.exit(1)
+
+    # Store in spec-graph
+    if tracker.store_commits(feature_name, shas):
+        console.print(f"[green]✓ Tagged {len(shas)} commits with know:feature:{feature_name}[/green]")
+        console.print(f"[green]✓ Stored commit SHAs in spec-graph[/green]")
+    else:
+        console.print(f"[yellow]⚠ Tagged commits but failed to update spec-graph[/yellow]")
+
+
+@cli.command(name='done')
+@click.argument('feature_name')
+@click.option('--skip-todos', is_flag=True, help='Skip todo completion check')
+@click.option('--skip-archive', is_flag=True, help='Skip archiving feature directory')
+@click.option('--auto', 'auto_tag', is_flag=True, help='Auto-tag all commits without prompting')
+@click.pass_context
+def done_feature(ctx, feature_name, skip_todos, skip_archive, auto_tag):
+    """Complete a feature: tag commits, update phase, optionally archive."""
+    import re
+    import shutil
+    from src.feature_tracker import FeatureTracker
+
+    tracker = FeatureTracker(
+        spec_graph_path=str(ctx.obj['graph'].cache.graph_path)
+    )
+
+    # 1. Verify feature exists
+    feature_dir = tracker.get_feature_dir(feature_name)
+    if not feature_dir:
+        console.print(f"[red]✗ Feature not found: {feature_name}[/red]")
+        sys.exit(1)
+
+    console.print(f"\n[bold]Completing feature: {feature_name}[/bold]\n")
+
+    # Ensure config.json exists
+    created, _ = tracker.ensure_config(feature_name)
+    if created:
+        console.print(f"[dim]Created config.json[/dim]")
+
+    # 2. Check todo completion
+    todo_path = feature_dir / "todo.md"
+    if todo_path.exists() and not skip_todos:
+        with open(todo_path, 'r') as f:
+            content = f.read()
+        completed = len(re.findall(r'- \[x\]', content, re.IGNORECASE))
+        total = len(re.findall(r'- \[[x ]\]', content, re.IGNORECASE))
+
+        if total > 0 and completed < total:
+            console.print(f"[yellow]⚠ Todos incomplete: {completed}/{total}[/yellow]")
+            if not click.confirm("Continue anyway?"):
+                sys.exit(0)
+        else:
+            console.print(f"[green]✓ Todos complete: {completed}/{total}[/green]")
+
+    # 3. Find and tag commits
+    commits = tracker.get_feature_commits(feature_name)
+
+    if commits:
+        console.print(f"\n[bold]Related commits ({len(commits)}):[/bold]")
+        for i, commit in enumerate(commits[:10], 1):
+            console.print(f"  {commit['short_sha']} - {commit['message'][:50]}")
+        if len(commits) > 10:
+            console.print(f"  ... and {len(commits) - 10} more")
+
+        if auto_tag:
+            shas = [c['sha'] for c in commits]
+        else:
+            selection = click.prompt(
+                "\nTag commits? (all/none/comma-separated numbers)",
+                default='all'
+            )
+            if selection.lower() == 'none':
+                shas = []
+            elif selection.lower() == 'all':
+                shas = [c['sha'] for c in commits]
+            else:
+                try:
+                    indices = [int(x.strip()) - 1 for x in selection.split(',')]
+                    shas = [commits[i]['sha'] for i in indices if 0 <= i < len(commits)]
+                except (ValueError, IndexError):
+                    shas = []
+
+        if shas:
+            success, error = tracker.tag_commits(feature_name, shas)
+            if success:
+                tracker.store_commits(feature_name, shas)
+                console.print(f"[green]✓ Tagged {len(shas)} commits[/green]")
+            else:
+                console.print(f"[yellow]⚠ Tagging failed: {error}[/yellow]")
+    else:
+        console.print("[dim]No commits to tag[/dim]")
+
+    # 4. Remove from phases (done = out of phases entirely)
+    graph_data = ctx.obj['graph'].load()
+    entity_id = f"feature:{feature_name}"
+
+    # Find and remove from current phase
+    current_phase = None
+    for phase_id, entities in graph_data.get('meta', {}).get('phases', {}).items():
+        if entity_id in entities:
+            current_phase = phase_id
+            del graph_data['meta']['phases'][phase_id][entity_id]
+            break
+
+    if ctx.obj['graph'].save_graph(graph_data):
+        if current_phase:
+            console.print(f"[green]✓ Removed from phase '{current_phase}'[/green]")
+        else:
+            console.print(f"[dim]Feature was not in any phase[/dim]")
+    else:
+        console.print(f"[red]✗ Failed to update phases[/red]")
+
+    # 5. Archive feature directory
+    if not skip_archive:
+        archive_dir = feature_dir.parent / "archive"
+        archive_dir.mkdir(exist_ok=True)
+        archive_path = archive_dir / feature_name
+
+        if archive_path.exists():
+            console.print(f"[yellow]⚠ Archive already exists: {archive_path}[/yellow]")
+        else:
+            try:
+                shutil.move(str(feature_dir), str(archive_path))
+                console.print(f"[green]✓ Archived to {archive_path}[/green]")
+            except OSError as e:
+                console.print(f"[yellow]⚠ Archive failed: {e}[/yellow]")
+
+    console.print(f"\n[bold green]Feature '{feature_name}' completed![/bold green]")
 
 
 # Beads integration command group

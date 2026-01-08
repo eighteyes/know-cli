@@ -1,12 +1,14 @@
 ---
 name: Know: Complete Feature
-description: Archive a completed feature to .ai/know/archive/
+description: Archive a completed feature to .ai/know/features/archive/
 category: Know
 tags: [know, archive, complete]
 ---
 
 **Prerequisites**
 - Activate the know-tool skill for graph validation
+
+**Auto-creates**: `config.json` if missing (touch it = track it)
 
 **Workflow**
 
@@ -71,13 +73,85 @@ tags: [know, archive, complete]
    - TO: `.ai/know/features/archive/<feature-name>/`
 2. Confirm the move was successful
 
-### 6. Update Spec-Graph
+### 6. Update Feature Index
 
 **Steps**:
-1. Update phase status to "done" in `meta.phases` (using **haiku agent**)
-2. Update `meta.feature_specs.<feature>.status` to "complete"
-3. **Validate both graphs**: `know validate`
-4. Confirm graphs are consistent (no validation errors)
+1. Read `.ai/know/features/feature-index.md`
+2. Move feature entry from "Features" to "Archived Features" section (create if doesn't exist)
+3. Update summary counts (decrement active, increment archived)
+4. Update feature status to "archived" and add archived date
+
+### 7. Update Spec-Graph Phase
+
+**Steps**:
+1. Update phase status to "done" (using **haiku agent**)
+2. Validate both spec-graph and code-graph
+3. Confirm graphs are consistent
+
+### 8. Identify Related Commits
+
+**Steps**:
+1. Get feature baseline from config.json or directory mtime:
+   ```bash
+   cat .ai/know/features/<feature-name>/config.json 2>/dev/null | jq '.baseline'
+   ```
+
+2. Find commits since baseline using CLI:
+   ```bash
+   know tag-feature <feature-name> --json
+   ```
+
+3. Present commits to user:
+   ```
+   The following commits touch files related to this feature:
+
+   [1] 0a42a87 - chore(spec-generation): move feature to in-progress
+   [2] f570887 - feat(spec-generation): implement rich spec generation
+   [3] e987c75 - feat: add feature and enhance bd list
+
+   Select commits to tag (comma-separated numbers, 'all', or 'none'):
+   ```
+
+4. Confirm selection with user
+
+### 9. Tag Commits with Git Notes
+
+**Steps**:
+1. Tag each selected commit:
+   ```bash
+   git notes --ref=refs/notes/know-features add -f -m "know:feature:<feature-name>" <sha>
+   ```
+
+2. Verify tagging:
+   ```bash
+   git notes --ref=refs/notes/know-features show <sha>
+   ```
+
+3. Report success:
+   ```
+   Tagged 4 commits with know:feature:<feature-name>
+   ```
+
+### 10. Store Commits in Spec-Graph
+
+**Steps**:
+1. Update `meta.feature_commits` in spec-graph:
+   ```json
+   "feature_commits": {
+     "<feature-name>": ["sha1", "sha2", "sha3"]
+   }
+   ```
+
+2. Use jq or direct edit to add entry:
+   ```bash
+   # Verify current state
+   jq '.meta.feature_commits' .ai/spec-graph.json
+   ```
+
+3. Validate spec-graph:
+   ```bash
+   know validate
+   ```
 
 **Example Usage**
 ```
@@ -89,7 +163,7 @@ Assistant: Checks completion, moves to archive, confirms success
 - Verify all todos are checked before archiving
 - Confirm feature directory exists
 - Ensure archive directory exists (create if needed)
-- Prompt for new name on archive conflict (preserve existing archives)
+- Don't overwrite existing archived features (prompt for new name if conflict)
 
 **Notes**
 - Features can be un-archived by manually moving them back
@@ -100,6 +174,3 @@ Assistant: Checks completion, moves to archive, confirms success
   - Merges feature branch using `--no-ff` for clear history
   - Removes worktree after successful merge
   - Can run from main repo or any worktree (auto-navigates as needed)
-
----
-`r1`
