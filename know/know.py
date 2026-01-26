@@ -1351,6 +1351,7 @@ def init(project_dir):
     4. Creates .ai/know/ directory structure
     5. Initializes project.md with template
     6. Creates initial graphs if they don't exist
+    7. Detects and optionally sets up task management (Beads or native)
     """
     project_path = Path(project_dir).resolve()
 
@@ -1398,18 +1399,21 @@ def init(project_dir):
     agents_dest_dir = project_path / ".claude" / "agents"
 
     if agents_templates_dir.exists():
-        agents_dest_dir.mkdir(parents=True, exist_ok=True)
-        copied_agents = []
-        for agent_file in agents_templates_dir.glob("*.md"):
-            dest_file = agents_dest_dir / agent_file.name
-            if dest_file.exists():
-                console.print(f"[yellow]⚠[/yellow] Agent {agent_file.stem} already exists")
-            else:
-                shutil.copy2(agent_file, dest_file)
-                copied_agents.append(agent_file.stem)
+        if agents_dest_dir.exists() and not agents_dest_dir.is_dir():
+            console.print(f"[yellow]⚠[/yellow] {agents_dest_dir} exists as a file, skipping agents installation")
+        else:
+            agents_dest_dir.mkdir(parents=True, exist_ok=True)
+            copied_agents = []
+            for agent_file in agents_templates_dir.glob("*.md"):
+                dest_file = agents_dest_dir / agent_file.name
+                if dest_file.exists():
+                    console.print(f"[yellow]⚠[/yellow] Agent {agent_file.stem} already exists")
+                else:
+                    shutil.copy2(agent_file, dest_file)
+                    copied_agents.append(agent_file.stem)
 
-        if copied_agents:
-            console.print(f"[green]✓[/green] Installed agents: {', '.join(copied_agents)}")
+            if copied_agents:
+                console.print(f"[green]✓[/green] Installed agents: {', '.join(copied_agents)}")
     else:
         console.print(f"[dim]  No agents to install[/dim]")
 
@@ -1449,8 +1453,8 @@ def init(project_dir):
     console.print(f"\n[bold green]✓ Initialization complete![/bold green]")
     console.print(f"\n[dim]Next steps:[/dim]")
     console.print(f"  • Edit {project_md} to add project context")
-    console.print(f"  • Use /know-add <feature-name> to start a new feature")
-    console.print(f"  • Use /know-list to see all features")
+    console.print(f"  • Use /know:add <feature-name> to start a new feature")
+    console.print(f"  • Use /know:list to see all features")
 
 
 @cli.command()
@@ -1707,7 +1711,21 @@ def phases(ctx):
 def phases_list(ctx):
     """Show all phases with their entities grouped by phase"""
     import re
+    import subprocess
     from pathlib import Path
+
+    # Get current branch name if in a git repo
+    branch_name = None
+    try:
+        result = subprocess.run(
+            ['git', 'branch', '--show-current'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        branch_name = result.stdout.strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pass
 
     graph_data = ctx.obj['graph'].load()
 
@@ -1754,6 +1772,7 @@ def phases_list(ctx):
             'done': '✅',
             'in-progress': '🔄',
             'review-ready': '🔄',
+            'changes-planned': '🔧',
             'incomplete': '📋',
             'pending': '📋',
             'planned': '📋'
@@ -1838,16 +1857,41 @@ def phases_list(ctx):
         console.print(f"[bold]Total: {total_features} features, {total_completed}/{total_tasks} tasks ({pct}% complete)[/bold]")
     else:
         console.print(f"[bold]Total: {total_features} features[/bold]")
-    console.print(f"[dim]Legend: ✅ completed  🔄 in-progress  📋 planned  ⚪ no status[/dim]")
+    if branch_name:
+        console.print(f"[dim]Branch: {branch_name}[/dim]")
+    console.print(f"[dim]Legend: ✅ completed  🔄 in-progress  🔧 changes-planned  📋 planned  ⚪ no status[/dim]")
 
 
 @phases.command(name='add')
 @click.argument('phase_id')
 @click.argument('entity_id')
-@click.option('--status', '-s', default='planned', help='Entity status (planned, in-progress, complete, etc.)')
+@click.option('--status', '-s', default='build-ready', help='Lifecycle status (build-ready, in-progress, etc.)')
 @click.pass_context
 def phases_add(ctx, phase_id, entity_id, status):
     """Add an entity to a phase"""
+    # Validate phase - Roman numerals only
+    valid_phases = {'I', 'II', 'III', 'IV', 'V'}
+    if phase_id not in valid_phases:
+        console.print(f"[red]✗ Invalid phase: {phase_id}[/red]")
+        console.print(f"[dim]  Valid phases: {', '.join(sorted(valid_phases))}[/dim]")
+        sys.exit(1)
+
+    # Validate status - lifecycle states
+    valid_statuses = {
+        'build-ready',      # Ready to start (in phase, waiting)
+        'build-not-ready',  # Blocked/invalidated (needs re-planning)
+        'changes-planned',  # Extension planned for existing feature
+        'in-progress',      # /know:build active
+        'review-ready',     # /know:build complete
+        'in-review',        # /know:review started
+        'merge-ready',      # /know:review passed (human approved)
+        'complete',         # /know:done
+    }
+    if status not in valid_statuses:
+        console.print(f"[red]✗ Invalid status: {status}[/red]")
+        console.print(f"[dim]  Valid: {', '.join(sorted(valid_statuses))}[/dim]")
+        sys.exit(1)
+
     graph_data = ctx.obj['graph'].load()
 
     # Initialize meta.phases if it doesn't exist
@@ -1886,10 +1930,34 @@ def phases_add(ctx, phase_id, entity_id, status):
 @phases.command(name='move')
 @click.argument('entity_id')
 @click.argument('phase_id')
-@click.option('--status', '-s', default=None, help='Update status (optional)')
+@click.option('--status', '-s', default=None, help='Update status (pending, in-progress, complete)')
 @click.pass_context
 def phases_move(ctx, entity_id, phase_id, status):
     """Move an entity to a different phase"""
+    # Validate phase - Roman numerals only
+    valid_phases = {'I', 'II', 'III', 'IV', 'V'}
+    if phase_id not in valid_phases:
+        console.print(f"[red]✗ Invalid phase: {phase_id}[/red]")
+        console.print(f"[dim]  Valid phases: {', '.join(sorted(valid_phases))}[/dim]")
+        sys.exit(1)
+
+    # Validate status if provided - lifecycle states
+    if status:
+        valid_statuses = {
+            'build-ready',      # Ready to start (in phase, waiting)
+            'build-not-ready',  # Blocked/invalidated (needs re-planning)
+            'changes-planned',  # Extension planned for existing feature
+            'in-progress',      # /know:build active
+            'review-ready',     # /know:build complete
+            'in-review',        # /know:review started
+            'merge-ready',      # /know:review passed (human approved)
+            'complete',         # /know:done
+        }
+        if status not in valid_statuses:
+            console.print(f"[red]✗ Invalid status: {status}[/red]")
+            console.print(f"[dim]  Valid: {', '.join(sorted(valid_statuses))}[/dim]")
+            sys.exit(1)
+
     graph_data = ctx.obj['graph'].load()
 
     if 'meta' not in graph_data or 'phases' not in graph_data['meta']:
@@ -1927,6 +1995,17 @@ def phases_move(ctx, entity_id, phase_id, status):
         console.print(f"[green]✓ Moved '{entity_id}' from '{current_phase}' to '{phase_id}'[/green]")
         if status:
             console.print(f"[green]  Status updated to '{new_status}'[/green]")
+
+        # Auto-set baseline when feature status becomes in-progress
+        if new_status == 'in-progress' and entity_id.startswith('feature:'):
+            from src.feature_tracker import FeatureTracker
+            feature_name = entity_id.replace('feature:', '')
+            tracker = FeatureTracker(
+                spec_graph_path=str(ctx.obj['graph'].cache.graph_path)
+            )
+            created, _ = tracker.ensure_config(feature_name)
+            if tracker.set_baseline(feature_name):
+                console.print(f"[green]  Baseline set for {feature_name}[/green]")
     else:
         console.print(f"[red]✗ Failed to save graph[/red]")
         sys.exit(1)
@@ -1994,6 +2073,912 @@ def phases_remove(ctx, entity_id):
     else:
         console.print(f"[yellow]⚠ Entity '{entity_id}' not found in any phase[/yellow]")
         sys.exit(1)
+
+
+# Feature tracking commands
+@cli.command(name='validate-feature')
+@click.argument('feature_name')
+@click.option('--since', help='Override baseline (YYYY-MM-DD or commit SHA)')
+@click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
+@click.option('--code-graph', '-c', default='.ai/code-graph.json', help='Code graph path')
+@click.pass_context
+def validate_feature(ctx, feature_name, since, json_output, code_graph):
+    """Check if codebase changes warrant revisiting feature plan."""
+    from src.feature_tracker import FeatureTracker
+
+    tracker = FeatureTracker(
+        spec_graph_path=str(ctx.obj['graph'].cache.graph_path),
+        code_graph_path=code_graph if Path(code_graph).exists() else None
+    )
+
+    # Verify feature exists
+    feature_dir = tracker.get_feature_dir(feature_name)
+    if not feature_dir:
+        console.print(f"[red]✗ Feature not found: {feature_name}[/red]")
+        console.print(f"[dim]  Expected: .ai/know/features/{feature_name}/[/dim]")
+        sys.exit(1)
+
+    # Ensure config.json exists (touch it = track it)
+    created, _ = tracker.ensure_config(feature_name)
+    if created:
+        console.print(f"[dim]Created config.json for {feature_name}[/dim]")
+
+    # Get baseline info
+    baseline_ts, baseline_commit = tracker.get_feature_baseline(feature_name)
+    if not baseline_ts and not baseline_commit:
+        console.print(f"[yellow]⚠ No baseline found for {feature_name}[/yellow]")
+
+    # Get changes and risk assessment
+    changes = tracker.get_changed_files(feature_name, since)
+    risk = tracker.assess_risk(feature_name, changes)
+
+    if json_output:
+        import json as json_module
+        output = {
+            'feature': feature_name,
+            'baseline': {
+                'timestamp': baseline_ts.isoformat() if baseline_ts else None,
+                'commit': baseline_commit
+            },
+            'changes': changes,
+            'risk': risk
+        }
+        print(json_module.dumps(output, indent=2))
+    else:
+        # Rich console output
+        console.print(f"\n[bold]Feature:[/bold] {feature_name}")
+        if baseline_ts:
+            console.print(f"[bold]Baseline:[/bold] {baseline_ts.strftime('%Y-%m-%d %H:%M')}", end="")
+            if baseline_commit:
+                console.print(f" (commit: {baseline_commit[:7]})")
+            else:
+                console.print()
+        console.print()
+
+        # Risk summary
+        console.print("[bold]Risk Assessment:[/bold]")
+        counts = risk['counts']
+        console.print(f"  [red]HIGH:[/red]   {counts['HIGH']} files")
+        console.print(f"  [yellow]MEDIUM:[/yellow] {counts['MEDIUM']} files")
+        console.print(f"  [green]LOW:[/green]    {counts['LOW']} files")
+        console.print(f"  [dim]INFO:[/dim]   {counts['INFO']} files")
+        console.print()
+
+        # Changed files
+        if changes:
+            console.print("[bold]Changed Files:[/bold]")
+            for cf in changes:
+                risk_color = {'HIGH': 'red', 'MEDIUM': 'yellow', 'LOW': 'green', 'INFO': 'dim'}.get(cf['risk'], 'white')
+                console.print(f"  [{risk_color}][{cf['risk']}][/{risk_color}] {cf['file']} ({len(cf['commits'])} commits)")
+            console.print()
+
+        # Recommendation
+        console.print(f"[bold]Recommendation:[/bold] {risk['recommendation']}")
+
+
+@cli.command(name='tag-feature')
+@click.argument('feature_name')
+@click.option('--since', help='Override baseline (YYYY-MM-DD or commit SHA)')
+@click.option('--auto', 'auto_tag', is_flag=True, help='Auto-tag all matching commits without prompting')
+@click.option('--code-graph', '-c', default='.ai/code-graph.json', help='Code graph path')
+@click.pass_context
+def tag_feature(ctx, feature_name, since, auto_tag, code_graph):
+    """Tag commits related to a feature with git notes."""
+    from src.feature_tracker import FeatureTracker
+
+    tracker = FeatureTracker(
+        spec_graph_path=str(ctx.obj['graph'].cache.graph_path),
+        code_graph_path=code_graph if Path(code_graph).exists() else None
+    )
+
+    # Verify feature exists
+    feature_dir = tracker.get_feature_dir(feature_name)
+    if not feature_dir:
+        console.print(f"[red]✗ Feature not found: {feature_name}[/red]")
+        sys.exit(1)
+
+    # Ensure config.json exists (touch it = track it)
+    created, _ = tracker.ensure_config(feature_name)
+    if created:
+        console.print(f"[dim]Created config.json for {feature_name}[/dim]")
+
+    # Get commits
+    commits = tracker.get_feature_commits(feature_name, since)
+
+    if not commits:
+        console.print(f"[yellow]⚠ No commits found for {feature_name} since baseline[/yellow]")
+        sys.exit(0)
+
+    console.print(f"\n[bold]Commits related to {feature_name}:[/bold]\n")
+
+    for i, commit in enumerate(commits, 1):
+        console.print(f"  [{i}] {commit['short_sha']} - {commit['message'][:60]}")
+        if commit['files']:
+            console.print(f"      [dim]Files: {', '.join(commit['files'][:3])}{'...' if len(commit['files']) > 3 else ''}[/dim]")
+
+    console.print()
+
+    if auto_tag:
+        shas = [c['sha'] for c in commits]
+    else:
+        # Interactive selection
+        selection = click.prompt(
+            "Select commits to tag (comma-separated numbers, 'all', or 'none')",
+            default='all'
+        )
+
+        if selection.lower() == 'none':
+            console.print("[yellow]No commits tagged[/yellow]")
+            sys.exit(0)
+        elif selection.lower() == 'all':
+            shas = [c['sha'] for c in commits]
+        else:
+            try:
+                indices = [int(x.strip()) - 1 for x in selection.split(',')]
+                shas = [commits[i]['sha'] for i in indices if 0 <= i < len(commits)]
+            except (ValueError, IndexError):
+                console.print("[red]Invalid selection[/red]")
+                sys.exit(1)
+
+    if not shas:
+        console.print("[yellow]No commits selected[/yellow]")
+        sys.exit(0)
+
+    # Tag commits
+    success, error = tracker.tag_commits(feature_name, shas)
+    if not success:
+        console.print(f"[red]✗ {error}[/red]")
+        sys.exit(1)
+
+    # Store in spec-graph
+    if tracker.store_commits(feature_name, shas):
+        console.print(f"[green]✓ Tagged {len(shas)} commits with know:feature:{feature_name}[/green]")
+        console.print(f"[green]✓ Stored commit SHAs in spec-graph[/green]")
+    else:
+        console.print(f"[yellow]⚠ Tagged commits but failed to update spec-graph[/yellow]")
+
+
+@cli.command(name='done')
+@click.argument('feature_name')
+@click.option('--skip-todos', is_flag=True, help='Skip todo completion check')
+@click.option('--skip-archive', is_flag=True, help='Skip archiving feature directory')
+@click.option('--auto', 'auto_tag', is_flag=True, help='Auto-tag all commits without prompting')
+@click.pass_context
+def done_feature(ctx, feature_name, skip_todos, skip_archive, auto_tag):
+    """Complete a feature: tag commits, update phase, optionally archive."""
+    import re
+    import shutil
+    from src.feature_tracker import FeatureTracker
+
+    tracker = FeatureTracker(
+        spec_graph_path=str(ctx.obj['graph'].cache.graph_path)
+    )
+
+    # 1. Verify feature exists
+    feature_dir = tracker.get_feature_dir(feature_name)
+    if not feature_dir:
+        console.print(f"[red]✗ Feature not found: {feature_name}[/red]")
+        sys.exit(1)
+
+    console.print(f"\n[bold]Completing feature: {feature_name}[/bold]\n")
+
+    # Ensure config.json exists
+    created, _ = tracker.ensure_config(feature_name)
+    if created:
+        console.print(f"[dim]Created config.json[/dim]")
+
+    # 2. Check todo completion
+    todo_path = feature_dir / "todo.md"
+    if todo_path.exists() and not skip_todos:
+        with open(todo_path, 'r') as f:
+            content = f.read()
+        completed = len(re.findall(r'- \[x\]', content, re.IGNORECASE))
+        total = len(re.findall(r'- \[[x ]\]', content, re.IGNORECASE))
+
+        if total > 0 and completed < total:
+            console.print(f"[yellow]⚠ Todos incomplete: {completed}/{total}[/yellow]")
+            if not click.confirm("Continue anyway?"):
+                sys.exit(0)
+        else:
+            console.print(f"[green]✓ Todos complete: {completed}/{total}[/green]")
+
+    # 3. Find and tag commits
+    commits = tracker.get_feature_commits(feature_name)
+
+    if commits:
+        console.print(f"\n[bold]Related commits ({len(commits)}):[/bold]")
+        for i, commit in enumerate(commits[:10], 1):
+            console.print(f"  {commit['short_sha']} - {commit['message'][:50]}")
+        if len(commits) > 10:
+            console.print(f"  ... and {len(commits) - 10} more")
+
+        if auto_tag:
+            shas = [c['sha'] for c in commits]
+        else:
+            selection = click.prompt(
+                "\nTag commits? (all/none/comma-separated numbers)",
+                default='all'
+            )
+            if selection.lower() == 'none':
+                shas = []
+            elif selection.lower() == 'all':
+                shas = [c['sha'] for c in commits]
+            else:
+                try:
+                    indices = [int(x.strip()) - 1 for x in selection.split(',')]
+                    shas = [commits[i]['sha'] for i in indices if 0 <= i < len(commits)]
+                except (ValueError, IndexError):
+                    shas = []
+
+        if shas:
+            success, error = tracker.tag_commits(feature_name, shas)
+            if success:
+                tracker.store_commits(feature_name, shas)
+                console.print(f"[green]✓ Tagged {len(shas)} commits[/green]")
+            else:
+                console.print(f"[yellow]⚠ Tagging failed: {error}[/yellow]")
+    else:
+        console.print("[dim]No commits to tag[/dim]")
+
+    # 4. Remove from phases (done = out of phases entirely)
+    graph_data = ctx.obj['graph'].load()
+    entity_id = f"feature:{feature_name}"
+
+    # Find and remove from current phase
+    current_phase = None
+    for phase_id, entities in graph_data.get('meta', {}).get('phases', {}).items():
+        if entity_id in entities:
+            current_phase = phase_id
+            del graph_data['meta']['phases'][phase_id][entity_id]
+            break
+
+    if ctx.obj['graph'].save_graph(graph_data):
+        if current_phase:
+            console.print(f"[green]✓ Removed from phase '{current_phase}'[/green]")
+        else:
+            console.print(f"[dim]Feature was not in any phase[/dim]")
+    else:
+        console.print(f"[red]✗ Failed to update phases[/red]")
+
+    # 5. Archive feature directory
+    if not skip_archive:
+        archive_dir = feature_dir.parent / "archive"
+        archive_dir.mkdir(exist_ok=True)
+        archive_path = archive_dir / feature_name
+
+        if archive_path.exists():
+            console.print(f"[yellow]⚠ Archive already exists: {archive_path}[/yellow]")
+        else:
+            try:
+                shutil.move(str(feature_dir), str(archive_path))
+                console.print(f"[green]✓ Archived to {archive_path}[/green]")
+            except OSError as e:
+                console.print(f"[yellow]⚠ Archive failed: {e}[/yellow]")
+
+    console.print(f"\n[bold green]Feature '{feature_name}' completed![/bold green]")
+
+
+# Contract management commands
+@cli.command(name='validate-contracts')
+@click.option('--feature', '-f', help='Specific feature to validate (validates all if not specified)')
+@click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
+@click.pass_context
+def validate_contracts(ctx, feature, json_output):
+    """Validate feature contracts for drift between declared and observed."""
+    from src.contract_manager import ContractManager
+    from src.validation import ContractValidator
+
+    cm = ContractManager()
+    cv = ContractValidator()
+
+    if feature:
+        features = [feature]
+    else:
+        features = cm.list_all_features_with_contracts()
+
+    if not features:
+        console.print("[yellow]No features with contracts found[/yellow]")
+        return
+
+    results = []
+    for feature_name in features:
+        # Run validation
+        validation = cm.validate_contract(feature_name)
+        confidence = cm.calculate_confidence(feature_name)
+        summary = cm.get_contract_summary(feature_name)
+
+        results.append({
+            'feature': feature_name,
+            'status': validation['status'],
+            'confidence': confidence['score'],
+            'discrepancies': len(validation['discrepancies']),
+            'summary': summary,
+            'validation': validation
+        })
+
+    if json_output:
+        print(json.dumps(results, indent=2))
+        return
+
+    # Pretty output
+    has_issues = False
+    for r in results:
+        status_color = {
+            'verified': 'green',
+            'pending': 'yellow',
+            'drifted': 'red',
+            'error': 'red'
+        }.get(r['status'], 'white')
+
+        status_icon = {
+            'verified': '✓',
+            'pending': '⚠',
+            'drifted': '✗',
+            'error': '✗'
+        }.get(r['status'], '?')
+
+        console.print(f"\n[{status_color}]{status_icon}[/{status_color}] [bold]{r['feature']}[/bold]")
+        console.print(f"  Status: [{status_color}]{r['status']}[/{status_color}]")
+        console.print(f"  Confidence: {r['confidence']}%")
+
+        if r['discrepancies'] > 0:
+            has_issues = True
+            console.print(f"  [red]Discrepancies: {r['discrepancies']}[/red]")
+            for disc in r['validation']['discrepancies'][:5]:
+                console.print(f"    • {disc['message']}")
+            if len(r['validation']['discrepancies']) > 5:
+                console.print(f"    ... and {len(r['validation']['discrepancies']) - 5} more")
+
+    if has_issues:
+        console.print(f"\n[yellow]⚠ Some features have contract issues[/yellow]")
+        sys.exit(1)
+    else:
+        console.print(f"\n[green]✓ All contracts validated[/green]")
+
+
+@cli.command(name='impact')
+@click.argument('target')
+@click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
+@click.pass_context
+def impact(ctx, target, json_output):
+    """Show features that depend on an entity or file.
+
+    Examples:
+        know impact component:validation-engine
+        know impact src/auth/handler.py
+    """
+    from src.impact_analyzer import ImpactAnalyzer
+
+    analyzer = ImpactAnalyzer()
+    report = analyzer.get_impact_report(target)
+
+    if json_output:
+        print(json.dumps(report, indent=2))
+        return
+
+    console.print(f"\n[bold cyan]Impact Report: {target}[/bold cyan]\n")
+
+    if report['target_type'] == 'entity':
+        if report['features_creating']:
+            console.print("[bold]Features creating this entity:[/bold]")
+            for f in report['features_creating']:
+                console.print(f"  • {f['name']} (confidence: {f['confidence']}%)")
+            console.print()
+
+        if report['features_depending']:
+            console.print("[bold]Features depending on this entity:[/bold]")
+            for f in report['features_depending']:
+                console.print(f"  • {f['name']} (confidence: {f['confidence']}%)")
+            console.print()
+
+        console.print(f"[bold]Impact Severity:[/bold] {report['impact_severity']}")
+    else:
+        if report['features_creating']:
+            console.print("[bold]Features creating this file:[/bold]")
+            for f in report['features_creating']:
+                console.print(f"  • {f['name']}")
+
+        if report['features_modifying']:
+            console.print("[bold]Features modifying this file:[/bold]")
+            for f in report['features_modifying']:
+                console.print(f"  • {f['name']}")
+
+        if report['features_watching']:
+            console.print("[bold]Features watching this file:[/bold]")
+            for f in report['features_watching']:
+                console.print(f"  • {f['name']}")
+
+    console.print(f"\n[bold]Total affected features:[/bold] {report['total_affected_features']}")
+
+    console.print("\n[bold]Recommendations:[/bold]")
+    for rec in report['recommendations']:
+        console.print(f"  • {rec}")
+
+
+@cli.command(name='contract')
+@click.argument('feature_name')
+@click.option('--show', is_flag=True, help='Show full contract YAML')
+@click.option('--confidence', is_flag=True, help='Show confidence calculation')
+@click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
+@click.pass_context
+def contract(ctx, feature_name, show, confidence, json_output):
+    """Display contract info for a feature.
+
+    Examples:
+        know contract my-feature
+        know contract my-feature --show
+        know contract my-feature --confidence
+    """
+    from src.contract_manager import ContractManager
+    import yaml
+
+    cm = ContractManager()
+    contract_data = cm.load_contract(feature_name)
+
+    if not contract_data:
+        console.print(f"[red]✗ No contract found for: {feature_name}[/red]")
+        sys.exit(1)
+
+    if json_output:
+        if show:
+            print(json.dumps(contract_data, indent=2))
+        elif confidence:
+            conf = cm.calculate_confidence(feature_name)
+            print(json.dumps(conf, indent=2))
+        else:
+            summary = cm.get_contract_summary(feature_name)
+            print(json.dumps(summary, indent=2))
+        return
+
+    if show:
+        console.print(f"\n[bold cyan]Contract: {feature_name}[/bold cyan]\n")
+        print(yaml.dump(contract_data, default_flow_style=False, sort_keys=False))
+        return
+
+    if confidence:
+        conf = cm.calculate_confidence(feature_name)
+        console.print(f"\n[bold cyan]Confidence for {feature_name}[/bold cyan]\n")
+        console.print(f"[bold]Score:[/bold] {conf['score']}%")
+        console.print(f"\n[bold]Factors:[/bold]")
+        for factor in conf['factors']:
+            console.print(f"  • {factor}")
+        return
+
+    # Default: show summary
+    summary = cm.get_contract_summary(feature_name)
+    if not summary:
+        console.print(f"[red]✗ Could not load contract summary[/red]")
+        sys.exit(1)
+
+    status_color = {
+        'verified': 'green',
+        'pending': 'yellow',
+        'drifted': 'red'
+    }.get(summary['validation_status'], 'white')
+
+    console.print(f"\n[bold cyan]Contract: {feature_name}[/bold cyan]\n")
+    console.print(f"[bold]Created:[/bold] {summary['created'][:10] if summary['created'] else 'N/A'}")
+    console.print(f"[bold]Baseline:[/bold] {summary['baseline_commit'][:7] if summary['baseline_commit'] else 'N/A'}")
+    console.print(f"[bold]Status:[/bold] [{status_color}]{summary['validation_status']}[/{status_color}]")
+    console.print(f"[bold]Confidence:[/bold] {summary['confidence_score']}%")
+
+    console.print(f"\n[bold]Declared:[/bold]")
+    df = summary['declared_files']
+    de = summary['declared_entities']
+    da = summary['declared_actions']
+    console.print(f"  Files: {df['creates']} creates, {df['modifies']} modifies")
+    console.print(f"  Entities: {de['creates']} creates, {de['depends_on']} depends_on")
+    console.print(f"  Actions: {da['verified']}/{da['total']} verified")
+
+    console.print(f"\n[bold]Observed:[/bold]")
+    of = summary['observed_files']
+    console.print(f"  Files: {of['created']} created, {of['modified']} modified, {of['deleted']} deleted")
+
+    if summary['discrepancy_count'] > 0:
+        console.print(f"\n[red]Discrepancies: {summary['discrepancy_count']}[/red]")
+
+
+@cli.command(name='migrate-contracts')
+@click.option('--feature', '-f', help='Specific feature to migrate')
+@click.option('--all', 'migrate_all', is_flag=True, help='Migrate all features')
+@click.option('--dry-run', is_flag=True, help='Show what would be migrated')
+@click.pass_context
+def migrate_contracts(ctx, feature, migrate_all, dry_run):
+    """Migrate config.json to contract.yaml format.
+
+    Examples:
+        know migrate-contracts --feature my-feature
+        know migrate-contracts --all
+        know migrate-contracts --all --dry-run
+    """
+    from src.contract_manager import ContractManager
+
+    cm = ContractManager()
+
+    if feature:
+        features = [feature]
+    elif migrate_all:
+        # Find all features with config.json but no contract.yaml
+        features = []
+        if cm.features_dir.exists():
+            for feature_dir in cm.features_dir.iterdir():
+                if not feature_dir.is_dir() or feature_dir.name == 'archive':
+                    continue
+                config_path = feature_dir / "config.json"
+                contract_path = feature_dir / "contract.yaml"
+                if config_path.exists() and not contract_path.exists():
+                    features.append(feature_dir.name)
+    else:
+        console.print("[red]✗ Specify --feature or --all[/red]")
+        sys.exit(1)
+
+    if not features:
+        console.print("[yellow]No features to migrate[/yellow]")
+        return
+
+    console.print(f"\n[bold]Migrating {len(features)} feature(s):[/bold]\n")
+
+    for feature_name in features:
+        if dry_run:
+            console.print(f"  [dim]Would migrate:[/dim] {feature_name}")
+        else:
+            result = cm.migrate_from_config_json(feature_name, save=True)
+            if result:
+                console.print(f"  [green]✓[/green] {feature_name}")
+            else:
+                console.print(f"  [red]✗[/red] {feature_name} (no config.json or error)")
+
+    if dry_run:
+        console.print(f"\n[dim]Dry run - no changes made[/dim]")
+    else:
+        console.print(f"\n[green]✓ Migration complete[/green]")
+        console.print(f"[dim]Original config.json files renamed to config.json.migrated[/dim]")
+
+
+# Deprecation commands
+@cli.command()
+@click.argument('entity_id')
+@click.option('--reason', '-r', required=True, help='Why the entity is deprecated')
+@click.option('--replacement', help='Entity ID of replacement')
+@click.option('--remove-by', help='Target removal date (YYYY-MM-DD)')
+@click.pass_context
+def deprecate(ctx, entity_id, reason, replacement, remove_by):
+    """Mark an entity as deprecated with warnings on use.
+
+    Examples:
+        know deprecate component:old-auth --reason "Replaced by new-auth"
+        know deprecate feature:legacy --reason "Obsolete" --replacement feature:modern
+        know deprecate action:old-flow --reason "Removed" --remove-by 2026-03-01
+    """
+    from src.deprecation import DeprecationManager
+
+    dm = DeprecationManager(ctx.obj['graph'])
+
+    if dm.is_deprecated(entity_id):
+        console.print(f"[yellow]⚠ Entity '{entity_id}' is already deprecated[/yellow]")
+        return
+
+    if dm.deprecate(entity_id, reason, replacement=replacement, removal_target=remove_by):
+        console.print(f"[green]✓ Deprecated '{entity_id}'[/green]")
+        console.print(f"  Reason: {reason}")
+        if replacement:
+            console.print(f"  Replacement: {replacement}")
+        if remove_by:
+            console.print(f"  Removal target: {remove_by}")
+    else:
+        console.print(f"[red]✗ Entity not found: {entity_id}[/red]")
+        sys.exit(1)
+
+
+@cli.command()
+@click.argument('entity_id')
+@click.pass_context
+def undeprecate(ctx, entity_id):
+    """Remove deprecation status from an entity.
+
+    Examples:
+        know undeprecate component:old-auth
+    """
+    from src.deprecation import DeprecationManager
+
+    dm = DeprecationManager(ctx.obj['graph'])
+
+    if dm.undeprecate(entity_id):
+        console.print(f"[green]✓ Removed deprecation from '{entity_id}'[/green]")
+    else:
+        console.print(f"[yellow]⚠ Entity '{entity_id}' was not deprecated[/yellow]")
+
+
+@cli.command()
+@click.option('--overdue', is_flag=True, help='Show only entities past removal date')
+@click.pass_context
+def deprecated(ctx, overdue):
+    """List all deprecated entities.
+
+    Examples:
+        know deprecated
+        know deprecated --overdue
+    """
+    from src.deprecation import DeprecationManager
+
+    dm = DeprecationManager(ctx.obj['graph'])
+
+    if overdue:
+        items = dm.get_overdue_removals()
+        title = "Overdue Deprecated Entities"
+    else:
+        items = dm.list_deprecated()
+        title = "Deprecated Entities"
+
+    if not items:
+        if overdue:
+            console.print("[green]✓ No overdue deprecated entities[/green]")
+        else:
+            console.print("[dim]No deprecated entities[/dim]")
+        return
+
+    console.print(f"\n[bold cyan]{title}[/bold cyan]\n")
+
+    for entity_id, info in items:
+        console.print(f"[yellow]{entity_id}[/yellow]")
+        console.print(f"  Reason: {info['reason']}")
+        console.print(f"  Deprecated: {info['deprecated_date']}")
+        if info.get('replacement'):
+            console.print(f"  Replacement: [green]{info['replacement']}[/green]")
+        if info.get('removal_target'):
+            console.print(f"  Remove by: {info['removal_target']}")
+        console.print()
+
+
+# Requirements command group
+@cli.group()
+@click.pass_context
+def req(ctx):
+    """Manage feature requirements"""
+    pass
+
+
+@req.command(name='add')
+@click.argument('feature')
+@click.argument('key')
+@click.option('--name', '-n', required=True, help='Human-readable requirement name')
+@click.option('--description', '-d', required=True, help='Testable specification')
+@click.pass_context
+def req_add(ctx, feature, key, name, description):
+    """Add a requirement to a feature.
+
+    Examples:
+        know req add auth login --name "User can log in" --description "..."
+        know req add checkout payment --name "Process payment" --description "..."
+    """
+    from src.requirements import RequirementManager
+
+    rm = RequirementManager(ctx.obj['graph'])
+
+    try:
+        req_id = rm.add_requirement(feature, key, name, description)
+        console.print(f"[green]✓ Added requirement '{req_id}'[/green]")
+        console.print(f"  Name: {name}")
+        console.print(f"  Linked to: feature:{feature}")
+    except ValueError as e:
+        console.print(f"[red]✗ {e}[/red]")
+        sys.exit(1)
+
+
+@req.command(name='status')
+@click.argument('req_id')
+@click.argument('status_value')
+@click.option('--notes', help='Additional notes')
+@click.option('--blocked-by', help='What is blocking this requirement')
+@click.option('--effort', type=float, help='Effort in hours')
+@click.pass_context
+def req_status(ctx, req_id, status_value, notes, blocked_by, effort):
+    """Update requirement status.
+
+    Examples:
+        know req status requirement:auth-login in-progress
+        know req status requirement:checkout-payment blocked --blocked-by "API not ready"
+        know req status auth-login complete --effort 8
+    """
+    from src.requirements import RequirementManager
+
+    rm = RequirementManager(ctx.obj['graph'])
+
+    kwargs = {}
+    if notes:
+        kwargs['notes'] = notes
+    if blocked_by:
+        kwargs['blocked_by'] = blocked_by
+    if effort:
+        kwargs['effort_hours'] = effort
+
+    try:
+        if rm.update_status(req_id, status_value, **kwargs):
+            console.print(f"[green]✓ Updated '{req_id}' to '{status_value}'[/green]")
+        else:
+            console.print(f"[red]✗ Requirement not found: {req_id}[/red]")
+            sys.exit(1)
+    except ValueError as e:
+        console.print(f"[red]✗ {e}[/red]")
+        sys.exit(1)
+
+
+@req.command(name='list')
+@click.argument('feature')
+@click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
+@click.pass_context
+def req_list(ctx, feature, json_output):
+    """List requirements for a feature with status.
+
+    Examples:
+        know req list auth
+        know req list checkout --json
+    """
+    from src.requirements import RequirementManager
+
+    rm = RequirementManager(ctx.obj['graph'])
+    reqs = rm.get_feature_requirements(feature)
+
+    if json_output:
+        print(json.dumps(reqs, indent=2))
+        return
+
+    if not reqs:
+        console.print(f"[yellow]No requirements for feature '{feature}'[/yellow]")
+        return
+
+    completion = rm.calculate_feature_completion(feature)
+
+    console.print(f"\n[bold cyan]Requirements for {feature}[/bold cyan]")
+    console.print(f"[dim]Progress: {completion['complete']}/{completion['total']} ({completion['percent']}%)[/dim]\n")
+
+    status_icons = {
+        'pending': '⚪',
+        'in-progress': '🔄',
+        'blocked': '🚫',
+        'complete': '✅',
+        'verified': '✅✅'
+    }
+
+    for req in reqs:
+        icon = status_icons.get(req['status'], '❓')
+        console.print(f"{icon} [bold]{req['name']}[/bold]")
+        console.print(f"   [dim]{req['id']}[/dim] - {req['status']}")
+        if req.get('blocked_by'):
+            console.print(f"   [red]Blocked by: {req['blocked_by']}[/red]")
+        console.print()
+
+
+@req.command(name='complete')
+@click.argument('req_id')
+@click.option('--effort', type=float, help='Effort in hours')
+@click.pass_context
+def req_complete(ctx, req_id, effort):
+    """Mark a requirement as complete (shorthand for status complete).
+
+    Examples:
+        know req complete requirement:auth-login
+        know req complete auth-login --effort 4.5
+    """
+    from src.requirements import RequirementManager
+
+    rm = RequirementManager(ctx.obj['graph'])
+
+    kwargs = {}
+    if effort:
+        kwargs['effort_hours'] = effort
+
+    if rm.update_status(req_id, 'complete', **kwargs):
+        console.print(f"[green]✓ Marked '{req_id}' as complete[/green]")
+    else:
+        console.print(f"[red]✗ Requirement not found: {req_id}[/red]")
+        sys.exit(1)
+
+
+@req.command(name='block')
+@click.argument('req_id')
+@click.option('--by', required=True, help='What is blocking this requirement')
+@click.pass_context
+def req_block(ctx, req_id, by):
+    """Mark a requirement as blocked.
+
+    Examples:
+        know req block auth-login --by "Waiting for API key"
+        know req block requirement:checkout --by "component:payment not ready"
+    """
+    from src.requirements import RequirementManager
+
+    rm = RequirementManager(ctx.obj['graph'])
+
+    if rm.update_status(req_id, 'blocked', blocked_by=by):
+        console.print(f"[yellow]⚠ Blocked '{req_id}'[/yellow]")
+        console.print(f"  Blocked by: {by}")
+    else:
+        console.print(f"[red]✗ Requirement not found: {req_id}[/red]")
+        sys.exit(1)
+
+
+@cli.command()
+@click.argument('feature')
+@click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
+@click.pass_context
+def requirements(ctx, feature, json_output):
+    """Show requirements summary for a feature (alias for req list).
+
+    Examples:
+        know requirements auth
+        know requirements checkout --json
+    """
+    # Forward to req_list
+    ctx.invoke(req_list, feature=feature, json_output=json_output)
+
+
+# Coverage commands
+@cli.command()
+@click.argument('feature')
+@click.option('--detail', is_flag=True, help='Show per-component breakdown')
+@click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
+@click.option('--code-graph', '-c', default='.ai/code-graph.json', help='Code graph path')
+@click.pass_context
+def coverage(ctx, feature, detail, json_output, code_graph):
+    """Show test coverage aggregated from feature level.
+
+    Traverses: feature -> components -> modules -> test-suites
+
+    Examples:
+        know coverage auth
+        know coverage checkout --detail
+        know coverage api-client --json
+    """
+    from src.coverage import CoverageAnalyzer
+
+    analyzer = CoverageAnalyzer(ctx.obj['graph'], code_graph_path=code_graph)
+    cov = analyzer.get_feature_coverage(feature)
+
+    if json_output:
+        print(json.dumps(cov, indent=2))
+        return
+
+    console.print(f"\n[bold cyan]Test Coverage: {cov['feature']}[/bold cyan]\n")
+
+    # Summary
+    pct = cov['coverage_percent']
+    color = 'green' if pct >= 80 else 'yellow' if pct >= 50 else 'red'
+    console.print(f"[{color}]Coverage: {pct}%[/{color}]")
+    console.print(f"Components: {cov['components']}")
+    console.print(f"Modules: {cov['modules']}")
+    console.print(f"Test Suites: {cov['test_suites']}")
+    console.print(f"Test Count: {cov['test_count']}")
+    if cov['test_types']:
+        console.print(f"Test Types: {', '.join(cov['test_types'])}")
+
+    if detail and cov['by_component']:
+        console.print(f"\n[bold]Per-Component Breakdown:[/bold]\n")
+        for comp in cov['by_component']:
+            comp_cov = comp['coverage']['coverage_percent']
+            comp_color = 'green' if comp_cov >= 80 else 'yellow' if comp_cov >= 50 else 'red'
+            console.print(f"  [cyan]{comp['component']}[/cyan]")
+            console.print(f"    Modules: {len(comp['modules'])}")
+            console.print(f"    Test Suites: {comp['test_suites']}")
+            console.print(f"    Coverage: [{comp_color}]{comp_cov}%[/{comp_color}]")
+            console.print()
+
+    # Gaps
+    gaps = analyzer.get_coverage_gaps(feature)
+    if any([gaps['unmapped_components'], gaps['untested_modules'], gaps['low_coverage_modules']]):
+        console.print(f"\n[bold yellow]Coverage Gaps:[/bold yellow]")
+        if gaps['unmapped_components']:
+            console.print(f"  Unmapped components: {len(gaps['unmapped_components'])}")
+            for comp in gaps['unmapped_components'][:3]:
+                console.print(f"    • {comp}")
+        if gaps['untested_modules']:
+            console.print(f"  Untested modules: {len(gaps['untested_modules'])}")
+            for mod in gaps['untested_modules'][:3]:
+                console.print(f"    • {mod['module']} ({mod['component']})")
+        if gaps['low_coverage_modules']:
+            console.print(f"  Low coverage (<50%): {len(gaps['low_coverage_modules'])}")
+            for mod in gaps['low_coverage_modules'][:3]:
+                console.print(f"    • {mod['module']}: {mod['coverage']}%")
 
 
 if __name__ == '__main__':

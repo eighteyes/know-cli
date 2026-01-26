@@ -10,9 +10,9 @@ tags: [know, review, qa, testing, acceptance]
 Guide user through interactive end-user acceptance testing of a completed feature using the generated QA_STEPS.md, recording results and updating feature status based on approval.
 
 **CRITICAL: ACTIVE TESTING WORKFLOW**
-Execute tests and validate results - this is hands-on acceptance testing:
-1. **Automate testable items**: Run CLI commands, execute scripts, check file outputs, verify logs
-2. **Guide user validation**: UI behavior, visual elements, user experience, edge cases requiring judgment
+This is NOT just a code review. The assistant should:
+1. **Test what can be automated**: Run CLI commands, execute scripts, check file outputs, verify logs
+2. **Guide user to validate the rest**: UI behavior, visual elements, user experience, edge cases requiring judgment
 
 **Testing Responsibilities**:
 - **AI tests**: CLI output, file generation, data validation, error handling, API responses, calculations
@@ -25,11 +25,9 @@ Execute tests and validate results - this is hands-on acceptance testing:
 - Record all results (Pass/Fail/Skip) and collect failure details
 
 **Prerequisites**
-- Activate the know-tool skill for graph operations
-- Feature directory must exist at `.ai/know/features/<feature>/`
-- At minimum, `overview.md` should exist with feature requirements
+- Feature must have completed `/know:build` (status: "complete" or "review-ready")
+- `.ai/know/features/<feature>/QA_STEPS.md` must exist
 - **Application must be running and ready to test**
-- Note: If `QA_STEPS.md` doesn't exist, it will be generated automatically
 
 **Usage**
 
@@ -43,19 +41,7 @@ Execute tests and validate results - this is hands-on acceptance testing:
 
 **Steps**:
 1. Verify feature directory exists at `.ai/know/features/<feature>/`
-2. Check if `QA_STEPS.md` exists:
-   - **If missing**: Generate it now before proceeding
-   - Read `overview.md`, `adrs.md`, `implementation.md` (if they exist)
-   - **CRITICAL: Human-only steps**:
-     - Include ONLY tests requiring human judgment (UX, visual, usability, edge cases)
-     - EXCLUDE machine-testable items (unit tests, API responses, function outputs)
-     - Focus on user experience, visual correctness, workflow completeness
-   - Create `.ai/know/features/<feature>/QA_STEPS.md` with:
-     - Objective (user perspective)
-     - Prerequisites (setup needed)
-     - Numbered test steps with expected outcomes (human evaluation required)
-     - Acceptance criteria (clear pass/fail from user perspective)
-   - Use checkbox format for tracking
+2. Check that `QA_STEPS.md` exists (if not, inform user to run `/know:build` Phase 7 first)
 3. Check spec-graph status (using **haiku agent**):
    - `know -g .ai/spec-graph.json show feature:<name>`
    - Verify status is "complete", "review-ready", or "in-progress"
@@ -76,24 +62,14 @@ Execute tests and validate results - this is hands-on acceptance testing:
 **For each test step in QA_STEPS.md**:
 
 1. **Display step number, description, and expected outcome**
-2. **Determine if step is automatable**:
-   - CLI command? → Run it with Bash tool
-   - File check? → Use Read/Glob tools
-   - API call? → Execute and verify response
-   - Data validation? → Run and check output
-   - UI/UX/Visual? → Ask user to validate
-3. **Execute or guide**:
-   - **If automatable**:
-     - Run the test automatically
-     - Display results to user
-     - Ask: "Does this output look correct to you? [Pass/Fail/Skip]"
-   - **If not automatable**:
-     - Instruct user: "Please test this manually in your application"
-     - Ask: "Did this step work as expected? [Pass/Fail/Skip]"
-4. **If "Fail"**:
+2. **All steps are human-executed** (QA_STEPS contains NO automation):
+   - Instruct user: "Please test this in your running application"
+   - Describe what to do and what to look for
+   - Ask: "Did this step work as expected? [Pass/Fail/Skip]"
+3. **If "Fail"**:
    - Ask follow-up: "What happened instead? Describe the issue."
    - Record detailed failure description
-5. **Track results for summary**
+4. **Track results for summary**
 
 **Tracking format**:
 ```
@@ -102,6 +78,22 @@ Step 1: [PASS/FAIL/SKIP]
   Expected: ...
   Actual: [if failed, user's description]
 ```
+
+### 3a. Contract Action Verification
+
+**After QA_STEPS testing, verify declared actions**:
+
+1. **Load contract.yaml** from `.ai/know/features/<feature>/contract.yaml`
+2. **For each declared action** in `declared.actions[]`:
+   - Display action entity and description
+   - Ask: "Did you verify that '{action description}' works correctly? [Yes/No/Skip]"
+   - **If "Yes"**: Toggle `verified: true` for this action
+   - **If "No"**: Record as unverified, add to discrepancies
+   - **If "Skip"**: Leave as unverified
+3. **Update contract.yaml** with verification status
+4. **If all actions verified**:
+   - Set `observed.verified_date` to current timestamp
+   - Set `observed.verified_commit` to current HEAD
 
 ### 4. Acceptance Criteria Check
 
@@ -156,13 +148,18 @@ Step 1: [PASS/FAIL/SKIP]
      - `.ai/know/features/<feature>/changes/`
    - For each bug: Create `bugs/NNN-slug.md` (numbered sequentially)
    - For each change: Create `changes/NNN-slug.md`
-4. **Update todo.md** with new unchecked items:
-   - Add at the top of todo.md (above existing items):
-     ```markdown
-     ## Review Fixes (from YYYY-MM-DD review)
-     - [ ] Fix Bug #001: [Description] (see bugs/001-slug.md)
-     - [ ] Implement Change #001: [Description] (see changes/001-slug.md)
+4. **Create requirements for fixes** (replaces todo.md approach):
+   - For each bug/change, add a requirement to track the fix:
+     ```bash
+     # For bug fix:
+     know req add <feature> fix-bug-NNN --name "Fix: [Bug title]" \
+       --description "See bugs/NNN-slug.md for details"
+
+     # For change:
+     know req add <feature> impl-change-NNN --name "Change: [Change title]" \
+       --description "See changes/NNN-slug.md for details"
      ```
+   - These requirements will show in `know req list <feature>`
 5. **Offer to create implementation plan**:
    - If 3+ bugs/changes, ask: "Create implementation plan for these fixes? [Yes/No]"
    - If Yes: Create `.ai/know/features/<feature>/plans/review-fixes-YYYYMMDD.md`
@@ -188,8 +185,9 @@ Step 1: [PASS/FAIL/SKIP]
 ## Actual Behavior
 [User's description of what happened]
 
-## Related Tasks
-- [ ] Fix bug #001: [Description] (in todo.md)
+## Tracking
+**Requirement:** requirement:<feature>-fix-bug-NNN
+**Query:** `know req status requirement:<feature>-fix-bug-NNN`
 ```
 
 **Change file template** (`.ai/know/features/<feature>/changes/001-description.md`):
@@ -213,8 +211,9 @@ Step 1: [PASS/FAIL/SKIP]
 ## Impact
 - [Areas affected by this change]
 
-## Related Tasks
-- [ ] Implement change #001: [Description] (in todo.md)
+## Tracking
+**Requirement:** requirement:<feature>-impl-change-NNN
+**Query:** `know req status requirement:<feature>-impl-change-NNN`
 ```
 
 ### 6. Generate Review Artifacts
@@ -269,35 +268,35 @@ Step 1: [PASS/FAIL/SKIP]
   - Actual: ...
   - Tracked As: Bug #001 (see bugs/001-description.md)
   - Severity: [Critical/High/Medium/Low]
+  - Requirement: requirement:<feature>-fix-bug-001
 
   [... for each failed step]
 
-  ## Action Items Created
+  ## Requirements Created
 
-  See updated todo.md for checklist of:
-  - [ ] Bug fixes (X bugs in bugs/ directory)
-  - [ ] Changes (Y changes in changes/ directory)
+  Bug fixes and changes are tracked as requirements in spec-graph:
+  - `know req list <feature>` to see all requirements
+  - `know req status requirement:<feature>-fix-bug-NNN complete` to mark done
 
   ## Next Steps
 
-  1. Address bugs/changes as prioritized
-  2. Update todo.md as items are completed
+  1. Address bugs/changes by working through requirements
+  2. Update requirement status as items are completed
   3. Re-run `/know:review <feature>` after fixes
   ```
 - Structured bug/change files in:
   - `.ai/know/features/<feature>/bugs/NNN-description.md`
   - `.ai/know/features/<feature>/changes/NNN-description.md`
-- Updated `.ai/know/features/<feature>/todo.md` with new unchecked items
+- Requirements added to spec-graph for tracking (replaces todo.md)
 
 ### 7. Update Spec-Graph
 
 **Using haiku agent**:
 - If Approved:
-  - Update `meta.phases` to move feature to "done" phase
-  - Update `meta.feature_specs.<feature>.status` to "complete"
-  - **Validate graph**: `know validate`
+  - `know -g .ai/spec-graph.json update feature:<name> '{"status": "done"}'` (or similar update)
+  - Add review completion date to meta if possible
 - If Needs Work:
-  - Keep status as "in-progress" in `meta.feature_specs`
+  - Keep status as "in-progress"
 - If Deferred:
   - No status change
 
@@ -307,7 +306,7 @@ Step 1: [PASS/FAIL/SKIP]
 - `.ai/know/features/<feature>/bugs/NNN-*.md` - Structured bug tracking files (if bugs found)
 - `.ai/know/features/<feature>/changes/NNN-*.md` - Structured change requests (if changes needed)
 - `.ai/know/features/<feature>/plans/review-fixes-*.md` - Implementation plan (if 3+ issues)
-- Updated `.ai/know/features/<feature>/todo.md` - New unchecked items for bugs/changes
+- New requirements in spec-graph for bug fixes/changes (tracked via `know req list`)
 - Updated spec-graph status (if Approved)
 - Optional: Feature ready for `/know:done` archival (if Approved)
 
@@ -316,7 +315,7 @@ Step 1: [PASS/FAIL/SKIP]
 ## Example Session
 
 ```
-User: /know:review user-authenticationAssistant: Found feature at .ai/know/user-authentication/
+User: /know:review user-authenticationAssistant: Found feature at .ai/know/features/user-authentication/
           Loading QA_STEPS.md...
 
           === Feature: User Authentication ===
@@ -364,14 +363,15 @@ Assistant: Created review-results.md and review-feedback.md
 
 ## Notes
 
-- **QA_STEPS.md scope**: Contains ONLY human-testable items (UX, visual, usability)
-  - ✅ Include: "Does the login form appear centered?", "Is the error message user-friendly?"
-  - ❌ Exclude: "Does the API return 200?", "Is the token valid?"
-  - Machine-testable items belong in automated test suites, not QA_STEPS.md
-- **Review process can still help automate**:
-  - During the review, AI can run CLI commands, check files, execute scripts
-  - This helps speed up the review even though QA_STEPS only contains human items
-  - Example: If QA step is "Check that summary.md was created", AI can verify file exists
+- **Human-only QA_STEPS** - All testing steps are manual human verification:
+  - UI test: "Does the login button appear blue?"
+  - Flow test: "Complete the checkout process and verify confirmation"
+  - Edge case: "Try an invalid input and verify error message"
+  - NO automated tests in QA_STEPS (those go in test files)
+- **Contract action verification** (Section 3a):
+  - Each declared action must be verified by user
+  - Verification updates contract.yaml `verified: true`
+  - All verified → sets verified_date and verified_commit
 - Use AskUserQuestion tool for all yes/no and multi-choice prompts
 - Keep language user-facing (not technical) in QA_STEPS.md
 - Record actual vs expected for all failures
@@ -382,5 +382,3 @@ Assistant: Created review-results.md and review-feedback.md
   - Can run from any location with access to `.ai/` directory
   - Feature remains in worktree until `/know:done` is run
 
----
-`r2`

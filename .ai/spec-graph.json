@@ -9,8 +9,13 @@
         "feature:graph-embeddings": {
           "status": "incomplete"
         },
-        "feature:beads-integration": {
+        "feature:spec-to-jsonl-converter": {
           "status": "planned"
+        }
+      },
+      "in-progress": {
+        "feature:spec-generation-enrichment": {
+          "status": "incomplete"
         }
       }
     },
@@ -49,6 +54,10 @@
         "name": "Review Ready",
         "description": "Awaiting user acceptance testing"
       },
+      "changes-planned": {
+        "name": "Changes Planned",
+        "description": "Extension/modification planned for existing feature"
+      },
       "done": {
         "name": "Done",
         "description": "Completed and deployed"
@@ -65,6 +74,18 @@
       "developer": {
         "name": "Software Developer",
         "description": "Developer using know to manage product specs"
+      },
+      "software-architect": {
+        "name": "Software Architect",
+        "description": "System architect designing and planning software architecture"
+      },
+      "product-manager": {
+        "name": "Product Manager",
+        "description": "Product manager tracking features and roadmap"
+      },
+      "tool-integrator": {
+        "name": "Tool Integrator",
+        "description": "Developer integrating know with other tools and workflows"
       }
     },
     "objective": {
@@ -83,6 +104,22 @@
       "generate-docs": {
         "name": "Generate Documentation",
         "description": "Generate spec documents from graph"
+      },
+      "manage-tasks": {
+        "name": "Manage Development Tasks",
+        "description": "Track and organize development tasks using requirements and spec-graph"
+      },
+      "architect-system": {
+        "name": "Architect System",
+        "description": "Design and document system architecture using graphs"
+      },
+      "track-features": {
+        "name": "Track Features",
+        "description": "Monitor feature development progress across phases"
+      },
+      "integrate-tools": {
+        "name": "Integrate Tools",
+        "description": "Integrate know with external tools and LLM workflows"
       }
     },
     "feature": {
@@ -114,9 +151,13 @@
         "name": "Graph Embeddings",
         "description": "Semantic search layer over spec-graph using vector embeddings for natural language queries and auto-suggestions"
       },
-      "beads-integration": {
-        "name": "Beads Integration",
-        "description": "Seamless integration with Beads task management system, with native JSONL alternative for users who prefer built-in task tracking"
+      "spec-generation-enrichment": {
+        "name": "Spec Generation Enrichment",
+        "description": "Enable rich spec generation with lightweight entities, reusable references, and feature-specific metadata"
+      },
+      "spec-to-jsonl-converter": {
+        "name": "Spec to JSONL Converter",
+        "description": "Convert spec-graph.json entities into JSONL format with cross-index identifiers for data pipelines"
       }
     },
     "component": {
@@ -164,21 +205,25 @@
         "name": "Auto Embed Hook",
         "description": "Triggers incremental embedding regeneration when graph is modified via add/link/unlink commands"
       },
-      "beads-bridge": {
-        "name": "Beads Bridge",
-        "description": "Integration layer between know CLI and Beads bd commands, handling initialization, passthrough, and JSONL parsing"
+      "spec-generator": {
+        "name": "Spec Generator",
+        "description": "Enhanced SpecGenerator class with helper methods for rich spec generation"
       },
-      "task-manager": {
-        "name": "Task Manager",
-        "description": "Native JSONL-based task system with hash IDs, dependency tracking, and auto-ready detection as Beads alternative"
+      "reference-renderer": {
+        "name": "Reference Renderer",
+        "description": "Helper methods for rendering TypeScript, signatures, and other reference types"
       },
-      "task-sync": {
-        "name": "Task Sync",
-        "description": "Bidirectional sync engine between Beads/native tasks and spec-graph feature entities"
+      "metadata-accessor": {
+        "name": "Metadata Accessor",
+        "description": "Helper for accessing meta.feature_specs and other metadata sections"
       },
-      "task-cli": {
-        "name": "Task CLI",
-        "description": "CLI commands for task management: know beads/task subcommands with feature linking"
+      "gap-analyzer": {
+        "name": "Gap Analyzer",
+        "description": "Component for detecting implementation gaps"
+      },
+      "reference-analyzer": {
+        "name": "Reference Analyzer",
+        "description": "Component for analyzing reference usage"
       }
     },
     "action": {
@@ -206,17 +251,187 @@
         "name": "Suggest Dependencies",
         "description": "Recommend potential dependencies for a node based on semantic similarity"
       },
-      "initialize-beads": {
-        "name": "Initialize Beads",
-        "description": "Set up Beads integration in .ai/beads/ with symlink to .beads for bd CLI compatibility"
+      "enrich-feature-specs": {
+        "name": "Enrich Feature Specs",
+        "description": "Generate rich feature specifications with metadata, components, operations, and references"
       },
-      "sync-tasks": {
-        "name": "Sync Tasks",
-        "description": "Bidirectionally sync tasks between Beads/native system and spec-graph features"
+      "add-entity": {
+        "name": "Add Entity",
+        "description": "Add new entities to the graph"
       },
-      "manage-tasks": {
-        "name": "Manage Tasks",
-        "description": "Create, list, update, and complete tasks with feature linking and auto-ready detection"
+      "query-dependencies": {
+        "name": "Query Dependencies",
+        "description": "Query entity dependencies (uses, used-by)"
+      },
+      "list-entities": {
+        "name": "List Entities",
+        "description": "List entities by type or all entities"
+      },
+      "manage-links": {
+        "name": "Manage Links",
+        "description": "Create and remove dependency links between entities"
+      },
+      "show-statistics": {
+        "name": "Show Statistics",
+        "description": "Display graph statistics and metrics"
+      },
+      "validate-structure": {
+        "name": "Validate Structure",
+        "description": "Validate graph structure and DAG properties"
+      },
+      "validate-dependencies": {
+        "name": "Validate Dependencies",
+        "description": "Validate dependency rules are followed"
+      },
+      "check-cycles": {
+        "name": "Check Cycles",
+        "description": "Detect circular dependencies"
+      },
+      "health-check": {
+        "name": "Health Check",
+        "description": "Comprehensive graph health assessment"
+      },
+      "analyze-missing-connections": {
+        "name": "Analyze Missing Connections",
+        "description": "Identify missing connections in dependency chains"
+      },
+      "detect-orphaned-references": {
+        "name": "Detect Orphaned References",
+        "description": "Find unused references in the graph"
+      },
+      "suggest-connections": {
+        "name": "Suggest Connections",
+        "description": "Recommend missing dependency links"
+      },
+      "generate-entity-spec": {
+        "name": "Generate Entity Spec",
+        "description": "Generate markdown spec for a single entity"
+      },
+      "generate-feature-spec": {
+        "name": "Generate Feature Spec",
+        "description": "Generate comprehensive feature specification"
+      },
+      "generate-sitemap": {
+        "name": "Generate Sitemap",
+        "description": "Generate sitemap of all interfaces"
+      },
+      "execute-llm-chain": {
+        "name": "Execute LLM Chain",
+        "description": "Run LLM workflow chain on graph data"
+      },
+      "call-llm-provider": {
+        "name": "Call LLM Provider",
+        "description": "Make API calls to LLM providers"
+      },
+      "manage-llm-workflows": {
+        "name": "Manage LLM Workflows",
+        "description": "Configure and manage workflow definitions"
+      }
+    },
+    "operation": {
+      "generate-rich-feature-spec": {
+        "name": "Generate Rich Feature Spec",
+        "description": "Enhanced feature spec generation with all new sections and metadata"
+      },
+      "render-typescript": {
+        "name": "Render TypeScript",
+        "description": "Convert data-model reference to TypeScript interface"
+      },
+      "render-signature": {
+        "name": "Render Signature",
+        "description": "Format function signature reference as readable string"
+      },
+      "get-feature-metadata": {
+        "name": "Get Feature Metadata",
+        "description": "Access meta.feature_specs for a feature with graceful degradation"
+      },
+      "get-component-operations": {
+        "name": "Get Component Operations",
+        "description": "Query graph for operations linked to a component"
+      },
+      "get-component-file": {
+        "name": "Get Component File",
+        "description": "Query source-file reference for component location"
+      },
+      "add_entity_to_graph": {
+        "name": "Add Entity to Graph",
+        "description": "Core operation to add a new entity with validation"
+      },
+      "get_entity_dependencies": {
+        "name": "Get Entity Dependencies",
+        "description": "Retrieve dependency list for an entity"
+      },
+      "create_dependency_link": {
+        "name": "Create Dependency Link",
+        "description": "Add a new dependency edge to the graph"
+      },
+      "remove_dependency_link": {
+        "name": "Remove Dependency Link",
+        "description": "Remove a dependency edge from the graph"
+      },
+      "list_entities_by_type": {
+        "name": "List Entities by Type",
+        "description": "List all entities of a specific type"
+      },
+      "compute_graph_stats": {
+        "name": "Compute Graph Stats",
+        "description": "Calculate statistics about the graph"
+      },
+      "validate_dag_structure": {
+        "name": "Validate DAG Structure",
+        "description": "Ensure graph is a valid directed acyclic graph"
+      },
+      "check_dependency_rules": {
+        "name": "Check Dependency Rules",
+        "description": "Verify dependencies follow schema rules"
+      },
+      "detect_cycles": {
+        "name": "Detect Cycles",
+        "description": "Find circular dependency chains"
+      },
+      "compute_health_score": {
+        "name": "Compute Health Score",
+        "description": "Calculate overall graph health metrics"
+      },
+      "find_missing_chains": {
+        "name": "Find Missing Chains",
+        "description": "Identify incomplete dependency chains"
+      },
+      "compute_completeness": {
+        "name": "Compute Completeness",
+        "description": "Calculate implementation completeness score"
+      },
+      "find_orphaned_refs": {
+        "name": "Find Orphaned Refs",
+        "description": "Locate unreferenced entities"
+      },
+      "suggest_links": {
+        "name": "Suggest Links",
+        "description": "Generate link suggestions"
+      },
+      "render_entity_template": {
+        "name": "Render Entity Template",
+        "description": "Render markdown template for entity"
+      },
+      "generate_interface_list": {
+        "name": "Generate Interface List",
+        "description": "Create list of all interfaces"
+      },
+      "execute_workflow_chain": {
+        "name": "Execute Workflow Chain",
+        "description": "Execute multi-step LLM workflow"
+      },
+      "call_anthropic_api": {
+        "name": "Call Anthropic API",
+        "description": "Make Anthropic API requests"
+      },
+      "call_openai_api": {
+        "name": "Call OpenAI API",
+        "description": "Make OpenAI API requests"
+      },
+      "load_workflow_definition": {
+        "name": "Load Workflow Definition",
+        "description": "Load workflow configuration"
       }
     }
   },
@@ -230,14 +445,16 @@
     "user:developer": {
       "depends_on": [
         "objective:manage-specs",
-        "objective:generate-docs"
+        "objective:generate-docs",
+        "objective:manage-tasks"
       ]
     },
     "objective:query-graph": {
       "depends_on": [
         "feature:cli-operations",
         "feature:schema-agnostic-know",
-        "feature:graph-embeddings"
+        "feature:graph-embeddings",
+        "feature:spec-to-jsonl-converter"
       ]
     },
     "objective:manage-specs": {
@@ -245,7 +462,9 @@
         "feature:cli-operations",
         "feature:graph-validation",
         "feature:schema-agnostic-know",
-        "feature:llm-workflows"
+        "feature:llm-workflows",
+        "feature:spec-generation-enrichment",
+        "feature:spec-to-jsonl-converter"
       ]
     },
     "objective:analyze-gaps": {
@@ -257,33 +476,9 @@
     "objective:generate-docs": {
       "depends_on": [
         "feature:spec-generation",
-        "feature:schema-agnostic-know"
-      ]
-    },
-    "feature:cli-operations": {
-      "depends_on": [
-        "component:cli-commands",
-        "component:graph-operations"
-      ]
-    },
-    "feature:graph-validation": {
-      "depends_on": [
-        "component:validation-engine"
-      ]
-    },
-    "feature:gap-detection": {
-      "depends_on": [
-        "component:graph-operations"
-      ]
-    },
-    "feature:spec-generation": {
-      "depends_on": [
-        "component:spec-templates"
-      ]
-    },
-    "feature:llm-workflows": {
-      "depends_on": [
-        "component:llm-integration"
+        "feature:schema-agnostic-know",
+        "feature:spec-generation-enrichment",
+        "feature:spec-to-jsonl-converter"
       ]
     },
     "feature:schema-agnostic-know": {
@@ -332,27 +527,247 @@
         "component:similarity-search"
       ]
     },
-    "feature:beads-integration": {
+    "objective:manage-tasks": {
+      "depends_on": []
+    },
+    "component:spec-generator": {
       "depends_on": [
-        "action:initialize-beads",
-        "action:sync-tasks",
-        "action:manage-tasks"
+        "operation:generate-rich-feature-spec"
       ]
     },
-    "action:initialize-beads": {
+    "component:reference-renderer": {
       "depends_on": [
-        "component:beads-bridge"
+        "operation:render-typescript",
+        "operation:render-signature"
       ]
     },
-    "action:sync-tasks": {
+    "component:metadata-accessor": {
       "depends_on": [
-        "component:task-sync"
+        "operation:get-feature-metadata",
+        "operation:get-component-operations",
+        "operation:get-component-file"
       ]
     },
-    "action:manage-tasks": {
+    "feature:spec-generation-enrichment": {
       "depends_on": [
-        "component:task-manager",
-        "component:task-cli"
+        "action:enrich-feature-specs"
+      ]
+    },
+    "action:enrich-feature-specs": {
+      "depends_on": [
+        "component:spec-generator",
+        "component:reference-renderer",
+        "component:metadata-accessor"
+      ]
+    },
+    "feature:cli-operations": {
+      "depends_on": [
+        "action:add-entity",
+        "action:query-dependencies",
+        "action:list-entities",
+        "action:manage-links",
+        "action:show-statistics"
+      ]
+    },
+    "action:add-entity": {
+      "depends_on": [
+        "component:graph-operations"
+      ]
+    },
+    "action:query-dependencies": {
+      "depends_on": [
+        "component:graph-operations"
+      ]
+    },
+    "action:list-entities": {
+      "depends_on": [
+        "component:cli-commands"
+      ]
+    },
+    "action:manage-links": {
+      "depends_on": [
+        "component:graph-operations"
+      ]
+    },
+    "action:show-statistics": {
+      "depends_on": [
+        "component:cli-commands"
+      ]
+    },
+    "component:graph-operations": {
+      "depends_on": [
+        "operation:add_entity_to_graph",
+        "operation:get_entity_dependencies",
+        "operation:create_dependency_link",
+        "operation:remove_dependency_link"
+      ]
+    },
+    "component:cli-commands": {
+      "depends_on": [
+        "operation:list_entities_by_type",
+        "operation:compute_graph_stats"
+      ]
+    },
+    "feature:graph-validation": {
+      "depends_on": [
+        "action:validate-structure",
+        "action:validate-dependencies",
+        "action:check-cycles",
+        "action:health-check"
+      ]
+    },
+    "action:validate-structure": {
+      "depends_on": [
+        "component:validation-engine"
+      ]
+    },
+    "action:validate-dependencies": {
+      "depends_on": [
+        "component:validation-engine"
+      ]
+    },
+    "action:check-cycles": {
+      "depends_on": [
+        "component:validation-engine"
+      ]
+    },
+    "action:health-check": {
+      "depends_on": [
+        "component:validation-engine"
+      ]
+    },
+    "component:validation-engine": {
+      "depends_on": [
+        "operation:validate_dag_structure",
+        "operation:check_dependency_rules",
+        "operation:detect_cycles",
+        "operation:compute_health_score"
+      ]
+    },
+    "feature:gap-detection": {
+      "depends_on": [
+        "action:analyze-missing-connections",
+        "action:detect-orphaned-references",
+        "action:suggest-connections"
+      ]
+    },
+    "action:analyze-missing-connections": {
+      "depends_on": [
+        "component:gap-analyzer"
+      ]
+    },
+    "action:detect-orphaned-references": {
+      "depends_on": [
+        "component:reference-analyzer"
+      ]
+    },
+    "action:suggest-connections": {
+      "depends_on": [
+        "component:gap-analyzer"
+      ]
+    },
+    "component:gap-analyzer": {
+      "depends_on": [
+        "operation:find_missing_chains",
+        "operation:compute_completeness",
+        "operation:suggest_links"
+      ]
+    },
+    "component:reference-analyzer": {
+      "depends_on": [
+        "operation:find_orphaned_refs"
+      ]
+    },
+    "feature:spec-generation": {
+      "depends_on": [
+        "action:generate-entity-spec",
+        "action:generate-feature-spec",
+        "action:generate-sitemap"
+      ]
+    },
+    "action:generate-entity-spec": {
+      "depends_on": [
+        "component:spec-templates"
+      ]
+    },
+    "action:generate-feature-spec": {
+      "depends_on": [
+        "component:spec-generator"
+      ]
+    },
+    "action:generate-sitemap": {
+      "depends_on": [
+        "component:spec-templates"
+      ]
+    },
+    "component:spec-templates": {
+      "depends_on": [
+        "operation:render_entity_template",
+        "operation:generate_interface_list"
+      ]
+    },
+    "feature:llm-workflows": {
+      "depends_on": [
+        "action:execute-llm-chain",
+        "action:call-llm-provider",
+        "action:manage-llm-workflows"
+      ]
+    },
+    "action:execute-llm-chain": {
+      "depends_on": [
+        "component:llm-integration"
+      ]
+    },
+    "action:call-llm-provider": {
+      "depends_on": [
+        "component:llm-integration"
+      ]
+    },
+    "action:manage-llm-workflows": {
+      "depends_on": [
+        "component:llm-integration"
+      ]
+    },
+    "component:llm-integration": {
+      "depends_on": [
+        "operation:execute_workflow_chain",
+        "operation:call_anthropic_api",
+        "operation:call_openai_api",
+        "operation:load_workflow_definition"
+      ]
+    },
+    "user:software-architect": {
+      "depends_on": [
+        "objective:architect-system",
+        "objective:query-graph",
+        "objective:analyze-gaps"
+      ]
+    },
+    "user:product-manager": {
+      "depends_on": [
+        "objective:track-features",
+        "objective:manage-specs"
+      ]
+    },
+    "user:tool-integrator": {
+      "depends_on": [
+        "objective:integrate-tools",
+        "objective:query-graph"
+      ]
+    },
+    "objective:architect-system": {
+      "depends_on": [
+        "feature:graph-validation",
+        "feature:gap-detection",
+        "feature:cli-operations"
+      ]
+    },
+    "objective:track-features": {
+      "depends_on": []
+    },
+    "objective:integrate-tools": {
+      "depends_on": [
+        "feature:llm-workflows"
       ]
     }
   }

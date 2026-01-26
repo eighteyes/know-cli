@@ -104,3 +104,5 @@ www/node_modules/
 know-cli
 .vscode/
 .vscode/PythonImportHelper-v2-Completion.json
+
+.beads/

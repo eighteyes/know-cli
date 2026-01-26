@@ -5,6 +5,92 @@ All notable changes to the Know Tool will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0] - 2026-01-25
+
+### Added
+
+#### Requirements-Driven System
+- **requirements.py** - First-class requirement entities with status tracking
+  - `know req add <feature> <key>` - Create requirements linked to features
+  - `know req status <id> <status>` - Update requirement status (pending/in-progress/blocked/complete/verified)
+  - `know req list <feature>` - List requirements with completion counts
+  - `know req complete <id>` - Mark requirement as complete
+  - `know req block <id>` - Mark requirement as blocked
+  - Status tracked in `meta.requirements` with dates and metadata
+
+#### Deprecation System
+- **deprecation.py** - Soft deprecation with warnings and migration paths
+  - `know deprecate <entity> --reason "..."` - Mark entity as deprecated
+  - `know undeprecate <entity>` - Remove deprecation status
+  - `know deprecated` - List all deprecated entities
+  - `know deprecated --overdue` - List entities past removal date
+  - Warnings shown when linking to deprecated entities
+  - Tracked in `meta.deprecated` with replacement suggestions
+
+#### Test Coverage Queries
+- **coverage.py** - Coverage analysis via graph traversal
+  - `know coverage <feature>` - Aggregate coverage from feature level
+  - `know coverage <feature> --detail` - Per-component breakdown
+  - Traverses: feature → components → modules → test-suites
+
+### Changed
+
+#### /know:add Command
+- Added step 3b "Define Requirements" for breaking features into testable requirements
+- Extension workflow uses `know req add` instead of todo.md
+- Scaffold creates `notes.md` for freeform notes (replaces todo.md)
+- Register step uses `know req add` commands
+- Replaced config.json with contract.yaml for drift detection
+- Expanded to populate full spec-graph from Clarify step
+- Added experiments capture and validation before build
+- Added reference materials tracking (research papers, specs, docs)
+- Added duplicate detection step
+- Added /know:connect step for graph coverage
+
+#### /know:build Command
+- Phase 6 tracks progress via `know req status` instead of todo.md
+- Replace workflow uses `know deprecate <entity>` instead of todo.md
+- Added contract.yaml tracking for observed files/entities
+- Added Phase 5: Experiments - gates implementation on validation
+- QA_STEPS are human-only (no automation)
+
+#### /know:review Command
+- Bug fixes and changes tracked as requirements in spec-graph
+- Creates requirements for fixes instead of todo.md entries
+- Added contract action verification section
+
+#### /know:plan Command
+- PM mode outputs requirements via spec-graph instead of todo.md
+- Streamlined Discovery mode (delegates to /know:add for feature details)
+- Renamed Mode 6 Prototyping→Experiments
+- Added Graph Operations section with CLI examples
+
+#### /know:done Command
+- Completion check uses `know req list` instead of todo.md parsing
+
+#### /know:list Command
+- Task counts from spec-graph requirements instead of todo.md
+
+#### /know:bug Command
+- Bug fixes tracked as requirements via `know req add`
+
+#### /know:prepare Command
+- Added /know:connect step for graph coverage validation
+
+### Removed
+- **Beads task management system** - Replaced by requirements
+  - Removed `know/src/tasks/` directory
+  - Removed `.ai/tasks/tasks.jsonl`
+  - Removed beads-integration feature
+  - Cleaned spec-graph of beads-related entities
+
+### Breaking Changes
+- `todo.md` no longer used for progress tracking
+- Use `know req list <feature>` to view feature requirements
+- Use `know req status` to update progress
+
+---
+
 ## [0.0.1] - 2025-10-08
 
 ### Added - Python Implementation

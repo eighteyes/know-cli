@@ -17,12 +17,12 @@
       "platform", "business_logic", "acceptance_criterion", "state_mutation",
       "event", "content", "label", "style", "color", "layout", "pattern",
       "spacing", "typography", "breakpoint", "z-index", "transition", "asset",
-      "api_contract", "validation_rule", "error_state", "performance_spec",
+      "api_contract", "api-schema", "validation_rule", "error_state", "performance_spec",
       "notification", "configuration", "metric", "example", "constraint",
-      "terminology", "sequence", "mapping", "default",
-      "source-file", "external-dep", "api-surface", "product-component",
+      "terminology", "sequence", "mapping", "default", "security-spec",
+      "source-file", "external-dep", "api-surface", "product-component", "signature",
       "execution-trace", "call-graph", "control-flow", "data-flow",
-      "side-effect", "error-path", "code-module"
+      "side-effect", "error-path", "code-module", "test-spec"
     ],
     "validation": "References are always valid dependencies and bypass entity-to-entity dependency rules",
     "examples": [
@@ -55,6 +55,7 @@
     "transition": "Animation timings and transition durations",
     "asset": "Visual assets including images, icons, and media files for UI components and content",
     "api_contract": "Detailed request/response schemas, error codes, rate limits for all API endpoints",
+    "api-schema": "TypeScript interface definitions for public APIs including request/response types",
     "validation_rule": "Field-level and cross-field validation specifications for data integrity",
     "error_state": "Error messages, recovery actions, and fallback behaviors for user-facing errors",
     "performance_spec": "Response time SLAs, data limits, concurrency requirements, and load specifications",
@@ -67,17 +68,20 @@
     "sequence": "Orders of operations, initialization sequences, shutdown procedures, and event cascades",
     "mapping": "Transformations between representations, status codes to messages, and field mappings",
     "default": "System-wide default values, fallback behaviors, and initial states for entities",
+    "security-spec": "Reusable security requirement that may apply to multiple components",
     "source-file": "Source code file implementations with file path and module details",
     "external-dep": "External package dependencies from npm, pip, or other package managers",
     "api-surface": "Public API definitions including exported functions, classes, and modules",
     "product-component": "Cross-reference to product-level components in spec-graph.json",
+    "signature": "Function or method signature with name, parameters, and return type",
     "execution-trace": "Step-by-step execution path through module functions with call details",
     "call-graph": "Function call relationships showing what calls what with call types",
     "control-flow": "Conditional logic, branches, loops, and decision points in code",
     "data-flow": "Data transformations and how data moves through the system",
     "side-effect": "Observable effects beyond return values: file I/O, state changes, process spawning",
     "error-path": "Exception handling, error propagation, and recovery strategies",
-    "code-module": "Cross-reference to code-level modules in code-graph.json"
+    "code-module": "Cross-reference to code-level modules in code-graph.json",
+    "test-spec": "Reusable test specification that may apply to multiple components"
   },
   "reference_note": {
     "purpose": "References are terminal graph nodes used for template generation and detailed specifications",
@@ -198,6 +202,50 @@
         "hardware_manufacturing",
         "third_party_integrations"
       ]
+    },
+    "deprecated": {
+      "schema": "OBJECT<ENTITY_ID:DEPRECATION_INFO>",
+      "note": "Soft-deprecated entities still exist but warn on use",
+      "deprecation_info": {
+        "reason": "STRING - Why the entity is deprecated",
+        "deprecated_date": "ISO8601_DATE - When entity was deprecated",
+        "removal_target": "ISO8601_DATE - When entity will be removed (optional)",
+        "replacement": "STRING - Entity ID of replacement (optional)"
+      },
+      "examples": {
+        "component:old-auth": {
+          "reason": "Replaced by component:new-auth",
+          "deprecated_date": "2026-01-20",
+          "removal_target": "2026-03-01",
+          "replacement": "component:new-auth"
+        }
+      }
+    },
+    "requirements": {
+      "schema": "OBJECT<REQUIREMENT_KEY:REQUIREMENT_STATUS>",
+      "note": "Status tracking for requirement entities",
+      "requirement_status": {
+        "status": "STRING - pending|in-progress|blocked|complete|verified",
+        "started_date": "ISO8601_DATE - When work began (optional)",
+        "completed_date": "ISO8601_DATE - When work finished (optional)",
+        "verified_date": "ISO8601_DATE - When requirement was verified (optional)",
+        "blocked_by": "STRING - Entity ID or external reason (optional)",
+        "effort_hours": "NUMBER - Estimated/actual effort (optional)",
+        "notes": "STRING - Additional context (optional)"
+      },
+      "examples": {
+        "auth-login-validation": {
+          "status": "complete",
+          "started_date": "2026-01-15",
+          "completed_date": "2026-01-20",
+          "effort_hours": 8
+        },
+        "auth-session-persistence": {
+          "status": "blocked",
+          "started_date": "2026-01-21",
+          "blocked_by": "component:session-store not implemented"
+        }
+      }
     }
   },
   "entity_description": {
