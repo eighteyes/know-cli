@@ -1,6 +1,6 @@
 ---
 name: Know: Create Schema
-description: Design a custom schema for domain-specific, core-periphery graph modeling with the know tool
+description: Design a custom schema for domain-specific graph modeling with the know tool
 category: Know
 tags: [know, schema, design, memory, knowledge-graph]
 ---
@@ -10,7 +10,6 @@ tags: [know, schema, design, memory, knowledge-graph]
 Guide an LLM through designing a custom schema (entity types, dependency rules, reference types) for modeling a specific domain using the know graph engine.
 
 **Prerequisites**
-- Activate know-tool skill for graph operations
 - Understanding of the domain you want to model
 - Knowledge of what entities and relationships exist in that domain
 
@@ -527,5 +526,3 @@ know -g graphs/my-memory.json validate
 
 **Note**: Current know tool needs schema-awareness added. This command generates schemas ready for when know becomes schema-agnostic.
 
----
-`r2`

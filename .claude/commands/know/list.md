@@ -24,6 +24,3 @@ This command displays features grouped by phase (I, II, III, in-progress, review
 - Status icons (✅ completed, 🔄 in-progress, 📋 planned)
 - Summary footer with totals
 
----
-`r2` - Requirements replace todo.md: completion counts from spec-graph requirements
-`r1` - Initial version

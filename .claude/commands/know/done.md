@@ -175,6 +175,3 @@ Assistant: Checks completion, moves to archive, confirms success
   - Removes worktree after successful merge
   - Can run from main repo or any worktree (auto-navigates as needed)
 
----
-`r2` - Requirements replace todo.md: completion check uses `know req list` instead of todo.md
-`r1` - Initial version

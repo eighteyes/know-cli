@@ -523,8 +523,3 @@ Assistant: Assessing project maturity...
 - Suitable for greenfield planning or refining existing projects
 - Can skip modes based on maturity assessment
 
----
-`r4` - Requirements replace todo.md: PM mode outputs requirements via spec-graph instead of todo.md
-`r3` - Streamlined Discovery mode: removed redundant feature detail questions, explicitly delegate to /know:add for each feature (separation: plan identifies WHICH features, add handles HOW each works)
-`r2` - Renamed Mode 6 Prototyping→Experiments, moved after Quality (Mode 6→7), enhanced outputs with project-level and feature-level experiments.md
-`r1` - Added explicit Graph Operations section with know CLI commands; added "Graph Commands to Execute" examples to Modes 2-5; updated Workflow Execution to specify /know:add for features vs know CLI for other entities

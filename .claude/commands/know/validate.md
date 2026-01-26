@@ -140,5 +140,3 @@ Assistant: Checking for codebase changes since spec-generation-enrichment was pl
           3. Dismiss
 ```
 
----
-`r1` - Initial version

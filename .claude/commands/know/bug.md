@@ -195,6 +195,3 @@ Assistant: Found feature at .ai/know/features/user-authentication/
 - **Resolution tracking**: Bug files include a Resolution section to document fixes
 - **Related to /know:review**: Bugs can be created during review or independently
 
----
-`r2` - Requirements replace todo.md: Bug fixes now tracked as requirements in spec-graph
-`r1` - Initial version

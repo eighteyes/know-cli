@@ -382,6 +382,3 @@ Assistant: Created review-results.md and review-feedback.md
   - Can run from any location with access to `.ai/` directory
   - Feature remains in worktree until `/know:done` is run
 
----
-`r2` - Requirements replace todo.md: bug fixes and changes tracked as requirements in spec-graph
-`r1` - Added contract action verification (Section 3a), human-only QA_STEPS

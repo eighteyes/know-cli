@@ -87,4 +87,6 @@ Begin with:
 2. Connecting highest-priority disconnected chains
 
 ---
-`r3`
+r3 - Updated to use `know coverage` command instead of python script
+r2 - Updated terminology to "coverage", added removal step, clarified leaf components
+r1 - Initial version with coverage-driven connection workflow

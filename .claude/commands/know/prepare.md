@@ -211,5 +211,3 @@ fd -g "*test*" -t d                        # Test directories
 - Always validate the graph after populating it
 - **Run `/know:connect` at the end** to ensure graph coverage and connectivity
 
----
-`r2`

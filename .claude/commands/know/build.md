@@ -540,8 +540,3 @@ Assistant: Feature not found in .ai/know/features/
   - Can skip with explicit risk acceptance
   - Failed experiments block build until resolved or skipped
 
----
-`r4` - Deprecation uses know deprecate: Replace workflow uses `know deprecate <entity>` instead of todo.md
-`r3` - Requirements replace todo.md: Phase 6 tracks progress via know req status, notes.md for freeform notes
-`r2` - Added contract.yaml tracking: observed files/entities in Phase 6, validation in Phase 8, QA_STEPS human-only
-`r1` - Added Phase 5: Experiments - gates implementation on experiment validation with user confirmation
