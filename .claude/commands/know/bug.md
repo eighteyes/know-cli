@@ -1,13 +1,13 @@
 ---
 name: Know: Report Bug
-description: Create a structured bug report for a feature with automatic tracking in todo.md
+description: Create a structured bug report for a feature with requirement tracking in spec-graph
 category: Know
 tags: [know, bug, tracking, issue]
 ---
 
 **Main Objective**
 
-Create a structured bug report for a feature, automatically numbering it, adding it to todo.md, and optionally updating spec-graph status.
+Create a structured bug report for a feature, automatically numbering it, creating a fix requirement in spec-graph, and optionally updating feature status.
 
 **Prerequisites**
 - Activate the know-tool skill for graph operations
@@ -98,8 +98,9 @@ Create a structured bug report for a feature, automatically numbering it, adding
 ## Context
 [Additional context, environment details, logs]
 
-## Related Tasks
-- [ ] Fix bug #NNN: [Title] (see todo.md)
+## Tracking
+**Requirement:** requirement:<feature>-fix-bug-NNN
+**Query:** `know req status requirement:<feature>-fix-bug-NNN`
 
 ## Resolution
 <!-- Updated when bug is fixed -->
@@ -108,16 +109,16 @@ Create a structured bug report for a feature, automatically numbering it, adding
 **Solution:** [Description of fix]
 ```
 
-### 4. Update todo.md
+### 4. Create Bug Fix Requirement
 
 **Steps**:
-1. Read `.ai/know/features/<feature>/todo.md`
-2. Add bug fix task at the top (or under a "## Bugs" section if it exists):
-   ```markdown
-   ## Bugs
-   - [ ] Fix Bug #NNN: [Title] (see bugs/NNN-slug.md) [Severity]
+1. Create a requirement in spec-graph for the bug fix:
+   ```bash
+   know req add <feature> fix-bug-NNN --name "Fix: [Bug title]" \
+     --description "See bugs/NNN-slug.md for details. Severity: [Level]"
    ```
-3. If multiple bugs exist, keep them grouped and sorted by number
+2. The requirement will be linked to the feature automatically
+3. Track progress with: `know req status requirement:<feature>-fix-bug-NNN in-progress`
 
 ### 5. Update Spec-Graph (Optional)
 
@@ -135,12 +136,13 @@ Create a structured bug report for a feature, automatically numbering it, adding
 Bug #NNN created: [Title]
 Severity: [Level]
 Location: .ai/know/features/<feature>/bugs/NNN-slug.md
-Todo updated: .ai/know/features/<feature>/todo.md
+Requirement: requirement:<feature>-fix-bug-NNN
 Status: [Updated to in-progress / Kept as <current>]
 
 Next steps:
-- Fix the bug and update todo.md
+- Fix the bug: `know req status requirement:<feature>-fix-bug-NNN in-progress`
 - Update bug file when resolved
+- Mark complete: `know req complete requirement:<feature>-fix-bug-NNN`
 - Run /know:review <feature> to verify fix
 ```
 
@@ -149,8 +151,8 @@ Next steps:
 ## Outputs
 
 - `.ai/know/features/<feature>/bugs/NNN-slug.md` - Structured bug report
-- Updated `.ai/know/features/<feature>/todo.md` - Added bug fix task
-- Updated spec-graph (if status changed to in-progress)
+- New requirement in spec-graph: `requirement:<feature>-fix-bug-NNN`
+- Updated spec-graph status (if changed to in-progress)
 
 ---
 
@@ -165,17 +167,18 @@ Assistant: Found feature at .ai/know/features/user-authentication/
           [Collects information via AskUserQuestion]
 
           Creating bug file: bugs/001-password-reset-email-not-sent.md
-          Updating todo.md...
+          Creating requirement: requirement:user-authentication-fix-bug-001
 
           Bug #001 created: Password reset email not being sent
           Severity: High
           Location: .ai/know/features/user-authentication/bugs/001-password-reset-email-not-sent.md
-          Todo updated: .ai/know/features/user-authentication/todo.md
+          Requirement: requirement:user-authentication-fix-bug-001
           Status: Feature is in-progress (no change needed)
 
           Next steps:
-          - Fix the bug and check off the task in todo.md
+          - Fix the bug: `know req status requirement:user-authentication-fix-bug-001 in-progress`
           - Update bugs/001-password-reset-email-not-sent.md when resolved
+          - Mark complete: `know req complete requirement:user-authentication-fix-bug-001`
           - Run /know:review user-authentication to verify the fix
 ```
 
@@ -186,11 +189,12 @@ Assistant: Found feature at .ai/know/features/user-authentication/
 - **Quick bug reporting**: Streamlined workflow for capturing bugs outside of review process
 - **Automatic numbering**: Bugs are numbered sequentially (001, 002, 003...)
 - **Slug generation**: File names are human-readable slugs from bug titles
-- **Todo integration**: Bug fix tasks automatically added to todo.md for tracking
+- **Requirement tracking**: Bug fixes tracked as requirements in spec-graph (`know req list <feature>`)
 - **Status management**: Can reopen features marked as done/review-ready
 - **Haiku agents**: Graph operations use haiku for speed and cost efficiency
 - **Resolution tracking**: Bug files include a Resolution section to document fixes
 - **Related to /know:review**: Bugs can be created during review or independently
 
 ---
-`r1`
+`r2` - Requirements replace todo.md: Bug fixes now tracked as requirements in spec-graph
+`r1` - Initial version

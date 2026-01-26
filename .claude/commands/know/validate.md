@@ -114,25 +114,25 @@ Ask user to choose next action:
 
 **Example Usage**
 ```
-User: /know:validate beads-integration
-Assistant: Checking for codebase changes since beads-integration was planned...
+User: /know:validate spec-generation-enrichment
+Assistant: Checking for codebase changes since spec-generation-enrichment was planned...
 
-          Baseline: 2024-01-10 (directory created)
+          Baseline: 2026-01-15 (directory created)
 
           Risk Assessment:
             HIGH:   0 files
-            MEDIUM: 2 files
-            LOW:    4 files
+            MEDIUM: 1 files
+            LOW:    2 files
             INFO:   1 file
 
           Changed files:
-            [MEDIUM] know/src/tasks/beads_bridge.py (bug fixes)
-            [MEDIUM] know/src/tasks/task_sync.py (enhancements)
-            [LOW]    tests/test_beads.py (4 commits)
+            [MEDIUM] know/src/generators.py (feature enhancements)
+            [LOW]    tests/test_generators.py (new tests)
+            [LOW]    know/templates/feature.md (template update)
             [INFO]   README.md (1 commit)
 
           Recommendation: Plan is likely valid. MEDIUM changes
-          are bug fixes within planned scope.
+          are enhancements within planned scope.
 
           What would you like to do?
           1. Review changes

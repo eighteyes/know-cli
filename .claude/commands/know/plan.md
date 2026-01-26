@@ -12,6 +12,40 @@ Guide user through interactive QA sessions to build a complete product vision wi
 **Prerequisites**
 - Activate the know-tool skill for graph operations
 
+**Graph Operations (CRITICAL)**
+
+All spec-graph modifications MUST use know CLI commands. Never edit spec-graph.json directly.
+
+**Adding Features** - Use `/know:add`:
+```
+/know:add <feature-name>
+```
+This triggers the full feature workflow: duplicate check → HITL clarification → scaffolding → registration → graph linking.
+
+**Adding Other Entities** - Use `know add`:
+```bash
+know -g .ai/spec-graph.json add user <key> '{"name":"...","description":"..."}'
+know -g .ai/spec-graph.json add objective <key> '{"name":"...","description":"..."}'
+know -g .ai/spec-graph.json add component <key> '{"name":"...","description":"..."}'
+know -g .ai/spec-graph.json add action <key> '{"name":"...","description":"..."}'
+know -g .ai/spec-graph.json add operation <key> '{"name":"...","description":"..."}'
+know -g .ai/spec-graph.json add interface <key> '{"name":"...","description":"..."}'
+know -g .ai/spec-graph.json add requirement <key> '{"name":"...","description":"..."}'
+```
+
+**Linking Dependencies** - Use `know link`:
+```bash
+know -g .ai/spec-graph.json link user:developer objective:manage-data
+know -g .ai/spec-graph.json link objective:manage-data feature:data-import
+know -g .ai/spec-graph.json link feature:data-import action:upload-file
+know -g .ai/spec-graph.json link action:upload-file component:file-processor
+```
+
+**Validation** - Always validate after modifications:
+```bash
+know -g .ai/spec-graph.json validate
+```
+
 **Exploration Strategy**
 When existing code is found, use parallel exploration to understand the codebase:
 - **Explore agent**: Discovers codebase nuances, patterns, and architecture (use `thoroughness: "medium"`)
@@ -59,10 +93,11 @@ Each mode follows this pattern:
 2. Write questions to `.ai/know/qa/[mode-name].md`
 3. Interactive QA session with user
 4. Generate mode artifacts (markdown files)
-5. Generate corresponding spec-graph entities
-6. **Confirm with user before writing to spec-graph**
-7. Validate graph
-8. Save QA session results
+5. **Add entities to spec-graph using know CLI** (see Graph Operations above)
+6. **Link dependencies using `know link`**
+7. **Confirm with user before executing commands**
+8. Validate graph: `know -g .ai/spec-graph.json validate`
+9. Save QA session results
 
 ---
 
@@ -93,17 +128,25 @@ Each mode follows this pattern:
 - What are their core objectives?
 - What is the critical path through the system?
 - What user stories define success?
+- **What features are needed?** (list by name, 1-line description each)
 - What features are must-have vs nice-to-have?
 - What are the key requirements?
 - What business processes need to be supported?
+- **Are there project-level reference materials?** (research papers, specifications, API docs, standards, prior art)
+
+**Surface Assumptions**:
+Before proceeding to Architect mode, state any assumptions about scope, technical approach, or existing system behavior.
+For each assumption: confidence ≥95% → state and proceed. <95% → ask user.
+*Assumption economics: -5 if wrong, +1 if right, 0 if ask.*
 
 **Outputs**:
 - Files:
   - `.ai/know/qa/discovery.md` - QA session log
   - `.ai/know/product/user-stories.md`
   - `.ai/know/product/requirements.md`
-  - `.ai/know/product/features.md`
+  - `.ai/know/product/features.md` - High-level feature list with priorities
   - `.ai/know/product/critical-path.md`
+  - **`.ai/know/references.md`** - Project-level research papers, specs, API docs, prior art (if provided)
   - `.ai/know/flows/user.md` - User journey diagram
   - `.ai/know/flows/system.md` - System interaction diagram
   - `.ai/know/flows/biz.md` - Business process diagram
@@ -111,8 +154,44 @@ Each mode follows this pattern:
 - Spec-graph entities (WITH CONFIRMATION):
   - `user:*` entities (e.g., user:developer, user:end-user)
   - `objective:*` entities (e.g., objective:manage-data, objective:generate-reports)
-  - Initial `feature:*` entities (high-level features)
-  - Dependencies: `user → objective`, `objective → feature`
+  - Dependencies: `user → objective`
+  - **`references.documentation`** entries for project-level research papers, specs, API docs (if provided)
+
+- **Graph Commands to Execute**:
+  ```bash
+  # Add users
+  know -g .ai/spec-graph.json add user developer '{"name":"Developer","description":"..."}'
+  know -g .ai/spec-graph.json add user end-user '{"name":"End User","description":"..."}'
+
+  # Add objectives
+  know -g .ai/spec-graph.json add objective manage-data '{"name":"Manage Data","description":"..."}'
+
+  # Link users to objectives
+  know -g .ai/spec-graph.json link user:developer objective:manage-data
+
+  # Validate users and objectives
+  know -g .ai/spec-graph.json validate
+  ```
+
+- **Feature Registration** (CRITICAL):
+
+  For each feature identified, explicitly call `/know:add`:
+  ```bash
+  /know:add data-import
+  /know:add user-auth
+  /know:add report-generation
+  # ... repeat for all features
+  ```
+
+  **Why delegate to /know:add?**
+  - Duplicate detection (prevents redundant work)
+  - Per-feature HITL clarification (components, actions, interfaces, requirements)
+  - Feature-specific reference materials capture
+  - Experiment identification for risky features
+  - Proper scaffolding and graph registration
+  - Automatic linking to objectives
+
+  **Note**: `/know:add` handles all feature-level details. Discovery mode only identifies WHICH features exist.
 
 ---
 
@@ -153,6 +232,34 @@ Each mode follows this pattern:
   - `requirement:*` entities (e.g., requirement:auth, requirement:audit)
   - Dependencies: `feature → action → component → operation`
 
+- **Graph Commands to Execute**:
+  ```bash
+  # Add components
+  know -g .ai/spec-graph.json add component auth-handler '{"name":"Auth Handler","description":"..."}'
+  know -g .ai/spec-graph.json add component data-processor '{"name":"Data Processor","description":"..."}'
+
+  # Add actions
+  know -g .ai/spec-graph.json add action login '{"name":"Login","description":"..."}'
+  know -g .ai/spec-graph.json add action export-report '{"name":"Export Report","description":"..."}'
+
+  # Add operations
+  know -g .ai/spec-graph.json add operation validate-token '{"name":"Validate Token","description":"..."}'
+
+  # Add interfaces
+  know -g .ai/spec-graph.json add interface api-gateway '{"name":"API Gateway","description":"..."}'
+
+  # Add requirements
+  know -g .ai/spec-graph.json add requirement auth '{"name":"Authentication","description":"..."}'
+
+  # Link the chain: feature → action → component → operation
+  know -g .ai/spec-graph.json link feature:user-auth action:login
+  know -g .ai/spec-graph.json link action:login component:auth-handler
+  know -g .ai/spec-graph.json link component:auth-handler operation:validate-token
+
+  # Validate
+  know -g .ai/spec-graph.json validate
+  ```
+
 - Spec-graph references:
   - `business_logic:*` - Business rules
   - `data-models:*` - Core data structures
@@ -180,6 +287,20 @@ Each mode follows this pattern:
   - `interface:*` entities (e.g., interface:rest-api, interface:graphql-endpoint)
   - Dependencies: `interface → action`
 
+- **Graph Commands to Execute**:
+  ```bash
+  # Add API interfaces
+  know -g .ai/spec-graph.json add interface rest-api '{"name":"REST API","description":"..."}'
+  know -g .ai/spec-graph.json add interface graphql-endpoint '{"name":"GraphQL Endpoint","description":"..."}'
+
+  # Link interfaces to actions
+  know -g .ai/spec-graph.json link interface:rest-api action:login
+  know -g .ai/spec-graph.json link interface:rest-api action:export-report
+
+  # Validate
+  know -g .ai/spec-graph.json validate
+  ```
+
 ---
 
 ### Mode 5: UI (if needed)
@@ -202,28 +323,23 @@ Each mode follows this pattern:
   - `interface:*` entities for screens (e.g., interface:dashboard, interface:settings)
   - Dependencies: `interface → action`
 
----
+- **Graph Commands to Execute**:
+  ```bash
+  # Add UI interfaces (screens)
+  know -g .ai/spec-graph.json add interface dashboard '{"name":"Dashboard","description":"Main overview screen"}'
+  know -g .ai/spec-graph.json add interface settings '{"name":"Settings","description":"User preferences screen"}'
 
-### Mode 6: Prototyping (if needed)
+  # Link screens to actions they enable
+  know -g .ai/spec-graph.json link interface:dashboard action:view-reports
+  know -g .ai/spec-graph.json link interface:settings action:update-profile
 
-**When to run**: Novel/risky requirements need validation
-
-**Questions to ask**:
-- What requirements are novel or untested?
-- What technical risks exist?
-- What assumptions need validation?
-- What experiments would de-risk?
-
-**Outputs**:
-- Files:
-  - `.ai/know/qa/prototyping.md` - QA session log
-  - `.ai/know/experiments.md` - Validation experiments
-
-- Spec-graph: Updates to `requirement:*` with risk notes
+  # Validate
+  know -g .ai/spec-graph.json validate
+  ```
 
 ---
 
-### Mode 7: Quality (Testing Strategy)
+### Mode 6: Quality (Testing Strategy)
 
 **When to run**: After architecture defined, before PM
 
@@ -241,6 +357,40 @@ Each mode follows this pattern:
 
 - Spec-graph references:
   - `test-strategy:*` - Testing approach per component
+
+---
+
+### Mode 7: Experiments (if needed)
+
+**When to run**: After Quality, when risky/novel elements identified
+
+**Questions to ask**:
+- What technical integrations are unproven?
+- What UI flows need user validation?
+- What performance assumptions lack data?
+- What "we think it works like X" beliefs need proof?
+- Which features carry highest implementation risk?
+
+**Outputs**:
+- Files:
+  - `.ai/know/qa/experiments.md` - QA session log
+  - `.ai/know/experiments.md` - **Project-level experiments** (cross-feature validations)
+  - `.ai/know/features/<feature>/experiments.md` - **Feature-level experiments** (per-feature validations)
+
+- Experiment format:
+  ```markdown
+  ## <Experiment Name>
+  - **Type**: <tech-integration|ui-prototype|performance|assumption>
+  - **Feature**: <feature:name or "project-wide">
+  - **Risk**: <consequence of skipping>
+  - **Validation**: <pass/fail criteria>
+  - **Scope**: <minimal implementation>
+  - **Status**: pending
+  ```
+
+- Spec-graph: Updates to `requirement:*` with risk notes, links experiments to features
+
+**Build Integration**: Experiments execute during `/know:build` BEFORE full implementation. Build gates on experiment success.
 
 ---
 
@@ -280,8 +430,8 @@ Each mode follows this pattern:
 - Files:
   - `.ai/know/qa/pm.md` - QA session log
   - `.ai/know/plan/1-[task].md`, `.ai/know/plan/2-[task].md`, etc. - Granular implementation tasks
-  - `.ai/know/todo.md` - Checklist with links
   - `.ai/know/file-index.md` - Proposed file structure
+- Requirements: Feature requirements tracked via `know req list` (replaces todo.md)
 
 - Spec-graph updates (WITH CONFIRMATION):
   - Populate `meta.phases_metadata` with phase definitions:
@@ -327,22 +477,30 @@ Each mode follows this pattern:
    c. **Interactive QA session**: Present questions, collect answers
    d. Update `.ai/know/revised-input.md` with learnings
    e. Generate mode artifacts (markdown files in `.ai/know/`)
-   f. Generate spec-graph entities/references
-   g. **Show user what will be added to spec-graph**
-   h. **Ask for confirmation before writing**
-   i. Update spec-graph.json
+   f. **Prepare graph commands** (see "Graph Commands to Execute" in each mode)
+   g. **Show user the exact commands to be executed**
+   h. **Ask for confirmation before executing**
+   i. **Execute commands**:
+      - For users/objectives/requirements: `know -g .ai/spec-graph.json add <type> <key> '{...}'`
+      - For dependencies: `know -g .ai/spec-graph.json link <from> <to>`
+      - **For features**: Call `/know:add <feature-name>` for EACH feature (delegates to full add workflow)
    j. Validate graph: `know -g .ai/spec-graph.json validate`
    k. Save QA session with answers to `.ai/know/qa/[mode-name].md`
 4. **Final delivery mode** - validate and generate project.md
 
+**Discovery Mode Special Note**:
+After adding users and objectives, explicitly call `/know:add` for each identified feature. This triggers duplicate detection, HITL clarification, scaffolding, and proper graph registration. Do NOT manually add features via `know add` - always use the `/know:add` skill.
+
 ## Key Principles
 
-- **Deliverables over timelines** - Focus on what, omit time estimates
+- **No time estimates** - Focus on what, not when
 - **Graph is source of truth** - Files document, graph defines relationships
-- **Confirm before graph writes** - User reviews entities before adding
-- **Iterative and resumable** - Pause/resume at any mode
-- **Depth over speed** - Ask more questions to avoid wrong assumptions
-- **Delegate to /know:prepare** - Reuse code analysis work
+- **Use know CLI for all graph operations** - Never edit spec-graph.json directly
+- **Use /know:add for features** - Triggers full workflow with scaffolding
+- **Confirmation before graph writes** - User reviews commands before execution
+- **Iterative and resumable** - Can stop/resume at any mode
+- **Quality over speed** - Better to ask more questions than make wrong assumptions
+- **Delegate to /know:prepare** - Don't duplicate code analysis work
 
 ## Example Usage
 
@@ -366,4 +524,7 @@ Assistant: Assessing project maturity...
 - Can skip modes based on maturity assessment
 
 ---
-`r1`
+`r4` - Requirements replace todo.md: PM mode outputs requirements via spec-graph instead of todo.md
+`r3` - Streamlined Discovery mode: removed redundant feature detail questions, explicitly delegate to /know:add for each feature (separation: plan identifies WHICH features, add handles HOW each works)
+`r2` - Renamed Mode 6 Prototyping→Experiments, moved after Quality (Mode 6→7), enhanced outputs with project-level and feature-level experiments.md
+`r1` - Added explicit Graph Operations section with know CLI commands; added "Graph Commands to Execute" examples to Modes 2-5; updated Workflow Execution to specify /know:add for features vs know CLI for other entities

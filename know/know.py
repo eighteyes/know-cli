@@ -1403,17 +1403,17 @@ def init(project_dir):
             console.print(f"[yellow]⚠[/yellow] {agents_dest_dir} exists as a file, skipping agents installation")
         else:
             agents_dest_dir.mkdir(parents=True, exist_ok=True)
-        copied_agents = []
-        for agent_file in agents_templates_dir.glob("*.md"):
-            dest_file = agents_dest_dir / agent_file.name
-            if dest_file.exists():
-                console.print(f"[yellow]⚠[/yellow] Agent {agent_file.stem} already exists")
-            else:
-                shutil.copy2(agent_file, dest_file)
-                copied_agents.append(agent_file.stem)
+            copied_agents = []
+            for agent_file in agents_templates_dir.glob("*.md"):
+                dest_file = agents_dest_dir / agent_file.name
+                if dest_file.exists():
+                    console.print(f"[yellow]⚠[/yellow] Agent {agent_file.stem} already exists")
+                else:
+                    shutil.copy2(agent_file, dest_file)
+                    copied_agents.append(agent_file.stem)
 
-        if copied_agents:
-            console.print(f"[green]✓[/green] Installed agents: {', '.join(copied_agents)}")
+            if copied_agents:
+                console.print(f"[green]✓[/green] Installed agents: {', '.join(copied_agents)}")
     else:
         console.print(f"[dim]  No agents to install[/dim]")
 
@@ -1450,92 +1450,11 @@ def init(project_dir):
     else:
         console.print(f"[dim]  code-graph.json not found (optional)[/dim]")
 
-    # 6. Task System Setup
-    console.print(f"\n[bold cyan]Task Management Setup[/bold cyan]")
-
-    from src.tasks import BeadsBridge, TaskManager
-
-    # Detect if bd CLI is available
-    bridge = BeadsBridge()
-    bd_available = bridge.is_bd_available()
-
-    if bd_available:
-        console.print(f"[green]✓[/green] Detected Beads CLI (bd) installed")
-        console.print(f"\n[cyan]Beads task management is available.[/cyan]")
-        console.print(f"Would you like to initialize Beads integration?")
-
-        # Simple yes/no prompt
-        response = click.prompt(
-            "Initialize Beads? [y/n/skip]",
-            type=click.Choice(['y', 'n', 'skip'], case_sensitive=False),
-            default='y'
-        )
-
-        if response == 'y':
-            # Initialize Beads
-            beads_path = project_path / ".ai" / "beads"
-            bridge_init = BeadsBridge(str(beads_path))
-            success, error = bridge_init.init_beads(stealth=False)
-
-            if success:
-                console.print(f"[green]✓[/green] Beads initialized at {beads_path}")
-                console.print(f"[green]  Symlink: .beads → {beads_path}[/green]")
-            else:
-                console.print(f"[red]✗ Failed to initialize Beads: {error}[/red]")
-        elif response == 'n':
-            # Offer native task system
-            console.print(f"\n[cyan]Would you like to use the native JSONL task system instead?[/cyan]")
-            native_response = click.prompt(
-                "Initialize native tasks? [y/n]",
-                type=click.Choice(['y', 'n'], case_sensitive=False),
-                default='y'
-            )
-
-            if native_response == 'y':
-                tasks_path = project_path / ".ai" / "tasks"
-                manager = TaskManager(str(tasks_path))
-                success, error = manager.init_tasks()
-
-                if success:
-                    console.print(f"[green]✓[/green] Native task system initialized at {tasks_path}")
-                else:
-                    console.print(f"[red]✗ Failed to initialize tasks: {error}[/red]")
-            else:
-                console.print(f"[dim]  Skipping task system setup[/dim]")
-        else:  # skip
-            console.print(f"[dim]  Skipping task system setup[/dim]")
-            console.print(f"[dim]  Run 'know bd init' or 'know task init' later to set up tasks[/dim]")
-    else:
-        # bd not available, offer native or skip
-        console.print(f"[yellow]⚠[/yellow] Beads CLI (bd) not detected")
-        console.print(f"\n[cyan]Would you like to use the native JSONL task system?[/cyan]")
-
-        response = click.prompt(
-            "Initialize native tasks? [y/n]",
-            type=click.Choice(['y', 'n'], case_sensitive=False),
-            default='y'
-        )
-
-        if response == 'y':
-            tasks_path = project_path / ".ai" / "tasks"
-            manager = TaskManager(str(tasks_path))
-            success, error = manager.init_tasks()
-
-            if success:
-                console.print(f"[green]✓[/green] Native task system initialized at {tasks_path}")
-            else:
-                console.print(f"[red]✗ Failed to initialize tasks: {error}[/red]")
-        else:
-            console.print(f"[dim]  Skipping task system setup[/dim]")
-            console.print(f"[dim]  Install Beads: https://github.com/steveyegge/beads[/dim]")
-            console.print(f"[dim]  Or run 'know task init' later for native tasks[/dim]")
-
     console.print(f"\n[bold green]✓ Initialization complete![/bold green]")
     console.print(f"\n[dim]Next steps:[/dim]")
     console.print(f"  • Edit {project_md} to add project context")
     console.print(f"  • Use /know:add <feature-name> to start a new feature")
     console.print(f"  • Use /know:list to see all features")
-    console.print(f"  • Use 'know bd --help' or 'know task --help' for task management")
 
 
 @cli.command()
@@ -1853,6 +1772,7 @@ def phases_list(ctx):
             'done': '✅',
             'in-progress': '🔄',
             'review-ready': '🔄',
+            'changes-planned': '🔧',
             'incomplete': '📋',
             'pending': '📋',
             'planned': '📋'
@@ -1939,7 +1859,7 @@ def phases_list(ctx):
         console.print(f"[bold]Total: {total_features} features[/bold]")
     if branch_name:
         console.print(f"[dim]Branch: {branch_name}[/dim]")
-    console.print(f"[dim]Legend: ✅ completed  🔄 in-progress  📋 planned  ⚪ no status[/dim]")
+    console.print(f"[dim]Legend: ✅ completed  🔄 in-progress  🔧 changes-planned  📋 planned  ⚪ no status[/dim]")
 
 
 @phases.command(name='add')
@@ -1960,6 +1880,7 @@ def phases_add(ctx, phase_id, entity_id, status):
     valid_statuses = {
         'build-ready',      # Ready to start (in phase, waiting)
         'build-not-ready',  # Blocked/invalidated (needs re-planning)
+        'changes-planned',  # Extension planned for existing feature
         'in-progress',      # /know:build active
         'review-ready',     # /know:build complete
         'in-review',        # /know:review started
@@ -2025,6 +1946,7 @@ def phases_move(ctx, entity_id, phase_id, status):
         valid_statuses = {
             'build-ready',      # Ready to start (in phase, waiting)
             'build-not-ready',  # Blocked/invalidated (needs re-planning)
+            'changes-planned',  # Extension planned for existing feature
             'in-progress',      # /know:build active
             'review-ready',     # /know:build complete
             'in-review',        # /know:review started
@@ -2436,340 +2358,627 @@ def done_feature(ctx, feature_name, skip_todos, skip_archive, auto_tag):
     console.print(f"\n[bold green]Feature '{feature_name}' completed![/bold green]")
 
 
-# Beads integration command group
-@cli.group(name='bd')
+# Contract management commands
+@cli.command(name='validate-contracts')
+@click.option('--feature', '-f', help='Specific feature to validate (validates all if not specified)')
+@click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
 @click.pass_context
-def bd(ctx):
-    """Beads task management integration (bd CLI wrapper)"""
-    from src.tasks import BeadsBridge, TaskSync
+def validate_contracts(ctx, feature, json_output):
+    """Validate feature contracts for drift between declared and observed."""
+    from src.contract_manager import ContractManager
+    from src.validation import ContractValidator
 
-    # Initialize managers
-    if 'beads' not in ctx.obj:
-        ctx.obj['beads'] = BeadsBridge()
-    if 'task_sync' not in ctx.obj:
-        ctx.obj['task_sync'] = TaskSync(
-            graph_path=str(ctx.obj['graph'].cache.graph_path)
-        )
+    cm = ContractManager()
+    cv = ContractValidator()
 
-
-@bd.command(name='init')
-@click.option('--path', default='.ai/beads', help='Beads directory path')
-@click.option('--stealth', is_flag=True, help='Run bd init in stealth mode')
-@click.pass_context
-def bd_init(ctx, path, stealth):
-    """Initialize Beads integration"""
-    from src.tasks import BeadsBridge
-
-    bridge = BeadsBridge(path)
-
-    console.print(f"[cyan]Initializing Beads integration at {path}...[/cyan]")
-
-    success, error = bridge.init_beads(stealth=stealth)
-
-    if success:
-        console.print(f"[green]✓ Beads initialized successfully[/green]")
-        console.print(f"[green]  Directory: {path}[/green]")
-        console.print(f"[green]  Symlink: .beads → {path}[/green]")
+    if feature:
+        features = [feature]
     else:
-        console.print(f"[red]✗ Failed to initialize Beads:[/red]")
-        console.print(f"[red]  {error}[/red]")
+        features = cm.list_all_features_with_contracts()
+
+    if not features:
+        console.print("[yellow]No features with contracts found[/yellow]")
+        return
+
+    results = []
+    for feature_name in features:
+        # Run validation
+        validation = cm.validate_contract(feature_name)
+        confidence = cm.calculate_confidence(feature_name)
+        summary = cm.get_contract_summary(feature_name)
+
+        results.append({
+            'feature': feature_name,
+            'status': validation['status'],
+            'confidence': confidence['score'],
+            'discrepancies': len(validation['discrepancies']),
+            'summary': summary,
+            'validation': validation
+        })
+
+    if json_output:
+        print(json.dumps(results, indent=2))
+        return
+
+    # Pretty output
+    has_issues = False
+    for r in results:
+        status_color = {
+            'verified': 'green',
+            'pending': 'yellow',
+            'drifted': 'red',
+            'error': 'red'
+        }.get(r['status'], 'white')
+
+        status_icon = {
+            'verified': '✓',
+            'pending': '⚠',
+            'drifted': '✗',
+            'error': '✗'
+        }.get(r['status'], '?')
+
+        console.print(f"\n[{status_color}]{status_icon}[/{status_color}] [bold]{r['feature']}[/bold]")
+        console.print(f"  Status: [{status_color}]{r['status']}[/{status_color}]")
+        console.print(f"  Confidence: {r['confidence']}%")
+
+        if r['discrepancies'] > 0:
+            has_issues = True
+            console.print(f"  [red]Discrepancies: {r['discrepancies']}[/red]")
+            for disc in r['validation']['discrepancies'][:5]:
+                console.print(f"    • {disc['message']}")
+            if len(r['validation']['discrepancies']) > 5:
+                console.print(f"    ... and {len(r['validation']['discrepancies']) - 5} more")
+
+    if has_issues:
+        console.print(f"\n[yellow]⚠ Some features have contract issues[/yellow]")
         sys.exit(1)
+    else:
+        console.print(f"\n[green]✓ All contracts validated[/green]")
 
 
-@bd.command(name='list')
-@click.option('--ready', is_flag=True, help='Show only ready tasks')
-@click.option('--feature', help='Filter by feature ID')
+@cli.command(name='impact')
+@click.argument('target')
+@click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
 @click.pass_context
-def bd_list(ctx, ready, feature):
-    """List Beads tasks"""
-    bridge = ctx.obj['beads']
+def impact(ctx, target, json_output):
+    """Show features that depend on an entity or file.
 
-    if not bridge.is_bd_available():
-        console.print("[red]✗ bd not found. Install Beads first:[/red]")
-        console.print("  https://github.com/steveyegge/beads")
+    Examples:
+        know impact component:validation-engine
+        know impact src/auth/handler.py
+    """
+    from src.impact_analyzer import ImpactAnalyzer
+
+    analyzer = ImpactAnalyzer()
+    report = analyzer.get_impact_report(target)
+
+    if json_output:
+        print(json.dumps(report, indent=2))
+        return
+
+    console.print(f"\n[bold cyan]Impact Report: {target}[/bold cyan]\n")
+
+    if report['target_type'] == 'entity':
+        if report['features_creating']:
+            console.print("[bold]Features creating this entity:[/bold]")
+            for f in report['features_creating']:
+                console.print(f"  • {f['name']} (confidence: {f['confidence']}%)")
+            console.print()
+
+        if report['features_depending']:
+            console.print("[bold]Features depending on this entity:[/bold]")
+            for f in report['features_depending']:
+                console.print(f"  • {f['name']} (confidence: {f['confidence']}%)")
+            console.print()
+
+        console.print(f"[bold]Impact Severity:[/bold] {report['impact_severity']}")
+    else:
+        if report['features_creating']:
+            console.print("[bold]Features creating this file:[/bold]")
+            for f in report['features_creating']:
+                console.print(f"  • {f['name']}")
+
+        if report['features_modifying']:
+            console.print("[bold]Features modifying this file:[/bold]")
+            for f in report['features_modifying']:
+                console.print(f"  • {f['name']}")
+
+        if report['features_watching']:
+            console.print("[bold]Features watching this file:[/bold]")
+            for f in report['features_watching']:
+                console.print(f"  • {f['name']}")
+
+    console.print(f"\n[bold]Total affected features:[/bold] {report['total_affected_features']}")
+
+    console.print("\n[bold]Recommendations:[/bold]")
+    for rec in report['recommendations']:
+        console.print(f"  • {rec}")
+
+
+@cli.command(name='contract')
+@click.argument('feature_name')
+@click.option('--show', is_flag=True, help='Show full contract YAML')
+@click.option('--confidence', is_flag=True, help='Show confidence calculation')
+@click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
+@click.pass_context
+def contract(ctx, feature_name, show, confidence, json_output):
+    """Display contract info for a feature.
+
+    Examples:
+        know contract my-feature
+        know contract my-feature --show
+        know contract my-feature --confidence
+    """
+    from src.contract_manager import ContractManager
+    import yaml
+
+    cm = ContractManager()
+    contract_data = cm.load_contract(feature_name)
+
+    if not contract_data:
+        console.print(f"[red]✗ No contract found for: {feature_name}[/red]")
         sys.exit(1)
 
-    tasks = bridge.list_tasks(ready_only=ready)
-
-    # Extract feature from title [feature-name] format and add to task dict
-    for task in tasks:
-        title = task.get('title', '')
-        if title.startswith('[') and ']' in title:
-            feature_name = title.split(']')[0][1:]
-            task['feature'] = feature_name
+    if json_output:
+        if show:
+            print(json.dumps(contract_data, indent=2))
+        elif confidence:
+            conf = cm.calculate_confidence(feature_name)
+            print(json.dumps(conf, indent=2))
         else:
-            task['feature'] = '-'
-
-    # Filter by feature if specified
-    if feature:
-        tasks = [t for t in tasks if t.get('feature') == feature]
-
-    if not tasks:
-        console.print("[yellow]No tasks found[/yellow]")
+            summary = cm.get_contract_summary(feature_name)
+            print(json.dumps(summary, indent=2))
         return
 
-    table = Table(title="Beads Tasks", show_header=True, header_style="bold magenta")
-    table.add_column("ID", style="cyan")
-    table.add_column("Title", style="green")
-    table.add_column("Status", style="yellow")
-    table.add_column("Feature", style="blue")
+    if show:
+        console.print(f"\n[bold cyan]Contract: {feature_name}[/bold cyan]\n")
+        print(yaml.dump(contract_data, default_flow_style=False, sort_keys=False))
+        return
 
-    for task in tasks:
-        task_id = task.get('id', '')
-        title = task.get('title', '')
-        status = task.get('status', 'unknown')
-        feature_id = task.get('feature', '-')
+    if confidence:
+        conf = cm.calculate_confidence(feature_name)
+        console.print(f"\n[bold cyan]Confidence for {feature_name}[/bold cyan]\n")
+        console.print(f"[bold]Score:[/bold] {conf['score']}%")
+        console.print(f"\n[bold]Factors:[/bold]")
+        for factor in conf['factors']:
+            console.print(f"  • {factor}")
+        return
 
-        table.add_row(task_id, title, status, feature_id)
-
-    console.print(table)
-    console.print(f"\n[cyan]Total: {len(tasks)} task(s)[/cyan]")
-
-
-@bd.command(name='add')
-@click.argument('title')
-@click.option('--feature', help='Link to feature ID (e.g., feature:auth)')
-@click.option('--description', default='', help='Task description')
-@click.pass_context
-def bd_add(ctx, title, feature, description):
-    """Create a new Beads task"""
-    bridge = ctx.obj['beads']
-
-    if not bridge.is_bd_available():
-        console.print("[red]✗ bd not found. Install Beads first:[/red]")
-        console.print("  https://github.com/steveyegge/beads")
+    # Default: show summary
+    summary = cm.get_contract_summary(feature_name)
+    if not summary:
+        console.print(f"[red]✗ Could not load contract summary[/red]")
         sys.exit(1)
 
-    console.print(f"[cyan]Creating Beads task: {title}...[/cyan]")
+    status_color = {
+        'verified': 'green',
+        'pending': 'yellow',
+        'drifted': 'red'
+    }.get(summary['validation_status'], 'white')
 
-    task_id = bridge.create_task_for_feature(title, feature or '', description)
+    console.print(f"\n[bold cyan]Contract: {feature_name}[/bold cyan]\n")
+    console.print(f"[bold]Created:[/bold] {summary['created'][:10] if summary['created'] else 'N/A'}")
+    console.print(f"[bold]Baseline:[/bold] {summary['baseline_commit'][:7] if summary['baseline_commit'] else 'N/A'}")
+    console.print(f"[bold]Status:[/bold] [{status_color}]{summary['validation_status']}[/{status_color}]")
+    console.print(f"[bold]Confidence:[/bold] {summary['confidence_score']}%")
 
-    if task_id:
-        console.print(f"[green]✓ Task created: {task_id}[/green]")
+    console.print(f"\n[bold]Declared:[/bold]")
+    df = summary['declared_files']
+    de = summary['declared_entities']
+    da = summary['declared_actions']
+    console.print(f"  Files: {df['creates']} creates, {df['modifies']} modifies")
+    console.print(f"  Entities: {de['creates']} creates, {de['depends_on']} depends_on")
+    console.print(f"  Actions: {da['verified']}/{da['total']} verified")
 
-        # If feature is specified, link it
-        if feature:
-            sync = ctx.obj['task_sync']
-            success, error = sync.link_task_to_feature(task_id, feature, task_system='beads')
+    console.print(f"\n[bold]Observed:[/bold]")
+    of = summary['observed_files']
+    console.print(f"  Files: {of['created']} created, {of['modified']} modified, {of['deleted']} deleted")
 
-            if success:
-                console.print(f"[green]  Linked to {feature}[/green]")
+    if summary['discrepancy_count'] > 0:
+        console.print(f"\n[red]Discrepancies: {summary['discrepancy_count']}[/red]")
+
+
+@cli.command(name='migrate-contracts')
+@click.option('--feature', '-f', help='Specific feature to migrate')
+@click.option('--all', 'migrate_all', is_flag=True, help='Migrate all features')
+@click.option('--dry-run', is_flag=True, help='Show what would be migrated')
+@click.pass_context
+def migrate_contracts(ctx, feature, migrate_all, dry_run):
+    """Migrate config.json to contract.yaml format.
+
+    Examples:
+        know migrate-contracts --feature my-feature
+        know migrate-contracts --all
+        know migrate-contracts --all --dry-run
+    """
+    from src.contract_manager import ContractManager
+
+    cm = ContractManager()
+
+    if feature:
+        features = [feature]
+    elif migrate_all:
+        # Find all features with config.json but no contract.yaml
+        features = []
+        if cm.features_dir.exists():
+            for feature_dir in cm.features_dir.iterdir():
+                if not feature_dir.is_dir() or feature_dir.name == 'archive':
+                    continue
+                config_path = feature_dir / "config.json"
+                contract_path = feature_dir / "contract.yaml"
+                if config_path.exists() and not contract_path.exists():
+                    features.append(feature_dir.name)
+    else:
+        console.print("[red]✗ Specify --feature or --all[/red]")
+        sys.exit(1)
+
+    if not features:
+        console.print("[yellow]No features to migrate[/yellow]")
+        return
+
+    console.print(f"\n[bold]Migrating {len(features)} feature(s):[/bold]\n")
+
+    for feature_name in features:
+        if dry_run:
+            console.print(f"  [dim]Would migrate:[/dim] {feature_name}")
+        else:
+            result = cm.migrate_from_config_json(feature_name, save=True)
+            if result:
+                console.print(f"  [green]✓[/green] {feature_name}")
             else:
-                console.print(f"[yellow]  Warning: Could not link to feature: {error}[/yellow]")
+                console.print(f"  [red]✗[/red] {feature_name} (no config.json or error)")
+
+    if dry_run:
+        console.print(f"\n[dim]Dry run - no changes made[/dim]")
     else:
-        console.print("[red]✗ Failed to create task[/red]")
-        sys.exit(1)
+        console.print(f"\n[green]✓ Migration complete[/green]")
+        console.print(f"[dim]Original config.json files renamed to config.json.migrated[/dim]")
 
 
-@bd.command(name='sync')
+# Deprecation commands
+@cli.command()
+@click.argument('entity_id')
+@click.option('--reason', '-r', required=True, help='Why the entity is deprecated')
+@click.option('--replacement', help='Entity ID of replacement')
+@click.option('--remove-by', help='Target removal date (YYYY-MM-DD)')
 @click.pass_context
-def bd_sync(ctx):
-    """Sync Beads tasks to spec-graph"""
-    sync = ctx.obj['task_sync']
+def deprecate(ctx, entity_id, reason, replacement, remove_by):
+    """Mark an entity as deprecated with warnings on use.
 
-    console.print("[cyan]Syncing Beads tasks to spec-graph...[/cyan]")
+    Examples:
+        know deprecate component:old-auth --reason "Replaced by new-auth"
+        know deprecate feature:legacy --reason "Obsolete" --replacement feature:modern
+        know deprecate action:old-flow --reason "Removed" --remove-by 2026-03-01
+    """
+    from src.deprecation import DeprecationManager
 
-    # Import Beads tasks
-    count, error = sync.import_beads_tasks()
+    dm = DeprecationManager(ctx.obj['graph'])
 
-    if error:
-        console.print(f"[red]✗ Sync failed: {error}[/red]")
-        sys.exit(1)
-
-    console.print(f"[green]✓ Synced {count} Beads task(s) to spec-graph[/green]")
-
-    # Show stats
-    stats = sync.get_stats()
-    beads_stats = stats.get('beads', {})
-
-    console.print(f"[cyan]Total Beads tasks: {beads_stats.get('total', 0)}[/cyan]")
-    console.print(f"[cyan]Linked to features: {beads_stats.get('linked_to_features', 0)}[/cyan]")
-
-
-# Native task management command group
-@cli.group(name='task')
-@click.pass_context
-def task(ctx):
-    """Native JSONL task management"""
-    from src.tasks import TaskManager, TaskSync
-
-    # Initialize managers
-    if 'task_manager' not in ctx.obj:
-        ctx.obj['task_manager'] = TaskManager()
-    if 'task_sync' not in ctx.obj:
-        ctx.obj['task_sync'] = TaskSync(
-            graph_path=str(ctx.obj['graph'].cache.graph_path)
-        )
-
-
-@task.command(name='init')
-@click.option('--path', default='.ai/tasks', help='Tasks directory path')
-@click.pass_context
-def task_init(ctx, path):
-    """Initialize native task system"""
-    from src.tasks import TaskManager
-
-    manager = TaskManager(path)
-
-    console.print(f"[cyan]Initializing native task system at {path}...[/cyan]")
-
-    success, error = manager.init_tasks()
-
-    if success:
-        console.print(f"[green]✓ Task system initialized successfully[/green]")
-        console.print(f"[green]  Directory: {path}[/green]")
-        console.print(f"[green]  JSONL file: {path}/tasks.jsonl[/green]")
-    else:
-        console.print(f"[red]✗ Failed to initialize tasks:[/red]")
-        console.print(f"[red]  {error}[/red]")
-        sys.exit(1)
-
-
-@task.command(name='add')
-@click.argument('title')
-@click.option('--feature', help='Link to feature ID (e.g., feature:auth)')
-@click.option('--description', default='', help='Task description')
-@click.option('--status', default='ready', help='Initial status (default: ready)')
-@click.pass_context
-def task_add(ctx, title, feature, description, status):
-    """Create a new native task"""
-    manager = ctx.obj['task_manager']
-
-    console.print(f"[cyan]Creating task: {title}...[/cyan]")
-
-    task_id = manager.add_task(title, feature=feature, description=description, status=status)
-
-    console.print(f"[green]✓ Task created: {task_id}[/green]")
-
-    if feature:
-        console.print(f"[green]  Linked to {feature}[/green]")
-
-
-@task.command(name='list')
-@click.option('--ready', is_flag=True, help='Show only ready tasks')
-@click.option('--feature', help='Filter by feature ID')
-@click.option('--status', help='Filter by status')
-@click.pass_context
-def task_list(ctx, ready, feature, status):
-    """List native tasks"""
-    manager = ctx.obj['task_manager']
-
-    tasks = manager.list_tasks(feature=feature, status=status, ready_only=ready)
-
-    if not tasks:
-        console.print("[yellow]No tasks found[/yellow]")
+    if dm.is_deprecated(entity_id):
+        console.print(f"[yellow]⚠ Entity '{entity_id}' is already deprecated[/yellow]")
         return
 
-    table = Table(title="Native Tasks", show_header=True, header_style="bold magenta")
-    table.add_column("ID", style="cyan")
-    table.add_column("Title", style="green")
-    table.add_column("Status", style="yellow")
-    table.add_column("Feature", style="blue")
-    table.add_column("Blocks", style="red")
-
-    for task in tasks:
-        task_id = task.get('id', '')
-        title = task.get('title', '')
-        task_status = task.get('status', 'unknown')
-        feature_id = task.get('feature', '-')
-        blocked_by = task.get('blocked_by', [])
-
-        blocks_str = f"{len(blocked_by)} blocker(s)" if blocked_by else "-"
-
-        table.add_row(task_id, title, task_status, feature_id, blocks_str)
-
-    console.print(table)
-    console.print(f"\n[cyan]Total: {len(tasks)} task(s)[/cyan]")
-
-
-@task.command(name='done')
-@click.argument('task_id')
-@click.pass_context
-def task_done(ctx, task_id):
-    """Mark a task as complete"""
-    manager = ctx.obj['task_manager']
-
-    console.print(f"[cyan]Marking task {task_id} as done...[/cyan]")
-
-    success, message = manager.mark_done(task_id)
-
-    if success:
-        console.print(f"[green]✓ {message}[/green]")
+    if dm.deprecate(entity_id, reason, replacement=replacement, removal_target=remove_by):
+        console.print(f"[green]✓ Deprecated '{entity_id}'[/green]")
+        console.print(f"  Reason: {reason}")
+        if replacement:
+            console.print(f"  Replacement: {replacement}")
+        if remove_by:
+            console.print(f"  Removal target: {remove_by}")
     else:
-        console.print(f"[red]✗ {message}[/red]")
+        console.print(f"[red]✗ Entity not found: {entity_id}[/red]")
         sys.exit(1)
 
 
-@task.command(name='ready')
+@cli.command()
+@click.argument('entity_id')
 @click.pass_context
-def task_ready(ctx):
-    """Show all ready tasks (auto-detect tasks with no blockers)"""
-    manager = ctx.obj['task_manager']
+def undeprecate(ctx, entity_id):
+    """Remove deprecation status from an entity.
 
-    ready_tasks = manager.find_ready()
+    Examples:
+        know undeprecate component:old-auth
+    """
+    from src.deprecation import DeprecationManager
 
-    if not ready_tasks:
-        console.print("[yellow]No ready tasks found[/yellow]")
+    dm = DeprecationManager(ctx.obj['graph'])
+
+    if dm.undeprecate(entity_id):
+        console.print(f"[green]✓ Removed deprecation from '{entity_id}'[/green]")
+    else:
+        console.print(f"[yellow]⚠ Entity '{entity_id}' was not deprecated[/yellow]")
+
+
+@cli.command()
+@click.option('--overdue', is_flag=True, help='Show only entities past removal date')
+@click.pass_context
+def deprecated(ctx, overdue):
+    """List all deprecated entities.
+
+    Examples:
+        know deprecated
+        know deprecated --overdue
+    """
+    from src.deprecation import DeprecationManager
+
+    dm = DeprecationManager(ctx.obj['graph'])
+
+    if overdue:
+        items = dm.get_overdue_removals()
+        title = "Overdue Deprecated Entities"
+    else:
+        items = dm.list_deprecated()
+        title = "Deprecated Entities"
+
+    if not items:
+        if overdue:
+            console.print("[green]✓ No overdue deprecated entities[/green]")
+        else:
+            console.print("[dim]No deprecated entities[/dim]")
         return
 
-    table = Table(title="Ready Tasks", show_header=True, header_style="bold magenta")
-    table.add_column("ID", style="cyan")
-    table.add_column("Title", style="green")
-    table.add_column("Feature", style="blue")
+    console.print(f"\n[bold cyan]{title}[/bold cyan]\n")
 
-    for task in ready_tasks:
-        task_id = task.get('id', '')
-        title = task.get('title', '')
-        feature_id = task.get('feature', '-')
-
-        table.add_row(task_id, title, feature_id)
-
-    console.print(table)
-    console.print(f"\n[cyan]Total: {len(ready_tasks)} ready task(s)[/cyan]")
+    for entity_id, info in items:
+        console.print(f"[yellow]{entity_id}[/yellow]")
+        console.print(f"  Reason: {info['reason']}")
+        console.print(f"  Deprecated: {info['deprecated_date']}")
+        if info.get('replacement'):
+            console.print(f"  Replacement: [green]{info['replacement']}[/green]")
+        if info.get('removal_target'):
+            console.print(f"  Remove by: {info['removal_target']}")
+        console.print()
 
 
-@task.command(name='block')
-@click.argument('task_id')
-@click.option('--on', 'blocker_id', required=True, help='Task ID that blocks this task')
+# Requirements command group
+@cli.group()
 @click.pass_context
-def task_block(ctx, task_id, blocker_id):
-    """Add blocking dependency between tasks"""
-    manager = ctx.obj['task_manager']
+def req(ctx):
+    """Manage feature requirements"""
+    pass
 
-    console.print(f"[cyan]Adding dependency: {task_id} blocked by {blocker_id}...[/cyan]")
 
-    success, message = manager.block_task(task_id, blocker_id)
+@req.command(name='add')
+@click.argument('feature')
+@click.argument('key')
+@click.option('--name', '-n', required=True, help='Human-readable requirement name')
+@click.option('--description', '-d', required=True, help='Testable specification')
+@click.pass_context
+def req_add(ctx, feature, key, name, description):
+    """Add a requirement to a feature.
 
-    if success:
-        console.print(f"[green]✓ {message}[/green]")
+    Examples:
+        know req add auth login --name "User can log in" --description "..."
+        know req add checkout payment --name "Process payment" --description "..."
+    """
+    from src.requirements import RequirementManager
+
+    rm = RequirementManager(ctx.obj['graph'])
+
+    try:
+        req_id = rm.add_requirement(feature, key, name, description)
+        console.print(f"[green]✓ Added requirement '{req_id}'[/green]")
+        console.print(f"  Name: {name}")
+        console.print(f"  Linked to: feature:{feature}")
+    except ValueError as e:
+        console.print(f"[red]✗ {e}[/red]")
+        sys.exit(1)
+
+
+@req.command(name='status')
+@click.argument('req_id')
+@click.argument('status_value')
+@click.option('--notes', help='Additional notes')
+@click.option('--blocked-by', help='What is blocking this requirement')
+@click.option('--effort', type=float, help='Effort in hours')
+@click.pass_context
+def req_status(ctx, req_id, status_value, notes, blocked_by, effort):
+    """Update requirement status.
+
+    Examples:
+        know req status requirement:auth-login in-progress
+        know req status requirement:checkout-payment blocked --blocked-by "API not ready"
+        know req status auth-login complete --effort 8
+    """
+    from src.requirements import RequirementManager
+
+    rm = RequirementManager(ctx.obj['graph'])
+
+    kwargs = {}
+    if notes:
+        kwargs['notes'] = notes
+    if blocked_by:
+        kwargs['blocked_by'] = blocked_by
+    if effort:
+        kwargs['effort_hours'] = effort
+
+    try:
+        if rm.update_status(req_id, status_value, **kwargs):
+            console.print(f"[green]✓ Updated '{req_id}' to '{status_value}'[/green]")
+        else:
+            console.print(f"[red]✗ Requirement not found: {req_id}[/red]")
+            sys.exit(1)
+    except ValueError as e:
+        console.print(f"[red]✗ {e}[/red]")
+        sys.exit(1)
+
+
+@req.command(name='list')
+@click.argument('feature')
+@click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
+@click.pass_context
+def req_list(ctx, feature, json_output):
+    """List requirements for a feature with status.
+
+    Examples:
+        know req list auth
+        know req list checkout --json
+    """
+    from src.requirements import RequirementManager
+
+    rm = RequirementManager(ctx.obj['graph'])
+    reqs = rm.get_feature_requirements(feature)
+
+    if json_output:
+        print(json.dumps(reqs, indent=2))
+        return
+
+    if not reqs:
+        console.print(f"[yellow]No requirements for feature '{feature}'[/yellow]")
+        return
+
+    completion = rm.calculate_feature_completion(feature)
+
+    console.print(f"\n[bold cyan]Requirements for {feature}[/bold cyan]")
+    console.print(f"[dim]Progress: {completion['complete']}/{completion['total']} ({completion['percent']}%)[/dim]\n")
+
+    status_icons = {
+        'pending': '⚪',
+        'in-progress': '🔄',
+        'blocked': '🚫',
+        'complete': '✅',
+        'verified': '✅✅'
+    }
+
+    for req in reqs:
+        icon = status_icons.get(req['status'], '❓')
+        console.print(f"{icon} [bold]{req['name']}[/bold]")
+        console.print(f"   [dim]{req['id']}[/dim] - {req['status']}")
+        if req.get('blocked_by'):
+            console.print(f"   [red]Blocked by: {req['blocked_by']}[/red]")
+        console.print()
+
+
+@req.command(name='complete')
+@click.argument('req_id')
+@click.option('--effort', type=float, help='Effort in hours')
+@click.pass_context
+def req_complete(ctx, req_id, effort):
+    """Mark a requirement as complete (shorthand for status complete).
+
+    Examples:
+        know req complete requirement:auth-login
+        know req complete auth-login --effort 4.5
+    """
+    from src.requirements import RequirementManager
+
+    rm = RequirementManager(ctx.obj['graph'])
+
+    kwargs = {}
+    if effort:
+        kwargs['effort_hours'] = effort
+
+    if rm.update_status(req_id, 'complete', **kwargs):
+        console.print(f"[green]✓ Marked '{req_id}' as complete[/green]")
     else:
-        console.print(f"[red]✗ {message}[/red]")
+        console.print(f"[red]✗ Requirement not found: {req_id}[/red]")
         sys.exit(1)
 
 
-@task.command(name='sync')
+@req.command(name='block')
+@click.argument('req_id')
+@click.option('--by', required=True, help='What is blocking this requirement')
 @click.pass_context
-def task_sync(ctx):
-    """Sync native tasks to spec-graph"""
-    sync = ctx.obj['task_sync']
+def req_block(ctx, req_id, by):
+    """Mark a requirement as blocked.
 
-    console.print("[cyan]Syncing native tasks to spec-graph...[/cyan]")
+    Examples:
+        know req block auth-login --by "Waiting for API key"
+        know req block requirement:checkout --by "component:payment not ready"
+    """
+    from src.requirements import RequirementManager
 
-    # Import native tasks
-    count, error = sync.import_native_tasks()
+    rm = RequirementManager(ctx.obj['graph'])
 
-    if error:
-        console.print(f"[red]✗ Sync failed: {error}[/red]")
+    if rm.update_status(req_id, 'blocked', blocked_by=by):
+        console.print(f"[yellow]⚠ Blocked '{req_id}'[/yellow]")
+        console.print(f"  Blocked by: {by}")
+    else:
+        console.print(f"[red]✗ Requirement not found: {req_id}[/red]")
         sys.exit(1)
 
-    console.print(f"[green]✓ Synced {count} native task(s) to spec-graph[/green]")
 
-    # Show stats
-    stats = sync.get_stats()
-    task_stats = stats.get('task', {})
+@cli.command()
+@click.argument('feature')
+@click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
+@click.pass_context
+def requirements(ctx, feature, json_output):
+    """Show requirements summary for a feature (alias for req list).
 
-    console.print(f"[cyan]Total native tasks: {task_stats.get('total', 0)}[/cyan]")
-    console.print(f"[cyan]Linked to features: {task_stats.get('linked_to_features', 0)}[/cyan]")
+    Examples:
+        know requirements auth
+        know requirements checkout --json
+    """
+    # Forward to req_list
+    ctx.invoke(req_list, feature=feature, json_output=json_output)
+
+
+# Coverage commands
+@cli.command()
+@click.argument('feature')
+@click.option('--detail', is_flag=True, help='Show per-component breakdown')
+@click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
+@click.option('--code-graph', '-c', default='.ai/code-graph.json', help='Code graph path')
+@click.pass_context
+def coverage(ctx, feature, detail, json_output, code_graph):
+    """Show test coverage aggregated from feature level.
+
+    Traverses: feature -> components -> modules -> test-suites
+
+    Examples:
+        know coverage auth
+        know coverage checkout --detail
+        know coverage api-client --json
+    """
+    from src.coverage import CoverageAnalyzer
+
+    analyzer = CoverageAnalyzer(ctx.obj['graph'], code_graph_path=code_graph)
+    cov = analyzer.get_feature_coverage(feature)
+
+    if json_output:
+        print(json.dumps(cov, indent=2))
+        return
+
+    console.print(f"\n[bold cyan]Test Coverage: {cov['feature']}[/bold cyan]\n")
+
+    # Summary
+    pct = cov['coverage_percent']
+    color = 'green' if pct >= 80 else 'yellow' if pct >= 50 else 'red'
+    console.print(f"[{color}]Coverage: {pct}%[/{color}]")
+    console.print(f"Components: {cov['components']}")
+    console.print(f"Modules: {cov['modules']}")
+    console.print(f"Test Suites: {cov['test_suites']}")
+    console.print(f"Test Count: {cov['test_count']}")
+    if cov['test_types']:
+        console.print(f"Test Types: {', '.join(cov['test_types'])}")
+
+    if detail and cov['by_component']:
+        console.print(f"\n[bold]Per-Component Breakdown:[/bold]\n")
+        for comp in cov['by_component']:
+            comp_cov = comp['coverage']['coverage_percent']
+            comp_color = 'green' if comp_cov >= 80 else 'yellow' if comp_cov >= 50 else 'red'
+            console.print(f"  [cyan]{comp['component']}[/cyan]")
+            console.print(f"    Modules: {len(comp['modules'])}")
+            console.print(f"    Test Suites: {comp['test_suites']}")
+            console.print(f"    Coverage: [{comp_color}]{comp_cov}%[/{comp_color}]")
+            console.print()
+
+    # Gaps
+    gaps = analyzer.get_coverage_gaps(feature)
+    if any([gaps['unmapped_components'], gaps['untested_modules'], gaps['low_coverage_modules']]):
+        console.print(f"\n[bold yellow]Coverage Gaps:[/bold yellow]")
+        if gaps['unmapped_components']:
+            console.print(f"  Unmapped components: {len(gaps['unmapped_components'])}")
+            for comp in gaps['unmapped_components'][:3]:
+                console.print(f"    • {comp}")
+        if gaps['untested_modules']:
+            console.print(f"  Untested modules: {len(gaps['untested_modules'])}")
+            for mod in gaps['untested_modules'][:3]:
+                console.print(f"    • {mod['module']} ({mod['component']})")
+        if gaps['low_coverage_modules']:
+            console.print(f"  Low coverage (<50%): {len(gaps['low_coverage_modules'])}")
+            for mod in gaps['low_coverage_modules'][:3]:
+                console.print(f"    • {mod['module']}: {mod['coverage']}%")
 
 
 if __name__ == '__main__':

@@ -115,6 +115,32 @@ know health                     # Comprehensive check
 know cycles                     # Find circular dependencies
 ```
 
+### Requirements Management
+```bash
+know req add feature key --name "..." --description "..."   # Add requirement to feature
+know req status requirement-id in-progress                   # Update status
+know req list feature                                        # List feature requirements
+know req complete requirement-id                             # Mark complete
+know req block requirement-id --by "reason"                  # Mark blocked
+know requirements feature                                    # Alias for req list
+```
+
+**Requirement status values:** pending, in-progress, blocked, complete, verified
+
+### Deprecation
+```bash
+know deprecate entity:id --reason "..." [--replacement entity:new]
+know undeprecate entity:id
+know deprecated                 # List all deprecated entities
+know deprecated --overdue       # Only entities past removal date
+```
+
+### Test Coverage
+```bash
+know coverage feature           # Aggregate coverage from feature level
+know coverage feature --detail  # Per-component breakdown
+```
+
 **Note:** Validation errors now include example fix commands. For example:
 ```
 ✗ Invalid dependency: feature:x → component:y. feature can only depend on: action
@@ -188,27 +214,38 @@ know uses feature:new-feature --recursive
 The `know phases` command displays features grouped by phase:
 
 ```bash
-know phases    # Show all features organized by phase with task counts
+know phases list               # Show all features organized by phase with requirement counts
+know phases add I feature:x    # Add feature to phase I
+know phases move feature:x II  # Move feature to phase II
+know phases status feature:x in-progress  # Update status
 ```
 
 **Output includes:**
 - Phase metadata (shortname, name, description) from `meta.phases_metadata`
 - Features within each phase
-- Task completion counts from `.ai/know/<feature>/todo.md`
+- Requirement completion counts from `meta.requirements`
 - Status icons (✅ completed, 🔄 in-progress, 📋 planned)
 - Summary totals
 
 **Example output:**
 ```
 Phase I (Foundation)
-  🔄 feature:auth (3/13) - Authentication system
+  🔄 feature:auth (3/5) - Authentication system (3 of 5 requirements complete)
 
 Phase II (Features)
-  📋 feature:api-gateway (0/8) - API routing
+  📋 feature:api-gateway (0/4) - API routing (0 of 4 requirements complete)
 
 Done
-  ✅ feature:onboarding (8/8) - User onboarding
+  ✅ feature:onboarding (5/5) - User onboarding
 ```
+
+## Requirements vs Todo.md
+
+**Requirements replace todo.md** for progress tracking:
+- Requirements are first-class entities in spec-graph
+- Each feature links to requirement entities via depends_on
+- Status tracked in `meta.requirements[key].status`
+- Query requirements: `know req list feature-name`
 
 ## Critical Rules for LLMs
 

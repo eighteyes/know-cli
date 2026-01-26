@@ -202,6 +202,50 @@
         "hardware_manufacturing",
         "third_party_integrations"
       ]
+    },
+    "deprecated": {
+      "schema": "OBJECT<ENTITY_ID:DEPRECATION_INFO>",
+      "note": "Soft-deprecated entities still exist but warn on use",
+      "deprecation_info": {
+        "reason": "STRING - Why the entity is deprecated",
+        "deprecated_date": "ISO8601_DATE - When entity was deprecated",
+        "removal_target": "ISO8601_DATE - When entity will be removed (optional)",
+        "replacement": "STRING - Entity ID of replacement (optional)"
+      },
+      "examples": {
+        "component:old-auth": {
+          "reason": "Replaced by component:new-auth",
+          "deprecated_date": "2026-01-20",
+          "removal_target": "2026-03-01",
+          "replacement": "component:new-auth"
+        }
+      }
+    },
+    "requirements": {
+      "schema": "OBJECT<REQUIREMENT_KEY:REQUIREMENT_STATUS>",
+      "note": "Status tracking for requirement entities",
+      "requirement_status": {
+        "status": "STRING - pending|in-progress|blocked|complete|verified",
+        "started_date": "ISO8601_DATE - When work began (optional)",
+        "completed_date": "ISO8601_DATE - When work finished (optional)",
+        "verified_date": "ISO8601_DATE - When requirement was verified (optional)",
+        "blocked_by": "STRING - Entity ID or external reason (optional)",
+        "effort_hours": "NUMBER - Estimated/actual effort (optional)",
+        "notes": "STRING - Additional context (optional)"
+      },
+      "examples": {
+        "auth-login-validation": {
+          "status": "complete",
+          "started_date": "2026-01-15",
+          "completed_date": "2026-01-20",
+          "effort_hours": 8
+        },
+        "auth-session-persistence": {
+          "status": "blocked",
+          "started_date": "2026-01-21",
+          "blocked_by": "component:session-store not implemented"
+        }
+      }
     }
   },
   "entity_description": {

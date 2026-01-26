@@ -1,25 +1,25 @@
 ---
-name: Know: Build Feature (7-Phase Workflow)
-description: Structured 7-phase workflow for building features with discovery, exploration, design, implementation, and review
+name: Know: Build Feature (8-Phase Workflow)
+description: Structured 8-phase workflow for building features with discovery, exploration, design, experiments, implementation, and review
 category: Know
 tags: [know, build, feature-dev, workflow]
 ---
 
 **Main Objective**
 
-Guide feature development through a structured 7-phase workflow adapted from Claude Code's feature-dev plugin, integrated with the know ecosystem for spec-graph tracking and documentation.
+Guide feature development through a structured 8-phase workflow adapted from Claude Code's feature-dev plugin, integrated with the know ecosystem for spec-graph tracking and documentation.
 
 **Prerequisites**
 - Activate the know-tool skill for graph operations
 
-**Auto-creates**: `config.json` if missing, sets baseline when moving to in-progress
+**Auto-creates**: `contract.yaml` if missing, sets baseline when moving to in-progress
 
 **Exploration Strategy**
 - **Use parallel agents** throughout this workflow for speed and depth
 - **Explore agent**: Discovers codebase nuances, patterns, and perspectives (use `thoroughness: "medium"` or `"very thorough"`)
 - **Custom Task agents**: Create specialized agents with specific objectives
 - **Launch in parallel**: Use SINGLE message with multiple Task tool calls to run agents concurrently
-- Phases 2, 4, and 6 explicitly require parallel agent launches
+- Phases 2, 4, and 7 explicitly require parallel agent launches
 
 **Entry Points**
 
@@ -30,13 +30,14 @@ Guide feature development through a structured 7-phase workflow adapted from Cla
 
 ```
 IF feature directory exists (.ai/know/features/<feature>/):
-  → Load context from overview.md, todo.md, plan.md
+  → Load context from overview.md, notes.md, plan.md
+  → Load requirements from spec-graph: know req list <feature>
   → Verify feature exists in spec-graph.json
   → Update meta.phases status to "in-progress"
   → Proceed to Phase 1
 
 ELSE (inline feature description or non-existent feature):
-  → Delegate to /know:add to scaffold feature
+  → Delegate to /know:add to scaffold feature (creates requirements)
   → Wait for /know:add completion
   → Load created context
   → Proceed to Phase 1
@@ -44,7 +45,7 @@ ELSE (inline feature description or non-existent feature):
 
 ---
 
-## 7-Phase Workflow
+## 8-Phase Workflow
 
 ### Phase 1: Discovery
 
@@ -145,7 +146,7 @@ ELSE (inline feature description or non-existent feature):
    **Based on user choice**:
    - **Reuse**: STOP workflow, document existing solution in overview.md, exit
    - **Generalize**: Continue exploration, note in plan.md to refactor existing code
-   - **Replace**: Continue exploration, add deprecation tasks to todo.md
+   - **Replace**: Continue exploration, deprecate old implementation via `know deprecate <entity>`
    - **Create separate**: Continue exploration, add justification to plan.md
 
    **If no duplicates found**: Proceed to parallel exploration
@@ -254,7 +255,59 @@ Send SINGLE message with:
 
 ---
 
-### Phase 5: Implementation
+### Phase 5: Experiments (if applicable)
+
+**Goal**: Validate risky elements before committing to full implementation
+
+**Gate**: This phase BLOCKS implementation until experiments pass or are explicitly skipped.
+
+**Steps**:
+1. **Check for experiments.md**: Read `.ai/know/features/<feature>/experiments.md`
+   - If file doesn't exist or empty: Skip to Phase 6
+   - If experiments exist: Continue with validation
+2. **Present experiments to user**:
+   ```
+   This feature has N experiments that should be validated before implementation:
+
+   1. <Experiment Name>
+      Type: <type>
+      Risk: <what goes wrong if skipped>
+      Validation: <pass/fail criteria>
+
+   2. ...
+
+   Run experiments now? [Yes / Skip (accept risk)]
+   ```
+3. **If user chooses "Skip"**: Document in experiments.md under Results, proceed to Phase 6
+4. **If user chooses "Yes"**: For each experiment:
+   a. Implement minimal validation code (scope from experiment definition)
+   b. Run validation against criteria
+   c. **Ask user to confirm result**: "Experiment '<name>' - does this pass your validation? [Pass / Fail / Needs adjustment]"
+   d. Record result in experiments.md
+5. **Gate check**: If ANY experiment fails:
+   - Present failures to user
+   - Ask: "How to proceed? [Fix and retry / Skip (accept risk) / Abort build]"
+   - If "Abort": Exit workflow, leave feature in current state
+6. **Update experiments.md** with all results:
+   ```markdown
+   ## Results
+
+   ### <Experiment Name>
+   - **Status**: passed | failed | skipped
+   - **Date**: YYYY-MM-DD
+   - **Notes**: <what was learned>
+   - **Artifacts**: <links to prototype code, if any>
+   ```
+7. **Clean up**: Move experiment code to `.ai/tmp/experiments/<feature>/` or delete if user prefers
+
+**Outputs**:
+- Updated `.ai/know/features/<feature>/experiments.md` with results
+- Validation artifacts in `.ai/tmp/experiments/<feature>/` (optional)
+- Gate cleared for implementation
+
+---
+
+### Phase 6: Implementation
 
 **Goal**: Build the feature following chosen architecture
 
@@ -262,29 +315,41 @@ Send SINGLE message with:
 1. **Require explicit user approval**: "Ready to implement? [Yes/No]"
 2. Read all relevant files from exploration phase
 3. Follow chosen architecture strictly
-4. **Track and update todo items as you work**:
-   - Before starting each task: Read `.ai/know/features/<feature>/todo.md` to see current checklist
-   - Identify which checkbox corresponds to the work you're about to do
-   - As you complete each task, edit todo.md to mark it complete
-   - Format: Change `- [ ] Task name` to `- [x] Task name`
-   - Example: `- [ ] 1. Implement auth handler` becomes `- [x] 1. Implement auth handler`
-   - Update immediately after completing each task (don't batch updates)
+4. **Track progress using requirements** (NOT todo.md):
+   - Before starting: Query requirements: `know req list <feature>`
+   - As you complete each requirement:
+     - `know req status requirement:<feature>-<key> in-progress` (when starting)
+     - `know req status requirement:<feature>-<key> complete` (when done)
+   - Example workflow:
+     ```bash
+     # Starting work on login validation
+     know req status requirement:auth-login-validation in-progress
+     # ... implement ...
+     know req status requirement:auth-login-validation complete
+     ```
+   - Update status immediately after completing each requirement
 5. Update phase status in spec-graph: `"status": "in-progress"` (using **haiku agent**)
 6. As code is written, link modules to spec-graph components:
    - Add to code-graph: `know -g .ai/code-graph.json add module <name> {...}`
    - Link via product-component references
-7. Track implementation in `.ai/know/features/<feature>/implementation.md`
+7. Track implementation notes in `.ai/know/features/<feature>/notes.md`
+8. **Track observed changes for contract** (during/after implementation):
+   - Track files created/modified during implementation
+   - Track entities added to spec-graph
+   - Update contract.yaml `observed` section with actual files/entities
+   - This enables drift detection in Phase 8
 
 **Outputs**:
 - Implemented code files
-- Updated `.ai/know/features/<feature>/todo.md` with progress
-- Updated `.ai/know/features/<feature>/implementation.md` with notes
+- Updated requirement statuses in spec-graph (`know req list <feature>` shows progress)
+- Updated `.ai/know/features/<feature>/notes.md` with implementation notes
 - Updated code-graph with new modules
+- Updated contract.yaml with observed files/entities
 - Phase status: "in-progress" in spec-graph
 
 ---
 
-### Phase 6: Quality Review
+### Phase 7: Quality Review
 
 **Goal**: Validate correctness, quality, and integration
 
@@ -312,7 +377,7 @@ Send SINGLE message with:
 
 ---
 
-### Phase 7: Summary
+### Phase 8: Summary
 
 **Goal**: Document completion and update tracking
 
@@ -332,18 +397,28 @@ Send SINGLE message with:
      - Numbered test steps with expected outcomes
      - Acceptance criteria (clear pass/fail)
    - Use checkbox format for tracking during `/know:review`
+   - **HUMAN-ONLY**: QA_STEPS must contain only manual human testing steps
+   - **NO automated tests** (those go in test files, not QA_STEPS)
+   - Focus on: UI flows, user experience, visual verification, edge cases requiring judgment
 6. **Update spec-graph** (using **haiku agents**):
    - Mark feature phase as "complete" (or move to "done" if fully deployed)
    - Update code-graph with all new modules
    - Validate both graphs
    - Run gap-summary: `know -g .ai/spec-graph.json gap-summary`
 7. Save summary to `.ai/know/features/<feature>/summary.md`
-8. **Inform user**: "Feature complete. Run `/know:review <feature>` to test, or `/know:done` to archive."
+8. **Validate contract and calculate confidence**:
+   - Run: `know validate-contracts -f <feature>`
+   - Display validation status (verified/pending/drifted)
+   - Display any discrepancies found
+   - Display confidence score with contributing factors
+   - If drifted: warn user to review before proceeding
+9. **Inform user**: "Feature complete. Run `/know:review <feature>` to test, or `/know:done` to archive."
 
 **Outputs**:
 - `.ai/know/features/<feature>/summary.md` - Completion summary
-- `.ai/know/features/<feature>/QA_STEPS.md` - End-user test instructions
+- `.ai/know/features/<feature>/QA_STEPS.md` - End-user test instructions (human-only steps)
 - Updated spec-graph (feature marked complete/done)
+- Updated contract.yaml with validation results
 - Validated graphs
 - Ready for `/know:review` or `/know:done`
 
@@ -376,8 +451,10 @@ Task tool with:
 ```
 .ai/know/features/<feature>/
 ├── overview.md              # Requirements (from /know:add)
-├── todo.md                  # Task checklist (updated by /know:review with bugs/changes)
+├── notes.md                 # Freeform working notes (replaces todo.md)
 ├── plan.md                  # Implementation plan (from /know:add)
+├── contract.yaml            # Feature contract: declared vs observed (from /know:add)
+├── experiments.md           # Validation experiments (from /know:add, results from Phase 5)
 ├── qa/
 │   ├── discovery.md         # Phase 1 Q&A
 │   └── clarification.md     # Phase 3 Q&A
@@ -385,10 +462,10 @@ Task tool with:
 ├── architecture/
 │   ├── chosen.md            # Phase 4 approved design
 │   └── alternatives.md      # Phase 4 other options
-├── implementation.md        # Phase 5 implementation notes
-├── review.md                # Phase 6 quality findings
-├── summary.md               # Phase 7 completion summary
-├── QA_STEPS.md              # Phase 7 end-user test steps
+├── implementation.md        # Phase 6 implementation notes
+├── review.md                # Phase 7 quality findings
+├── summary.md               # Phase 8 completion summary
+├── QA_STEPS.md              # Phase 8 end-user test steps (human-only, NO automation)
 ├── review-results.md        # From /know:review (test execution)
 ├── review-feedback.md       # From /know:review (summary of issues)
 ├── bugs/                    # From /know:review (structured bug tracking)
@@ -398,6 +475,10 @@ Task tool with:
 │   └── 001-description.md
 └── plans/                   # From /know:review (implementation plans for fixes)
     └── review-fixes-YYYYMMDD.md
+
+# Progress is tracked via requirements in spec-graph.json:
+#   - meta.requirements[feature-key].status
+#   - Query with: know req list <feature>
 ```
 
 ---
@@ -454,3 +535,13 @@ Assistant: Feature not found in .ai/know/features/
   - `exploration.md` - Codebase understanding
   - `architecture/chosen.md` - Selected design with reference alignment
 - When complete, use `/know:done` to archive and mark in "done" phase
+- **Experiments gate implementation** - If experiments.md exists, Phase 5 validates risky elements before code
+  - User must confirm experiment results pass
+  - Can skip with explicit risk acceptance
+  - Failed experiments block build until resolved or skipped
+
+---
+`r4` - Deprecation uses know deprecate: Replace workflow uses `know deprecate <entity>` instead of todo.md
+`r3` - Requirements replace todo.md: Phase 6 tracks progress via know req status, notes.md for freeform notes
+`r2` - Added contract.yaml tracking: observed files/entities in Phase 6, validation in Phase 8, QA_STEPS human-only
+`r1` - Added Phase 5: Experiments - gates implementation on experiment validation with user confirmation

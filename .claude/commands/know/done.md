@@ -33,8 +33,8 @@ tags: [know, archive, complete]
 **Steps**:
 1. Extract feature name from conversation or prompt user
 2. Verify feature exists in `.ai/know/features/<feature-name>/`
-3. Check that all tasks in `todo.md` are completed (all checkboxes checked)
-   - If not all complete, warn user and ask for confirmation
+3. Check that all requirements are complete: `know req list <feature-name>`
+   - If not all complete/verified, warn user and ask for confirmation
 4. Check spec-graph status is "done" or "complete"
 
 ### 3. Merge Feature Branch (if worktree exists)
@@ -160,17 +160,21 @@ Assistant: Checks completion, moves to archive, confirms success
 ```
 
 **Safety Checks**
-- Verify all todos are checked before archiving
+- Verify all requirements are complete before archiving (`know req list <feature>`)
 - Confirm feature directory exists
 - Ensure archive directory exists (create if needed)
 - Don't overwrite existing archived features (prompt for new name if conflict)
 
 **Notes**
 - Features can be un-archived by manually moving them back
-- Archive maintains full history (proposal, todo, plan, spec)
+- Archive maintains full history (proposal, notes, plan, spec, requirements in graph)
 - **Worktree handling**:
   - Automatically detects if feature was built in a worktree
   - Switches to main repo if currently in feature worktree
   - Merges feature branch using `--no-ff` for clear history
   - Removes worktree after successful merge
   - Can run from main repo or any worktree (auto-navigates as needed)
+
+---
+`r2` - Requirements replace todo.md: completion check uses `know req list` instead of todo.md
+`r1` - Initial version
