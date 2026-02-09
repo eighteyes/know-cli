@@ -661,6 +661,136 @@ def trace(ctx, entity_id, code_graph, spec_graph):
     console.print()
 
 
+@cli.command(name='trace-matrix')
+@click.option('--type', '-t', 'entity_type', default='feature',
+              help='Entity type to trace (default: feature)')
+@click.option('--full', '-f', is_flag=True, help='Show full chain including operations')
+@click.pass_context
+def trace_matrix(ctx, entity_type, full):
+    """Show requirement traceability matrix - chains from users to implementation
+
+    Displays how requirements flow through the graph:
+    user → objective → feature → action → component → operation
+
+    Examples:
+        know trace-matrix                    # Trace all features
+        know trace-matrix -t component       # Trace all components
+        know trace-matrix --full             # Include operations in chain
+    """
+    graph = ctx.obj['graph']
+    deps = ctx.obj['deps']
+    entities = ctx.obj['entities']
+
+    graph_data = graph.load()
+
+    console.print(f"\n[bold cyan]Requirement Traceability Matrix[/bold cyan]\n")
+
+    # Get all entities of the specified type
+    target_entities = []
+    entity_section = graph_data.get('entities', {}).get(entity_type, {})
+    for key in entity_section.keys():
+        target_entities.append(f"{entity_type}:{key}")
+
+    if not target_entities:
+        console.print(f"[yellow]No {entity_type} entities found[/yellow]")
+        return
+
+    # Chain order for tracing upward
+    chain_order = ['operation', 'component', 'action', 'feature', 'objective', 'user']
+    if not full:
+        chain_order = ['component', 'action', 'feature', 'objective', 'user']
+
+    for entity_id in sorted(target_entities):
+        # Build the trace chain going upstream
+        chain = [entity_id]
+        current = entity_id
+
+        # Find upstream path
+        visited = set()
+        while current and current not in visited:
+            visited.add(current)
+            # Get what this entity depends on (upstream)
+            upstream = deps.get_dependencies(current)
+            if not upstream:
+                break
+
+            # Find the next entity in the chain order
+            current_type = current.split(':')[0]
+            try:
+                current_idx = chain_order.index(current_type)
+            except ValueError:
+                current_idx = -1
+
+            next_entity = None
+            for up in upstream:
+                up_type = up.split(':')[0]
+                try:
+                    up_idx = chain_order.index(up_type)
+                    if up_idx > current_idx:
+                        next_entity = up
+                        break
+                except ValueError:
+                    continue
+
+            if next_entity:
+                chain.append(next_entity)
+                current = next_entity
+            else:
+                break
+
+        # Also trace downstream for context
+        downstream_chain = []
+        current = entity_id
+        visited = set()
+        while current and current not in visited:
+            visited.add(current)
+            # Get what depends on this entity (downstream)
+            downstream = deps.get_dependents(current)
+            if not downstream:
+                break
+
+            current_type = current.split(':')[0]
+            try:
+                current_idx = chain_order.index(current_type)
+            except ValueError:
+                current_idx = len(chain_order)
+
+            next_entity = None
+            for down in downstream:
+                down_type = down.split(':')[0]
+                try:
+                    down_idx = chain_order.index(down_type)
+                    if down_idx < current_idx:
+                        next_entity = down
+                        break
+                except ValueError:
+                    continue
+
+            if next_entity:
+                downstream_chain.append(next_entity)
+                current = next_entity
+            else:
+                break
+
+        # Combine: downstream (reversed) + current chain (reversed to show user first)
+        full_chain = list(reversed(chain))
+        if downstream_chain:
+            full_chain.extend(downstream_chain)
+
+        # Print the chain
+        if len(full_chain) > 1:
+            chain_str = " → ".join(full_chain)
+            console.print(f"  {chain_str}")
+        else:
+            console.print(f"  {entity_id} [dim](no chain)[/dim]")
+
+    console.print()
+
+    # Summary
+    console.print(f"[dim]Traced {len(target_entities)} {entity_type} entities[/dim]")
+    console.print(f"[dim]Use --full to include operations in the chain[/dim]\n")
+
+
 @cli.command()
 @click.pass_context
 def health(ctx):

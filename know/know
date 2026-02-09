@@ -4,18 +4,81 @@
 # Provides backward compatibility with existing bash interface
 
 # Get the directory where this script is located (follow symlinks)
-SCRIPT_DIR="$( cd "$( dirname "$(readlink -f "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}")" )" && pwd )"
+# Resolve symlinks portably (macOS lacks readlink -f)
+_resolve_symlinks() {
+    local path="$1"
+    while [ -L "$path" ]; do
+        local dir="$(cd "$(dirname "$path")" && pwd)"
+        path="$(readlink "$path")"
+        [[ "$path" != /* ]] && path="$dir/$path"
+    done
+    echo "$path"
+}
+SCRIPT_DIR="$( cd "$( dirname "$(_resolve_symlinks "${BASH_SOURCE[0]}")" )" && pwd )"
 PYTHON_SCRIPT="$SCRIPT_DIR/know.py"
-SYSTEM_VENV_PYTHON="$HOME/.local/venvs/know/bin/python3"
-VENV_PYTHON="$SCRIPT_DIR/venv/bin/python3"
+# Find python binary in a venv (handles python3, python3.14, python)
+# Prefer versioned pythons first to handle multi-version environments
+_find_venv_python() {
+    local venv_bin="$1/bin"
+    # Check versioned pythons first (expanded in target dir)
+    local versioned
+    versioned="$(ls -1 "$venv_bin"/python3.[0-9]* 2>/dev/null | tail -1)"
+    [ -x "$versioned" ] && { echo "$versioned"; return 0; }
+    # Fall back to python3, then python
+    for name in python3 python; do
+        local candidate="$venv_bin/$name"
+        [ -x "$candidate" ] && { echo "$candidate"; return 0; }
+    done
+    return 1
+}
 
-# Use system venv Python if available, otherwise fall back to local venv or system Python
-if [ -f "$SYSTEM_VENV_PYTHON" ]; then
+SYSTEM_VENV_PYTHON="$(_find_venv_python "$HOME/.local/venvs/know" 2>/dev/null)"
+VENV_PYTHON="$(_find_venv_python "$SCRIPT_DIR/venv" 2>/dev/null)"
+
+# Bootstrap venv if no venv exists
+_bootstrap_venv() {
+    local venv_dir="$1"
+    local req_file="$SCRIPT_DIR/requirements.txt"
+    echo "Setting up know virtual environment..." >&2
+    if python3 -c "import ensurepip" 2>/dev/null; then
+        python3 -m venv "$venv_dir" || { echo "Error: failed to create venv" >&2; exit 1; }
+    else
+        python3 -m venv --without-pip "$venv_dir" || { echo "Error: failed to create venv" >&2; exit 1; }
+        local venv_python
+        venv_python="$(_find_venv_python "$venv_dir")" || { echo "Error: no python in venv" >&2; exit 1; }
+        local get_pip="/tmp/know-get-pip.py"
+        "$venv_python" -c "import urllib.request; urllib.request.urlretrieve('https://bootstrap.pypa.io/get-pip.py', '$get_pip')" \
+            || { echo "Error: failed to download get-pip.py" >&2; exit 1; }
+        "$venv_python" "$get_pip" --quiet || { echo "Error: failed to bootstrap pip" >&2; exit 1; }
+        rm -f "$get_pip"
+    fi
+    local venv_pip="$(_find_venv_python "$venv_dir" | xargs dirname)/pip"
+    "$venv_pip" install -r "$req_file" || { echo "Error: failed to install dependencies" >&2; exit 1; }
+    local bootstrapped_python
+    bootstrapped_python="$(_find_venv_python "$venv_dir")" || true
+    if [ -z "$bootstrapped_python" ] || ! _venv_healthy "$bootstrapped_python"; then
+        echo "Error: venv bootstrap failed — missing packages." >&2
+        echo "  Python: $(python3 --version 2>&1)" >&2
+        echo "  Run manually:" >&2
+        echo "    cd $SCRIPT_DIR && python3 -m venv venv && venv/bin/pip install -r requirements.txt" >&2
+        exit 1
+    fi
+    echo "Done." >&2
+}
+
+# Verify a python binary can import the required dependencies
+_venv_healthy() {
+    "$1" -c "import yaml, click, pydantic, networkx, rich" 2>/dev/null
+}
+
+# Use system venv, local venv, or bootstrap a new one
+if [ -n "$SYSTEM_VENV_PYTHON" ] && _venv_healthy "$SYSTEM_VENV_PYTHON"; then
     PYTHON="$SYSTEM_VENV_PYTHON"
-elif [ -f "$VENV_PYTHON" ]; then
+elif [ -n "$VENV_PYTHON" ] && _venv_healthy "$VENV_PYTHON"; then
     PYTHON="$VENV_PYTHON"
 elif command -v python3 &> /dev/null; then
-    PYTHON="python3"
+    _bootstrap_venv "$SCRIPT_DIR/venv"
+    PYTHON="$(_find_venv_python "$SCRIPT_DIR/venv")"
 else
     echo "Error: Python 3 is required but not installed" >&2
     exit 1

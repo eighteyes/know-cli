@@ -12,88 +12,52 @@ tags: [know, archive, complete]
 
 **Workflow**
 
-### 1. Detect Git Worktree Status
-
-**Steps**:
-1. Check if feature has an associated worktree:
-   ```bash
-   git worktree list | grep "feature/<feature-name>"
-   ```
-2. Determine current location:
-   ```bash
-   MAIN_WORKTREE=$(git worktree list | head -1 | awk '{print $1}')
-   CURRENT_TOPLEVEL=$(git rev-parse --show-toplevel)
-   ```
-3. **If worktree exists**:
-   - If currently IN that worktree: Switch to main repo first
-   - If in main or different worktree: Proceed from current location
-
-### 2. Verify Feature Completion
+### 1. Verify Feature Completion
 
 **Steps**:
 1. Extract feature name from conversation or prompt user
 2. Verify feature exists in `.ai/know/features/<feature-name>/`
 3. Check that all requirements are complete: `know req list <feature-name>`
    - If not all complete/verified, warn user and ask for confirmation
-4. Check spec-graph status is "done" or "complete"
+4. Check spec-graph status is "review-ready" or "complete"
 
-### 3. Merge Feature Branch (if worktree exists)
-
-**Steps**:
-1. **Ensure in main repo**:
-   ```bash
-   cd $MAIN_WORKTREE
-   ```
-2. **Sync .ai/ from worktree** (if it hasn't been synced yet):
-   ```bash
-   cp -r ../<repo-name>-<feature-name>/.ai/know/features/<feature-name>/ .ai/know/features/<feature-name>/
-   ```
-3. **Merge feature branch**:
-   ```bash
-   git checkout main
-   git merge --no-ff feature/<feature-name> -m "Merge feature: <feature-name>"
-   ```
-4. **Ask user**: "Delete feature branch? [Yes/No]"
-   - If Yes: `git branch -d feature/<feature-name>`
-
-### 4. Remove Git Worktree (if exists)
+### 2. Archive Feature Directory
 
 **Steps**:
-1. Remove the worktree:
-   ```bash
-   git worktree remove ../<repo-name>-<feature-name>
-   ```
-2. Verify removal was successful
-
-### 5. Archive Feature Directory
-
-**Steps**:
-1. Move entire feature directory:
+1. Create archive directory if needed: `.ai/know/features/archive/`
+2. Move entire feature directory:
    - FROM: `.ai/know/features/<feature-name>/`
    - TO: `.ai/know/features/archive/<feature-name>/`
-2. Confirm the move was successful
+3. Confirm the move was successful
 
-### 6. Update Feature Index
+### 3. Update Feature Index
 
 **Steps**:
-1. Read `.ai/know/features/feature-index.md`
-2. Move feature entry from "Features" to "Archived Features" section (create if doesn't exist)
+1. Read `.ai/know/features/feature-index.md` (create if missing)
+2. Move feature entry from "Features" to "Archived Features" section
 3. Update summary counts (decrement active, increment archived)
 4. Update feature status to "archived" and add archived date
 
-### 7. Update Spec-Graph Phase
+### 4. Update Spec-Graph Status
 
 **Steps**:
-1. Update phase status to "done" (using **haiku agent**)
-2. Validate both spec-graph and code-graph
+1. Update feature status to "complete" (using **haiku agent**):
+   ```bash
+   know phases status feature:<feature-name> complete
+   ```
+2. Validate both spec-graph and code-graph:
+   ```bash
+   know -g .ai/spec-graph.json validate
+   know -g .ai/code-graph.json validate
+   ```
 3. Confirm graphs are consistent
 
-### 8. Identify Related Commits
+### 5. Identify Related Commits
 
 **Steps**:
 1. Get feature baseline from config.json or directory mtime:
    ```bash
-   cat .ai/know/features/<feature-name>/config.json 2>/dev/null | jq '.baseline'
+   cat .ai/know/features/archive/<feature-name>/config.json 2>/dev/null | jq '.baseline'
    ```
 
 2. Find commits since baseline using CLI:
@@ -114,7 +78,7 @@ tags: [know, archive, complete]
 
 4. Confirm selection with user
 
-### 9. Tag Commits with Git Notes
+### 6. Tag Commits with Git Notes
 
 **Steps**:
 1. Tag each selected commit:
@@ -132,7 +96,7 @@ tags: [know, archive, complete]
    Tagged 4 commits with know:feature:<feature-name>
    ```
 
-### 10. Store Commits in Spec-Graph
+### 7. Store Commits in Spec-Graph
 
 **Steps**:
 1. Update `meta.feature_commits` in spec-graph:
@@ -142,20 +106,14 @@ tags: [know, archive, complete]
    }
    ```
 
-2. Use jq or direct edit to add entry:
-   ```bash
-   # Verify current state
-   jq '.meta.feature_commits' .ai/spec-graph.json
-   ```
-
-3. Validate spec-graph:
+2. Validate spec-graph:
    ```bash
    know validate
    ```
 
 **Example Usage**
 ```
-User: /know-done user-authentication
+User: /know:done user-authentication
 Assistant: Checks completion, moves to archive, confirms success
 ```
 
@@ -168,10 +126,4 @@ Assistant: Checks completion, moves to archive, confirms success
 **Notes**
 - Features can be un-archived by manually moving them back
 - Archive maintains full history (proposal, notes, plan, spec, requirements in graph)
-- **Worktree handling**:
-  - Automatically detects if feature was built in a worktree
-  - Switches to main repo if currently in feature worktree
-  - Merges feature branch using `--no-ff` for clear history
-  - Removes worktree after successful merge
-  - Can run from main repo or any worktree (auto-navigates as needed)
-
+- Git branching/merging is an independent concern - handle separately if needed

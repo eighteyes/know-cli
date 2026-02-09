@@ -17,10 +17,12 @@ Run the `know phases` command:
 know phases
 ```
 
-This command displays features grouped by phase (I, II, III, in-progress, review-ready, done) with:
+This command displays features grouped by phase (I, II, III, pending) with:
 - Phase shortname, name, and description
 - Features within each phase
-- Requirement completion counts from spec-graph (e.g., "3/13")
-- Status icons (✅ completed, 🔄 in-progress, 📋 planned)
+- Requirement completion counts from spec-graph (e.g., "3/13" or "--" if none defined)
+- Status icons (✅ complete, 🔄 in-progress, 📋 planned)
 - Summary footer with totals
+
+**Note**: Phase is the plan (WHEN), status is the territory (current state). A feature can be phase III but status in-progress.
 

@@ -70,6 +70,7 @@ Every entity MUST have a reference or another entity as dependent. Any reference
     "III": {"name": "Polish", "description": "Optimizations and refinements"},
     "in-progress": {"name": "In Progress", "description": "Currently being worked on"},
     "review-ready": {"name": "Review Ready", "description": "Awaiting user testing"},
+    "changes-planned": {"name": "Changes Planned", "description": "Extension/modification planned for existing feature"},
     "done": {"name": "Done", "description": "Completed and deployed"}
   }
 }
@@ -89,8 +90,8 @@ Every entity MUST have a reference or another entity as dependent. Any reference
 }
 ```
 
-**Viewing phases**: Use `know phases` to display grouped features with task completion counts.
-Each feature's task count comes from `.ai/know/<feature>/todo.md` checkbox counting.
+**Viewing phases**: Use `know phases` to display grouped features with requirement completion counts.
+Each feature's count comes from `meta.requirements` in spec-graph. Shows "--" if no requirements defined.
 
 # Using Know with Dual Graphs
 

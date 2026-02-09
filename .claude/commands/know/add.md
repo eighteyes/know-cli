@@ -1,6 +1,6 @@
 ---
 name: Know: Add Feature
-description: 5-step workflow to add a feature to spec-graph with HITL clarification
+description: 8-step workflow to add a feature to spec-graph with HITL clarification
 category: Know
 tags: [know, feature, overview]
 ---
@@ -581,7 +581,24 @@ Edit `.ai/spec-graph.json` to add a new reference type for documentation:
 - LLMs can query for context: "What papers is this feature based on?"
 - Traceability from implementation → research
 
-## 6. Update Feature Index
+## 6. Validate (Cycle Detection)
+
+After registering the feature, check for circular dependencies:
+
+```bash
+know -g .ai/spec-graph.json cycles
+```
+
+**If cycles detected involving the new feature**:
+- Display the cycle: `feature:new → feature:existing → feature:new`
+- Ask user how to proceed:
+  - "Break cycle" - Remove the problematic dependency
+  - "Proceed anyway" - Accept the cycle (not recommended)
+  - "Abort" - Remove the feature and dependencies
+
+**If no cycles**: Proceed to Feature Index step.
+
+## 7. Update Feature Index
 Maintain `.ai/know/features/feature-index.md` with a summary of all features:
 
 **Steps**:
@@ -614,7 +631,7 @@ Maintain `.ai/know/features/feature-index.md` with a summary of all features:
 
 **Note**: Keep entries alphabetically sorted for easy lookup.
 
-## 7. Connect
+## 8. Connect
 - Run `/know:connect` to validate graph coverage
 - Ensure new feature is reachable from root users
 - If coverage < 100%, assist with connecting disconnected entities

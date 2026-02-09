@@ -25,7 +25,15 @@ class SpecGenerator:
 
     def generate_entity_spec(self, entity_id: str, include_deps: bool = True) -> str:
         """
-        Generate a specification for an entity.
+        Generate a comprehensive specification for an entity.
+
+        Produces LLM-quality output deterministically by traversing
+        the full graph context including:
+        - Full dependency chain narrative
+        - Cross-referenced related entities
+        - User story format for user/objective/action chains
+        - Phase and status information
+        - Related references
 
         Args:
             entity_id: Entity identifier
@@ -47,6 +55,13 @@ class SpecGenerator:
         lines.append(f"**ID:** `{entity_id}`")
         lines.append("")
 
+        # Phase and Status from meta
+        phase_info = self._get_entity_phase_status(entity_id)
+        if phase_info:
+            lines.append(f"**Phase:** {phase_info.get('phase', 'N/A')}")
+            lines.append(f"**Status:** {phase_info.get('status', 'N/A')}")
+            lines.append("")
+
         # Description
         if entity_data.get('description'):
             lines.append("## Description")
@@ -54,22 +69,58 @@ class SpecGenerator:
             lines.append(entity_data['description'])
             lines.append("")
 
-        # Dependencies
+        # User Story (for features, actions, components)
+        user_story = self._generate_user_story(entity_id)
+        if user_story:
+            lines.append("## User Story")
+            lines.append("")
+            lines.append(user_story)
+            lines.append("")
+
+        # Traceability Chain
+        trace_chain = self._build_trace_chain(entity_id)
+        if trace_chain and len(trace_chain) > 1:
+            lines.append("## Traceability")
+            lines.append("")
+            lines.append("**Chain:** " + " → ".join(trace_chain))
+            lines.append("")
+
+        # Dependencies with context
         if include_deps:
             dependencies = self.deps.get_dependencies(entity_id)
             if dependencies:
+                # Group by type for better organization
+                dep_by_type: Dict[str, List[str]] = {}
+                for dep in dependencies:
+                    dep_type = dep.split(':')[0] if ':' in dep else 'other'
+                    if dep_type not in dep_by_type:
+                        dep_by_type[dep_type] = []
+                    dep_by_type[dep_type].append(dep)
+
                 lines.append("## Dependencies")
                 lines.append("")
-                for dep in dependencies:
-                    dep_data = self.entities.get_entity(dep)
-                    if dep_data:
-                        dep_name = dep_data.get('name', dep)
-                        lines.append(f"- `{dep}` - {dep_name}")
-                    else:
-                        lines.append(f"- `{dep}`")
-                lines.append("")
 
-            # Dependents
+                for dep_type, deps in sorted(dep_by_type.items()):
+                    lines.append(f"### {dep_type.replace('-', ' ').title()}")
+                    lines.append("")
+                    for dep in deps:
+                        dep_data = self.entities.get_entity(dep)
+                        if dep_data:
+                            dep_name = dep_data.get('name', dep)
+                            dep_desc = dep_data.get('description', '')
+                            lines.append(f"- **`{dep}`** - {dep_name}")
+                            if dep_desc:
+                                lines.append(f"  - {dep_desc[:150]}{'...' if len(dep_desc) > 150 else ''}")
+                        else:
+                            # It's a reference, get reference data
+                            ref_data = self._get_reference_data(dep)
+                            if ref_data:
+                                lines.append(f"- **`{dep}`** (reference)")
+                            else:
+                                lines.append(f"- `{dep}`")
+                    lines.append("")
+
+            # Dependents (what uses this)
             dependents = self.deps.get_dependents(entity_id)
             if dependents:
                 lines.append("## Used By")
@@ -78,13 +129,166 @@ class SpecGenerator:
                     dep_data = self.entities.get_entity(dep)
                     if dep_data:
                         dep_name = dep_data.get('name', dep)
-                        lines.append(f"- `{dep}` - {dep_name}")
+                        lines.append(f"- **`{dep}`** - {dep_name}")
                     else:
                         lines.append(f"- `{dep}`")
                 lines.append("")
 
+        # Requirements (if this is a feature)
+        if entity_type == 'feature':
+            requirements = self._get_feature_requirements(entity_name)
+            if requirements:
+                lines.append("## Requirements")
+                lines.append("")
+                for req_key, req_data in requirements.items():
+                    status = req_data.get('status', 'pending')
+                    name = req_data.get('name', req_key)
+                    status_icon = '✅' if status == 'complete' else '🔄' if status == 'in-progress' else '📋'
+                    lines.append(f"- {status_icon} **{name}** ({status})")
+                    if req_data.get('description'):
+                        lines.append(f"  - {req_data['description']}")
+                lines.append("")
+
+        # Related references (data-models, business_logic, etc.)
+        related_refs = self._get_related_references(entity_id)
+        if related_refs:
+            lines.append("## Related References")
+            lines.append("")
+            for ref_type, refs in related_refs.items():
+                lines.append(f"### {ref_type.replace('_', ' ').title()}")
+                lines.append("")
+                for ref_id, ref_data in refs.items():
+                    lines.append(f"**{ref_id}:**")
+                    if isinstance(ref_data, dict):
+                        lines.append("```json")
+                        import json
+                        lines.append(json.dumps(ref_data, indent=2))
+                        lines.append("```")
+                    else:
+                        lines.append(f"```\n{ref_data}\n```")
+                lines.append("")
+
         # Filter out any None values
         return "\n".join(str(line) if line is not None else '' for line in lines)
+
+    def _get_entity_phase_status(self, entity_id: str) -> dict:
+        """Get phase and status for an entity from meta.phases."""
+        data = self.graph.get_graph()
+        phases = data.get('meta', {}).get('phases', {})
+
+        for phase_name, phase_entities in phases.items():
+            if entity_id in phase_entities:
+                return {
+                    'phase': phase_name,
+                    'status': phase_entities[entity_id].get('status', 'unknown')
+                }
+        return {}
+
+    def _generate_user_story(self, entity_id: str) -> str:
+        """
+        Generate a user story by tracing up to user/objective.
+
+        Returns format: "As a [user], I want to [action] so that [objective]"
+        """
+        # Trace upstream to find user and objective
+        chain = self._build_trace_chain(entity_id)
+
+        user = None
+        objective = None
+        action = None
+
+        for item in chain:
+            if item.startswith('user:'):
+                user_data = self.entities.get_entity(item)
+                user = user_data.get('name', item) if user_data else item
+            elif item.startswith('objective:'):
+                obj_data = self.entities.get_entity(item)
+                objective = obj_data.get('description', obj_data.get('name', item)) if obj_data else item
+            elif item.startswith('action:'):
+                act_data = self.entities.get_entity(item)
+                action = act_data.get('name', item) if act_data else item
+
+        if user and (objective or action):
+            story = f"As a **{user}**"
+            if action:
+                story += f", I want to **{action}**"
+            if objective:
+                story += f" so that **{objective}**"
+            return story
+
+        return ""
+
+    def _build_trace_chain(self, entity_id: str) -> List[str]:
+        """Build traceability chain from entity up to user."""
+        chain_order = ['operation', 'component', 'action', 'feature', 'objective', 'user']
+        chain = [entity_id]
+        current = entity_id
+        visited = set()
+
+        while current and current not in visited:
+            visited.add(current)
+            upstream = self.deps.get_dependencies(current)
+            if not upstream:
+                break
+
+            current_type = current.split(':')[0]
+            try:
+                current_idx = chain_order.index(current_type)
+            except ValueError:
+                current_idx = -1
+
+            next_entity = None
+            for up in upstream:
+                up_type = up.split(':')[0]
+                try:
+                    up_idx = chain_order.index(up_type)
+                    if up_idx > current_idx:
+                        next_entity = up
+                        break
+                except ValueError:
+                    continue
+
+            if next_entity:
+                chain.append(next_entity)
+                current = next_entity
+            else:
+                break
+
+        return list(reversed(chain))
+
+    def _get_feature_requirements(self, feature_name: str) -> dict:
+        """Get requirements for a feature from meta.requirements."""
+        data = self.graph.get_graph()
+        all_reqs = data.get('meta', {}).get('requirements', {})
+
+        feature_reqs = {}
+        for req_key, req_data in all_reqs.items():
+            if req_key.startswith(f"{feature_name}-"):
+                feature_reqs[req_key] = req_data
+
+        return feature_reqs
+
+    def _get_related_references(self, entity_id: str) -> Dict[str, Dict]:
+        """Get references that this entity depends on, grouped by type."""
+        dependencies = self.deps.get_dependencies(entity_id)
+        data = self.graph.get_graph()
+        references = data.get('references', {})
+
+        related = {}
+        for dep in dependencies:
+            if ':' not in dep:
+                continue
+            dep_type, dep_name = dep.split(':', 1)
+
+            # Check if it's a reference type
+            if dep_type in references:
+                if dep_type not in related:
+                    related[dep_type] = {}
+                ref_data = references[dep_type].get(dep_name)
+                if ref_data:
+                    related[dep_type][dep_name] = ref_data
+
+        return related
 
     def generate_feature_spec(self, feature_id: str) -> str:
         """

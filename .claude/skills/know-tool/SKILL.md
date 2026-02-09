@@ -159,33 +159,39 @@ know ref-clean                  # Clean up unused references
 know build-order                # Topological sort
 know trace entity:x             # Trace entity across product-code boundary
 know suggest entity:x           # Suggest valid connections for an entity
+know coverage                   # % of entities connected to root users
 ```
 
 ### Specification Generation
 ```bash
-know spec entity:x              # Generate spec for single entity
-know feature-spec feature:x     # Generate detailed feature specification
+know spec entity:x              # Generate complete spec deterministically
+know trace-matrix               # Show requirement traceability matrix
+know trace-matrix -t component  # Trace specific entity type
 know sitemap                    # Generate sitemap of all interfaces
 ```
+
+**`know spec` produces comprehensive output:**
+- Phase and status information
+- Auto-generated user story (As a [user], I want to [action] so that [objective])
+- Full traceability chain (user → objective → feature → component)
+- Dependencies grouped by type with descriptions
+- Requirements list with status icons
+- Related references (data-models, business_logic, etc.)
 
 ### Advanced
 ```bash
 know diff graph1.json graph2.json    # Compare two graph files
 know init                            # Initialize know workflow in a project
-know llm-chains                      # List available LLM workflow chains
-know llm-providers                   # List available LLM providers
 ```
 
 ## Reference Files
 
 For detailed information, read these reference files:
 
-- **[entity-types.md](references/entity-types.md)** - Deep dive on all entity types and their roles
-- **[references-guide.md](references/references-guide.md)** - Understanding reference categories and when to use them
-- **[meta-sections.md](references/meta-sections.md)** - Meta section structures and schemas
-- **[commands-reference.md](references/commands-reference.md)** - Complete command listing with examples
-- **[workflows.md](references/workflows.md)** - Common patterns: adding features, connecting actions, validation
-- **[troubleshooting.md](references/troubleshooting.md)** - Debugging and fixing graph issues
+- **[creating.md](references/creating.md)** - Guide to creating entities and references
+- **[generating.md](references/generating.md)** - Specification generation patterns
+- **[validating.md](references/validating.md)** - Graph validation and health checks
+- **[qa-steps.md](references/qa-steps.md)** - QA testing patterns
 
 ## Quick Workflow Pattern
 
@@ -209,35 +215,42 @@ know validate
 know uses feature:new-feature --recursive
 ```
 
-## Viewing Phases
+## Phase Management
 
-The `know phases` command displays features grouped by phase:
+**Phase** = Roman numerals (I, II, III) - WHEN to do this feature (planning waves)
+**Status** = in-progress, complete, planned - current state of the work
+
+Phase is the plan, status is the territory. A feature can be `phase: III` (planned for wave 3) but `status: in-progress` (started early).
 
 ```bash
-know phases list               # Show all features organized by phase with requirement counts
-know phases add I feature:x    # Add feature to phase I
-know phases move feature:x II  # Move feature to phase II
-know phases status feature:x in-progress  # Update status
+know phases                          # Alias for phases list
+know phases list                     # Show all features organized by phase
+know phases add <phase> <entity>     # Add feature to phase (e.g., know phases add I feature:auth)
+know phases move <entity> <phase>    # Move feature to different phase
+know phases status <entity> <status> # Update status (planned, in-progress, complete)
+know phases remove <entity>          # Remove entity from all phases
 ```
 
 **Output includes:**
 - Phase metadata (shortname, name, description) from `meta.phases_metadata`
 - Features within each phase
-- Requirement completion counts from `meta.requirements`
-- Status icons (✅ completed, 🔄 in-progress, 📋 planned)
+- Requirement completion counts (from `meta.requirements`)
+- Status icons (✅ complete, 🔄 in-progress, 📋 planned)
 - Summary totals
 
 **Example output:**
 ```
 Phase I (Foundation)
-  🔄 feature:auth (3/5) - Authentication system (3 of 5 requirements complete)
+  🔄 feature:auth (3/5) - Authentication system
 
 Phase II (Features)
-  📋 feature:api-gateway (0/4) - API routing (0 of 4 requirements complete)
+  📋 feature:api-gateway (0/4) - API routing
 
-Done
-  ✅ feature:onboarding (5/5) - User onboarding
+Phase III (Polish)
+  📋 feature:dark-mode (--) - No requirements yet
 ```
+
+**Note:** "--" indicates no requirements exist yet for that feature.
 
 ## Requirements vs Todo.md
 
@@ -256,14 +269,6 @@ Done
 5. **Use full paths** - Always use `type:key` format (e.g., `feature:real-time-telemetry`)
 6. **Never add dependencies to entity objects** - Only in the `graph` section
 7. **Check completeness** - Use `know gap-analysis` to ensure full dependency chains
-
-## When to Read Which Reference
-
-- **Adding/modifying entities?** → Read [entity-types.md](references/entity-types.md) and [workflows.md](references/workflows.md)
-- **Working with references?** → Read [references-guide.md](references/references-guide.md)
-- **Updating meta sections?** → Read [meta-sections.md](references/meta-sections.md)
-- **Need command details?** → Read [commands-reference.md](references/commands-reference.md)
-- **Debugging issues?** → Read [troubleshooting.md](references/troubleshooting.md)
 
 ## Installation Note
 
