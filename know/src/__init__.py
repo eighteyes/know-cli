@@ -19,6 +19,7 @@ from .impact_analyzer import ImpactAnalyzer
 from .deprecation import DeprecationManager
 from .requirements import RequirementManager
 from .coverage import CoverageAnalyzer
+from .op_manager import OpManager
 from .utils import (
     parse_entity_id,
     format_entity_id,
@@ -49,6 +50,7 @@ __all__ = [
     "DeprecationManager",
     "RequirementManager",
     "CoverageAnalyzer",
+    "OpManager",
     "parse_entity_id",
     "format_entity_id",
     "normalize_entity_type",

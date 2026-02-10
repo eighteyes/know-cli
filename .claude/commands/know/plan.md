@@ -128,25 +128,28 @@ Each mode follows this pattern:
 - What are their core objectives?
 - What is the critical path through the system?
 - What user stories define success?
-- **What features are needed?** (list by name, 1-line description each)
 - What features are must-have vs nice-to-have?
 - What are the key requirements?
 - What business processes need to be supported?
-- **Are there project-level reference materials?** (research papers, specifications, API docs, standards, prior art)
+- **Are there reference materials?** (research papers, specifications, API docs, standards, prior art)
 
 **Surface Assumptions**:
 Before proceeding to Architect mode, state any assumptions about scope, technical approach, or existing system behavior.
 For each assumption: confidence ≥95% → state and proceed. <95% → ask user.
 *Assumption economics: -5 if wrong, +1 if right, 0 if ask.*
+  - Research papers this is based on?
+  - Industry standards or RFCs to follow?
+  - API documentation to integrate with?
+  - Similar projects to learn from?
 
 **Outputs**:
 - Files:
   - `.ai/know/qa/discovery.md` - QA session log
   - `.ai/know/product/user-stories.md`
   - `.ai/know/product/requirements.md`
-  - `.ai/know/product/features.md` - High-level feature list with priorities
+  - `.ai/know/product/features.md`
   - `.ai/know/product/critical-path.md`
-  - **`.ai/know/references.md`** - Project-level research papers, specs, API docs, prior art (if provided)
+  - **`.ai/know/references.md`** - Research papers, specs, API docs, prior art (if provided)
   - `.ai/know/flows/user.md` - User journey diagram
   - `.ai/know/flows/system.md` - System interaction diagram
   - `.ai/know/flows/biz.md` - Business process diagram
@@ -154,8 +157,9 @@ For each assumption: confidence ≥95% → state and proceed. <95% → ask user.
 - Spec-graph entities (WITH CONFIRMATION):
   - `user:*` entities (e.g., user:developer, user:end-user)
   - `objective:*` entities (e.g., objective:manage-data, objective:generate-reports)
-  - Dependencies: `user → objective`
-  - **`references.documentation`** entries for project-level research papers, specs, API docs (if provided)
+  - Initial `feature:*` entities (high-level features)
+  - Dependencies: `user → objective`, `objective → feature`
+  - **`references.documentation`** entries for research papers, specs, API docs (if provided)
 
 - **Graph Commands to Execute**:
   ```bash
@@ -169,29 +173,13 @@ For each assumption: confidence ≥95% → state and proceed. <95% → ask user.
   # Link users to objectives
   know -g .ai/spec-graph.json link user:developer objective:manage-data
 
-  # Validate users and objectives
-  know -g .ai/spec-graph.json validate
-  ```
-
-- **Feature Registration** (CRITICAL):
-
-  For each feature identified, explicitly call `/know:add`:
-  ```bash
+  # Add features via /know:add (triggers full workflow)
   /know:add data-import
   /know:add user-auth
-  /know:add report-generation
-  # ... repeat for all features
+
+  # Validate
+  know -g .ai/spec-graph.json validate
   ```
-
-  **Why delegate to /know:add?**
-  - Duplicate detection (prevents redundant work)
-  - Per-feature HITL clarification (components, actions, interfaces, requirements)
-  - Feature-specific reference materials capture
-  - Experiment identification for risky features
-  - Proper scaffolding and graph registration
-  - Automatic linking to objectives
-
-  **Note**: `/know:add` handles all feature-level details. Discovery mode only identifies WHICH features exist.
 
 ---
 
@@ -339,7 +327,26 @@ For each assumption: confidence ≥95% → state and proceed. <95% → ask user.
 
 ---
 
-### Mode 6: Quality (Testing Strategy)
+### Mode 6: Prototyping (if needed)
+
+**When to run**: Novel/risky requirements need validation
+
+**Questions to ask**:
+- What requirements are novel or untested?
+- What technical risks exist?
+- What assumptions need validation?
+- What experiments would de-risk?
+
+**Outputs**:
+- Files:
+  - `.ai/know/qa/prototyping.md` - QA session log
+  - `.ai/know/experiments.md` - Validation experiments
+
+- Spec-graph: Updates to `requirement:*` with risk notes
+
+---
+
+### Mode 7: Quality (Testing Strategy)
 
 **When to run**: After architecture defined, before PM
 
@@ -357,40 +364,6 @@ For each assumption: confidence ≥95% → state and proceed. <95% → ask user.
 
 - Spec-graph references:
   - `test-strategy:*` - Testing approach per component
-
----
-
-### Mode 7: Experiments (if needed)
-
-**When to run**: After Quality, when risky/novel elements identified
-
-**Questions to ask**:
-- What technical integrations are unproven?
-- What UI flows need user validation?
-- What performance assumptions lack data?
-- What "we think it works like X" beliefs need proof?
-- Which features carry highest implementation risk?
-
-**Outputs**:
-- Files:
-  - `.ai/know/qa/experiments.md` - QA session log
-  - `.ai/know/experiments.md` - **Project-level experiments** (cross-feature validations)
-  - `.ai/know/features/<feature>/experiments.md` - **Feature-level experiments** (per-feature validations)
-
-- Experiment format:
-  ```markdown
-  ## <Experiment Name>
-  - **Type**: <tech-integration|ui-prototype|performance|assumption>
-  - **Feature**: <feature:name or "project-wide">
-  - **Risk**: <consequence of skipping>
-  - **Validation**: <pass/fail criteria>
-  - **Scope**: <minimal implementation>
-  - **Status**: pending
-  ```
-
-- Spec-graph: Updates to `requirement:*` with risk notes, links experiments to features
-
-**Build Integration**: Experiments execute during `/know:build` BEFORE full implementation. Build gates on experiment success.
 
 ---
 
@@ -430,8 +403,8 @@ For each assumption: confidence ≥95% → state and proceed. <95% → ask user.
 - Files:
   - `.ai/know/qa/pm.md` - QA session log
   - `.ai/know/plan/1-[task].md`, `.ai/know/plan/2-[task].md`, etc. - Granular implementation tasks
+  - `.ai/know/todo.md` - Checklist with links
   - `.ai/know/file-index.md` - Proposed file structure
-- Requirements: Feature requirements tracked via `know req list` (replaces todo.md)
 
 - Spec-graph updates (WITH CONFIRMATION):
   - Populate `meta.phases_metadata` with phase definitions:
@@ -481,15 +454,12 @@ For each assumption: confidence ≥95% → state and proceed. <95% → ask user.
    g. **Show user the exact commands to be executed**
    h. **Ask for confirmation before executing**
    i. **Execute commands**:
-      - For users/objectives/requirements: `know -g .ai/spec-graph.json add <type> <key> '{...}'`
+      - For features: `/know:add <feature-name>` (full workflow)
+      - For other entities: `know -g .ai/spec-graph.json add <type> <key> '{...}'`
       - For dependencies: `know -g .ai/spec-graph.json link <from> <to>`
-      - **For features**: Call `/know:add <feature-name>` for EACH feature (delegates to full add workflow)
    j. Validate graph: `know -g .ai/spec-graph.json validate`
    k. Save QA session with answers to `.ai/know/qa/[mode-name].md`
 4. **Final delivery mode** - validate and generate project.md
-
-**Discovery Mode Special Note**:
-After adding users and objectives, explicitly call `/know:add` for each identified feature. This triggers duplicate detection, HITL clarification, scaffolding, and proper graph registration. Do NOT manually add features via `know add` - always use the `/know:add` skill.
 
 ## Key Principles
 
@@ -523,3 +493,5 @@ Assistant: Assessing project maturity...
 - Suitable for greenfield planning or refining existing projects
 - Can skip modes based on maturity assessment
 
+---
+`r1` - Added explicit Graph Operations section with know CLI commands; added "Graph Commands to Execute" examples to Modes 2-5; updated Workflow Execution to specify /know:add for features vs know CLI for other entities

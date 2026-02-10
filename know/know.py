@@ -31,6 +31,65 @@ console = Console()
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
+class SectionedGroup(click.Group):
+    """Click Group that organizes commands into sections."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.section_commands = {
+            'Initialization': ['init'],
+            'Graph Management': ['add', 'get', 'list', 'graph', 'check', 'gen'],
+            'Feature Lifecycle': ['feature'],
+            'Project Planning': ['phases', 'req', 'op', 'meta'],
+            'Maintenance': ['nodes'],
+        }
+
+    def format_commands(self, ctx, formatter):
+        """Custom command formatting with sections."""
+        # Organize commands by section
+        sections = {}
+        unassigned = []
+
+        for name in self.list_commands(ctx):
+            cmd = self.get_command(ctx, name)
+            if cmd is None:
+                continue
+
+            # Find which section this command belongs to
+            found = False
+            for section, commands in self.section_commands.items():
+                if name in commands:
+                    if section not in sections:
+                        sections[section] = []
+                    sections[section].append((name, cmd))
+                    found = True
+                    break
+
+            if not found:
+                unassigned.append((name, cmd))
+
+        # Format sections
+        for section in ['Initialization', 'Graph Management', 'Feature Lifecycle', 'Project Planning', 'Maintenance']:
+            if section in sections:
+                with formatter.section(section):
+                    self._format_command_list(formatter, sections[section])
+
+        # Add unassigned commands if any
+        if unassigned:
+            with formatter.section('Other Commands'):
+                self._format_command_list(formatter, unassigned)
+
+    def _format_command_list(self, formatter, commands):
+        """Format a list of commands."""
+        rows = []
+        for name, cmd in commands:
+            help_text = cmd.get_short_help_str(limit=60)
+            rows.append((name, help_text))
+
+        if rows:
+            formatter.write_dl(rows)
+
+
 def _get_type_category(rules_path: str, type_name: str) -> str:
     """Determine if a type is an entity or reference based on rules.
 
@@ -49,7 +108,7 @@ def _get_type_category(rules_path: str, type_name: str) -> str:
     return 'unknown'
 
 
-@click.group(context_settings=CONTEXT_SETTINGS)
+@click.command(cls=SectionedGroup, context_settings=CONTEXT_SETTINGS)
 @click.option('--graph-path', '-g', default='.ai/spec-graph.json',
               help='Path to graph file')
 @click.option('--rules-path', '-r', default=None,

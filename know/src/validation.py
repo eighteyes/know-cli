@@ -240,6 +240,14 @@ class GraphValidator:
         used_references = set()
 
         for node_id, node_data in graph.items():
+            # Defensive check: ensure node_data is a dictionary
+            if not isinstance(node_data, dict):
+                results['errors'].append(
+                    f"Graph node {node_id} has invalid data type: {type(node_data).__name__} "
+                    f"(expected dict)"
+                )
+                continue
+
             for dep in node_data.get('depends_on', []):
                 if ':' in dep:
                     ref_type = dep.split(':')[0]
@@ -432,7 +440,8 @@ class GraphValidator:
         # Check for dependencies
         score['total'] += 1
         graph = data.get('graph', {})
-        if entity_id in graph and graph[entity_id].get('depends_on'):
+        graph_node = graph.get(entity_id, {})
+        if isinstance(graph_node, dict) and graph_node.get('depends_on'):
             score['checks']['has_dependencies'] = True
             score['completed'] += 1
 
@@ -455,6 +464,10 @@ class GraphValidator:
         # Build adjacency list (undirected for connectivity)
         adjacency = defaultdict(set)
         for node, node_data in graph_data.items():
+            # Defensive check: ensure node_data is a dictionary
+            if not isinstance(node_data, dict):
+                continue
+
             for dep in node_data.get('depends_on', []):
                 adjacency[node].add(dep)
                 adjacency[dep].add(node)
@@ -510,3 +523,194 @@ class GraphValidator:
                             )
 
         return results
+
+
+class ContractValidator:
+    """
+    Validates feature contracts for declared vs observed consistency.
+
+    Provides severity-based validation with high, medium, and info levels.
+    """
+
+    SEVERITY_HIGH = 'high'
+    SEVERITY_MEDIUM = 'medium'
+    SEVERITY_INFO = 'info'
+
+    def __init__(self, features_dir: str = ".ai/know/features"):
+        """
+        Initialize ContractValidator.
+
+        Args:
+            features_dir: Path to features directory
+        """
+        from .contract_manager import ContractManager
+        self.features_dir = Path(features_dir)
+        self.contract_manager = ContractManager(features_dir=features_dir)
+
+    def validate_declared_vs_observed(self, feature_name: str) -> Dict[str, List]:
+        """
+        Compare declared intent vs observed reality.
+
+        Args:
+            feature_name: Feature name
+
+        Returns:
+            Dict with 'high', 'medium', 'info' severity lists
+        """
+        results = {
+            'high': [],
+            'medium': [],
+            'info': []
+        }
+
+        contract = self.contract_manager.load_contract(feature_name)
+        if not contract:
+            results['high'].append({
+                'type': 'contract_missing',
+                'message': f"No contract found for feature: {feature_name}"
+            })
+            return results
+
+        declared = contract.get('declared', {})
+        observed = contract.get('observed', {})
+
+        # Validate files
+        self._validate_files(declared, observed, results)
+
+        # Validate entities
+        self._validate_entities(declared, observed, results)
+
+        # Validate actions
+        self._validate_actions(declared, results)
+
+        return results
+
+    def _validate_files(
+        self,
+        declared: Dict,
+        observed: Dict,
+        results: Dict[str, List]
+    ) -> None:
+        """Validate declared files vs observed files."""
+        declared_creates = declared.get('files', {}).get('creates', [])
+        declared_modifies = declared.get('files', {}).get('modifies', [])
+        observed_created = observed.get('files', {}).get('created', [])
+        observed_modified = observed.get('files', {}).get('modified', [])
+
+        # Check declared creates were actually created
+        for pattern in declared_creates:
+            matched = any(self._matches_pattern(f, pattern) for f in observed_created)
+            if not matched:
+                results['high'].append({
+                    'type': 'file_not_created',
+                    'pattern': pattern,
+                    'message': f"Declared file pattern '{pattern}' was not created"
+                })
+
+        # Check declared modifies were actually modified
+        for pattern in declared_modifies:
+            matched = any(self._matches_pattern(f, pattern) for f in observed_modified)
+            if not matched:
+                results['medium'].append({
+                    'type': 'file_not_modified',
+                    'pattern': pattern,
+                    'message': f"Declared file pattern '{pattern}' was not modified"
+                })
+
+        # Check for unexpected created files
+        all_patterns = declared_creates + declared_modifies
+        for created_file in observed_created:
+            matched = any(self._matches_pattern(created_file, p) for p in all_patterns)
+            if not matched:
+                results['medium'].append({
+                    'type': 'file_unexpected',
+                    'file': created_file,
+                    'message': f"Created file '{created_file}' was not declared"
+                })
+
+    def _validate_entities(
+        self,
+        declared: Dict,
+        observed: Dict,
+        results: Dict[str, List]
+    ) -> None:
+        """Validate declared entities vs observed entities."""
+        declared_creates = declared.get('entities', {}).get('creates', [])
+        observed_created = observed.get('entities', {}).get('created', [])
+
+        # Check declared creates were actually created
+        for entity_id in declared_creates:
+            if entity_id not in observed_created:
+                results['high'].append({
+                    'type': 'entity_not_created',
+                    'entity': entity_id,
+                    'message': f"Declared entity '{entity_id}' was not created"
+                })
+
+        # Check for unexpected entities
+        for entity_id in observed_created:
+            if entity_id not in declared_creates:
+                results['info'].append({
+                    'type': 'entity_unexpected',
+                    'entity': entity_id,
+                    'message': f"Created entity '{entity_id}' was not declared"
+                })
+
+    def _validate_actions(
+        self,
+        declared: Dict,
+        results: Dict[str, List]
+    ) -> None:
+        """Validate action verification status."""
+        actions = declared.get('actions', [])
+
+        for action in actions:
+            if not action.get('verified', False):
+                results['medium'].append({
+                    'type': 'action_unverified',
+                    'action': action.get('entity'),
+                    'description': action.get('description', ''),
+                    'message': f"Action '{action.get('entity')}' has not been verified"
+                })
+
+    def _matches_pattern(self, path: str, pattern: str) -> bool:
+        """Check if a path matches a glob pattern."""
+        from fnmatch import fnmatch
+
+        if '**' in pattern:
+            return fnmatch(path, pattern) or fnmatch(path, pattern.replace('**/', '*/'))
+        return fnmatch(path, pattern)
+
+    def get_validation_summary(self, feature_name: str) -> Dict:
+        """
+        Get validation summary with counts and overall status.
+
+        Args:
+            feature_name: Feature name
+
+        Returns:
+            Dict with counts and status
+        """
+        results = self.validate_declared_vs_observed(feature_name)
+
+        high_count = len(results['high'])
+        medium_count = len(results['medium'])
+        info_count = len(results['info'])
+
+        if high_count > 0:
+            status = 'drifted'
+        elif medium_count > 0:
+            status = 'pending'
+        else:
+            status = 'verified'
+
+        return {
+            'feature': feature_name,
+            'status': status,
+            'counts': {
+                'high': high_count,
+                'medium': medium_count,
+                'info': info_count
+            },
+            'issues': results
+        }

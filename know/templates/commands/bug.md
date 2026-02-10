@@ -126,7 +126,7 @@ Create a structured bug report for a feature, automatically numbering it, adding
 - If Yes (using **haiku agent**):
   - Update `meta.phases` to move feature back to "in-progress" phase
   - Update `meta.feature_specs.<feature>.status` to "in-progress"
-  - Validate: `know validate`
+  - Validate: `know check validate`
 
 ### 6. Confirmation
 

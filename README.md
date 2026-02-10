@@ -1,29 +1,89 @@
 # KNOW CLI - v 0.0.1
-An opinionated graph knowledgebase for product driven software development. 
+Opinionated LLM tooling for product driven software development. 
 
-Intended primarily for automated access.
+Know CLI is mainly for AI-driven *feature management*. 
 
+Know commands are for end users. 
+
+## Why Know?
+Every AI toolset for making software implicitly carries the creator's mental model for software development. This is a point of friction for experienced developers, and my recommendation is to roll your own tooling for the best results. My model is not your model, and that's ok. I made `know` to give my mental model hands to work with, and it works for me.
+
+### The Model
+My background is not in Computer Science and has as little enterprise exposure as was affordable. Mostly startups and small businesses, including a stint with an incubator / venture builder studio. I've done a few 0->1s but mostly 0->0.1s, usually in a client / customer / founder facing role as the technical lead. Rapid prototyping to learn quickly is my typical objective.
+
+`know` was designed to find and capture context around what you're asking an AI to accomplish. The WHAT and WHY in addition to the HOW.
+
+*Why pollute context with product signals?*
+
+Just like humans, LLMs need to make decisions as they go, as the map is not the territory. Having this contextual information helps make those decisions, because the last thing we want, as AI-powered builders, is to have the thing guess wrong and we don't find out until later.
+
+*Why not spec files?*
+
+I started with spec files, then I hit a wall. Spec files are BRITTLE, they represent your thinking and the project at a point in history, and they get bloated and are not adaptable. Necessarily, you store information in multiple places, and that information is subject to rot. What we need to defeat this are data structures which are not flat, which support branching and nesting. What we need are spec graphs.
+
+*Spec graphs...*
+
+Yes, single directional dependency graphs which link the WHAT with the HOW of a project. A clear link which is *generated* when needed. The human concerns, who is using it, what are they trying to accomplish, how are they doing it, are linked with the technical details needed to execute. Information lives in one place and it's trivial to reason between feature and implementation, because traversing that information space is just a query. 
+
+With `know` feature delivery is not a checklist, it is a deterministic state of your codebase. Getting to Done still requires human review.
+
+*... cool ... what's next?*
+
+```
+npm install -g know-cli
+
+# cd to your project
+know init
+```
+
+## Workflow
+```
+# main
+/know:add - Add more features as you go
+/know:build <feature> - Spin up some agents to knock it out
+/know:review <feature> - Your checklist for validation
+/know:done <feature> - Mark it as finished. 
+
+# as needed
+/know:prepare - init on an existing codebase, runs know:plan after setup
+/know:plan - Kick off a new project with a phased Product discovery conversation.
+/know:bug - track an issue witha feature
+/know:connect - if the graph gets sparse
+/know:list - whats out there to work on
+/know:change <feature> - things change
+/know:validate - check the graph
+
+# skills
+know-tool - teaches AI how to use Know CLI
+```
 ## Why? 
-spec.md is a brittle approach to defining projects for LLM understanding. For months, I've used, built and rebuilt approaches to making spec files and I'm never truly happy with the results. They are brittle, prone to hallucination, resistant to change, and never internally consistent. Despite how "production-ready" and "Perfect!" they are. 
+Task based workflows are very granular, looking at medium sized project with a minor task backlog can reach into the hundreds and becomes overwhelming very quickly even with AI and tooling assistance. Grouping tasks into Features is an intuitive approach and lets us approach tasks in aggregates.
+
+`spec.md` is a brittle approach to defining projects for LLM understanding. Having built with spec files for months, they are brittle, prone to hallucination, resistant to change, and never internally consistent. despite how "production-ready" and "Perfect!" they are. 
 
 Introducing **SPEC GRAPHS**
 
+Specs can be *queryable*, *internally consistent*, *generated* and with *inherent references*.
+
 ## Spec Graphs solve for brittle specs. 
-Every piece of information lives in one place, and is referenced by others. Functionally, this approach uses a simple graph with a single relationship type "depends_on" to map the connection between a User, their Objectives, into how they Act on software Components. 
+Every piece of information lives in one place, and is referenced by others. Functionally, this approach uses a simple graph with a single relationship type "depends_on" to map the connection between a User, their Objectives, into how they Act on software Components.
 
-These components serve as the link to a second graph in the same vein, one which describes the software architecture and how components link together. In this way, we can map from a user objective and determine all the software pieces involved in making that happen. It's an exciting vision.
+These components serve as the link to a second graph in the same vein, one which describes the software architecture and how components link together. In this way, we can map from a user objective and determine all the software pieces involved in making that happen.
 
-Especially when you add AI, reinforced with tooling, to help you make these graphs. 
+AI, reinforced with tooling, help you make these graphs driven by feature development conversations. ( `/know:add` )
 
 ## Pure Alpha
-This is a work in progress. There are two primary intents with `know`:
+This is a work in progress. Primary intents:
 1) Provide a surface area for LLMs to understand the product and codebase without conducting token-wasting, repetitive manual analysis. 
 2) Output current spec files for "traditional" spec-driven development.
+3) Create a kick-ass `project.md` file.
  
 Generally speaking, this is not designed for human use, as the ergonomics are somewhere between `tar` and `aws-cli`. That being said, a skill is provided for use `.claude/skills/know-tool/marketplace.json`, give it a spin.
 
 ## Results
-I get considerably better plans made with `know` then with  other tools used by generalist agents. Instead of assuming my intent, the plans intuit where I want to go. I spend less time guiding the agent when it has a prepared knowledgebase that understands both the codebase and how it connects to features. [
+I get considerably better plans made with `know` then with other tools used by generalist agents. Instead of assuming my intent, the plans intuit where I want to go. I spend less time guiding the agent when it has a prepared knowledgebase that understands both the codebase and how it connects to features.
+
+Plans made with stock Claude Code sometimes miss the mark, even with Explore Agents.
 
 ## Installation
 
@@ -49,146 +109,133 @@ Know supports two types of graphs with separate validation rules:
 **Auto-detection**: The CLI automatically selects the correct rules based on graph filename:
 ```bash
 # Spec graph - auto-uses dependency-rules.json
-know -g .ai/spec-graph.json add user developer '{"name":"Developer","description":"..."}'
+know -g .ai/spec-graph.json add entity user developer '{"name":"Developer","description":"..."}'
 
 # Code graph - auto-uses code-dependency-rules.json
-know -g .ai/code-graph.json add module auth '{"name":"Auth Module","description":"..."}'
+know -g .ai/code-graph.json add entity module auth '{"name":"Auth Module","description":"..."}'
 ```
 
 **Manual override**: Use `-r` to specify custom rules:
 ```bash
-know -g custom-graph.json -r my-rules.json add entity-type key '{"name":"...","description":"..."}'
+know -g custom-graph.json -r my-rules.json add entity entity-type key '{"name":"...","description":"..."}'
 ```
 
 ## Commands Reference
 
 **Note**: Most commands accept `-g/--graph-path` to specify which graph to operate on. The `-r/--rules-path` flag is optional as rules are auto-detected from the graph filename.
 
-### Core Graph Operations
+### Adding to Graph (`know add`)
 
 ```bash
-# List all entities in the graph
-know list
+# Add entities
+know add entity <type> <key> '{"name":"Name","description":"Description"}'
+know -g .ai/code-graph.json add entity module auth-handler '{"name":"Auth Handler","description":"..."}'
+know -g .ai/spec-graph.json add entity feature user-login '{"name":"User Login","description":"..."}'
 
-# List entities of a specific type
-know list-type <entity_type>
+# Add references (validated against dependency-rules.json)
+know add reference <ref_type> <key> '{"field":"value"}'
+know add reference documentation api-spec '{"title":"API Spec","url":"..."}'
 
-# Get details of a specific entity
-know get <entity_id>
-
-# Add a new entity (entity_type and entity_key are separate arguments)
-know add <entity_type> <entity_key> '{"name":"Name","description":"Description"}'
-
-# Example: Add a code module
-know -g .ai/code-graph.json add module auth-handler '{"name":"Auth Handler","description":"Handles authentication"}'
-
-# Example: Add a spec feature
-know -g .ai/spec-graph.json add feature user-login '{"name":"User Login","description":"User authentication flow"}'
-
-# Show graph statistics
-know stats
-
-# Generate sitemap of all interfaces
-know sitemap
+# Add meta sections
+know add meta project name '{"value":"My Project"}'
+know add meta decision auth-choice '{"title":"JWT vs Sessions","rationale":"..."}'
 ```
 
-### Dependency Management
+### Entity Management (`know list` / `know get`)
 
 ```bash
-# Show what an entity uses (its dependencies)
-know uses <entity_id>
-know down <entity_id>  # Alias for 'uses'
-
-# Show what uses an entity (its dependents)
-know used-by <entity_id>
-know up <entity_id>  # Alias for 'used-by'
-
-# Add a dependency between entities
-know link <from_entity> <to_entity>
-
-# Remove a dependency between entities
-know unlink <from_entity> <to_entity>
-
-# Suggest valid connections for an entity
-know suggest <entity_id>
-
-# Show topological build order
-know build-order
-
-# Trace entity across product-code boundary
-know -g .ai/spec-graph.json trace component:cli-commands -c .ai/code-graph.json
-know -g .ai/code-graph.json trace module:auth-handler -s .ai/spec-graph.json
+know list                           # List all entities
+know list --type feature            # List entities of a specific type
+know get <entity_id>                # Get details of a specific entity
 ```
 
-### Analysis & Validation
+### Node Operations (`know nodes`)
 
 ```bash
-# Validate graph structure and dependencies
-know validate
+# Deprecation
+know nodes deprecate <entity_id> --reason "..." [--replacement <entity>] [--removal-date YYYY-MM-DD]
+know nodes undeprecate <entity_id>
+know nodes deprecated               # List all deprecated entities
+know nodes deprecated --overdue     # List overdue for removal
 
-# Comprehensive graph health check
-know health
+# Modification
+know nodes update <entity_id> '{"name":"New Name"}'  # Update properties
+know nodes rename <entity_id> <new_key>              # Rename entity key
+know nodes clone <entity_id> <new_key>               # Clone with all dependencies
+know nodes clone <entity_id> <new_key> --no-upstream # Clone without incoming deps
 
-# Detect circular dependencies
-know cycles
+# Removal
+know nodes delete <entity_id>       # Remove entity and clean up dependencies
+know nodes cut <entity_id>          # Remove entity only, leave deps orphaned
 
-# Check completeness score for an entity
-know completeness <entity_id>
+# Merging
+know nodes merge <from> <into>      # Merge entities, transfer dependencies
+know nodes merge <from> <into> --keep  # Keep source after merge
 ```
 
-### Gap Analysis
+### Graph Operations (`know graph`)
 
 ```bash
-# Analyze implementation gaps in dependency chains
-know gap-analysis [entity_id] [--json]
-
-# List missing connections in dependency chains
-know gap-missing
-
-# Show implementation summary
-know gap-summary
+know graph uses <entity_id>         # Show dependencies
+know graph used-by <entity_id>      # Show dependents
+know graph up <entity_id>           # Alias for uses
+know graph down <entity_id>         # Alias for used-by
+know graph link <from> <to>         # Add dependency
+know graph unlink <from> <to>       # Remove dependency
+know graph connect <entity_id>      # Suggest valid connections
+know graph build-order              # Topological sort
+know graph diff graph1.json graph2.json  # Compare graphs
 ```
 
-### Reference Management
+### Checks & Validation (`know check`)
 
 ```bash
-# Find orphaned references
-know ref-orphans
-
-# Show reference usage statistics
-know ref-usage
-
-# Suggest connections for orphaned references
-know ref-suggest
-
-# Clean up unused references
-know ref-clean [--remove] [--dry-run]
+know check validate                 # Validate graph structure
+know check health                   # Comprehensive health check
+know check cycles                   # Detect circular dependencies
+know check stats                    # Show graph statistics
+know check completeness <entity_id> # Completeness score
 ```
 
-### Dependency Rules
+### Reference & Gap Analysis (`know check link`)
 
 ```bash
-# Describe entity, reference, or meta type
-know rules describe [type_name]
-
-# Show what entity types can come after this type
-know rules after <entity_type>
-
-# Show what entity types can come before this type
-know rules before <entity_type>
-
-# Visualize the high-level dependency graph structure
-know rules graph
+know check link orphans             # Find orphaned references
+know check link usage               # Reference usage statistics
+know check link suggest             # Suggest connections for orphans
+know check link clean [--remove]    # Clean up unused references
+know check link gap-analysis [entity_id]  # Analyze gaps
+know check link gap-missing         # List missing connections
+know check link gap-summary         # Implementation summary
 ```
 
-### Specification Generation
+### Generation (`know gen`)
 
 ```bash
-# Generate specification for an entity
-know spec <entity_id>
+know gen spec <entity_id>           # Generate entity specification
+know gen spec <feature_id> --format xml  # Generate XML task specification (GSD format)
+know gen feature-spec <feature_id>  # Generate feature specification
+know gen feature-spec <feature_id> --format xml  # Generate XML task specification
+know gen sitemap                    # Generate interface sitemap
+know gen codemap <source_dir>       # Generate code structure map
+know gen trace <entity_id>          # Trace across product-code boundary
+know gen trace-matrix               # Requirement traceability matrix
+know gen rules describe <type>      # Describe entity/reference type
+know gen rules before <type>        # What can depend on this type
+know gen rules after <type>         # What can this type depend on
+know gen rules graph                # Visualize dependency structure
+```
 
-# Generate detailed feature specification
-know feature-spec <feature_id>
+### Feature Lifecycle (`know feature`)
+
+```bash
+know feature contract <name>        # Display contract info
+know feature validate-contracts     # Validate all contracts
+know feature validate <name>        # Check if changes warrant re-planning
+know feature tag <name>             # Tag commits with git notes
+know feature done <name>            # Complete and archive feature
+know feature impact <target>        # Show affected features
+know feature coverage <name>        # Test coverage from feature level
 ```
 
 ### User-Friendly Workflow
@@ -233,9 +280,9 @@ know init
 # 3. Fill out overview, todo, and plan files
 
 # 4. Generate specs for each component
-know spec feature:login-form >> .ai/know/user-authentication/spec.md
-know spec component:auth-button >> .ai/know/user-authentication/spec.md
-know spec action:submit-credentials >> .ai/know/user-authentication/spec.md
+know gen spec feature:login-form >> .ai/know/user-authentication/spec.md
+know gen spec component:auth-button >> .ai/know/user-authentication/spec.md
+know gen spec action:submit-credentials >> .ai/know/user-authentication/spec.md
 
 # 5. Complete the feature
 /know-done user-authentication

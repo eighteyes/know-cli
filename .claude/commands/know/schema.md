@@ -273,7 +273,7 @@ know -g graphs/my-graph.json add <entity-type-1> example-name \
 ```bash
 # Example commands
 know add <entity> <name> '{...}'
-know link <from> <to>
+know graph link <from> <to>
 ```
 
 ## Getting Started
@@ -526,3 +526,5 @@ know -g graphs/my-memory.json validate
 
 **Note**: Current know tool needs schema-awareness added. This command generates schemas ready for when know becomes schema-agnostic.
 
+---
+`r1`

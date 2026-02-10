@@ -63,7 +63,7 @@ tags: [know, validate, drift-detection]
 
 **Run CLI command for detailed analysis**:
 ```bash
-know validate-feature <feature-name> --json
+know check validate-feature <feature-name> --json
 ```
 
 **Or manual git query**:

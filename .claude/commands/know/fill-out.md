@@ -462,7 +462,7 @@ know -g .ai/code-graph.json stats
 
 6. **Quality Over Quantity**: Better to have 50 well-connected entities than 200 floating ones.
 
-7. **Validate Often**: Run `know validate` after major additions to catch issues early.
+7. **Validate Often**: Run `know check validate` after major additions to catch issues early.
 
 8. **Query, Don't Bypass**: For project.md, always query the graphs instead of manually analyzing code.
 

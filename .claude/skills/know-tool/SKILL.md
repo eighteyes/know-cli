@@ -62,115 +62,149 @@ Dependencies are strict and unidirectional:
 - References are terminal nodes (no dependencies)
 - Graph must remain a DAG (no cycles)
 
-## Using know rules Commands
+## Command Groups
+
+Know CLI uses a flat structure with auto-detection:
+
+| Command | Purpose |
+|---------|---------|
+| `know get <type:key>` | Get entity or reference (auto-detects) |
+| `know list [--type TYPE]` | List entities or references (auto-detects) |
+| `know add <type> <key> <json>` | Add entity or reference (auto-detects) |
+| `know nodes` | Node operations: deprecate, merge, rename, delete, cut, clone |
+| `know meta get/set` | Get or set meta sections |
+| `know graph` | Link, unlink, traverse dependencies |
+| `know check` | Validate, health, stats, gaps, orphans |
+| `know gen` | Generate specs, maps, traces, rules |
+| `know feature` | Contracts, coverage, block, complete |
+| `know phases` | Phase management |
+
+## Using know gen rules Commands
 
 These commands expose the dependency structure for LLMs:
 
 ```bash
 # Understand any type
-know rules describe feature
-know rules describe business_logic
-know rules describe phases
+know gen rules describe feature
+know gen rules describe business_logic
+know gen rules describe phases
 
 # See dependency rules
-know rules before component    # What can depend on component?
-know rules after feature        # What can feature depend on?
+know gen rules before component    # What can depend on component?
+know gen rules after feature        # What can feature depend on?
 
 # Visualize the structure
-know rules graph                # See the full dependency map
+know gen rules graph                # See the full dependency map
 ```
 
-**Always start with `know rules` commands before manipulating the graph.**
+**Always start with `know gen rules` commands before manipulating the graph.**
 
 ## Essential Commands
 
 ### Discovery & Exploration
 ```bash
-know list                       # List all entities
-know list-type feature          # List specific type
-know get feature:real-time-telemetry
+know list                           # List all entities
+know list --type feature            # List entities of type (auto-detects entity vs reference)
+know list --type business_logic     # List references of type (auto-detects)
+know get feature:real-time-telemetry   # Get entity (auto-detects)
+know get business_logic:login          # Get reference (auto-detects)
 
 # Dependencies
-know uses feature:real-time-telemetry          # What does this entity use? (dependencies)
-know used-by component:websocket-manager       # What uses this entity? (dependents)
-know up feature:x                              # Alias for 'uses' (go up dependency chain)
-know down component:y                          # Alias for 'used-by' (go down chain)
+know graph uses feature:real-time-telemetry          # What does this entity use? (dependencies)
+know graph used-by component:websocket-manager       # What uses this entity? (dependents)
+know graph up feature:x                              # Alias for 'uses' (go up dependency chain)
+know graph down component:y                          # Alias for 'used-by' (go down chain)
 
 # Statistics
-know stats                      # Graph statistics (entity counts, dependencies)
-know completeness feature:x     # Completeness score for an entity
+know check stats                    # Graph statistics (entity counts, dependencies)
+know check completeness feature:x   # Completeness score for an entity
 ```
 
 ### Modification
 ```bash
-know add feature new-feature '{"name":"...", "description":"..."}'
-know link feature:analytics action:export-report     # Add dependency
-know unlink feature:analytics action:export-report   # Remove dependency
+know add feature new-feature '{"name":"...", "description":"..."}'       # Add entity (auto-detects)
+know add documentation new-doc '{"title":"...", "url":"..."}'            # Add reference (auto-detects)
+know meta set project key '{"value":"..."}'                              # Set meta value
+know meta get project                                                    # Get meta section
+know graph link feature:analytics action:export-report     # Add dependency
+know graph unlink feature:analytics action:export-report   # Remove dependency
 ```
 
 ### Validation
 ```bash
-know validate                   # Must run after changes (includes fix commands in errors)
-know health                     # Comprehensive check
-know cycles                     # Find circular dependencies
+know check validate                 # Must run after changes (includes fix commands in errors)
+know check health                   # Comprehensive check
+know check cycles                   # Find circular dependencies
 ```
 
 ### Requirements Management
 ```bash
-know req add feature key --name "..." --description "..."   # Add requirement to feature
-know req status requirement-id in-progress                   # Update status
-know req list feature                                        # List feature requirements
-know req complete requirement-id                             # Mark complete
-know req block requirement-id --by "reason"                  # Mark blocked
-know requirements feature                                    # Alias for req list
+know feature block <requirement-id> --by "reason"   # Mark requirement blocked
+know feature complete <requirement-id>              # Mark requirement complete
 ```
 
 **Requirement status values:** pending, in-progress, blocked, complete, verified
 
-### Deprecation
+Requirements are managed through `meta.requirements` in the graph. Use `know meta get requirements` to view all.
+
+### Node Operations (`know nodes`)
 ```bash
-know deprecate entity:id --reason "..." [--replacement entity:new]
-know undeprecate entity:id
-know deprecated                 # List all deprecated entities
-know deprecated --overdue       # Only entities past removal date
+# Deprecation
+know nodes deprecate entity:id --reason "..." [--replacement entity:new]
+know nodes undeprecate entity:id
+know nodes deprecated             # List all deprecated entities
+know nodes deprecated --overdue   # Only entities past removal date
+
+# Modification
+know nodes update entity:id '{"name":"New Name"}'  # Update properties
+know nodes rename entity:id new-key                # Rename entity key
+know nodes clone entity:id new-key                 # Clone with all dependencies
+know nodes clone entity:id new-key --no-upstream  # Clone without incoming deps
+
+# Removal
+know nodes delete entity:id       # Remove entity and clean up dependencies
+know nodes cut entity:id          # Remove entity only, leave deps orphaned
+
+# Merging
+know nodes merge from:entity into:entity      # Merge entities, transfer deps
+know nodes merge from:entity into:entity --keep  # Keep source after merge
 ```
 
 ### Test Coverage
 ```bash
-know coverage feature           # Aggregate coverage from feature level
-know coverage feature --detail  # Per-component breakdown
+know feature coverage feature           # Aggregate coverage from feature level
+know feature coverage feature --detail  # Per-component breakdown
 ```
 
 **Note:** Validation errors now include example fix commands. For example:
 ```
 ✗ Invalid dependency: feature:x → component:y. feature can only depend on: action
-  Fix: know unlink feature:x component:y
+  Fix: know graph unlink feature:x component:y
 ```
 
 ### Analysis
 ```bash
-know gap-analysis feature:x     # Find missing dependencies
-know gap-missing                # List missing connections in chains
-know gap-summary                # Overall implementation status
-know ref-orphans                # Find unused references
-know ref-usage                  # Reference usage statistics
-know ref-suggest                # Suggest connections for orphaned references
-know ref-clean                  # Clean up unused references
-know build-order                # Topological sort
-know trace entity:x             # Trace entity across product-code boundary
-know suggest entity:x           # Suggest valid connections for an entity
-know coverage                   # % of entities connected to root users
+know check gap-analysis feature:x  # Find missing dependencies
+know check gap-missing             # List missing connections in chains
+know check gap-summary             # Overall implementation status
+know check orphans                 # Find unused references
+know check usage                   # Reference usage statistics
+know check suggest                 # Suggest connections for orphaned references
+know check clean                   # Clean up unused references
+know graph build-order             # Topological sort
+know gen trace entity:x            # Trace entity across product-code boundary
+know graph connect entity:x        # Suggest valid connections for an entity
 ```
 
 ### Specification Generation
 ```bash
-know spec entity:x              # Generate complete spec deterministically
-know trace-matrix               # Show requirement traceability matrix
-know trace-matrix -t component  # Trace specific entity type
-know sitemap                    # Generate sitemap of all interfaces
+know gen spec entity:x              # Generate complete spec deterministically
+know gen trace-matrix               # Show requirement traceability matrix
+know gen trace-matrix -t component  # Trace specific entity type
+know gen sitemap                    # Generate sitemap of all interfaces
 ```
 
-**`know spec` produces comprehensive output:**
+**`know gen spec` produces comprehensive output:**
 - Phase and status information
 - Auto-generated user story (As a [user], I want to [action] so that [objective])
 - Full traceability chain (user → objective → feature → component)
@@ -180,8 +214,8 @@ know sitemap                    # Generate sitemap of all interfaces
 
 ### Advanced
 ```bash
-know diff graph1.json graph2.json    # Compare two graph files
-know init                            # Initialize know workflow in a project
+know graph diff graph1.json graph2.json  # Compare two graph files
+know init                                # Initialize know workflow in a project
 ```
 
 ## Reference Files
@@ -199,20 +233,20 @@ When adding a new feature:
 
 ```bash
 # 1. Understand the type
-know rules describe feature
+know gen rules describe feature
 
 # 2. Add the entity
 know add feature new-feature '{"name":"...", "description":"..."}'
 
 # 3. Check what it can depend on
-know rules after feature
+know gen rules after feature
 
 # 4. Connect dependencies
-know link feature:new-feature action:trigger-action
+know graph link feature:new-feature action:trigger-action
 
 # 5. Validate
-know validate
-know uses feature:new-feature --recursive
+know check validate
+know graph uses feature:new-feature --recursive
 ```
 
 ## Phase Management
@@ -255,20 +289,21 @@ Phase III (Polish)
 ## Requirements vs Todo.md
 
 **Requirements replace todo.md** for progress tracking:
-- Requirements are first-class entities in spec-graph
+- Requirements are stored in `meta.requirements`
 - Each feature links to requirement entities via depends_on
 - Status tracked in `meta.requirements[key].status`
-- Query requirements: `know req list feature-name`
+- Query requirements: `know meta get requirements`
+- Update status: `know feature complete <req-id>` or `know feature block <req-id> --by "reason"`
 
 ## Critical Rules for LLMs
 
-1. **Always validate after modifications** - Run `know validate`
+1. **Always validate after modifications** - Run `know check validate`
 2. **Respect entity vs reference distinction** - Entities participate in dependencies, references don't
-3. **Follow dependency rules** - Use `know rules` to check before adding dependencies
-4. **Maintain DAG properties** - No cycles allowed, check with `know cycles`
+3. **Follow dependency rules** - Use `know gen rules` to check before adding dependencies
+4. **Maintain DAG properties** - No cycles allowed, check with `know check cycles`
 5. **Use full paths** - Always use `type:key` format (e.g., `feature:real-time-telemetry`)
 6. **Never add dependencies to entity objects** - Only in the `graph` section
-7. **Check completeness** - Use `know gap-analysis` to ensure full dependency chains
+7. **Check completeness** - Use `know check gap-analysis` to ensure full dependency chains
 
 ## Installation Note
 
@@ -276,4 +311,4 @@ If `know` command is not found, run `python3 know/know.py` from the project root
 
 ---
 
-**Remember:** The graph is dependency-driven. Use `know rules` to understand structure before making changes. Always validate after modifications.
+**Remember:** The graph is dependency-driven. Use `know gen rules` to understand structure before making changes. Always validate after modifications.

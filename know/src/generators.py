@@ -563,6 +563,234 @@ class SpecGenerator:
         # Filter out any None values that might have slipped in
         return "\n".join(str(line) if line is not None else '' for line in lines)
 
+    def generate_feature_spec_xml(self, feature_id: str, code_graph_path: str = '.ai/code-graph.json') -> str:
+        """
+        Generate XML specification for a feature based on GSD framework.
+
+        This generates executable task specifications with minimal agent guessing,
+        designed for consumption by /know:build command.
+
+        Args:
+            feature_id: Feature entity ID
+            code_graph_path: Path to code-graph.json for file path lookups
+
+        Returns:
+            XML formatted feature spec with meta, context, dependencies, and tasks
+        """
+        import xml.etree.ElementTree as ET
+        from xml.dom import minidom
+        from pathlib import Path
+        import json
+
+        entity_data = self.entities.get_entity(feature_id)
+        if not entity_data:
+            return f"<!-- Error: Feature {feature_id} not found -->\n"
+
+        feature_name = feature_id.split(':', 1)[1] if ':' in feature_id else feature_id
+
+        # Load code-graph for file path lookups
+        code_graph = None
+        if Path(code_graph_path).exists():
+            with open(code_graph_path) as f:
+                code_graph = json.load(f)
+
+        # Create root element
+        root = ET.Element('spec', version='1.0')
+
+        # META section
+        meta_el = ET.SubElement(root, 'meta')
+        ET.SubElement(meta_el, 'feature').text = feature_id
+        ET.SubElement(meta_el, 'name').text = entity_data.get('name', feature_id)
+        ET.SubElement(meta_el, 'description').text = entity_data.get('description', '')
+
+        # Get phase and status
+        phase_info = self._get_entity_phase_status(feature_id)
+        if phase_info:
+            ET.SubElement(meta_el, 'phase').text = phase_info.get('phase', 'pending')
+            ET.SubElement(meta_el, 'status').text = phase_info.get('status', 'incomplete')
+
+        # CONTEXT section - full graph context to minimize agent guessing
+        context_el = ET.SubElement(root, 'context')
+
+        # Get dependencies breakdown
+        dependencies = self.deps.get_dependencies(feature_id)
+        dep_by_type: Dict[str, List[str]] = {}
+        for dep in dependencies:
+            dep_type = dep.split(':')[0] if ':' in dep else 'unknown'
+            if dep_type not in dep_by_type:
+                dep_by_type[dep_type] = []
+            dep_by_type[dep_type].append(dep)
+
+        # Users this feature serves (from reverse dependencies)
+        users_el = ET.SubElement(context_el, 'users')
+        dependents = self.deps.get_dependents(feature_id)
+        user_dependents = [d for d in dependents if d.startswith('user:')]
+        for user_id in user_dependents:
+            user_data = self.entities.get_entity(user_id)
+            if user_data:
+                user_el = ET.SubElement(users_el, 'user', id=user_id.split(':', 1)[1])
+                user_el.text = user_data.get('name', user_id)
+
+        # Objectives this feature addresses
+        objectives_el = ET.SubElement(context_el, 'objectives')
+        obj_dependents = [d for d in dependents if d.startswith('objective:')]
+        for obj_id in obj_dependents:
+            obj_data = self.entities.get_entity(obj_id)
+            if obj_data:
+                obj_el = ET.SubElement(objectives_el, 'objective', id=obj_id.split(':', 1)[1])
+                obj_el.text = obj_data.get('description', obj_data.get('name', obj_id))
+
+        # Actions required
+        if 'action' in dep_by_type:
+            actions_el = ET.SubElement(context_el, 'actions')
+            for action_id in dep_by_type['action']:
+                action_data = self.entities.get_entity(action_id)
+                if action_data:
+                    action_el = ET.SubElement(actions_el, 'action', id=action_id.split(':', 1)[1])
+                    ET.SubElement(action_el, 'name').text = action_data.get('name', action_id)
+                    ET.SubElement(action_el, 'description').text = action_data.get('description', '')
+
+        # Components to implement
+        if 'component' in dep_by_type:
+            components_el = ET.SubElement(context_el, 'components')
+            for comp_id in dep_by_type['component']:
+                comp_data = self.entities.get_entity(comp_id)
+                if comp_data:
+                    comp_el = ET.SubElement(components_el, 'component', id=comp_id.split(':', 1)[1])
+                    ET.SubElement(comp_el, 'name').text = comp_data.get('name', comp_id)
+                    ET.SubElement(comp_el, 'description').text = comp_data.get('description', '')
+
+        # Gather all components early (needed for dependencies section)
+        all_components = []
+        if 'action' in dep_by_type:
+            for action_id in dep_by_type['action']:
+                action_deps = self.deps.get_dependencies(action_id)
+                for dep in action_deps:
+                    if dep.startswith('component:'):
+                        all_components.append(dep)
+        # Also include direct component dependencies
+        if 'component' in dep_by_type:
+            all_components.extend(dep_by_type['component'])
+
+        # DEPENDENCIES section - code-graph cross-references
+        deps_el = ET.SubElement(root, 'dependencies')
+
+        # Code modules (from code-graph references if available)
+        # TODO: Cross-reference code-graph when available
+        code_modules_el = ET.SubElement(deps_el, 'code-modules')
+        ET.Comment(' Code module integration points will be added here ')
+
+        # Interfaces
+        if 'interface' in dep_by_type:
+            interfaces_el = ET.SubElement(deps_el, 'interfaces')
+            for intf_id in dep_by_type['interface']:
+                intf_data = self.entities.get_entity(intf_id)
+                if intf_data:
+                    intf_el = ET.SubElement(interfaces_el, 'interface',
+                                          id=intf_id.split(':', 1)[1],
+                                          graph='spec-graph.json')
+                    ET.SubElement(intf_el, 'name').text = intf_data.get('name', intf_id)
+                    ET.SubElement(intf_el, 'description').text = intf_data.get('description', '')
+
+        # External dependencies - extract from code-graph
+        external_el = ET.SubElement(deps_el, 'external')
+        if code_graph and all_components:
+            # Get external deps for components via module lookups
+            external_deps = self._get_external_deps_for_components(
+                all_components, code_graph
+            )
+            for dep_name, dep_data in external_deps.items():
+                dep_el = ET.SubElement(external_el, 'package')
+                dep_el.text = dep_name
+                if dep_data.get('purpose'):
+                    dep_el.set('purpose', dep_data['purpose'])
+
+        # TASKS section - executable tasks derived from operations
+        tasks_el = ET.SubElement(root, 'tasks')
+
+        # Generate tasks from operations (all_components gathered earlier)
+        if all_components:
+            # Also gather components from context section
+            if not all_components and 'action' in dep_by_type:
+                # Traverse actions to find components
+                for action_id in dep_by_type['action']:
+                    action_comps = [d for d in self.deps.get_dependencies(action_id) if d.startswith('component:')]
+                    all_components.extend(action_comps)
+
+            # Add components to context if we found them via traversal
+            if all_components and 'component' not in dep_by_type:
+                components_el = ET.SubElement(context_el, 'components')
+                for comp_id in set(all_components):  # Use set to deduplicate
+                    comp_data = self.entities.get_entity(comp_id)
+                    if comp_data:
+                        comp_el = ET.SubElement(components_el, 'component', id=comp_id.split(':', 1)[1])
+                        ET.SubElement(comp_el, 'name').text = comp_data.get('name', comp_id)
+                        ET.SubElement(comp_el, 'description').text = comp_data.get('description', '')
+
+            wave = 1
+            for comp_id in set(all_components):  # Use set to deduplicate
+                operations = self._get_component_operations(comp_id)
+                comp_data = self.entities.get_entity(comp_id)
+                comp_file = self._get_component_file(comp_id)
+
+                for op_id in operations:
+                    op_data = self.entities.get_entity(op_id)
+                    if op_data:
+                        task_id = f"task-{wave}"
+                        task_el = ET.SubElement(tasks_el, 'task',
+                                              id=task_id,
+                                              type='checkpoint:human-verify',
+                                              wave=str(wave))
+
+                        ET.SubElement(task_el, 'operation').text = op_id
+                        ET.SubElement(task_el, 'name').text = op_data.get('name', op_id)
+
+                        # Files - look up from code-graph via product-component
+                        files_el = ET.SubElement(task_el, 'files')
+                        file_path = None
+
+                        if code_graph and comp_data:
+                            # Look up module for this component
+                            file_path = self._get_file_path_from_code_graph(
+                                comp_id, code_graph
+                            )
+
+                        if not file_path and comp_file:
+                            file_path = comp_file
+
+                        if file_path:
+                            ET.SubElement(files_el, 'file').text = file_path
+                        else:
+                            files_el.append(ET.Comment(' File path to be determined '))
+
+                        # Action - detailed HOW
+                        action_text = f"""Implement {op_data.get('name', 'operation')}:
+
+Component: {comp_data.get('name', comp_id) if comp_data else comp_id}
+{comp_data.get('description', '') if comp_data else ''}
+
+Operation: {op_data.get('description', '')}
+
+TODO: Add specific implementation guidance with library choices and constraints.
+"""
+                        ET.SubElement(task_el, 'action').text = action_text
+
+                        # Verify
+                        verify_el = ET.SubElement(task_el, 'verify')
+                        ET.SubElement(verify_el, 'test').text = '# TODO: Add test command'
+                        ET.SubElement(verify_el, 'assertion').text = '# TODO: Add expected outcome'
+
+                        # Done
+                        done_text = f"{op_data.get('name', 'Operation')} implemented and verified.\nCHECKPOINT: Human reviews implementation."
+                        ET.SubElement(task_el, 'done').text = done_text
+
+                        wave += 1
+
+        # Pretty print XML
+        xml_str = ET.tostring(root, encoding='unicode')
+        dom = minidom.parseString(xml_str)
+        return dom.toprettyxml(indent='  ')
+
     def generate_interface_spec(self, interface_id: str) -> str:
         """
         Generate a UI interface specification.
@@ -776,6 +1004,69 @@ class SpecGenerator:
 
         ref_type, ref_name = reference_id.split(':', 1)
         return references.get(ref_type, {}).get(ref_name)
+
+    def _get_file_path_from_code_graph(self, component_id: str, code_graph: dict) -> str:
+        """
+        Look up file path for a component via code-graph product-component refs.
+
+        Args:
+            component_id: Component entity ID (e.g., "component:spec-generator")
+            code_graph: Loaded code-graph dictionary
+
+        Returns:
+            File path string or empty string if not found
+        """
+        # Get component name without prefix
+        comp_name = component_id.split(':', 1)[1] if ':' in component_id else component_id
+
+        # Look through product-component references
+        product_components = code_graph.get('references', {}).get('product-component', {})
+
+        for module_name, ref_data in product_components.items():
+            ref_component = ref_data.get('component', '')
+            if ref_component == component_id:
+                # Found module that maps to this component
+                # Look up module entity for file path
+                module_entity = code_graph.get('entities', {}).get('module', {}).get(module_name)
+                if module_entity:
+                    return module_entity.get('file_path', '')
+
+        return ''
+
+    def _get_external_deps_for_components(self, component_ids: List[str], code_graph: dict) -> Dict[str, Any]:
+        """
+        Get external dependencies for components via code-graph.
+
+        Args:
+            component_ids: List of component entity IDs
+            code_graph: Loaded code-graph dictionary
+
+        Returns:
+            Dictionary of external dependencies {dep_name: dep_data}
+        """
+        external_deps = {}
+        product_components = code_graph.get('references', {}).get('product-component', {})
+        all_external_deps = code_graph.get('references', {}).get('external-dep', {})
+
+        # Find modules for these components
+        module_names = []
+        for comp_id in component_ids:
+            for module_name, ref_data in product_components.items():
+                if ref_data.get('component') == comp_id:
+                    module_names.append(module_name)
+
+        # Get external deps for these modules from graph
+        for module_name in module_names:
+            module_key = f"module:{module_name}"
+            module_deps = code_graph.get('graph', {}).get(module_key, {}).get('depends_on', [])
+
+            for dep in module_deps:
+                if dep.startswith('external-dep:'):
+                    dep_name = dep.split(':', 1)[1]
+                    if dep_name in all_external_deps:
+                        external_deps[dep_name] = all_external_deps[dep_name]
+
+        return external_deps
 
     def _get_feature_spec_meta(self, feature_name: str) -> dict:
         """

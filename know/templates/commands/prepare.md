@@ -19,7 +19,7 @@ The graph is the **SOURCE OF TRUTH** - build it first, then derive documentation
 
 **CORRECT APPROACH** ✅:
 1. Create graph entities FIRST (users, objectives, features, components, modules)
-2. Query the graph for intelligence (`know uses`, `know list-type`, `know gap-summary`)
+2. Query the graph for intelligence (`know graph uses`, `know list --type`, `know check gap-summary`)
 3. Derive project.md FROM graph queries
 4. Graph is the foundation, project.md is the derived documentation
 
@@ -174,23 +174,23 @@ The graph is the **SOURCE OF TRUTH** - build it first, then derive documentation
 
 ```bash
 # Step 2.5: Populate the graph
-know stats                                 # Check if graph is empty/sparse
+know check stats                                 # Check if graph is empty/sparse
 # If sparse, discover and add entities:
 fd -e py -e js -e ts -e go                # Find code files
 rg "class |function |const " --type-list  # Discover components
 # Use know add to create entities for discovered items
-know add component:auth-handler '{"name":"Auth Handler","description":"..."}'
-know add feature:user-login '{"name":"User Login","description":"..."}'
-know link feature:user-login component:auth-handler
-know validate                             # Ensure graph is valid
+know add component auth-handler '{"name":"Auth Handler","description":"..."}'
+know add feature user-login '{"name":"User Login","description":"..."}'
+know graph link feature:user-login component:auth-handler
+know check validate                             # Ensure graph is valid
 
 # Step 3: Graph intelligence
-know stats                    # Entity overview
-know rules graph              # Dependency structure
-know list-type user           # User personas
-know list-type objective      # User objectives
-know gap-summary              # Implementation status
-know ref-usage                # Reference patterns
+know check stats                    # Entity overview
+know gen rules graph              # Dependency structure
+know list --type user                  # User personas
+know list --type objective             # User objectives
+know check gap-summary              # Implementation status
+know check usage                # Reference patterns
 
 # Codebase intelligence
 rg "description" package.json -A 1         # Project description
