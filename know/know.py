@@ -410,21 +410,27 @@ def list_items(ctx, type_filter):
 
 
 # =============================================================================
-# TOP-LEVEL DEPRECATION commands
+# NODES group - Node-level operations
 # =============================================================================
-@cli.command(name='deprecate')
+@cli.group(context_settings=CONTEXT_SETTINGS)
+@click.pass_context
+def nodes(ctx):
+    """Node-level operations: deprecate, merge, rename, delete, cut, update, clone"""
+    pass
+
+
+@nodes.command(name='deprecate')
 @click.argument('entity_id')
 @click.option('--reason', '-r', required=True, help='Why the entity is deprecated')
 @click.option('--replacement', help='Entity ID of replacement')
 @click.option('--remove-by', help='Target removal date (YYYY-MM-DD)')
 @click.pass_context
-def deprecate(ctx, entity_id, reason, replacement, remove_by):
+def nodes_deprecate(ctx, entity_id, reason, replacement, remove_by):
     """Mark an entity as deprecated with warnings on use.
 
     Examples:
-        know deprecate component:old-auth --reason "Replaced by new-auth"
-        know deprecate feature:legacy --reason "Obsolete" --replacement feature:modern
-        know deprecate action:old-flow --reason "Removed" --remove-by 2026-03-01
+        know nodes deprecate component:old-auth --reason "Replaced by new-auth"
+        know nodes deprecate feature:legacy --reason "Obsolete" --replacement feature:modern
     """
     from src.deprecation import DeprecationManager
 
@@ -446,14 +452,14 @@ def deprecate(ctx, entity_id, reason, replacement, remove_by):
         sys.exit(1)
 
 
-@cli.command(name='undeprecate')
+@nodes.command(name='undeprecate')
 @click.argument('entity_id')
 @click.pass_context
-def undeprecate(ctx, entity_id):
+def nodes_undeprecate(ctx, entity_id):
     """Remove deprecation status from an entity.
 
     Examples:
-        know undeprecate component:old-auth
+        know nodes undeprecate component:old-auth
     """
     from src.deprecation import DeprecationManager
 
@@ -465,15 +471,15 @@ def undeprecate(ctx, entity_id):
         console.print(f"[yellow]⚠ Entity '{entity_id}' was not deprecated[/yellow]")
 
 
-@cli.command(name='deprecated')
+@nodes.command(name='deprecated')
 @click.option('--overdue', is_flag=True, help='Show only entities past removal date')
 @click.pass_context
-def deprecated(ctx, overdue):
+def nodes_deprecated(ctx, overdue):
     """List all deprecated entities.
 
     Examples:
-        know deprecated
-        know deprecated --overdue
+        know nodes deprecated
+        know nodes deprecated --overdue
     """
     from src.deprecation import DeprecationManager
 
@@ -504,6 +510,352 @@ def deprecated(ctx, overdue):
         if info.get('removal_target'):
             console.print(f"  Remove by: {info['removal_target']}")
         console.print()
+
+
+@nodes.command(name='merge')
+@click.argument('from_entity')
+@click.argument('into_entity')
+@click.option('--keep', is_flag=True, help='Keep the source entity after merge')
+@click.pass_context
+def nodes_merge(ctx, from_entity, into_entity, keep):
+    """Merge one entity into another, transferring all dependencies.
+
+    Transfers all incoming dependencies (things pointing to FROM) to INTO.
+    Transfers all outgoing dependencies (things FROM depends on) to INTO.
+    Deletes FROM unless --keep is specified.
+
+    Examples:
+        know nodes merge component:old-auth component:new-auth
+        know nodes merge feature:duplicate feature:original --keep
+    """
+    graph_data = ctx.obj['graph'].load()
+
+    # Parse entity paths
+    from_type, from_key = from_entity.split(':', 1)
+    into_type, into_key = into_entity.split(':', 1)
+
+    # Verify both entities exist
+    if from_type not in graph_data.get('entities', {}) or \
+       from_key not in graph_data['entities'].get(from_type, {}):
+        console.print(f"[red]✗ Source entity not found: {from_entity}[/red]")
+        sys.exit(1)
+
+    if into_type not in graph_data.get('entities', {}) or \
+       into_key not in graph_data['entities'].get(into_type, {}):
+        console.print(f"[red]✗ Target entity not found: {into_entity}[/red]")
+        sys.exit(1)
+
+    graph_section = graph_data.get('graph', {})
+    changes = {'incoming': 0, 'outgoing': 0}
+
+    # Transfer outgoing dependencies (what FROM depends on)
+    if from_entity in graph_section:
+        from_deps = graph_section[from_entity].get('depends_on', [])
+        if from_deps:
+            if into_entity not in graph_section:
+                graph_section[into_entity] = {'depends_on': []}
+            if 'depends_on' not in graph_section[into_entity]:
+                graph_section[into_entity]['depends_on'] = []
+
+            for dep in from_deps:
+                if dep not in graph_section[into_entity]['depends_on']:
+                    graph_section[into_entity]['depends_on'].append(dep)
+                    changes['outgoing'] += 1
+
+    # Transfer incoming dependencies (what points to FROM)
+    for entity_id, entity_deps in graph_section.items():
+        if from_entity in entity_deps.get('depends_on', []):
+            entity_deps['depends_on'].remove(from_entity)
+            if into_entity not in entity_deps['depends_on']:
+                entity_deps['depends_on'].append(into_entity)
+            changes['incoming'] += 1
+
+    # Remove FROM entity unless --keep
+    if not keep:
+        # Remove from entities
+        if from_key in graph_data['entities'].get(from_type, {}):
+            del graph_data['entities'][from_type][from_key]
+        # Remove from graph
+        if from_entity in graph_section:
+            del graph_section[from_entity]
+
+    ctx.obj['graph'].save_graph(graph_data)
+
+    console.print(f"[green]✓ Merged '{from_entity}' into '{into_entity}'[/green]")
+    console.print(f"  Transferred {changes['incoming']} incoming dependencies")
+    console.print(f"  Transferred {changes['outgoing']} outgoing dependencies")
+    if not keep:
+        console.print(f"  Removed '{from_entity}'")
+
+
+@nodes.command(name='rename')
+@click.argument('entity_id')
+@click.argument('new_key')
+@click.pass_context
+def nodes_rename(ctx, entity_id, new_key):
+    """Rename an entity's key, updating all graph references.
+
+    Examples:
+        know nodes rename component:old-name component:new-name
+        know nodes rename feature:auth feature:authentication
+    """
+    graph_data = ctx.obj['graph'].load()
+
+    # Parse entity path
+    entity_type, old_key = entity_id.split(':', 1)
+    new_entity_id = f"{entity_type}:{new_key}"
+
+    # Verify entity exists
+    if entity_type not in graph_data.get('entities', {}) or \
+       old_key not in graph_data['entities'].get(entity_type, {}):
+        console.print(f"[red]✗ Entity not found: {entity_id}[/red]")
+        sys.exit(1)
+
+    # Check new key doesn't exist
+    if new_key in graph_data['entities'].get(entity_type, {}):
+        console.print(f"[red]✗ Entity already exists: {new_entity_id}[/red]")
+        sys.exit(1)
+
+    # Rename in entities section
+    graph_data['entities'][entity_type][new_key] = graph_data['entities'][entity_type].pop(old_key)
+
+    # Update graph section
+    graph_section = graph_data.get('graph', {})
+
+    # Rename the key if it exists
+    if entity_id in graph_section:
+        graph_section[new_entity_id] = graph_section.pop(entity_id)
+
+    # Update all references to this entity
+    ref_count = 0
+    for eid, deps in graph_section.items():
+        if entity_id in deps.get('depends_on', []):
+            deps['depends_on'].remove(entity_id)
+            deps['depends_on'].append(new_entity_id)
+            ref_count += 1
+
+    ctx.obj['graph'].save_graph(graph_data)
+
+    console.print(f"[green]✓ Renamed '{entity_id}' to '{new_entity_id}'[/green]")
+    console.print(f"  Updated {ref_count} references in graph")
+
+
+@nodes.command(name='delete')
+@click.argument('entity_id')
+@click.option('--force', '-f', is_flag=True, help='Delete without confirmation')
+@click.pass_context
+def nodes_delete(ctx, entity_id, force):
+    """Remove an entity AND clean up all its dependencies.
+
+    Removes the entity from entities section.
+    Removes all dependencies to/from this entity in graph section.
+    Use 'cut' if you want to preserve orphaned dependencies.
+
+    Examples:
+        know nodes delete component:obsolete
+        know nodes delete feature:cancelled --force
+    """
+    graph_data = ctx.obj['graph'].load()
+
+    # Parse entity path
+    entity_type, entity_key = entity_id.split(':', 1)
+
+    # Verify entity exists
+    if entity_type not in graph_data.get('entities', {}) or \
+       entity_key not in graph_data['entities'].get(entity_type, {}):
+        console.print(f"[red]✗ Entity not found: {entity_id}[/red]")
+        sys.exit(1)
+
+    # Count dependencies
+    graph_section = graph_data.get('graph', {})
+    outgoing = len(graph_section.get(entity_id, {}).get('depends_on', []))
+    incoming = sum(1 for deps in graph_section.values()
+                   if entity_id in deps.get('depends_on', []))
+
+    if not force:
+        console.print(f"[yellow]Will delete '{entity_id}':[/yellow]")
+        console.print(f"  Outgoing dependencies: {outgoing}")
+        console.print(f"  Incoming dependencies: {incoming}")
+        if not click.confirm("Proceed?"):
+            console.print("[dim]Cancelled[/dim]")
+            return
+
+    # Remove from entities
+    del graph_data['entities'][entity_type][entity_key]
+
+    # Remove from graph (outgoing)
+    if entity_id in graph_section:
+        del graph_section[entity_id]
+
+    # Remove incoming references
+    for deps in graph_section.values():
+        if entity_id in deps.get('depends_on', []):
+            deps['depends_on'].remove(entity_id)
+
+    ctx.obj['graph'].save_graph(graph_data)
+
+    console.print(f"[green]✓ Deleted '{entity_id}'[/green]")
+    console.print(f"  Removed {outgoing} outgoing dependencies")
+    console.print(f"  Removed {incoming} incoming references")
+
+
+@nodes.command(name='cut')
+@click.argument('entity_id')
+@click.option('--force', '-f', is_flag=True, help='Cut without confirmation')
+@click.pass_context
+def nodes_cut(ctx, entity_id, force):
+    """Remove an entity only, leaving dependencies orphaned.
+
+    Removes the entity from entities section.
+    Leaves graph dependencies intact (may create dangling references).
+    Use 'delete' for clean removal with dependency cleanup.
+
+    Examples:
+        know nodes cut component:to-replace
+        know nodes cut feature:swap-out --force
+    """
+    graph_data = ctx.obj['graph'].load()
+
+    # Parse entity path
+    entity_type, entity_key = entity_id.split(':', 1)
+
+    # Verify entity exists
+    if entity_type not in graph_data.get('entities', {}) or \
+       entity_key not in graph_data['entities'].get(entity_type, {}):
+        console.print(f"[red]✗ Entity not found: {entity_id}[/red]")
+        sys.exit(1)
+
+    # Count dependencies that will be orphaned
+    graph_section = graph_data.get('graph', {})
+    outgoing = len(graph_section.get(entity_id, {}).get('depends_on', []))
+    incoming = sum(1 for deps in graph_section.values()
+                   if entity_id in deps.get('depends_on', []))
+
+    if not force and (outgoing > 0 or incoming > 0):
+        console.print(f"[yellow]Will cut '{entity_id}' leaving orphaned dependencies:[/yellow]")
+        console.print(f"  Orphaned outgoing: {outgoing}")
+        console.print(f"  Dangling incoming refs: {incoming}")
+        if not click.confirm("Proceed?"):
+            console.print("[dim]Cancelled[/dim]")
+            return
+
+    # Remove from entities only
+    del graph_data['entities'][entity_type][entity_key]
+
+    ctx.obj['graph'].save_graph(graph_data)
+
+    console.print(f"[green]✓ Cut '{entity_id}'[/green]")
+    if outgoing > 0 or incoming > 0:
+        console.print(f"[yellow]  ⚠ {outgoing + incoming} orphaned dependencies remain[/yellow]")
+        console.print(f"  Run 'know check validate' to see issues")
+
+
+@nodes.command(name='update')
+@click.argument('entity_id')
+@click.argument('data')
+@click.pass_context
+def nodes_update(ctx, entity_id, data):
+    """Update an entity's properties (name, description, etc.).
+
+    Merges provided JSON with existing entity data.
+
+    Examples:
+        know nodes update feature:auth '{"name":"Authentication System"}'
+        know nodes update component:api '{"description":"Updated description"}'
+    """
+    graph_data = ctx.obj['graph'].load()
+
+    # Parse entity path
+    entity_type, entity_key = entity_id.split(':', 1)
+
+    # Verify entity exists
+    if entity_type not in graph_data.get('entities', {}) or \
+       entity_key not in graph_data['entities'].get(entity_type, {}):
+        console.print(f"[red]✗ Entity not found: {entity_id}[/red]")
+        sys.exit(1)
+
+    # Parse update data
+    try:
+        update_data = json.loads(data)
+    except json.JSONDecodeError as e:
+        console.print(f"[red]✗ Invalid JSON: {e}[/red]")
+        sys.exit(1)
+
+    # Merge with existing
+    existing = graph_data['entities'][entity_type][entity_key]
+    existing.update(update_data)
+
+    ctx.obj['graph'].save_graph(graph_data)
+
+    console.print(f"[green]✓ Updated '{entity_id}'[/green]")
+    for key, value in update_data.items():
+        console.print(f"  {key}: {value}")
+
+
+@nodes.command(name='clone')
+@click.argument('entity_id')
+@click.argument('new_key')
+@click.option('--no-upstream', is_flag=True, help='Skip copying upstream dependencies')
+@click.option('--no-downstream', is_flag=True, help='Skip copying downstream dependencies')
+@click.pass_context
+def nodes_clone(ctx, entity_id, new_key, no_upstream, no_downstream):
+    """Clone an entity with both upstream and downstream dependencies.
+
+    Creates a copy of the entity with a new key.
+    Copies downstream dependencies (what the entity depends on).
+    Copies upstream dependencies (things that depend on the entity also depend on clone).
+
+    Examples:
+        know nodes clone component:auth component:auth-v2
+        know nodes clone feature:login feature:login-mobile --no-upstream
+    """
+    graph_data = ctx.obj['graph'].load()
+
+    # Parse entity path
+    entity_type, old_key = entity_id.split(':', 1)
+    new_entity_id = f"{entity_type}:{new_key}"
+
+    # Verify source exists
+    if entity_type not in graph_data.get('entities', {}) or \
+       old_key not in graph_data['entities'].get(entity_type, {}):
+        console.print(f"[red]✗ Entity not found: {entity_id}[/red]")
+        sys.exit(1)
+
+    # Check new key doesn't exist
+    if new_key in graph_data['entities'].get(entity_type, {}):
+        console.print(f"[red]✗ Entity already exists: {new_entity_id}[/red]")
+        sys.exit(1)
+
+    # Clone entity properties
+    import copy
+    graph_data['entities'][entity_type][new_key] = copy.deepcopy(
+        graph_data['entities'][entity_type][old_key]
+    )
+
+    graph_section = graph_data.get('graph', {})
+    downstream_count = 0
+    upstream_count = 0
+
+    # Clone downstream dependencies (what entity depends on)
+    if not no_downstream and entity_id in graph_section:
+        deps = graph_section[entity_id].get('depends_on', [])
+        if deps:
+            graph_section[new_entity_id] = {'depends_on': list(deps)}
+            downstream_count = len(deps)
+
+    # Clone upstream dependencies (things that depend on entity)
+    if not no_upstream:
+        for eid, edeps in graph_section.items():
+            if entity_id in edeps.get('depends_on', []):
+                if new_entity_id not in edeps['depends_on']:
+                    edeps['depends_on'].append(new_entity_id)
+                    upstream_count += 1
+
+    ctx.obj['graph'].save_graph(graph_data)
+
+    console.print(f"[green]✓ Cloned '{entity_id}' to '{new_entity_id}'[/green]")
+    console.print(f"  Copied {downstream_count} downstream dependencies")
+    console.print(f"  Copied {upstream_count} upstream dependencies")
 
 
 # =============================================================================
@@ -2312,15 +2664,18 @@ def _validate_feature_completion(ctx, feature_name: str) -> dict:
 @feature.command(name='review')
 @click.argument('feature_name')
 @click.option('--skip-validation', is_flag=True, help='Skip graph completion validation')
+@click.option('--check-only', is_flag=True, help='Only check readiness, do not proceed to QA')
 @click.pass_context
-def feature_review(ctx, feature_name, skip_validation):
+def feature_review(ctx, feature_name, skip_validation, check_only):
     """Review feature for completion: validate graph linkage and check QA readiness.
 
-    This command validates that:
-    - Feature has implementation references
-    - Graph-links exist in code graph
-    - Bidirectional consistency (graph-links point back to feature)
-    - QA_STEPS.md exists
+    Shows comprehensive readiness status including:
+    - Implementation linkage (spec ↔ code graph)
+    - QA readiness (QA_STEPS.md, review status)
+    - Requirements completion
+    - Meta status
+
+    Use --check-only to see readiness without proceeding to interactive QA.
     """
     from src.feature_tracker import FeatureTracker
 
@@ -2335,34 +2690,112 @@ def feature_review(ctx, feature_name, skip_validation):
         console.print(f"[dim]  Expected: .ai/know/features/{feature_name}/[/dim]")
         sys.exit(1)
 
-    console.print(f"\n[bold]Reviewing feature: {feature_name}[/bold]\n")
+    console.print(f"\n[bold cyan]Feature Readiness Check: {feature_name}[/bold cyan]\n")
 
-    # 2. Validate graph completion
+    ready_for_review = True
+    ready_for_done = True
+
+    # 2. Implementation Linkage Check
+    console.print("[bold]Implementation Linkage:[/bold]")
     if not skip_validation:
-        console.print("[bold]Graph Completion Validation:[/bold]")
         validation = _validate_feature_completion(ctx, feature_name)
 
         for msg in validation['messages']:
             console.print(f"  {msg}")
 
+        if not validation['passed']:
+            ready_for_review = False
+            ready_for_done = False
+    else:
+        console.print("  [dim]⊘ Validation skipped[/dim]")
+
+    console.print()
+
+    # 3. QA Readiness Check
+    console.print("[bold]QA Readiness:[/bold]")
+    qa_steps_path = feature_dir / "QA_STEPS.md"
+    if qa_steps_path.exists():
+        console.print("  [green]✓[/green] QA_STEPS.md exists")
+    else:
+        console.print("  [red]✗[/red] QA_STEPS.md missing")
+        console.print("  [dim]  Run `/know:build` Phase 7 to generate[/dim]")
+        ready_for_review = False
+        ready_for_done = False
+
+    review_results_path = feature_dir / "review-results.md"
+    if review_results_path.exists():
+        console.print("  [green]✓[/green] Feature has been reviewed")
+        # Could parse review-results.md to show pass/fail status
+    else:
+        console.print("  [yellow]⚠[/yellow] Not yet reviewed")
+        ready_for_done = False
+
+    console.print()
+
+    # 4. Requirements Check (if they exist)
+    graph_data = ctx.obj['graph'].load()
+    feature_id = f"feature:{feature_name}"
+    requirements = graph_data.get('meta', {}).get('requirements', {}).get(feature_id, {})
+
+    if requirements:
+        console.print("[bold]Requirements:[/bold]")
+        total = len(requirements)
+        complete = sum(1 for req in requirements.values() if req.get('status') == 'complete')
+        verified = sum(1 for req in requirements.values() if req.get('status') == 'verified')
+
+        if complete == total or verified == total:
+            console.print(f"  [green]✓[/green] {complete + verified}/{total} requirements complete")
+        else:
+            console.print(f"  [yellow]⚠[/yellow] {complete + verified}/{total} requirements complete")
+            ready_for_review = False
+            ready_for_done = False
         console.print()
 
-        if not validation['passed']:
-            console.print("[yellow]⚠ Feature incomplete - missing proper graph linkage[/yellow]")
-            if not click.confirm("Continue with review anyway?"):
-                console.print("\n[dim]Run `/know:connect` to establish graph links[/dim]")
-                sys.exit(0)
+    # 5. Meta Status
+    phases = graph_data.get('meta', {}).get('phases', {})
+    current_phase = None
+    current_status = None
+    for phase_id, entities in phases.items():
+        if feature_id in entities:
+            current_phase = phase_id
+            current_status = entities[feature_id].get('status', 'unknown')
+            break
 
-    # 3. Check for QA_STEPS.md
-    qa_steps_path = feature_dir / "QA_STEPS.md"
-    if not qa_steps_path.exists():
-        console.print("[yellow]⚠ QA_STEPS.md not found[/yellow]")
-        console.print("[dim]  Run `/know:build` Phase 7 to generate QA steps[/dim]")
-        sys.exit(1)
+    console.print("[bold]Meta Status:[/bold]")
+    if current_phase:
+        console.print(f"  Phase: {current_phase}")
+        console.print(f"  Status: {current_status}")
+    else:
+        console.print("  [dim]Not assigned to any phase[/dim]")
+    console.print()
 
-    console.print("[green]✓ QA_STEPS.md found[/green]")
-    console.print(f"\n[bold cyan]Feature is ready for interactive QA review[/bold cyan]")
-    console.print("[dim]The Claude skill /know:review will guide you through QA testing[/dim]\n")
+    # 6. Readiness Summary
+    console.print("[bold]Readiness Summary:[/bold]")
+    if ready_for_review:
+        console.print("  [bold green]✓ Ready for review[/bold green]")
+    else:
+        console.print("  [bold yellow]⚠ Not ready for review[/bold yellow]")
+        console.print("  [dim]  Address issues above before reviewing[/dim]")
+
+    if ready_for_done:
+        console.print("  [bold green]✓ Ready to mark done[/bold green]")
+    else:
+        console.print("  [bold yellow]⚠ Not ready for done[/bold yellow]")
+        if not review_results_path.exists():
+            console.print("  [dim]  Needs review first[/dim]")
+
+    console.print()
+
+    # 7. Proceed or exit
+    if check_only:
+        sys.exit(0 if ready_for_review else 1)
+
+    if not ready_for_review:
+        if not click.confirm("Feature not ready. Continue anyway?"):
+            sys.exit(1)
+
+    console.print(f"[bold cyan]Proceeding to interactive QA review[/bold cyan]")
+    console.print("[dim]The Claude skill /know:review will guide you through testing[/dim]\n")
 
 
 @feature.command(name='connect')
