@@ -1,6 +1,6 @@
 ---
 name: Know: Complete Feature
-description: Archive a completed feature to .ai/know/features/archive/
+description: Archive a completed feature to .ai/know/archive/
 category: Know
 tags: [know, archive, complete]
 ---
@@ -8,122 +8,65 @@ tags: [know, archive, complete]
 **Prerequisites**
 - Activate the know-tool skill for graph validation
 
-**Auto-creates**: `config.json` if missing (touch it = track it)
-
 **Workflow**
 
-### 1. Verify Feature Completion
+### 1. Extract Feature Name
 
 **Steps**:
-1. Extract feature name from conversation or prompt user
-2. Verify feature exists in `.ai/know/features/<feature-name>/`
-3. Check that all requirements are complete: `know req list <feature-name>`
-   - If not all complete/verified, warn user and ask for confirmation
-4. Check spec-graph status is "review-ready" or "complete"
+1. Extract feature name from conversation context or prompt user
+2. Verify feature directory exists at `.ai/know/<feature-name>/`
 
-### 2. Archive Feature Directory
+### 2. Execute Done Command
 
 **Steps**:
-1. Create archive directory if needed: `.ai/know/features/archive/`
-2. Move entire feature directory:
-   - FROM: `.ai/know/features/<feature-name>/`
-   - TO: `.ai/know/features/archive/<feature-name>/`
-3. Confirm the move was successful
+1. Run the know CLI command:
+   ```bash
+   know feature done <feature-name>
+   ```
+2. The command will:
+   - Validate completion (implementation linkage, requirements)
+   - Check for review-results.md
+   - Detect and handle git worktree
+   - Merge feature branch (if worktree exists)
+   - Mark as done in spec-graph
+   - Archive to .ai/know/archive/
 
-### 3. Update Feature Index
+### 3. Confirm Completion
 
 **Steps**:
-1. Read `.ai/know/features/feature-index.md` (create if missing)
-2. Move feature entry from "Features" to "Archived Features" section
-3. Update summary counts (decrement active, increment archived)
-4. Update feature status to "archived" and add archived date
-
-### 4. Update Spec-Graph Status
-
-**Steps**:
-1. Update feature status to "complete" (using **haiku agent**):
-   ```bash
-   know phases status feature:<feature-name> complete
-   ```
-2. Validate both spec-graph and code-graph:
-   ```bash
-   know -g .ai/spec-graph.json validate
-   know -g .ai/code-graph.json validate
-   ```
-3. Confirm graphs are consistent
-
-### 5. Identify Related Commits
-
-**Steps**:
-1. Get feature baseline from config.json or directory mtime:
-   ```bash
-   cat .ai/know/features/archive/<feature-name>/config.json 2>/dev/null | jq '.baseline'
-   ```
-
-2. Find commits since baseline using CLI:
-   ```bash
-   know tag-feature <feature-name> --json
-   ```
-
-3. Present commits to user:
-   ```
-   The following commits touch files related to this feature:
-
-   [1] 0a42a87 - chore(spec-generation): move feature to in-progress
-   [2] f570887 - feat(spec-generation): implement rich spec generation
-   [3] e987c75 - feat: add feature and enhance bd list
-
-   Select commits to tag (comma-separated numbers, 'all', or 'none'):
-   ```
-
-4. Confirm selection with user
-
-### 6. Tag Commits with Git Notes
-
-**Steps**:
-1. Tag each selected commit:
-   ```bash
-   git notes --ref=refs/notes/know-features add -f -m "know:feature:<feature-name>" <sha>
-   ```
-
-2. Verify tagging:
-   ```bash
-   git notes --ref=refs/notes/know-features show <sha>
-   ```
-
-3. Report success:
-   ```
-   Tagged 4 commits with know:feature:<feature-name>
-   ```
-
-### 7. Store Commits in Spec-Graph
-
-**Steps**:
-1. Update `meta.feature_commits` in spec-graph:
-   ```json
-   "feature_commits": {
-     "<feature-name>": ["sha1", "sha2", "sha3"]
-   }
-   ```
-
-2. Validate spec-graph:
-   ```bash
-   know validate
-   ```
+1. Verify the command completed successfully
+2. Confirm feature has been archived to `.ai/know/archive/<feature-name>/`
+3. Confirm spec-graph updated to "done" phase
 
 **Example Usage**
 ```
 User: /know:done user-authentication
-Assistant: Checks completion, moves to archive, confirms success
+Assistant: Runs `know feature done user-authentication`
+          Feature archived to .ai/know/archive/user-authentication/
+          Spec-graph updated to "done" phase
 ```
 
-**Safety Checks**
-- Verify all requirements are complete before archiving (`know req list <feature>`)
+**Safety Checks (handled by CLI)**
+- Validate completion before archiving
+- Verify feature was reviewed
 - Confirm feature directory exists
 - Ensure archive directory exists (create if needed)
 - Don't overwrite existing archived features (prompt for new name if conflict)
 
 **Notes**
+- **Skill wraps CLI command**: This skill calls `know feature done <feature>` which handles all the logic
 - Features can be un-archived by manually moving them back
-- Archive maintains full history (proposal, notes, plan, spec, requirements in graph)
-- Git branching/merging is an independent concern - handle separately if needed
+- Archive maintains full history (proposal, todo, plan, spec, review results)
+- **Validation happens first**:
+  - CLI command validates completion (graph linkage, requirements)
+  - Checks for review-results.md
+  - Only proceeds if feature is ready
+- **Worktree handling** (automated by CLI):
+  - Detects if feature was built in a worktree
+  - Switches to main repo if currently in feature worktree
+  - Merges feature branch using `--no-ff` for clear history
+  - Removes worktree after successful merge
+  - Can run from main repo or any worktree (auto-navigates as needed)
+
+---
+`r1`

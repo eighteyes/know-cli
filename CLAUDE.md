@@ -36,16 +36,62 @@ function → [function, module, class]
 ```
 
 ## Integration Between Graphs
-**product-component** references in code-graph link modules to spec-graph components:
+
+**Bidirectional feature-level linking** connects spec intent to code implementation.
+
+### Meta Configuration
+Each graph stores the path to its counterpart:
 ```json
-"product-component": {
-  "module-name": {
-    "component": "component:spec-component-name",
-    "graph_path": "spec-graph.json",
-    "feature": "feature:parent-feature"
+// spec-graph.json
+"meta": {
+  "code_graph_path": ".ai/code-graph.json"
+}
+
+// code-graph.json
+"meta": {
+  "spec_graph_path": ".ai/spec-graph.json"
+}
+```
+
+### Spec → Code (Implementation References)
+Features depend on `implementation` references that point to code graph-links:
+```json
+// spec-graph.json
+"references": {
+  "implementation": {
+    "auth-impl": ["graph-link:auth-module", "graph-link:user-service"],
+    "data-impl": ["graph-link:data-module"]
+  }
+},
+"graph": {
+  "feature:auth": {
+    "depends_on": ["implementation:auth-impl"]
   }
 }
 ```
+
+### Code → Spec (Graph-Link References)
+Modules/packages use `graph-link` references to point back to spec features/components:
+```json
+// code-graph.json
+"references": {
+  "graph-link": {
+    "auth-module": {
+      "component": "component:auth-handler",
+      "feature": "feature:auth"
+    },
+    "user-service": {
+      "feature": "feature:auth"
+    }
+  }
+}
+```
+
+**Key Properties**:
+- **Feature-level linking**: Only features (not components/actions) link to implementations
+- **Many-to-many**: One feature can have multiple modules, one module can contribute to multiple features
+- **Bidirectional navigation**: Query from either graph to find counterpart
+- **Completion tracking**: Implementation references indicate what code fulfills spec requirements
 
 # Graph Structure (both graphs)
 ```
@@ -98,17 +144,19 @@ Each feature's count comes from `meta.requirements` in spec-graph. Shows "--" if
 **Auto-detection**: The `-g` flag auto-selects rules based on graph filename:
 ```bash
 # Spec graph operations (auto-uses dependency-rules.json)
-know -g .ai/spec-graph.json add user developer '{"name":"...","description":"..."}'
-know -g .ai/spec-graph.json add feature login '{"name":"...","description":"..."}'
+know -g .ai/spec-graph.json add entity user developer '{"name":"...","description":"..."}'
+know -g .ai/spec-graph.json add entity feature login '{"name":"...","description":"..."}'
+know -g .ai/spec-graph.json add reference documentation auth-rfc '{"title":"...","url":"..."}'
+know -g .ai/spec-graph.json add meta project name '{"value":"..."}'
 
 # Code graph operations (auto-uses code-dependency-rules.json)
-know -g .ai/code-graph.json add module auth '{"name":"...","description":"..."}'
-know -g .ai/code-graph.json add package core '{"name":"...","description":"..."}'
+know -g .ai/code-graph.json add entity module auth '{"name":"...","description":"..."}'
+know -g .ai/code-graph.json add entity package core '{"name":"...","description":"..."}'
 ```
 
 **Manual override**: Use `-r` to specify custom rules:
 ```bash
-know -g custom.json -r know/config/code-dependency-rules.json add module test '...'
+know -g custom.json -r know/config/code-dependency-rules.json add entity module test '...'
 ```
 
 **IMPORTANT**: Always use the correct graph for the entity type:
@@ -139,12 +187,12 @@ Use these to modify / query / analyze the graph file. Utilize these instead of `
 Know Tool: `know`
 
 **Key Commands:**
-- `uses <entity>` / `down <entity>` - Show what an entity uses (dependencies)
-- `used-by <entity>` / `up <entity>` - Show what uses this entity (dependents)
-- `link <from> <to>` - Add dependency
-- `unlink <from> <to>` - Remove dependency
-- `validate` - Validate graph structure
-- `stats` - Show graph statistics
+- `graph uses <entity>` / `graph down <entity>` - Show what an entity uses (dependencies)
+- `graph used-by <entity>` / `graph up <entity>` - Show what uses this entity (dependents)
+- `graph link <from> <to>` - Add dependency
+- `graph unlink <from> <to>` - Remove dependency
+- `check validate` - Validate graph structure
+- `check stats` - Show graph statistics
 
 # WWW_v2 Map
 @www_v2/ASTDOM_MAP.md
