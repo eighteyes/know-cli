@@ -5,6 +5,7 @@ networkx>=3.0        # Graph algorithms
 aiofiles>=0.8        # Async file operations
 python-dotenv>=0.19  # Environment management
 rich>=13.0           # Beautiful CLI output
+pyyaml>=6.0          # YAML parsing for contracts
 
 # Development dependencies
 pytest>=7.0          # Testing framework

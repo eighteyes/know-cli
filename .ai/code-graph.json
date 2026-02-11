@@ -75,6 +75,48 @@
         "version": ">=1.0",
         "type": "pypi",
         "purpose": "Type checking"
+      },
+      "urllib": {
+        "identifier": "pypi:urllib",
+        "version": "auto-detected",
+        "type": "pypi",
+        "purpose": "TODO: Document purpose",
+        "detected": true
+      },
+      "string": {
+        "identifier": "pypi:string",
+        "version": "auto-detected",
+        "type": "pypi",
+        "purpose": "TODO: Document purpose",
+        "detected": true
+      },
+      "yaml": {
+        "identifier": "pypi:yaml",
+        "version": "auto-detected",
+        "type": "pypi",
+        "purpose": "TODO: Document purpose",
+        "detected": true
+      },
+      "fnmatch": {
+        "identifier": "pypi:fnmatch",
+        "version": "auto-detected",
+        "type": "pypi",
+        "purpose": "TODO: Document purpose",
+        "detected": true
+      },
+      "enum": {
+        "identifier": "pypi:enum",
+        "version": "auto-detected",
+        "type": "pypi",
+        "purpose": "TODO: Document purpose",
+        "detected": true
+      },
+      "threading": {
+        "identifier": "pypi:threading",
+        "version": "auto-detected",
+        "type": "pypi",
+        "purpose": "TODO: Document purpose",
+        "detected": true
       }
     },
     "product-component": {
@@ -115,237 +157,752 @@
         "component": "component:graph-operations",
         "graph_path": "spec-graph.json",
         "feature": "feature:gap-detection"
+      },
+      "diff": {
+        "component": "component:gap-analyzer",
+        "graph_path": "spec-graph.json",
+        "feature": "feature:gap-detection"
       }
     }
   },
   "entities": {
-    "package": {
-      "src": {
-        "name": "Source Package",
-        "description": "Core library implementation with all graph operations"
-      },
-      "tests": {
-        "name": "Test Package",
-        "description": "Comprehensive test suite with pytest"
-      },
-      "config": {
-        "name": "Config Package",
-        "description": "Dependency rules configuration for both graph types"
-      },
-      "templates": {
-        "name": "Templates Package",
-        "description": "File templates for init command"
-      }
-    },
     "module": {
-      "know-cli": {
-        "name": "Know CLI Entry Point",
-        "description": "Main CLI entry point and command dispatcher using Click framework (know.py)"
-      },
-      "benchmark": {
-        "name": "Benchmark Module",
-        "description": "Performance benchmarking utilities"
-      },
-      "graph": {
-        "name": "Graph Manager",
-        "description": "Core graph operations and NetworkX integration for efficient graph algorithms"
+      "async_graph": {
+        "name": "Async Graph",
+        "description": "Module at know/src/async_graph.py",
+        "file_path": "know/src/async_graph.py"
       },
       "cache": {
-        "name": "Graph Cache",
-        "description": "In-memory caching with file synchronization and atomic writes"
+        "name": "Cache",
+        "description": "Module at know/src/cache.py",
+        "file_path": "know/src/cache.py"
       },
-      "entities": {
-        "name": "Entity Manager",
-        "description": "CRUD operations for entities with validation against dependency rules"
+      "codemap_to_graph": {
+        "name": "Codemap To Graph",
+        "description": "Module at know/src/codemap_to_graph.py",
+        "file_path": "know/src/codemap_to_graph.py"
+      },
+      "contract_manager": {
+        "name": "Contract Manager",
+        "description": "Module at know/src/contract_manager.py",
+        "file_path": "know/src/contract_manager.py"
+      },
+      "coverage": {
+        "name": "Coverage",
+        "description": "Module at know/src/coverage.py",
+        "file_path": "know/src/coverage.py"
       },
       "dependencies": {
-        "name": "Dependency Manager",
-        "description": "Dependency relationship management and validation"
+        "name": "Dependencies",
+        "description": "Module at know/src/dependencies.py",
+        "file_path": "know/src/dependencies.py"
       },
-      "validation": {
-        "name": "Graph Validator",
-        "description": "Graph structure and rule validation against dependency rules"
+      "deprecation": {
+        "name": "Deprecation",
+        "description": "Module at know/src/deprecation.py",
+        "file_path": "know/src/deprecation.py"
+      },
+      "diff": {
+        "name": "Diff",
+        "description": "Module at know/src/diff.py",
+        "file_path": "know/src/diff.py"
+      },
+      "entities": {
+        "name": "Entities",
+        "description": "Module at know/src/entities.py",
+        "file_path": "know/src/entities.py"
+      },
+      "feature_tracker": {
+        "name": "Feature Tracker",
+        "description": "Module at know/src/feature_tracker.py",
+        "file_path": "know/src/feature_tracker.py"
+      },
+      "gap_analysis": {
+        "name": "Gap Analysis",
+        "description": "Module at know/src/gap_analysis.py",
+        "file_path": "know/src/gap_analysis.py"
       },
       "generators": {
-        "name": "Spec Generator",
-        "description": "Template-based specification document generation from graph data"
+        "name": "Generators",
+        "description": "Module at know/src/generators.py",
+        "file_path": "know/src/generators.py"
+      },
+      "graph": {
+        "name": "Graph",
+        "description": "Module at know/src/graph.py",
+        "file_path": "know/src/graph.py"
+      },
+      "impact_analyzer": {
+        "name": "Impact Analyzer",
+        "description": "Module at know/src/impact_analyzer.py",
+        "file_path": "know/src/impact_analyzer.py"
       },
       "llm": {
-        "name": "LLM Manager",
-        "description": "LLM provider integration and workflow management"
+        "name": "Llm",
+        "description": "Module at know/src/llm.py",
+        "file_path": "know/src/llm.py"
       },
-      "gap-analysis": {
-        "name": "Gap Analysis",
-        "description": "Implementation gap detection and dependency chain analysis"
+      "op_manager": {
+        "name": "Op Manager",
+        "description": "Module at know/src/op_manager.py",
+        "file_path": "know/src/op_manager.py"
       },
-      "reference-tools": {
+      "reference_tools": {
         "name": "Reference Tools",
-        "description": "Reference management, orphan detection, and cleanup utilities"
+        "description": "Module at know/src/reference_tools.py",
+        "file_path": "know/src/reference_tools.py"
       },
-      "async-graph": {
-        "name": "Async Graph Operations",
-        "description": "Asynchronous graph operations for concurrent access"
+      "requirements": {
+        "name": "Requirements",
+        "description": "Module at know/src/requirements.py",
+        "file_path": "know/src/requirements.py"
       },
       "utils": {
-        "name": "Utilities",
-        "description": "Common utility functions and helpers"
+        "name": "Utils",
+        "description": "Module at know/src/utils.py",
+        "file_path": "know/src/utils.py"
       },
-      "test-graph": {
-        "name": "Graph Tests",
-        "description": "Unit tests for graph operations"
+      "validation": {
+        "name": "Validation",
+        "description": "Module at know/src/validation.py",
+        "file_path": "know/src/validation.py"
       },
-      "test-entities": {
-        "name": "Entity Tests",
-        "description": "Unit tests for entity management"
+      "visualizers.__init__": {
+        "name": "Visualizers Init",
+        "description": "Module at know/src/visualizers/__init__.py",
+        "file_path": "know/src/visualizers/__init__.py"
+      }
+    },
+    "class": {
+      "async_graph.AsyncGraphManager": {
+        "name": "AsyncGraphManager",
+        "description": "Class in async_graph.py",
+        "file_path": "know/src/async_graph.py",
+        "line": 42
       },
-      "test-dependencies": {
-        "name": "Dependency Tests",
-        "description": "Unit tests for dependency management"
+      "async_graph.AsyncGraphPool": {
+        "name": "AsyncGraphPool",
+        "description": "Class in async_graph.py",
+        "file_path": "know/src/async_graph.py",
+        "line": 322
       },
-      "test-validation": {
-        "name": "Validation Tests",
-        "description": "Unit tests for validation engine"
+      "cache.GraphCache": {
+        "name": "GraphCache",
+        "description": "Class in cache.py",
+        "file_path": "know/src/cache.py",
+        "line": 12
       },
-      "test-commands": {
-        "name": "Command Tests",
-        "description": "Integration tests for CLI commands"
+      "codemap_to_graph.CodeGraphGenerator": {
+        "name": "CodeGraphGenerator",
+        "description": "Class in codemap_to_graph.py",
+        "file_path": "know/src/codemap_to_graph.py",
+        "line": 12
       },
-      "test-llm": {
-        "name": "LLM Tests",
-        "description": "Unit tests for LLM integration"
+      "contract_manager.ContractManager": {
+        "name": "ContractManager",
+        "description": "Class in contract_manager.py",
+        "file_path": "know/src/contract_manager.py",
+        "line": 22
       },
-      "test-utils": {
-        "name": "Utils Tests",
-        "description": "Unit tests for utility functions"
+      "coverage.CoverageAnalyzer": {
+        "name": "CoverageAnalyzer",
+        "description": "Class in coverage.py",
+        "file_path": "know/src/coverage.py",
+        "line": 10
       },
-      "test-bug-fixes": {
-        "name": "Bug Fix Tests",
-        "description": "Regression tests for bug fixes"
+      "dependencies.DependencyManager": {
+        "name": "DependencyManager",
+        "description": "Class in dependencies.py",
+        "file_path": "know/src/dependencies.py",
+        "line": 11
+      },
+      "deprecation.DeprecationManager": {
+        "name": "DeprecationManager",
+        "description": "Class in deprecation.py",
+        "file_path": "know/src/deprecation.py",
+        "line": 9
+      },
+      "diff.GraphDiff": {
+        "name": "GraphDiff",
+        "description": "Class in diff.py",
+        "file_path": "know/src/diff.py",
+        "line": 7
+      },
+      "entities.EntityManager": {
+        "name": "EntityManager",
+        "description": "Class in entities.py",
+        "file_path": "know/src/entities.py",
+        "line": 10
+      },
+      "feature_tracker.FeatureTracker": {
+        "name": "FeatureTracker",
+        "description": "Class in feature_tracker.py",
+        "file_path": "know/src/feature_tracker.py",
+        "line": 19
+      },
+      "gap_analysis.ChainStatus": {
+        "name": "ChainStatus",
+        "description": "Class in gap_analysis.py",
+        "file_path": "know/src/gap_analysis.py",
+        "line": 9
+      },
+      "gap_analysis.GapAnalyzer": {
+        "name": "GapAnalyzer",
+        "description": "Class in gap_analysis.py",
+        "file_path": "know/src/gap_analysis.py",
+        "line": 19
+      },
+      "generators.SpecGenerator": {
+        "name": "SpecGenerator",
+        "description": "Class in generators.py",
+        "file_path": "know/src/generators.py",
+        "line": 9
+      },
+      "graph.GraphManager": {
+        "name": "GraphManager",
+        "description": "Class in graph.py",
+        "file_path": "know/src/graph.py",
+        "line": 10
+      },
+      "impact_analyzer.ImpactAnalyzer": {
+        "name": "ImpactAnalyzer",
+        "description": "Class in impact_analyzer.py",
+        "file_path": "know/src/impact_analyzer.py",
+        "line": 15
+      },
+      "llm.LLMProvider": {
+        "name": "LLMProvider",
+        "description": "Class in llm.py",
+        "file_path": "know/src/llm.py",
+        "line": 20
+      },
+      "llm.MockProvider": {
+        "name": "MockProvider",
+        "description": "Class in llm.py",
+        "file_path": "know/src/llm.py",
+        "line": 151
+      },
+      "llm.LLMManager": {
+        "name": "LLMManager",
+        "description": "Class in llm.py",
+        "file_path": "know/src/llm.py",
+        "line": 187
+      },
+      "op_manager.OpManager": {
+        "name": "OpManager",
+        "description": "Class in op_manager.py",
+        "file_path": "know/src/op_manager.py",
+        "line": 14
+      },
+      "reference_tools.ReferenceManager": {
+        "name": "ReferenceManager",
+        "description": "Class in reference_tools.py",
+        "file_path": "know/src/reference_tools.py",
+        "line": 9
+      },
+      "requirements.RequirementManager": {
+        "name": "RequirementManager",
+        "description": "Class in requirements.py",
+        "file_path": "know/src/requirements.py",
+        "line": 9
+      },
+      "validation.GraphValidator": {
+        "name": "GraphValidator",
+        "description": "Class in validation.py",
+        "file_path": "know/src/validation.py",
+        "line": 11
+      },
+      "validation.ContractValidator": {
+        "name": "ContractValidator",
+        "description": "Class in validation.py",
+        "file_path": "know/src/validation.py",
+        "line": 527
+      }
+    },
+    "function": {
+      "async_graph.async_cached": {
+        "name": "async_cached",
+        "description": "Function in async_graph.py",
+        "file_path": "know/src/async_graph.py",
+        "line": 19
+      },
+      "async_graph.wrapper": {
+        "name": "wrapper",
+        "description": "Function in async_graph.py",
+        "file_path": "know/src/async_graph.py",
+        "line": 22
+      },
+      "async_graph.get_graph": {
+        "name": "get_graph",
+        "description": "Function in async_graph.py",
+        "file_path": "know/src/async_graph.py",
+        "line": 363
+      },
+      "codemap_to_graph.load_codemap": {
+        "name": "load_codemap",
+        "description": "Function in codemap_to_graph.py",
+        "file_path": "know/src/codemap_to_graph.py",
+        "line": 275
+      },
+      "codemap_to_graph.load_code_graph": {
+        "name": "load_code_graph",
+        "description": "Function in codemap_to_graph.py",
+        "file_path": "know/src/codemap_to_graph.py",
+        "line": 281
+      },
+      "feature_tracker.create_feature_config": {
+        "name": "create_feature_config",
+        "description": "Function in feature_tracker.py",
+        "file_path": "know/src/feature_tracker.py",
+        "line": 552
+      },
+      "utils.parse_entity_id": {
+        "name": "parse_entity_id",
+        "description": "Function in utils.py",
+        "file_path": "know/src/utils.py",
+        "line": 10
+      },
+      "utils.format_entity_id": {
+        "name": "format_entity_id",
+        "description": "Function in utils.py",
+        "file_path": "know/src/utils.py",
+        "line": 30
+      },
+      "utils.normalize_entity_type": {
+        "name": "normalize_entity_type",
+        "description": "Function in utils.py",
+        "file_path": "know/src/utils.py",
+        "line": 44
+      },
+      "utils.snake_to_kebab": {
+        "name": "snake_to_kebab",
+        "description": "Function in utils.py",
+        "file_path": "know/src/utils.py",
+        "line": 60
+      },
+      "utils.kebab_to_snake": {
+        "name": "kebab_to_snake",
+        "description": "Function in utils.py",
+        "file_path": "know/src/utils.py",
+        "line": 73
+      },
+      "utils.validate_name_format": {
+        "name": "validate_name_format",
+        "description": "Function in utils.py",
+        "file_path": "know/src/utils.py",
+        "line": 86
+      },
+      "utils.truncate_text": {
+        "name": "truncate_text",
+        "description": "Function in utils.py",
+        "file_path": "know/src/utils.py",
+        "line": 127
+      },
+      "utils.format_list": {
+        "name": "format_list",
+        "description": "Function in utils.py",
+        "file_path": "know/src/utils.py",
+        "line": 145
+      },
+      "utils.get_entity_display_name": {
+        "name": "get_entity_display_name",
+        "description": "Function in utils.py",
+        "file_path": "know/src/utils.py",
+        "line": 172
+      },
+      "utils.find_fuzzy_match": {
+        "name": "find_fuzzy_match",
+        "description": "Function in utils.py",
+        "file_path": "know/src/utils.py",
+        "line": 186
+      },
+      "utils.safe_filename": {
+        "name": "safe_filename",
+        "description": "Function in utils.py",
+        "file_path": "know/src/utils.py",
+        "line": 253
+      },
+      "utils.group_by": {
+        "name": "group_by",
+        "description": "Function in utils.py",
+        "file_path": "know/src/utils.py",
+        "line": 270
+      },
+      "utils.flatten_dict": {
+        "name": "flatten_dict",
+        "description": "Function in utils.py",
+        "file_path": "know/src/utils.py",
+        "line": 291
+      },
+      "utils.resolve_graph_path": {
+        "name": "resolve_graph_path",
+        "description": "Function in utils.py",
+        "file_path": "know/src/utils.py",
+        "line": 313
+      },
+      "utils.count_entity_types": {
+        "name": "count_entity_types",
+        "description": "Function in utils.py",
+        "file_path": "know/src/utils.py",
+        "line": 339
+      },
+      "utils.get_graph_stats": {
+        "name": "get_graph_stats",
+        "description": "Function in utils.py",
+        "file_path": "know/src/utils.py",
+        "line": 359
       }
     }
   },
   "graph": {
-    "module:know-cli": {
+    "class:async_graph.AsyncGraphManager": {
       "depends_on": [
+        "module:async_graph"
+      ]
+    },
+    "class:async_graph.AsyncGraphPool": {
+      "depends_on": [
+        "module:async_graph"
+      ]
+    },
+    "function:async_graph.async_cached": {
+      "depends_on": [
+        "module:async_graph"
+      ]
+    },
+    "function:async_graph.wrapper": {
+      "depends_on": [
+        "module:async_graph"
+      ]
+    },
+    "function:async_graph.get_graph": {
+      "depends_on": [
+        "module:async_graph"
+      ]
+    },
+    "class:cache.GraphCache": {
+      "depends_on": [
+        "module:cache"
+      ]
+    },
+    "class:codemap_to_graph.CodeGraphGenerator": {
+      "depends_on": [
+        "module:codemap_to_graph"
+      ]
+    },
+    "function:codemap_to_graph.load_codemap": {
+      "depends_on": [
+        "module:codemap_to_graph"
+      ]
+    },
+    "function:codemap_to_graph.load_code_graph": {
+      "depends_on": [
+        "module:codemap_to_graph"
+      ]
+    },
+    "class:contract_manager.ContractManager": {
+      "depends_on": [
+        "module:contract_manager"
+      ]
+    },
+    "class:coverage.CoverageAnalyzer": {
+      "depends_on": [
+        "module:coverage"
+      ]
+    },
+    "class:dependencies.DependencyManager": {
+      "depends_on": [
+        "module:dependencies"
+      ]
+    },
+    "class:deprecation.DeprecationManager": {
+      "depends_on": [
+        "module:deprecation"
+      ]
+    },
+    "class:diff.GraphDiff": {
+      "depends_on": [
+        "module:diff"
+      ]
+    },
+    "class:entities.EntityManager": {
+      "depends_on": [
+        "module:entities"
+      ]
+    },
+    "class:feature_tracker.FeatureTracker": {
+      "depends_on": [
+        "module:feature_tracker"
+      ]
+    },
+    "function:feature_tracker.create_feature_config": {
+      "depends_on": [
+        "module:feature_tracker"
+      ]
+    },
+    "class:gap_analysis.ChainStatus": {
+      "depends_on": [
+        "module:gap_analysis"
+      ]
+    },
+    "class:gap_analysis.GapAnalyzer": {
+      "depends_on": [
+        "module:gap_analysis"
+      ]
+    },
+    "class:generators.SpecGenerator": {
+      "depends_on": [
+        "module:generators"
+      ]
+    },
+    "class:graph.GraphManager": {
+      "depends_on": [
+        "module:graph"
+      ]
+    },
+    "class:impact_analyzer.ImpactAnalyzer": {
+      "depends_on": [
+        "module:impact_analyzer"
+      ]
+    },
+    "class:llm.LLMProvider": {
+      "depends_on": [
+        "module:llm"
+      ]
+    },
+    "class:llm.MockProvider": {
+      "depends_on": [
+        "module:llm"
+      ]
+    },
+    "class:llm.LLMManager": {
+      "depends_on": [
+        "module:llm"
+      ]
+    },
+    "class:op_manager.OpManager": {
+      "depends_on": [
+        "module:op_manager"
+      ]
+    },
+    "class:reference_tools.ReferenceManager": {
+      "depends_on": [
+        "module:reference_tools"
+      ]
+    },
+    "class:requirements.RequirementManager": {
+      "depends_on": [
+        "module:requirements"
+      ]
+    },
+    "function:utils.parse_entity_id": {
+      "depends_on": [
+        "module:utils"
+      ]
+    },
+    "function:utils.format_entity_id": {
+      "depends_on": [
+        "module:utils"
+      ]
+    },
+    "function:utils.normalize_entity_type": {
+      "depends_on": [
+        "module:utils"
+      ]
+    },
+    "function:utils.snake_to_kebab": {
+      "depends_on": [
+        "module:utils"
+      ]
+    },
+    "function:utils.kebab_to_snake": {
+      "depends_on": [
+        "module:utils"
+      ]
+    },
+    "function:utils.validate_name_format": {
+      "depends_on": [
+        "module:utils"
+      ]
+    },
+    "function:utils.truncate_text": {
+      "depends_on": [
+        "module:utils"
+      ]
+    },
+    "function:utils.format_list": {
+      "depends_on": [
+        "module:utils"
+      ]
+    },
+    "function:utils.get_entity_display_name": {
+      "depends_on": [
+        "module:utils"
+      ]
+    },
+    "function:utils.find_fuzzy_match": {
+      "depends_on": [
+        "module:utils"
+      ]
+    },
+    "function:utils.safe_filename": {
+      "depends_on": [
+        "module:utils"
+      ]
+    },
+    "function:utils.group_by": {
+      "depends_on": [
+        "module:utils"
+      ]
+    },
+    "function:utils.flatten_dict": {
+      "depends_on": [
+        "module:utils"
+      ]
+    },
+    "function:utils.resolve_graph_path": {
+      "depends_on": [
+        "module:utils"
+      ]
+    },
+    "function:utils.count_entity_types": {
+      "depends_on": [
+        "module:utils"
+      ]
+    },
+    "function:utils.get_graph_stats": {
+      "depends_on": [
+        "module:utils"
+      ]
+    },
+    "class:validation.GraphValidator": {
+      "depends_on": [
+        "module:validation"
+      ]
+    },
+    "class:validation.ContractValidator": {
+      "depends_on": [
+        "module:validation"
+      ]
+    },
+    "module:async_graph": {
+      "depends_on": [
+        "external-dep:asyncio",
+        "external-dep:functools",
         "module:graph",
         "module:entities",
         "module:dependencies",
         "module:validation",
         "module:generators",
-        "module:llm",
-        "external-dep:click",
-        "external-dep:rich"
+        "module:cache",
+        "module:utils"
       ]
     },
-    "module:graph": {
+    "module:cache": {
       "depends_on": [
-        "module:cache",
-        "external-dep:networkx"
+        "external-dep:threading",
+        "external-dep:tempfile",
+        "external-dep:time",
+        "external-dep:datetime"
       ]
+    },
+    "module:codemap_to_graph": {
+      "depends_on": []
+    },
+    "module:contract_manager": {
+      "depends_on": [
+        "external-dep:subprocess",
+        "external-dep:yaml",
+        "external-dep:datetime",
+        "external-dep:fnmatch"
+      ]
+    },
+    "module:coverage": {
+      "depends_on": []
+    },
+    "module:dependencies": {
+      "depends_on": [
+        "external-dep:collections"
+      ]
+    },
+    "module:deprecation": {
+      "depends_on": [
+        "external-dep:datetime"
+      ]
+    },
+    "module:diff": {
+      "depends_on": []
     },
     "module:entities": {
       "depends_on": [
         "module:graph"
       ]
     },
-    "module:dependencies": {
+    "module:feature_tracker": {
       "depends_on": [
-        "module:graph"
+        "external-dep:subprocess",
+        "external-dep:datetime",
+        "external-dep:fnmatch"
       ]
     },
-    "module:validation": {
+    "module:gap_analysis": {
       "depends_on": [
-        "module:graph"
+        "external-dep:enum"
       ]
     },
     "module:generators": {
       "depends_on": [
-        "module:graph",
-        "module:entities"
+        "external-dep:xml"
+      ]
+    },
+    "module:graph": {
+      "depends_on": [
+        "external-dep:networkx",
+        "module:cache"
+      ]
+    },
+    "module:impact_analyzer": {
+      "depends_on": [
+        "module:contract_manager",
+        "external-dep:fnmatch"
       ]
     },
     "module:llm": {
       "depends_on": [
-        "external-dep:pydantic"
+        "external-dep:string",
+        "external-dep:time",
+        "external-dep:re",
+        "external-dep:urllib"
       ]
     },
-    "module:gap-analysis": {
+    "module:op_manager": {
       "depends_on": [
-        "module:graph"
+        "external-dep:datetime"
       ]
     },
-    "module:reference-tools": {
+    "module:reference_tools": {
+      "depends_on": []
+    },
+    "module:requirements": {
       "depends_on": [
-        "module:graph"
+        "external-dep:datetime"
       ]
     },
-    "module:async-graph": {
+    "module:utils": {
       "depends_on": [
-        "external-dep:aiofiles",
-        "external-dep:networkx"
+        "external-dep:re"
       ]
     },
-    "package:src": {
+    "module:validation": {
       "depends_on": [
-        "external-dep:networkx",
-        "external-dep:pydantic",
-        "external-dep:click",
-        "external-dep:rich"
+        "external-dep:collections",
+        "module:contract_manager",
+        "external-dep:fnmatch"
       ]
     },
-    "package:tests": {
+    "module:visualizers.__init__": {
       "depends_on": [
-        "package:src",
-        "external-dep:pytest",
-        "external-dep:pytest-asyncio",
-        "external-dep:pytest-cov"
-      ]
-    },
-    "module:test-graph": {
-      "depends_on": [
-        "module:graph",
-        "external-dep:pytest"
-      ]
-    },
-    "module:test-entities": {
-      "depends_on": [
-        "module:entities",
-        "external-dep:pytest"
-      ]
-    },
-    "module:test-dependencies": {
-      "depends_on": [
-        "module:dependencies",
-        "external-dep:pytest"
-      ]
-    },
-    "module:test-validation": {
-      "depends_on": [
-        "module:validation",
-        "external-dep:pytest"
-      ]
-    },
-    "module:test-commands": {
-      "depends_on": [
-        "module:know-cli",
-        "external-dep:pytest"
-      ]
-    },
-    "module:test-llm": {
-      "depends_on": [
-        "module:llm",
-        "external-dep:pytest"
-      ]
-    },
-    "module:test-utils": {
-      "depends_on": [
-        "module:utils",
-        "external-dep:pytest"
-      ]
-    },
-    "module:test-bug-fixes": {
-      "depends_on": [
-        "external-dep:pytest"
+        "module:mermaid"
       ]
     }
   }

@@ -62,6 +62,9 @@ logs/
 *.temp
 .ai/spec-graph.json.backup-*
 
+# Git worktrees (local working copies)
+.ai/worktrees/
+
 # IDE / Editor
 .vscode/
 .idea/

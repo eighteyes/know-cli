@@ -76,7 +76,7 @@ class RequirementManager:
             'status': 'pending'
         }
 
-        self.graph.save(data)
+        self.graph.save_graph(data)
         return req_id
 
     def update_status(
@@ -122,7 +122,7 @@ class RequirementManager:
             if key in ['started_date', 'completed_date', 'verified_date', 'blocked_by', 'effort_hours', 'notes']:
                 data['meta']['requirements'][req_key][key] = value
 
-        self.graph.save(data)
+        self.graph.save_graph(data)
         return True
 
     def get_feature_requirements(self, feature_name: str) -> list:
@@ -242,7 +242,7 @@ class RequirementManager:
         if impl_id not in data['graph'][req_id]['depends_on']:
             data['graph'][req_id]['depends_on'].append(impl_id)
 
-        self.graph.save(data)
+        self.graph.save_graph(data)
         return True
 
     def get_blocked_requirements(self) -> list:

@@ -9,8 +9,8 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-// Find the Python know script
-const packageRoot = path.resolve(__dirname, '..');
+// Find the Python know script (resolve symlinks for npm link)
+const packageRoot = path.resolve(path.dirname(fs.realpathSync(__filename)), '..');
 const pythonKnow = path.join(packageRoot, 'know', 'know');
 
 if (!fs.existsSync(pythonKnow)) {

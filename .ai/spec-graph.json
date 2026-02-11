@@ -62,9 +62,12 @@
         "name": "Done",
         "description": "Completed and deployed"
       }
-    }
+    },
+    "project": {}
   },
-  "references": {},
+  "references": {
+    "technical_architecture": {}
+  },
   "entities": {
     "user": {
       "ai-assistant": {
