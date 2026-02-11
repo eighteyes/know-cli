@@ -24,8 +24,8 @@ class FeatureTracker:
 
     def __init__(
         self,
-        spec_graph_path: str = ".ai/spec-graph.json",
-        code_graph_path: Optional[str] = ".ai/code-graph.json",
+        spec_graph_path: str = ".ai/know/spec-graph.json",
+        code_graph_path: Optional[str] = ".ai/know/code-graph.json",
         features_dir: str = ".ai/know/features"
     ):
         """

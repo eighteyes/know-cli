@@ -13,7 +13,7 @@ from datetime import datetime
 class GraphCache:
     """Thread-safe in-memory cache for graph data"""
 
-    def __init__(self, graph_path: str = ".ai/spec-graph.json"):
+    def __init__(self, graph_path: str = ".ai/know/spec-graph.json"):
         self.graph_path = Path(graph_path)
         self._cache: Optional[Dict[str, Any]] = None
         self._last_mtime: Optional[float] = None

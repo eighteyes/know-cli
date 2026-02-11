@@ -361,7 +361,7 @@ class AsyncGraphPool:
 _global_pool = AsyncGraphPool()
 
 
-async def get_graph(graph_path: str = '.ai/spec-graph.json') -> AsyncGraphManager:
+async def get_graph(graph_path: str = '.ai/know/spec-graph.json') -> AsyncGraphManager:
     """
     Get async graph manager from global pool.
 

@@ -2,7 +2,7 @@
 Know Tool - Python implementation for efficient graph operations
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 from .graph import GraphManager
 from .entities import EntityManager
@@ -20,6 +20,7 @@ from .deprecation import DeprecationManager
 from .requirements import RequirementManager
 from .coverage import CoverageAnalyzer
 from .op_manager import OpManager
+from .migration import GraphConformanceChecker, RulesDiffAnalyzer
 from .utils import (
     parse_entity_id,
     format_entity_id,
@@ -51,6 +52,8 @@ __all__ = [
     "RequirementManager",
     "CoverageAnalyzer",
     "OpManager",
+    "GraphConformanceChecker",
+    "RulesDiffAnalyzer",
     "parse_entity_id",
     "format_entity_id",
     "normalize_entity_type",

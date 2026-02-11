@@ -362,13 +362,13 @@
     "examples": {
       "spawn-command": {
         "component": "component:spawn-command",
-        "graph_path": ".ai/spec-graph.json",
+        "graph_path": ".ai/know/spec-graph.json",
         "feature": "feature:mesh-lifecycle",
         "action": "action:spawn-mesh"
       },
       "logger": {
         "component": "component:logger",
-        "graph_path": ".ai/spec-graph.json",
+        "graph_path": ".ai/know/spec-graph.json",
         "operations": ["operation:write-jsonl-log"]
       }
     }

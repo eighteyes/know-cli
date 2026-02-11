@@ -32,7 +32,7 @@
       "know CLI tool"
     ],
     "files": [
-      ".ai/spec-graph.json"
+      ".ai/know/spec-graph.json"
     ],
     "platform": "any"
   },

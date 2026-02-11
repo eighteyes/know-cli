@@ -563,7 +563,7 @@ class SpecGenerator:
         # Filter out any None values that might have slipped in
         return "\n".join(str(line) if line is not None else '' for line in lines)
 
-    def generate_feature_spec_xml(self, feature_id: str, code_graph_path: str = '.ai/code-graph.json') -> str:
+    def generate_feature_spec_xml(self, feature_id: str, code_graph_path: str = '.ai/know/code-graph.json') -> str:
         """
         Generate XML specification for a feature based on GSD framework.
 

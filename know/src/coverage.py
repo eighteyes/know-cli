@@ -19,7 +19,7 @@ class CoverageAnalyzer:
             code_graph_path: Path to code-graph.json (optional)
         """
         self.spec = spec_graph_manager
-        self.code_graph_path = code_graph_path or '.ai/code-graph.json'
+        self.code_graph_path = code_graph_path or '.ai/know/code-graph.json'
         self._code_graph_data = None
 
     def _load_code_graph(self):

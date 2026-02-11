@@ -60,7 +60,7 @@ logs/
 .ai/tmp/*
 *.tmp
 *.temp
-.ai/spec-graph.json.backup-*
+.ai/know/spec-graph.json.backup-*
 
 # Git worktrees (local working copies)
 .ai/worktrees/

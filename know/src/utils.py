@@ -325,12 +325,12 @@ def resolve_graph_path(path: Optional[str] = None) -> Path:
         return Path(path).resolve()
 
     # Default path
-    default_path = Path('.ai/spec-graph.json')
+    default_path = Path('.ai/know/spec-graph.json')
 
     # Check if we're in a subdirectory
     if not default_path.exists():
         # Try parent directory
-        parent_path = Path('../.ai/spec-graph.json')
+        parent_path = Path('../.ai/know/spec-graph.json')
         if parent_path.exists():
             return parent_path.resolve()
 

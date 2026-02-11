@@ -21,7 +21,8 @@ from rich import print as rprint
 
 from src import (
     GraphManager, EntityManager, DependencyManager,
-    GraphValidator, SpecGenerator, GraphDiff, get_graph_stats
+    GraphValidator, SpecGenerator, GraphDiff,
+    GraphConformanceChecker, RulesDiffAnalyzer, get_graph_stats
 )
 
 
@@ -109,7 +110,7 @@ def _get_type_category(rules_path: str, type_name: str) -> str:
 
 
 @click.command(cls=SectionedGroup, context_settings=CONTEXT_SETTINGS)
-@click.option('--graph-path', '-g', default='.ai/spec-graph.json',
+@click.option('--graph-path', '-g', default='.ai/know/spec-graph.json',
               help='Path to graph file')
 @click.option('--rules-path', '-r', default=None,
               help='Path to dependency rules file (auto-detects based on graph name if not specified)')
@@ -124,12 +125,16 @@ def cli(ctx, graph_path, rules_path):
             graph_path = Path('..') / graph_path
 
     # Auto-detect rules path based on graph name if not specified
+    # Prefer local project copy (.ai/know/config/), fall back to package config
     if rules_path is None:
-        config_dir = Path(__file__).parent / "config"
+        local_config_dir = Path('.ai/know/config')
+        package_config_dir = Path(__file__).parent / "config"
         if 'code-graph' in str(graph_path):
-            rules_path = str(config_dir / "code-dependency-rules.json")
+            rules_file = "code-dependency-rules.json"
         else:
-            rules_path = str(config_dir / "dependency-rules.json")
+            rules_file = "dependency-rules.json"
+        local_rules = local_config_dir / rules_file
+        rules_path = str(local_rules) if local_rules.exists() else str(package_config_dir / rules_file)
 
     ctx.ensure_object(dict)
     ctx.obj['graph'] = GraphManager(str(graph_path))
@@ -327,7 +332,7 @@ def get_item(ctx, path):
         know get feature:auth              # Entity
         know get business_logic:login      # Reference
         know get component:login-form      # Entity
-        know -g .ai/code-graph.json get module:graph
+        know -g .ai/know/code-graph.json get module:graph
     """
     if ':' not in path:
         console.print(f"[red]Invalid path '{path}'. Use format: type:key[/red]")
@@ -376,7 +381,7 @@ def list_items(ctx, type_filter):
         know list                          # All entities and references
         know list --type feature           # Entity type
         know list -t business_logic        # Reference type
-        know -g .ai/code-graph.json list --type module
+        know -g .ai/know/code-graph.json list --type module
     """
     graph_data = ctx.obj['graph'].load()
 
@@ -575,8 +580,9 @@ def nodes_deprecated(ctx, overdue):
 @click.argument('from_entity')
 @click.argument('into_entity')
 @click.option('--keep', is_flag=True, help='Keep the source entity after merge')
+@click.option('--yes', '-y', is_flag=True, help='Skip confirmation prompt')
 @click.pass_context
-def nodes_merge(ctx, from_entity, into_entity, keep):
+def nodes_merge(ctx, from_entity, into_entity, keep, yes):
     """Merge one entity into another, transferring all dependencies.
 
     Transfers all incoming dependencies (things pointing to FROM) to INTO.
@@ -586,6 +592,7 @@ def nodes_merge(ctx, from_entity, into_entity, keep):
     Examples:
         know nodes merge component:old-auth component:new-auth
         know nodes merge feature:duplicate feature:original --keep
+        know nodes merge action:old action:new -y
     """
     graph_data = ctx.obj['graph'].load()
 
@@ -604,7 +611,24 @@ def nodes_merge(ctx, from_entity, into_entity, keep):
         console.print(f"[red]✗ Target entity not found: {into_entity}[/red]")
         sys.exit(1)
 
+    # Preview changes before merge
     graph_section = graph_data.get('graph', {})
+
+    if not yes:
+        outgoing_count = len(graph_section.get(from_entity, {}).get('depends_on', []))
+        incoming_count = sum(1 for deps in graph_section.values()
+                           if from_entity in deps.get('depends_on', []))
+
+        console.print(f"[yellow]Will merge '{from_entity}' into '{into_entity}':[/yellow]")
+        console.print(f"  Outgoing dependencies to transfer: {outgoing_count}")
+        console.print(f"  Incoming dependencies to redirect: {incoming_count}")
+        if not keep:
+            console.print(f"  Will delete '{from_entity}' after merge")
+
+        if not click.confirm("\nProceed?"):
+            console.print("[dim]Cancelled[/dim]")
+            return
+
     changes = {'incoming': 0, 'outgoing': 0}
 
     # Transfer outgoing dependencies (what FROM depends on)
@@ -650,13 +674,15 @@ def nodes_merge(ctx, from_entity, into_entity, keep):
 @nodes.command(name='rename')
 @click.argument('entity_id')
 @click.argument('new_key')
+@click.option('--yes', '-y', is_flag=True, help='Skip confirmation prompt')
 @click.pass_context
-def nodes_rename(ctx, entity_id, new_key):
+def nodes_rename(ctx, entity_id, new_key, yes):
     """Rename an entity's key, updating all graph references.
 
     Examples:
         know nodes rename component:old-name component:new-name
         know nodes rename feature:auth feature:authentication
+        know nodes rename action:setup action:initialize -y
     """
     graph_data = ctx.obj['graph'].load()
 
@@ -674,6 +700,19 @@ def nodes_rename(ctx, entity_id, new_key):
     if new_key in graph_data['entities'].get(entity_type, {}):
         console.print(f"[red]✗ Entity already exists: {new_entity_id}[/red]")
         sys.exit(1)
+
+    # Preview changes before rename
+    if not yes:
+        graph_section = graph_data.get('graph', {})
+        ref_count = sum(1 for deps in graph_section.values()
+                       if entity_id in deps.get('depends_on', []))
+
+        console.print(f"[yellow]Will rename '{entity_id}' to '{new_entity_id}':[/yellow]")
+        console.print(f"  References to update: {ref_count}")
+
+        if not click.confirm("\nProceed?"):
+            console.print("[dim]Cancelled[/dim]")
+            return
 
     # Rename in entities section
     graph_data['entities'][entity_type][new_key] = graph_data['entities'][entity_type].pop(old_key)
@@ -701,111 +740,177 @@ def nodes_rename(ctx, entity_id, new_key):
 
 @nodes.command(name='delete')
 @click.argument('entity_id')
-@click.option('--force', '-f', is_flag=True, help='Delete without confirmation')
+@click.option('--yes', '-y', is_flag=True, help='Skip confirmation prompt')
 @click.pass_context
-def nodes_delete(ctx, entity_id, force):
-    """Remove an entity AND clean up all its dependencies.
+def nodes_delete(ctx, entity_id, yes):
+    """Remove an entity or reference AND clean up all its dependencies.
 
-    Removes the entity from entities section.
-    Removes all dependencies to/from this entity in graph section.
+    Removes the node from entities or references section.
+    Removes all dependencies to/from this node in graph section.
     Use 'cut' if you want to preserve orphaned dependencies.
 
     Examples:
         know nodes delete component:obsolete
-        know nodes delete feature:cancelled --force
+        know nodes delete feature:cancelled -y
+        know nodes delete data-model:old-schema
     """
     graph_data = ctx.obj['graph'].load()
 
-    # Parse entity path
-    entity_type, entity_key = entity_id.split(':', 1)
+    # Parse node path
+    node_type, node_key = entity_id.split(':', 1)
 
-    # Verify entity exists
-    if entity_type not in graph_data.get('entities', {}) or \
-       entity_key not in graph_data['entities'].get(entity_type, {}):
-        console.print(f"[red]✗ Entity not found: {entity_id}[/red]")
+    # Determine if this is an entity or reference
+    is_entity = False
+    is_reference = False
+
+    if node_type in graph_data.get('entities', {}) and \
+       node_key in graph_data['entities'].get(node_type, {}):
+        is_entity = True
+    elif node_type in graph_data.get('references', {}) and \
+         node_key in graph_data['references'].get(node_type, {}):
+        is_reference = True
+    else:
+        console.print(f"[red]✗ Node not found: {entity_id}[/red]")
+        console.print(f"[dim]Not found in entities or references sections[/dim]")
         sys.exit(1)
 
-    # Count dependencies
-    graph_section = graph_data.get('graph', {})
-    outgoing = len(graph_section.get(entity_id, {}).get('depends_on', []))
-    incoming = sum(1 for deps in graph_section.values()
-                   if entity_id in deps.get('depends_on', []))
+    node_category = "entity" if is_entity else "reference"
 
-    if not force:
-        console.print(f"[yellow]Will delete '{entity_id}':[/yellow]")
-        console.print(f"  Outgoing dependencies: {outgoing}")
-        console.print(f"  Incoming dependencies: {incoming}")
-        if not click.confirm("Proceed?"):
+    # Collect dependencies
+    graph_section = graph_data.get('graph', {})
+    outgoing_deps = graph_section.get(entity_id, {}).get('depends_on', [])
+    incoming_deps = [eid for eid, deps in graph_section.items()
+                     if entity_id in deps.get('depends_on', [])]
+
+    if not yes:
+        console.print(f"[yellow]Will delete {node_category} '{entity_id}':[/yellow]")
+
+        if outgoing_deps:
+            console.print(f"\n[dim]Outgoing dependencies ({len(outgoing_deps)}):[/dim]")
+            for dep in outgoing_deps:
+                console.print(f"  • {dep}")
+        else:
+            console.print(f"\n[dim]No outgoing dependencies[/dim]")
+
+        if incoming_deps:
+            console.print(f"\n[dim]Incoming dependencies ({len(incoming_deps)}):[/dim]")
+            for dep in incoming_deps:
+                console.print(f"  • {dep}")
+        else:
+            console.print(f"\n[dim]No incoming dependencies[/dim]")
+
+        if not click.confirm("\nProceed?"):
             console.print("[dim]Cancelled[/dim]")
             return
 
-    # Remove from entities
-    del graph_data['entities'][entity_type][entity_key]
+    # Track what we're removing
+    removed_outgoing = outgoing_deps.copy()
+    removed_incoming = incoming_deps.copy()
+
+    # Remove from entities or references
+    if is_entity:
+        del graph_data['entities'][node_type][node_key]
+    else:
+        del graph_data['references'][node_type][node_key]
 
     # Remove from graph (outgoing)
     if entity_id in graph_section:
         del graph_section[entity_id]
 
     # Remove incoming references
-    for deps in graph_section.values():
-        if entity_id in deps.get('depends_on', []):
-            deps['depends_on'].remove(entity_id)
+    for eid in removed_incoming:
+        if eid in graph_section and entity_id in graph_section[eid].get('depends_on', []):
+            graph_section[eid]['depends_on'].remove(entity_id)
 
     ctx.obj['graph'].save_graph(graph_data)
 
-    console.print(f"[green]✓ Deleted '{entity_id}'[/green]")
-    console.print(f"  Removed {outgoing} outgoing dependencies")
-    console.print(f"  Removed {incoming} incoming references")
+    # Show what was actually removed
+    console.print(f"\n[green]✓ Deleted {node_category} '{entity_id}'[/green]")
+
+    if removed_outgoing:
+        console.print(f"\n[dim]Removed outgoing links ({len(removed_outgoing)}):[/dim]")
+        for dep in removed_outgoing:
+            console.print(f"  • {entity_id} → {dep}")
+
+    if removed_incoming:
+        console.print(f"\n[dim]Removed incoming links ({len(removed_incoming)}):[/dim]")
+        for dep in removed_incoming:
+            console.print(f"  • {dep} → {entity_id}")
 
 
 @nodes.command(name='cut')
 @click.argument('entity_id')
-@click.option('--force', '-f', is_flag=True, help='Cut without confirmation')
+@click.option('--yes', '-y', is_flag=True, help='Skip confirmation prompt')
 @click.pass_context
-def nodes_cut(ctx, entity_id, force):
-    """Remove an entity only, leaving dependencies orphaned.
+def nodes_cut(ctx, entity_id, yes):
+    """Remove an entity or reference only, leaving dependencies orphaned.
 
-    Removes the entity from entities section.
+    Removes the node from entities or references section.
     Leaves graph dependencies intact (may create dangling references).
     Use 'delete' for clean removal with dependency cleanup.
 
     Examples:
         know nodes cut component:to-replace
-        know nodes cut feature:swap-out --force
+        know nodes cut feature:swap-out -y
+        know nodes cut data-model:old-schema
     """
     graph_data = ctx.obj['graph'].load()
 
-    # Parse entity path
-    entity_type, entity_key = entity_id.split(':', 1)
+    # Parse node path
+    node_type, node_key = entity_id.split(':', 1)
 
-    # Verify entity exists
-    if entity_type not in graph_data.get('entities', {}) or \
-       entity_key not in graph_data['entities'].get(entity_type, {}):
-        console.print(f"[red]✗ Entity not found: {entity_id}[/red]")
+    # Determine if this is an entity or reference
+    is_entity = False
+    is_reference = False
+
+    if node_type in graph_data.get('entities', {}) and \
+       node_key in graph_data['entities'].get(node_type, {}):
+        is_entity = True
+    elif node_type in graph_data.get('references', {}) and \
+         node_key in graph_data['references'].get(node_type, {}):
+        is_reference = True
+    else:
+        console.print(f"[red]✗ Node not found: {entity_id}[/red]")
+        console.print(f"[dim]Not found in entities or references sections[/dim]")
         sys.exit(1)
 
-    # Count dependencies that will be orphaned
-    graph_section = graph_data.get('graph', {})
-    outgoing = len(graph_section.get(entity_id, {}).get('depends_on', []))
-    incoming = sum(1 for deps in graph_section.values()
-                   if entity_id in deps.get('depends_on', []))
+    node_category = "entity" if is_entity else "reference"
 
-    if not force and (outgoing > 0 or incoming > 0):
-        console.print(f"[yellow]Will cut '{entity_id}' leaving orphaned dependencies:[/yellow]")
-        console.print(f"  Orphaned outgoing: {outgoing}")
-        console.print(f"  Dangling incoming refs: {incoming}")
-        if not click.confirm("Proceed?"):
+    # Collect dependencies that will be orphaned
+    graph_section = graph_data.get('graph', {})
+    outgoing_deps = graph_section.get(entity_id, {}).get('depends_on', [])
+    incoming_deps = [eid for eid, deps in graph_section.items()
+                     if entity_id in deps.get('depends_on', [])]
+
+    if not yes and (outgoing_deps or incoming_deps):
+        console.print(f"[yellow]Will cut {node_category} '{entity_id}' leaving orphaned dependencies:[/yellow]")
+
+        if outgoing_deps:
+            console.print(f"\n[dim]Orphaned outgoing ({len(outgoing_deps)}):[/dim]")
+            for dep in outgoing_deps:
+                console.print(f"  • {entity_id} → {dep}")
+
+        if incoming_deps:
+            console.print(f"\n[dim]Dangling incoming refs ({len(incoming_deps)}):[/dim]")
+            for dep in incoming_deps:
+                console.print(f"  • {dep} → {entity_id}")
+
+        if not click.confirm("\nProceed?"):
             console.print("[dim]Cancelled[/dim]")
             return
 
-    # Remove from entities only
-    del graph_data['entities'][entity_type][entity_key]
+    # Remove from entities or references only
+    if is_entity:
+        del graph_data['entities'][node_type][node_key]
+    else:
+        del graph_data['references'][node_type][node_key]
 
     ctx.obj['graph'].save_graph(graph_data)
 
-    console.print(f"[green]✓ Cut '{entity_id}'[/green]")
-    if outgoing > 0 or incoming > 0:
-        console.print(f"[yellow]  ⚠ {outgoing + incoming} orphaned dependencies remain[/yellow]")
+    console.print(f"\n[green]✓ Cut {node_category} '{entity_id}'[/green]")
+    if outgoing_deps or incoming_deps:
+        total = len(outgoing_deps) + len(incoming_deps)
+        console.print(f"[yellow]  ⚠ {total} orphaned dependencies remain in graph[/yellow]")
         console.print(f"  Run 'know check validate' to see issues")
 
 
@@ -945,9 +1050,20 @@ def graph_link(ctx, from_entity, to_entity):
 @graph.command(name='unlink')
 @click.argument('from_entity')
 @click.argument('to_entity')
+@click.option('--yes', '-y', is_flag=True, help='Skip confirmation prompt')
 @click.pass_context
-def graph_unlink(ctx, from_entity, to_entity):
-    """Remove a dependency between entities"""
+def graph_unlink(ctx, from_entity, to_entity, yes):
+    """Remove a dependency between entities
+
+    Examples:
+        know graph unlink feature:auth action:login
+        know graph unlink component:ui api-contract:endpoints -y
+    """
+    if not yes:
+        if not click.confirm(f"Remove dependency: {from_entity} -> {to_entity}?"):
+            console.print("[dim]Cancelled[/dim]")
+            return
+
     success = ctx.obj['entities'].remove_dependency(from_entity, to_entity)
 
     if success:
@@ -1071,7 +1187,7 @@ def graph_diff(graph1, graph2, verbose, format):
 
     Examples:
         know graph diff spec-graph.json spec-graph-backup.json
-        know graph diff .ai/spec-graph.json /tmp/spec-graph.json --verbose
+        know graph diff .ai/know/spec-graph.json /tmp/spec-graph.json --verbose
         know graph diff graph1.json graph2.json --format json
     """
     try:
@@ -1214,6 +1330,302 @@ def graph_diff(graph1, graph2, verbose, format):
         sys.exit(1)
     except Exception as e:
         console.print(f"[red]✗ Error: {e}[/red]")
+        import traceback
+        console.print(f"[dim]{traceback.format_exc()}[/dim]")
+        sys.exit(1)
+
+
+@graph.command(name='migrate')
+@click.option('--format', '-f', type=click.Choice(['terminal', 'json']), default='terminal',
+              help='Output format')
+@click.pass_context
+def graph_migrate(ctx, format):
+    """Check graph structure against current rules
+
+    Finds entity types not in rules, dependency paths not allowed,
+    and dangling references. Lighter than 'check validate'.
+
+    Examples:
+        know graph migrate
+        know graph migrate --format json
+        know -g .ai/know/code-graph.json graph migrate
+    """
+    try:
+        graph_data = ctx.obj['graph'].load()
+        rules_path = ctx.obj['rules_path']
+
+        checker = GraphConformanceChecker(rules_path, graph_data)
+        result = checker.check()
+
+        if format == 'json':
+            print(json.dumps(result, indent=2))
+            return
+
+        console.print(f"\n[bold cyan]Graph Conformance:[/bold cyan] rules={result['rules_path']}\n")
+
+        counts = result['counts']
+        if counts['total'] == 0:
+            console.print("[green]✓ Graph conforms to rules[/green]\n")
+            return
+
+        # Group issues by type
+        by_type = {}
+        for issue in result['issues']:
+            by_type.setdefault(issue['type'], []).append(issue)
+
+        type_labels = {
+            'unknown_entity_type': ('Unknown Entity Types', 'red'),
+            'invalid_dependency_path': ('Invalid Dependency Paths', 'yellow'),
+            'dangling_graph_ref': ('Dangling Graph References', 'magenta'),
+        }
+
+        for issue_type, (label, color) in type_labels.items():
+            items = by_type.get(issue_type, [])
+            if not items:
+                continue
+            console.print(f"[bold]{label}:[/bold] ({len(items)})")
+            for item in items:
+                if issue_type == 'unknown_entity_type':
+                    console.print(f"  [{color}]{item['entity_id']}[/{color}] — type '{item['entity_type']}' not in rules")
+                elif issue_type == 'invalid_dependency_path':
+                    console.print(f"  [{color}]{item['from']} → {item['to']}[/{color}] ({item['path']})")
+                elif issue_type == 'dangling_graph_ref':
+                    console.print(f"  [{color}]{item['from']} → {item['to']}[/{color}] (target missing)")
+            console.print()
+
+        console.print(f"[bold]Total issues:[/bold] {counts['total']}\n")
+
+    except FileNotFoundError as e:
+        console.print(f"[red]✗ File not found: {e}[/red]")
+        sys.exit(1)
+    except json.JSONDecodeError as e:
+        console.print(f"[red]✗ Invalid JSON: {e}[/red]")
+        sys.exit(1)
+    except Exception as e:
+        console.print(f"[red]✗ Error: {e}[/red]")
+        import traceback
+        console.print(f"[dim]{traceback.format_exc()}[/dim]")
+        sys.exit(1)
+
+
+@graph.command(name='migrate-rules')
+@click.argument('target_rules', type=click.Path(exists=True))
+@click.option('--format', '-f', type=click.Choice(['terminal', 'json']), default='terminal',
+              help='Output format')
+@click.option('--verbose', '-v', is_flag=True, help='Show detailed migration plan')
+@click.pass_context
+def graph_migrate_rules(ctx, target_rules, format, verbose):
+    """Analyze migration impact from current rules to target rules
+
+    Compares current dependency rules against target rules and reports
+    affected entities, invalid links, and generates a migration plan.
+    Analysis only — does not execute changes.
+
+    Examples:
+        know graph migrate-rules new-rules.json
+        know graph migrate-rules new-rules.json --format json
+        know graph migrate-rules new-rules.json --verbose
+    """
+    try:
+        graph_data = ctx.obj['graph'].load()
+        current_rules = ctx.obj['rules_path']
+
+        analyzer = RulesDiffAnalyzer(current_rules, target_rules, graph_data)
+        result = analyzer.run()
+
+        if format == 'json':
+            print(json.dumps(result, indent=2))
+            return
+
+        summary = result['summary']
+        diff = result['diff']
+        impact = result['impact']
+        plan = result['plan']
+
+        # Header
+        console.print(f"\n[bold cyan]Rules Migration:[/bold cyan] {summary['current_rules']} → {summary['target_rules']}\n")
+
+        # Rules Diff
+        console.print("[bold]Rules Diff:[/bold]")
+        if diff['entity_types']['removed']:
+            for et in diff['entity_types']['removed']:
+                disp = diff['entity_types']['dispositions'].get(et, 'unknown')
+                console.print(f"  [red]- entity type: {et}[/red] ({disp})")
+        if diff['entity_types']['added']:
+            for et in diff['entity_types']['added']:
+                console.print(f"  [green]+ entity type: {et}[/green]")
+        if diff['dependency_paths']['removed']:
+            for fr, to in diff['dependency_paths']['removed']:
+                console.print(f"  [red]- path: {fr} → {to}[/red]")
+        if diff['dependency_paths']['added']:
+            for fr, to in diff['dependency_paths']['added']:
+                console.print(f"  [green]+ path: {fr} → {to}[/green]")
+        if diff['reference_types']['added']:
+            for rt in diff['reference_types']['added']:
+                console.print(f"  [green]+ ref type: {rt}[/green]")
+        if diff['reference_types']['removed']:
+            for rt in diff['reference_types']['removed']:
+                console.print(f"  [red]- ref type: {rt}[/red]")
+
+        if not any([
+            diff['entity_types']['removed'], diff['entity_types']['added'],
+            diff['dependency_paths']['removed'], diff['dependency_paths']['added'],
+            diff['reference_types']['removed'], diff['reference_types']['added'],
+        ]):
+            console.print("  [green]✓ Rules are identical[/green]")
+            return
+
+        console.print()
+
+        # Impact Analysis
+        console.print("[bold]Impact Analysis:[/bold]")
+        console.print(f"  Affected entities:   {impact['counts']['entities']}")
+        console.print(f"  Affected links:      {impact['counts']['links']}")
+        console.print(f"  Affected references: {impact['counts']['references']}")
+        console.print(f"  Affected phases:     {impact['counts']['phases']}")
+        console.print()
+
+        if verbose:
+            if impact['entities']:
+                console.print("[bold]Affected Entities:[/bold]")
+                for e in impact['entities']:
+                    console.print(f"  [yellow]{e['id']}[/yellow] — {e['disposition']}")
+                    if e['dependents']:
+                        console.print(f"    depended on by: {', '.join(e['dependents'])}")
+                    if e['dependencies']:
+                        console.print(f"    depends on: {', '.join(e['dependencies'])}")
+                console.print()
+
+            if impact['links']:
+                console.print("[bold]Invalid Links:[/bold]")
+                for link in impact['links']:
+                    console.print(f"  [red]{link['from']} → {link['to']}[/red] ({link['path']})")
+                console.print()
+
+            if impact['phases']:
+                console.print("[bold]Affected Phases:[/bold]")
+                for p in impact['phases']:
+                    console.print(f"  [yellow]{p['phase']}[/yellow]: {p['entity_id']}")
+                console.print()
+
+        # Migration Plan
+        console.print(f"[bold]Migration Plan:[/bold] ({len(plan['steps'])} steps)")
+        for i, step in enumerate(plan['steps'], 1):
+            phase_color = {
+                'pre-validation': 'cyan',
+                'create-references': 'green',
+                'reroute-links': 'yellow',
+                'remove-entities': 'red',
+                'update-phases': 'magenta',
+                'post-validation': 'cyan',
+            }.get(step['phase'], 'white')
+            console.print(f"  {i:3}. [{phase_color}][{step['phase']}][/{phase_color}] {step['description']}")
+            if verbose:
+                console.print(f"       [dim]$ {step['command']}[/dim]")
+
+        console.print()
+
+    except FileNotFoundError as e:
+        console.print(f"[red]✗ File not found: {e}[/red]")
+        sys.exit(1)
+    except json.JSONDecodeError as e:
+        console.print(f"[red]✗ Invalid JSON: {e}[/red]")
+        sys.exit(1)
+    except Exception as e:
+        console.print(f"[red]✗ Error: {e}[/red]")
+        import traceback
+        console.print(f"[dim]{traceback.format_exc()}[/dim]")
+        sys.exit(1)
+
+
+@graph.command(name='traverse')
+@click.argument('entity_id')
+@click.option('--direction', '-d', type=click.Choice(['impl', 'spec']),
+              help='Direction: "impl" for spec→code, "spec" for code→spec')
+@click.pass_context
+def graph_traverse(ctx, entity_id, direction):
+    """Traverse between spec and code graphs
+
+    Shows implementation mappings between specification and code entities.
+    Uses meta.code_graph_path / meta.spec_graph_path for cross-graph lookups.
+
+    Examples:
+        know graph traverse feature:auth --direction impl
+        know graph traverse module:auth --direction spec
+        know graph traverse feature:profile   # Auto-detects direction
+    """
+    graph_manager = ctx.obj['graph']
+
+    # Check if counterpart graph is configured
+    counterpart_path = graph_manager.get_counterpart_graph_path()
+    if not counterpart_path:
+        console.print("[yellow]⚠ No counterpart graph configured in meta[/yellow]")
+        console.print("\nAdd to your graph's meta section:")
+        console.print('  "code_graph_path": ".ai/know/code-graph.json"  (in spec-graph.json)')
+        console.print('  "spec_graph_path": ".ai/know/spec-graph.json"  (in code-graph.json)')
+        sys.exit(1)
+
+    # Auto-detect direction if not specified
+    if not direction:
+        if entity_id.startswith('feature:') or entity_id.startswith('component:'):
+            direction = 'impl'
+        elif entity_id.startswith('module:') or entity_id.startswith('package:'):
+            direction = 'spec'
+        else:
+            console.print(f"[yellow]⚠ Cannot auto-detect direction for {entity_id}[/yellow]")
+            console.print("Specify --direction impl (spec→code) or --direction spec (code→spec)")
+            sys.exit(1)
+
+    try:
+        if direction == 'impl':
+            # Spec → Code: Show implementations
+            if entity_id.startswith('feature:'):
+                results = graph_manager.get_feature_implementations(entity_id)
+
+                if not results:
+                    console.print(f"[yellow]⚠ No implementations found for {entity_id}[/yellow]")
+                    console.print("\nFeatures link to code via implementation references:")
+                    console.print('  1. Add graph-link in code-graph.json referencing code entities')
+                    console.print('  2. Add implementation reference in spec-graph.json')
+                    console.print('  3. Link feature to implementation reference')
+                    sys.exit(0)
+
+                console.print(f"[bold cyan]Implementations for {entity_id}:[/bold cyan]\n")
+                for code_id, code_data in results:
+                    name = code_data.get('name', code_id)
+                    desc = code_data.get('description', '')
+                    console.print(f"  • [green]{code_id}[/green]: {name}")
+                    if desc:
+                        console.print(f"    {desc}")
+
+            else:
+                console.print(f"[yellow]⚠ Implementation lookup only supported for features[/yellow]")
+                console.print(f"Use: know graph traverse feature:<name> --direction impl")
+                sys.exit(1)
+
+        elif direction == 'spec':
+            # Code → Spec: Show feature mapping
+            result = graph_manager.get_code_feature_mapping(entity_id)
+
+            if not result:
+                console.print(f"[yellow]⚠ No feature mapping found for {entity_id}[/yellow]")
+                console.print("\nCode entities link to features via graph-link references:")
+                console.print('  1. Add graph-link in code-graph.json')
+                console.print('  2. Reference it from spec implementation')
+                console.print('  3. Link feature to the implementation')
+                sys.exit(0)
+
+            feature_id, feature_data = result
+            name = feature_data.get('name', feature_id)
+            desc = feature_data.get('description', '')
+
+            console.print(f"[bold cyan]Feature for {entity_id}:[/bold cyan]\n")
+            console.print(f"  • [green]{feature_id}[/green]: {name}")
+            if desc:
+                console.print(f"    {desc}")
+
+    except Exception as e:
+        console.print(f"[red]✗ Error traversing graphs: {e}[/red]")
         import traceback
         console.print(f"[dim]{traceback.format_exc()}[/dim]")
         sys.exit(1)
@@ -1706,7 +2118,7 @@ def gen_sitemap(ctx, output):
 @gen.command(name='code-graph')
 @click.option('--codemap', '-c', default='.ai/codemap.json', help='Input codemap.json path')
 @click.option('--existing', '-e', help='Existing code-graph.json to preserve references')
-@click.option('--output', '-o', default='.ai/code-graph.json', help='Output code-graph.json path')
+@click.option('--output', '-o', default='.ai/know/code-graph.json', help='Output code-graph.json path')
 @click.option('--source-dir', '-s', default='know/src', help='Source directory for file paths')
 def gen_code_graph(codemap, existing, output, source_dir):
     """Generate code-graph from codemap AST parsing.
@@ -1720,7 +2132,7 @@ def gen_code_graph(codemap, existing, output, source_dir):
         know gen code-graph
 
         # Preserve existing references
-        know gen code-graph --existing .ai/code-graph.json
+        know gen code-graph --existing .ai/know/code-graph.json
 
         # Custom paths
         know gen code-graph -c .ai/codemap.json -o .ai/code-graph-new.json
@@ -1807,8 +2219,8 @@ def gen_trace(ctx, entity_id, code_graph, spec_graph):
     """Trace entity across product-code boundary showing full upstream/downstream chain
 
     Examples:
-        know -g .ai/spec-graph.json gen trace component:cli-commands -c .ai/code-graph.json
-        know -g .ai/code-graph.json gen trace module:auth-handler -s .ai/spec-graph.json
+        know -g .ai/know/spec-graph.json gen trace component:cli-commands -c .ai/know/code-graph.json
+        know -g .ai/know/code-graph.json gen trace module:auth-handler -s .ai/know/spec-graph.json
     """
     from pathlib import Path
     import json
@@ -1817,7 +2229,7 @@ def gen_trace(ctx, entity_id, code_graph, spec_graph):
     current_graph_data = current_graph.load()
 
     # Determine which graph we're starting from
-    current_graph_path = ctx.obj.get('graph_path', '.ai/spec-graph.json')
+    current_graph_path = ctx.obj.get('graph_path', '.ai/know/spec-graph.json')
     is_spec_graph = 'spec-graph' in str(current_graph_path).lower()
 
     console.print(f"\n[bold cyan]Tracing {entity_id}[/bold cyan]\n")
@@ -1901,7 +2313,7 @@ def gen_trace(ctx, entity_id, code_graph, spec_graph):
 
     elif not code_graph and not spec_graph:
         console.print(f"\n[dim]Tip: Use -c and -s flags to trace across graphs[/dim]")
-        console.print(f"[dim]Example: know -g .ai/spec-graph.json gen trace {entity_id} -c .ai/code-graph.json[/dim]")
+        console.print(f"[dim]Example: know -g .ai/know/spec-graph.json gen trace {entity_id} -c .ai/know/code-graph.json[/dim]")
 
     console.print()
 
@@ -2062,8 +2474,8 @@ def rules_describe(ctx, type_name):
     """Describe entity, reference, or meta type, or list all types
 
     Examples:
-        know -g .ai/spec-graph.json gen rules describe feature
-        know -g .ai/code-graph.json gen rules describe module
+        know -g .ai/know/spec-graph.json gen rules describe feature
+        know -g .ai/know/code-graph.json gen rules describe module
         know gen rules describe business_logic
         know gen rules describe phases
         know gen rules describe entities       # List all entity types
@@ -2182,8 +2594,8 @@ def rules_before(ctx, entity_type):
     """Show what entity types can come before this type in dependency graph
 
     Examples:
-        know -g .ai/spec-graph.json gen rules before component
-        know -g .ai/code-graph.json gen rules before module
+        know -g .ai/know/spec-graph.json gen rules before component
+        know -g .ai/know/code-graph.json gen rules before module
     """
     rules_path = ctx.obj.get('rules_path') if ctx.obj else None
     rules = _load_rules(rules_path)
@@ -2211,8 +2623,8 @@ def rules_after(ctx, entity_type):
     """Show what entity types can come after this type in dependency graph
 
     Examples:
-        know -g .ai/spec-graph.json gen rules after feature
-        know -g .ai/code-graph.json gen rules after module
+        know -g .ai/know/spec-graph.json gen rules after feature
+        know -g .ai/know/code-graph.json gen rules after module
     """
     rules_path = ctx.obj.get('rules_path') if ctx.obj else None
     rules = _load_rules(rules_path)
@@ -2238,8 +2650,8 @@ def rules_graph(ctx):
     """Visualize the high-level dependency graph structure
 
     Examples:
-        know -g .ai/spec-graph.json gen rules graph
-        know -g .ai/code-graph.json gen rules graph
+        know -g .ai/know/spec-graph.json gen rules graph
+        know -g .ai/know/code-graph.json gen rules graph
     """
     rules_path = ctx.obj.get('rules_path') if ctx.obj else None
     rules = _load_rules(rules_path)
@@ -2470,7 +2882,7 @@ def feature_validate_contracts(ctx, feature_filter, json_output):
 @click.argument('feature_name')
 @click.option('--since', help='Override baseline (YYYY-MM-DD or commit SHA)')
 @click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
-@click.option('--code-graph', '-c', default='.ai/code-graph.json', help='Code graph path')
+@click.option('--code-graph', '-c', default='.ai/know/code-graph.json', help='Code graph path')
 @click.pass_context
 def feature_validate(ctx, feature_name, since, json_output, code_graph):
     """Check if codebase changes warrant revisiting feature plan."""
@@ -2550,7 +2962,7 @@ def feature_validate(ctx, feature_name, since, json_output, code_graph):
 @click.argument('feature_name')
 @click.option('--since', help='Override baseline (YYYY-MM-DD or commit SHA)')
 @click.option('--auto', 'auto_tag', is_flag=True, help='Auto-tag all matching commits without prompting')
-@click.option('--code-graph', '-c', default='.ai/code-graph.json', help='Code graph path')
+@click.option('--code-graph', '-c', default='.ai/know/code-graph.json', help='Code graph path')
 @click.pass_context
 def feature_tag(ctx, feature_name, since, auto_tag, code_graph):
     """Tag commits related to a feature with git notes."""
@@ -2663,7 +3075,7 @@ def _validate_feature_completion(ctx, feature_name: str) -> dict:
     result['messages'].append(f"[green]✓ Feature has {len(implementation_refs)} implementation reference(s)[/green]")
 
     # Get code graph path from meta
-    code_graph_path = graph_data.get('meta', {}).get('code_graph_path', '.ai/code-graph.json')
+    code_graph_path = graph_data.get('meta', {}).get('code_graph_path', '.ai/know/code-graph.json')
     code_graph_file = Path(code_graph_path)
 
     if not code_graph_file.exists():
@@ -2881,12 +3293,12 @@ def feature_connect(ctx, feature_name, code_entities, component):
         sys.exit(1)
 
     # 2. Load code-graph
-    code_graph_path = graph_data.get('meta', {}).get('code_graph_path', '.ai/code-graph.json')
+    code_graph_path = graph_data.get('meta', {}).get('code_graph_path', '.ai/know/code-graph.json')
     code_graph_file = Path(code_graph_path)
 
     if not code_graph_file.exists():
         console.print(f"[red]✗ Code graph not found: {code_graph_path}[/red]")
-        console.print("[dim]  Set meta.code_graph_path in spec-graph or ensure .ai/code-graph.json exists[/dim]")
+        console.print("[dim]  Set meta.code_graph_path in spec-graph or ensure .ai/know/code-graph.json exists[/dim]")
         sys.exit(1)
 
     with open(code_graph_file, 'r') as f:
@@ -3206,7 +3618,7 @@ def feature_impact(ctx, target, json_output):
 @click.argument('feature_name')
 @click.option('--detail', is_flag=True, help='Show per-component breakdown')
 @click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
-@click.option('--code-graph', '-c', default='.ai/code-graph.json', help='Code graph path')
+@click.option('--code-graph', '-c', default='.ai/know/code-graph.json', help='Code graph path')
 @click.pass_context
 def feature_coverage(ctx, feature_name, detail, json_output, code_graph):
     """Show test coverage aggregated from feature level.
@@ -4039,7 +4451,7 @@ def init(project_dir):
     4. Creates .ai/know/ directory structure
     5. Initializes project.md with template
     6. Creates initial graphs if they don't exist
-    7. Detects and optionally sets up task management (Beads or native)
+    7. Installs graph protection hook (prevents direct file edits)
     """
     project_path = Path(project_dir).resolve()
 
@@ -4108,9 +4520,26 @@ def init(project_dir):
     # 3. Create .ai/know/ directory structure
     know_dir = project_path / ".ai" / "know"
     archive_dir = know_dir / "archive"
+    config_dir = know_dir / "config"
     know_dir.mkdir(parents=True, exist_ok=True)
     archive_dir.mkdir(parents=True, exist_ok=True)
+    config_dir.mkdir(parents=True, exist_ok=True)
     console.print(f"[green]✓[/green] Created {know_dir}")
+
+    # 3a. Copy dependency rules to local config
+    rules_source_dir = Path(__file__).parent / "config"
+    rules_copied = []
+    for rules_file in ["dependency-rules.json", "code-dependency-rules.json"]:
+        source = rules_source_dir / rules_file
+        dest = config_dir / rules_file
+        if source.exists():
+            if dest.exists():
+                console.print(f"[dim]  {rules_file} already exists locally[/dim]")
+            else:
+                shutil.copy2(source, dest)
+                rules_copied.append(rules_file)
+    if rules_copied:
+        console.print(f"[green]✓[/green] Copied rules: {', '.join(rules_copied)}")
 
     # 4. Initialize project.md
     project_md = know_dir / "project.md"
@@ -4125,8 +4554,8 @@ def init(project_dir):
         console.print(f"[yellow]⚠[/yellow] {project_md} already exists")
 
     # 5. Check for graphs
-    spec_graph = project_path / ".ai" / "spec-graph.json"
-    code_graph = project_path / ".ai" / "code-graph.json"
+    spec_graph = know_dir / "spec-graph.json"
+    code_graph = know_dir / "code-graph.json"
 
     if spec_graph.exists():
         console.print(f"[green]✓[/green] spec-graph.json exists")
@@ -4137,6 +4566,66 @@ def init(project_dir):
         console.print(f"[green]✓[/green] code-graph.json exists")
     else:
         console.print(f"[dim]  code-graph.json not found (optional)[/dim]")
+
+    # 6. Install graph protection hook
+    hooks_source = Path(__file__).parent / "templates" / "hooks"
+    hooks_dest = project_path / ".claude" / "hooks"
+
+    if hooks_source.exists():
+        hooks_dest.mkdir(parents=True, exist_ok=True)
+
+        # Copy hook script
+        hook_script = "protect-graph-files.sh"
+        hook_source_file = hooks_source / hook_script
+        hook_dest_file = hooks_dest / hook_script
+
+        if hook_source_file.exists():
+            shutil.copy2(hook_source_file, hook_dest_file)
+            hook_dest_file.chmod(0o755)  # Make executable
+            console.print(f"[green]✓[/green] Installed graph protection hook")
+
+            # Update settings.json to configure the hook
+            settings_file = project_path / ".claude" / "settings.json"
+
+            if settings_file.exists():
+                with open(settings_file, 'r') as f:
+                    settings = json.load(f)
+            else:
+                settings = {}
+
+            # Add hook configuration
+            if 'hooks' not in settings:
+                settings['hooks'] = {}
+
+            if 'PreToolUse' not in settings['hooks']:
+                settings['hooks']['PreToolUse'] = []
+
+            # Check if hook already configured
+            hook_exists = any(
+                hook.get('hooks', [{}])[0].get('command', '').endswith('protect-graph-files.sh')
+                for hook in settings['hooks']['PreToolUse']
+                if isinstance(hook, dict) and 'hooks' in hook
+            )
+
+            if not hook_exists:
+                settings['hooks']['PreToolUse'].append({
+                    "matcher": "Read|Edit|Write",
+                    "hooks": [{
+                        "type": "command",
+                        "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/protect-graph-files.sh"
+                    }]
+                })
+
+                with open(settings_file, 'w') as f:
+                    json.dump(settings, f, indent=2)
+
+                console.print(f"[green]✓[/green] Configured hook in settings.json")
+            else:
+                console.print(f"[dim]  Graph protection hook already configured[/dim]")
+        else:
+            console.print(f"[yellow]⚠[/yellow] Hook script not found: {hook_source_file}")
+    else:
+        console.print(f"[yellow]⚠[/yellow] Hooks template directory not found: {hooks_source}")
 
     console.print(f"\n[bold green]✓ Initialization complete![/bold green]")
     console.print(f"\n[dim]Next steps:[/dim]")

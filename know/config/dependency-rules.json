@@ -1,13 +1,11 @@
 {
   "allowed_dependencies": {
-    "project": ["requirement", "user"],
-    "requirement": ["interface", "component"],
-    "interface": ["feature"],
+    "project": ["user"],
+    "user": ["objective"],
+    "objective": ["feature"],
     "feature": ["action"],
     "action": ["component"],
-    "component": ["operation"],
-    "user": ["objective", "requirement"],
-    "objective": ["action", "feature"]
+    "component": ["operation"]
   },
   "reference_dependency_rule": {
     "description": "References (terminal nodes) can be dependencies of ANY entity type",
@@ -22,7 +20,8 @@
       "terminology", "sequence", "mapping", "default", "security-spec",
       "source-file", "external-dep", "api-surface", "product-component", "signature",
       "execution-trace", "call-graph", "control-flow", "data-flow",
-      "side-effect", "error-path", "code-module", "test-spec"
+      "side-effect", "error-path", "code-module", "test-spec",
+      "requirement", "interface"
     ],
     "validation": "References are always valid dependencies and bypass entity-to-entity dependency rules",
     "examples": [
@@ -81,13 +80,15 @@
     "side-effect": "Observable effects beyond return values: file I/O, state changes, process spawning",
     "error-path": "Exception handling, error propagation, and recovery strategies",
     "code-module": "Cross-reference to code-level modules in code-graph.json",
-    "test-spec": "Reusable test specification that may apply to multiple components"
+    "test-spec": "Reusable test specification that may apply to multiple components",
+    "requirement": "Functional or non-functional specification that the system must satisfy",
+    "interface": "User interface screen or page in the application"
   },
   "reference_note": {
     "purpose": "References are terminal graph nodes used for template generation and detailed specifications",
     "schema": "Each reference category uses a flat, but flexible schema tailored to its specific needs",
     "naming": "Reference keys use plaintext naming (not key_object_notation) for final nodes",
-    "usage": "'How' entities in the graph can reference these nodes for implementation details and specifications",
+    "usage": "Entities in the graph can reference these nodes for implementation details and specifications",
     "dependency_rule": "References can be dependencies of ANY entity type (see reference_dependency_rule)",
     "design_keys": [
       "colors-css",
@@ -250,14 +251,12 @@
   },
   "entity_description": {
     "project": "Top-level container representing the entire software project or system",
-    "requirement": "Functional or non-functional specification that the system must satisfy",
-    "interface": "User interface screen or page in the application",
-    "feature": "Distinct functionality or capability provided to users",
-    "component": "Reusable building block of the system architecture",
-    "operation": "Logic and state management for component interactions",
     "user": "Actor or role that interacts with the system",
     "objective": "High-level goal or outcome that users want to achieve",
-    "action": "Specific user action connected to an objective"
+    "feature": "Distinct functionality or capability provided to users",
+    "action": "Specific user action connected to an objective",
+    "component": "Reusable building block of the system architecture",
+    "operation": "Logic and state management for component interactions"
   },
   "entity_note": {
     "purpose": "provide containers for references and relationship structure",
@@ -267,7 +266,6 @@
   "notes":{
     "names": "reference and entity keys use snake case, use - for keys, not _",
     "schema": "Do not use id, the parent key is the unique identifier",
-    "what": ["project","user","objective","action"],
-    "how": ["project","requirement","interface","feature","component","operation"]
+    "chain": ["project","user","objective","feature","action","component","operation"]
   }
 }

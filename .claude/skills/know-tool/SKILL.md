@@ -7,7 +7,7 @@ description: Master the know CLI tool for managing specification graphs. Use whe
 
 ## What is the Specification Graph?
 
-The specification graph (`.ai/spec-graph.json`) is a directed acyclic graph (DAG) representing software systems as interconnected nodes with explicit dependencies. Everything is a node, relationships are explicit, nothing is implied.
+The specification graph (`.ai/know/spec-graph.json`) is a directed acyclic graph (DAG) representing software systems as interconnected nodes with explicit dependencies. Everything is a node, relationships are explicit, nothing is implied.
 
 **Three node types:**
 
