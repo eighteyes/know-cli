@@ -227,7 +227,7 @@ def add_item(ctx, type_name, key, data, json_file, skip_validation):
 @cli.group(context_settings=CONTEXT_SETTINGS)
 @click.pass_context
 def meta(ctx):
-    """Get and set meta sections (project, phases, decisions, etc.)"""
+    """Get, set, and delete meta sections (project, phases, decisions, etc.)"""
     pass
 
 
@@ -312,6 +312,67 @@ def meta_set(ctx, section, key, data, json_file):
     ctx.obj['graph'].save_graph(graph_data)
 
     console.print(f"[green]✓ Set meta.{section}.{key}[/green]")
+
+
+@meta.command(name='delete')
+@click.argument('section')
+@click.argument('key')
+@click.option('--yes', '-y', is_flag=True, help='Skip confirmation')
+@click.pass_context
+def meta_delete(ctx, section, key, yes):
+    """Delete a key from a meta section
+
+    Examples:
+        know meta delete phases I                    # Delete phase I
+        know meta delete requirements auth-login     # Delete requirement
+        know meta delete deprecated component:old    # Undeprecate entity
+        know meta delete decisions caching-approach  # Delete decision
+        know meta delete phases II -y                # Skip confirmation
+    """
+    graph_data = ctx.obj['graph'].load()
+
+    # Check if section exists
+    if 'meta' not in graph_data:
+        console.print("[yellow]No meta section in graph[/yellow]")
+        return
+
+    if section not in graph_data['meta']:
+        console.print(f"[yellow]No '{section}' section in meta[/yellow]")
+        return
+
+    # Check if key exists
+    if key not in graph_data['meta'][section]:
+        console.print(f"[yellow]Key '{key}' not found in meta.{section}[/yellow]")
+        return
+
+    # Show what will be deleted
+    console.print(f"\n[bold]Deleting meta.{section}.{key}:[/bold]")
+    rprint(graph_data['meta'][section][key])
+    console.print()
+
+    # Confirm deletion
+    if not yes:
+        if not click.confirm(f"Delete meta.{section}.{key}?"):
+            console.print("[dim]Cancelled[/dim]")
+            return
+
+    # Delete the key
+    del graph_data['meta'][section][key]
+
+    # If section is now empty, optionally remove it
+    if not graph_data['meta'][section]:
+        console.print(f"[dim]Section '{section}' is now empty[/dim]")
+        if yes or click.confirm(f"Remove empty section meta.{section}?"):
+            del graph_data['meta'][section]
+            console.print(f"[green]✓ Deleted meta.{section}.{key} and removed empty section[/green]")
+        else:
+            # Save with empty section
+            ctx.obj['graph'].save_graph(graph_data)
+            console.print(f"[green]✓ Deleted meta.{section}.{key} (kept empty section)[/green]")
+    else:
+        # Save graph
+        ctx.obj['graph'].save_graph(graph_data)
+        console.print(f"[green]✓ Deleted meta.{section}.{key}[/green]")
 
 
 # =============================================================================
@@ -4039,6 +4100,11 @@ def _validate_feature_completion(ctx, feature_name: str) -> dict:
 def feature_review(ctx, feature_name, skip_validation, check_only):
     """Review feature for completion: validate graph linkage and check QA readiness.
 
+    Examples:
+        know feature review auth
+        know feature review checkout --check-only
+        know feature review auth --skip-validation
+
     Shows comprehensive readiness status including:
     - Implementation linkage (spec ↔ code graph)
     - QA readiness (QA_STEPS.md, review status)
@@ -4316,7 +4382,12 @@ def feature_connect(ctx, feature_name, code_entities, component):
 @click.option('--auto', 'auto_tag', is_flag=True, help='Auto-tag all commits without prompting')
 @click.pass_context
 def feature_done(ctx, feature_name, skip_todos, skip_archive, auto_tag):
-    """Complete a feature: tag commits, update phase, optionally archive."""
+    """Complete a feature: tag commits, update phase, optionally archive.
+
+    Examples:
+        know feature done auth
+        know feature done checkout --auto
+        know feature done auth --skip-archive"""
     import re
     import shutil
     from src.feature_tracker import FeatureTracker

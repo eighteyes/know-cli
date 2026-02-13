@@ -69,7 +69,7 @@ Know CLI uses a flat structure with auto-detection:
 | `know link <from> <to>` | Add dependency (top-level shortcut) |
 | `know unlink <from> <to>` | Remove dependency (top-level shortcut) |
 | `know nodes` | Node operations: deprecate, merge, rename, delete, cut, clone, update |
-| `know meta get/set` | Get or set meta sections |
+| `know meta` | Get, set, and delete meta sections (project, phases, decisions) |
 | `know graph` | Traverse, uses, used-by, connect, clean, suggest, diff, migrate |
 | `know check` | Validate, health, stats, gaps, orphans, cycles, completeness |
 | `know gen` | Specs, feature-specs, docs, traces, rules, codemap, code-graph, sitemap |
@@ -138,6 +138,8 @@ know add feature new-feature '{"name":"...", "description":"..."}'       # Add e
 know add documentation new-doc '{"title":"...", "url":"..."}'            # Add reference (auto-detects)
 know meta set project key '{"value":"..."}'                              # Set meta value
 know meta get project                                                    # Get meta section
+know meta delete phases I                                                # Delete meta key (prompts)
+know meta delete requirements auth-login -y                              # Delete meta key (skip prompt)
 know link feature:analytics action:export-report     # Add dependency
 know unlink feature:analytics action:export-report   # Remove dependency
 ```
