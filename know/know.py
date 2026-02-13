@@ -1298,7 +1298,13 @@ def unlink(ctx, from_entity, to_entity, yes):
               help='Show all dependencies or just direct ones')
 @click.pass_context
 def graph_uses(ctx, entity_path, recursive):
-    """Show what an entity uses (its dependencies)"""
+    """Show what an entity uses (its dependencies)
+
+    Examples:
+        know graph uses feature:auth
+        know graph uses feature:auth --direct
+        know graph uses component:login-form --recursive
+    """
     deps = ctx.obj['graph'].find_dependencies(entity_path, recursive)
 
     if not deps:
@@ -1330,7 +1336,13 @@ def graph_up(ctx, entity_path, recursive):
               help='Show all dependents or just direct ones')
 @click.pass_context
 def graph_used_by(ctx, entity_path, recursive):
-    """Show what uses this entity (dependents)"""
+    """Show what uses this entity (dependents)
+
+    Examples:
+        know graph used-by component:auth-handler
+        know graph used-by action:login --direct
+        know graph used-by data-model:user-profile
+    """
     deps = ctx.obj['graph'].find_dependents(entity_path, recursive)
 
     if not deps:
@@ -1361,7 +1373,12 @@ def graph_down(ctx, entity_path, recursive):
 @click.option('--max', '-m', default=5, help='Maximum suggestions per type')
 @click.pass_context
 def graph_connect(ctx, entity_id, max):
-    """Suggest valid connections for an entity (formerly 'suggest')"""
+    """Suggest valid connections for an entity (formerly 'suggest')
+
+    Examples:
+        know graph connect feature:auth
+        know graph connect component:api-client --max 10
+    """
     suggestions = ctx.obj['deps'].suggest_connections(entity_id, max)
 
     if not suggestions:
@@ -1381,7 +1398,12 @@ def graph_connect(ctx, entity_id, max):
 @graph.command(name='build-order')
 @click.pass_context
 def graph_build_order(ctx):
-    """Show topological build order"""
+    """Show topological build order
+
+    Examples:
+        know graph build-order
+        know -g .ai/know/code-graph.json graph build-order
+    """
     order = ctx.obj['deps'].topological_sort()
 
     if not order:
@@ -1863,7 +1885,12 @@ def check(ctx):
 @check.command(name='validate')
 @click.pass_context
 def check_validate(ctx):
-    """Validate graph structure and dependencies"""
+    """Validate graph structure and dependencies
+
+    Examples:
+        know check validate
+        know -g .ai/know/code-graph.json check validate
+    """
     # Run comprehensive validation
     is_valid, results = ctx.obj['validator'].validate_all()
 
@@ -1902,7 +1929,11 @@ def check_validate(ctx):
 @check.command(name='health')
 @click.pass_context
 def check_health(ctx):
-    """Comprehensive graph health check"""
+    """Comprehensive graph health check
+
+    Examples:
+        know check health
+    """
     console.print("[bold]Running health checks...[/bold]\n")
 
     # Validation
@@ -1948,7 +1979,12 @@ def check_health(ctx):
 @check.command(name='stats')
 @click.pass_context
 def check_stats(ctx):
-    """Show graph statistics"""
+    """Show graph statistics
+
+    Examples:
+        know check stats
+        know -g .ai/know/code-graph.json check stats
+    """
     graph_data = ctx.obj['graph'].load()
     stats = get_graph_stats(graph_data)
 
@@ -1975,7 +2011,12 @@ def check_stats(ctx):
 @click.argument('entity_id')
 @click.pass_context
 def check_completeness(ctx, entity_id):
-    """Check completeness score for an entity"""
+    """Check completeness score for an entity
+
+    Examples:
+        know check completeness feature:auth
+        know check completeness component:api-client
+    """
     score = ctx.obj['validator'].get_completeness_score(entity_id)
 
     if score['total'] == 0:
@@ -1994,7 +2035,11 @@ def check_completeness(ctx, entity_id):
 @check.command(name='cycles')
 @click.pass_context
 def check_cycles(ctx):
-    """Detect circular dependencies"""
+    """Detect circular dependencies
+
+    Examples:
+        know check cycles
+    """
     cycles = ctx.obj['deps'].detect_cycles()
 
     if not cycles:
@@ -2012,7 +2057,11 @@ def check_cycles(ctx):
 @check.command(name='orphans')
 @click.pass_context
 def check_orphans(ctx):
-    """Find orphaned references"""
+    """Find orphaned references
+
+    Examples:
+        know check orphans
+    """
     from src.reference_tools import ReferenceManager
 
     ref_mgr = ReferenceManager(ctx.obj['graph'], ctx.obj['entities'], ctx.obj['deps'])
@@ -2038,7 +2087,11 @@ def check_orphans(ctx):
 @check.command(name='usage')
 @click.pass_context
 def check_link_usage(ctx):
-    """Show reference usage statistics"""
+    """Show reference usage statistics
+
+    Examples:
+        know check usage
+    """
     from src.reference_tools import ReferenceManager
 
     ref_mgr = ReferenceManager(ctx.obj['graph'], ctx.obj['entities'], ctx.obj['deps'])
@@ -2119,7 +2172,13 @@ def graph_suggest(ctx, max):
 @click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
 @click.pass_context
 def check_link_gap_analysis(ctx, entity_id, json_output):
-    """Analyze implementation gaps in dependency chains"""
+    """Analyze implementation gaps in dependency chains
+
+    Examples:
+        know check gap-analysis feature:auth
+        know check gap-analysis
+        know check gap-analysis feature:checkout --json
+    """
     from src.gap_analysis import GapAnalyzer, ChainStatus
 
     analyzer = GapAnalyzer(ctx.obj['graph'], ctx.obj['entities'], ctx.obj['deps'])
@@ -2167,7 +2226,11 @@ def check_link_gap_analysis(ctx, entity_id, json_output):
 @check.command(name='gap-missing')
 @click.pass_context
 def check_link_gap_missing(ctx):
-    """List missing connections in dependency chains"""
+    """List missing connections in dependency chains
+
+    Examples:
+        know check gap-missing
+    """
     from src.gap_analysis import GapAnalyzer
 
     analyzer = GapAnalyzer(ctx.obj['graph'], ctx.obj['entities'], ctx.obj['deps'])
@@ -2187,7 +2250,11 @@ def check_link_gap_missing(ctx):
 @check.command(name='gap-summary')
 @click.pass_context
 def check_link_gap_summary(ctx):
-    """Show implementation summary"""
+    """Show implementation summary
+
+    Examples:
+        know check gap-summary
+    """
     from src.gap_analysis import GapAnalyzer
 
     analyzer = GapAnalyzer(ctx.obj['graph'], ctx.obj['entities'], ctx.obj['deps'])
@@ -2316,7 +2383,13 @@ def gen_spec(ctx, entity_id, format):
               help='Output format')
 @click.pass_context
 def gen_feature_spec(ctx, feature_id, output, format):
-    """Generate detailed feature specification"""
+    """Generate detailed feature specification
+
+    Examples:
+        know gen feature-spec feature:auth
+        know gen feature-spec feature:checkout -o spec.md
+        know gen feature-spec feature:auth --format xml
+    """
     generator = ctx.obj['generator']
 
     if format == 'xml':
@@ -2704,7 +2777,12 @@ See [plan.md](./plan.md) for detailed architecture.
 @click.option('--output', '-o', help='Output file path')
 @click.pass_context
 def gen_sitemap(ctx, output):
-    """Generate sitemap of all interfaces"""
+    """Generate sitemap of all interfaces
+
+    Examples:
+        know gen sitemap
+        know gen sitemap -o .ai/know/sitemap.md
+    """
     sitemap_text = ctx.obj['generator'].generate_sitemap()
 
     if output:
@@ -3362,6 +3440,168 @@ def feature(ctx):
     pass
 
 
+@feature.command(name='status')
+@click.argument('feature_id')
+@click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
+@click.pass_context
+def feature_status(ctx, feature_id, json_output):
+    """Show feature lifecycle status (planned, implemented, reviewed)
+
+    Virtual flags computed from graph state:
+    - planned: Feature exists in meta.phases
+    - implemented: Code-graph links exist for this feature
+    - reviewed: Git commit with [feature:id] merged to main
+
+    Examples:
+        know feature status feature:auth
+        know feature status auth             # Auto-detects feature: prefix
+        know feature status auth --json
+    """
+    import subprocess
+    from pathlib import Path
+
+    # Auto-add feature: prefix if missing
+    if not feature_id.startswith('feature:'):
+        feature_id = f'feature:{feature_id}'
+
+    graph = ctx.obj['graph']
+    graph_data = graph.load()
+
+    # === CHECK PLANNED ===
+    # Feature exists in meta.phases (any phase)
+    phases = graph_data.get('meta', {}).get('phases', {})
+    planned = False
+    current_phase = None
+    phase_status = None
+
+    for phase_name, phase_features in phases.items():
+        if feature_id in phase_features:
+            planned = True
+            current_phase = phase_name
+            phase_data = phase_features[feature_id]
+            if isinstance(phase_data, dict):
+                phase_status = phase_data.get('status', 'unknown')
+            break
+
+    # === CHECK IMPLEMENTED ===
+    # Code-graph links exist for this feature
+    implemented = False
+    code_modules = []
+
+    # Check if feature has implementation references
+    feature_deps = graph_data.get('graph', {}).get(feature_id, {}).get('depends_on', [])
+    impl_refs = [d for d in feature_deps if d.startswith('implementation:')]
+
+    if impl_refs:
+        # Get code graph path from meta
+        code_graph_path = graph_data.get('meta', {}).get('code_graph_path')
+        if code_graph_path:
+            code_graph_path = Path(code_graph_path)
+            if code_graph_path.exists():
+                with open(code_graph_path, 'r') as f:
+                    code_graph_data = json.load(f)
+
+                # Check for graph-link references pointing to this feature
+                graph_links = code_graph_data.get('references', {}).get('graph-link', {})
+                for link_key, link_data in graph_links.items():
+                    if isinstance(link_data, dict):
+                        if link_data.get('feature') == feature_id:
+                            implemented = True
+                            code_modules.append(f"module:{link_key}")
+
+    # === CHECK REVIEWED ===
+    # Git commit with [feature:id] merged to main
+    reviewed = False
+    merge_commit = None
+    merge_date = None
+
+    try:
+        feature_key = feature_id.split(':', 1)[1]
+        # Search for commits with [feature:key] in message on main branch
+        result = subprocess.run(
+            ['git', 'log', '--oneline', '--grep', f'\\[{feature_id}\\]', 'main'],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            reviewed = True
+            # Get first (most recent) commit
+            first_line = result.stdout.strip().split('\n')[0]
+            merge_commit = first_line.split()[0]
+
+            # Get commit date
+            date_result = subprocess.run(
+                ['git', 'log', '-1', '--format=%ci', merge_commit],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if date_result.returncode == 0:
+                merge_date = date_result.stdout.strip()
+
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        # Git not available or timeout
+        pass
+
+    # === OUTPUT ===
+    if json_output:
+        output = {
+            'feature_id': feature_id,
+            'planned': planned,
+            'implemented': implemented,
+            'reviewed': reviewed,
+            'phase': current_phase,
+            'phase_status': phase_status,
+            'code_modules': code_modules,
+            'merge_commit': merge_commit,
+            'merge_date': merge_date
+        }
+        print(json.dumps(output, indent=2))
+    else:
+        console.print(f"\n[bold cyan]Feature Status: {feature_id}[/bold cyan]\n")
+
+        # Planned
+        planned_icon = "✅" if planned else "⏳"
+        planned_text = f"[green]Yes[/green]" if planned else "[dim]No[/dim]"
+        console.print(f"{planned_icon} [bold]Planned:[/bold] {planned_text}")
+        if planned and current_phase:
+            console.print(f"   Phase: {current_phase}")
+            if phase_status:
+                console.print(f"   Status: {phase_status}")
+
+        # Implemented
+        impl_icon = "✅" if implemented else "⏳"
+        impl_text = f"[green]Yes[/green]" if implemented else "[dim]No[/dim]"
+        console.print(f"{impl_icon} [bold]Implemented:[/bold] {impl_text}")
+        if implemented and code_modules:
+            console.print(f"   Modules: {', '.join(code_modules[:5])}")
+            if len(code_modules) > 5:
+                console.print(f"   ... and {len(code_modules) - 5} more")
+
+        # Reviewed
+        reviewed_icon = "✅" if reviewed else "⏳"
+        reviewed_text = f"[green]Yes[/green]" if reviewed else "[dim]No[/dim]"
+        console.print(f"{reviewed_icon} [bold]Reviewed:[/bold] {reviewed_text}")
+        if reviewed:
+            console.print(f"   Commit: {merge_commit}")
+            if merge_date:
+                console.print(f"   Date: {merge_date[:10]}")
+
+        # Summary
+        console.print()
+        if planned and implemented and reviewed:
+            console.print("[green]✓ Feature is fully complete![/green]")
+        elif planned and implemented:
+            console.print("[yellow]⚠ Feature implemented but not reviewed/merged[/yellow]")
+        elif planned:
+            console.print("[blue]📋 Feature planned but not implemented[/blue]")
+        else:
+            console.print("[dim]Feature not yet planned[/dim]")
+
+        console.print()
+
+
 @feature.command(name='contract')
 @click.argument('feature_name')
 @click.option('--show', is_flag=True, help='Show full contract YAML')
@@ -3450,7 +3690,12 @@ def feature_contract(ctx, feature_name, show, confidence, json_output):
 @click.option('--json', 'json_output', is_flag=True, help='Output as JSON')
 @click.pass_context
 def feature_validate_contracts(ctx, feature_filter, json_output):
-    """Validate feature contracts for drift between declared and observed."""
+    """Validate feature contracts for drift between declared and observed.
+
+    Examples:
+        know feature validate-contracts
+        know feature validate-contracts --feature auth
+        know feature validate-contracts --json"""
     from src.contract_manager import ContractManager
     from src.validation import ContractValidator
 
@@ -3529,7 +3774,12 @@ def feature_validate_contracts(ctx, feature_filter, json_output):
 @click.option('--code-graph', '-c', default='.ai/know/code-graph.json', help='Code graph path')
 @click.pass_context
 def feature_validate(ctx, feature_name, since, json_output, code_graph):
-    """Check if codebase changes warrant revisiting feature plan."""
+    """Check if codebase changes warrant revisiting feature plan.
+
+    Examples:
+        know feature validate auth
+        know feature validate checkout --since 2026-01-01
+        know feature validate auth --json"""
     from src.feature_tracker import FeatureTracker
 
     tracker = FeatureTracker(
@@ -3609,7 +3859,12 @@ def feature_validate(ctx, feature_name, since, json_output, code_graph):
 @click.option('--code-graph', '-c', default='.ai/know/code-graph.json', help='Code graph path')
 @click.pass_context
 def feature_tag(ctx, feature_name, since, auto_tag, code_graph):
-    """Tag commits related to a feature with git notes."""
+    """Tag commits related to a feature with git notes.
+
+    Examples:
+        know feature tag auth
+        know feature tag checkout --auto
+        know feature tag auth --since abc123f"""
     from src.feature_tracker import FeatureTracker
 
     tracker = FeatureTracker(
@@ -4395,7 +4650,12 @@ def phases(ctx):
 @phases.command(name='list')
 @click.pass_context
 def phases_list(ctx):
-    """Show all phases with their entities grouped by phase"""
+    """Show all phases with their entities grouped by phase
+
+    Examples:
+        know phases
+        know phases list
+    """
     import re
     import subprocess
     from pathlib import Path
@@ -4533,8 +4793,56 @@ def phases_list(ctx):
             else:
                 task_display = ""
 
+            # Check virtual status flags (planned, implemented, reviewed)
+            virtual_status = []
+
+            # Planned: always true if in phases
+            virtual_status.append("📋")
+
+            # Implemented: check for code-graph links
+            if entity_type == 'feature':
+                implemented = False
+                feature_deps = graph_data.get('graph', {}).get(entity_id, {}).get('depends_on', [])
+                impl_refs = [d for d in feature_deps if d.startswith('implementation:')]
+
+                if impl_refs:
+                    code_graph_path = graph_data.get('meta', {}).get('code_graph_path')
+                    if code_graph_path:
+                        code_graph_path = Path(code_graph_path)
+                        if code_graph_path.exists():
+                            try:
+                                with open(code_graph_path, 'r') as f:
+                                    code_graph_data = json.load(f)
+                                graph_links = code_graph_data.get('references', {}).get('graph-link', {})
+                                for link_data in graph_links.values():
+                                    if isinstance(link_data, dict) and link_data.get('feature') == entity_id:
+                                        implemented = True
+                                        break
+                            except Exception:
+                                pass
+
+                virtual_status.append("✅" if implemented else "⏳")
+
+                # Reviewed: check for git commit with [feature:name]
+                reviewed = False
+                try:
+                    result = subprocess.run(
+                        ['git', 'log', '--oneline', '--grep', f'\\[{entity_id}\\]', 'main'],
+                        capture_output=True,
+                        text=True,
+                        timeout=2
+                    )
+                    if result.returncode == 0 and result.stdout.strip():
+                        reviewed = True
+                except Exception:
+                    pass
+
+                virtual_status.append("✅" if reviewed else "⏳")
+
+            status_display = f"[{' '.join(virtual_status)}]" if entity_type == 'feature' else ""
+
             # Print feature line
-            console.print(f"  {icon} {name:<45} {task_display}")
+            console.print(f"  {icon} {name:<45} {task_display:>8} {status_display}")
 
     # Print summary
     console.print(f"\n[bold cyan]{'━' * 80}[/bold cyan]")
@@ -4554,7 +4862,12 @@ def phases_list(ctx):
 @click.option('--status', '-s', default='build-ready', help='Lifecycle status (build-ready, in-progress, etc.)')
 @click.pass_context
 def phases_add(ctx, phase_id, entity_id, status):
-    """Add an entity to a phase"""
+    """Add an entity to a phase
+
+    Examples:
+        know phases add I feature:auth
+        know phases add II feature:checkout --status in-progress
+    """
     # Validate phase - Roman numerals only
     valid_phases = {'I', 'II', 'III', 'IV', 'V'}
     if phase_id not in valid_phases:
@@ -4619,7 +4932,12 @@ def phases_add(ctx, phase_id, entity_id, status):
 @click.option('--status', '-s', default=None, help='Update status (pending, in-progress, complete)')
 @click.pass_context
 def phases_move(ctx, entity_id, phase_id, status):
-    """Move an entity to a different phase"""
+    """Move an entity to a different phase
+
+    Examples:
+        know phases move feature:auth done
+        know phases move feature:checkout II --status in-progress
+    """
     # Validate phase - Roman numerals only
     valid_phases = {'I', 'II', 'III', 'IV', 'V'}
     if phase_id not in valid_phases:
@@ -4702,7 +5020,12 @@ def phases_move(ctx, entity_id, phase_id, status):
 @click.argument('status_value')
 @click.pass_context
 def phases_status(ctx, entity_id, status_value):
-    """Update the status of an entity in its current phase"""
+    """Update the status of an entity in its current phase
+
+    Examples:
+        know phases status feature:auth in-progress
+        know phases status feature:checkout complete
+    """
     graph_data = ctx.obj['graph'].load()
 
     if 'meta' not in graph_data or 'phases' not in graph_data['meta']:
@@ -4733,7 +5056,11 @@ def phases_status(ctx, entity_id, status_value):
 @click.argument('entity_id')
 @click.pass_context
 def phases_remove(ctx, entity_id):
-    """Remove an entity from all phases"""
+    """Remove an entity from all phases
+
+    Examples:
+        know phases remove feature:cancelled
+    """
     graph_data = ctx.obj['graph'].load()
 
     if 'meta' not in graph_data or 'phases' not in graph_data['meta']:

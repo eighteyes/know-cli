@@ -66,15 +66,17 @@ Know CLI uses a flat structure with auto-detection:
 | `know list [--type TYPE]` | List entities or references (auto-detects) |
 | `know search <pattern>` | Search all text content (supports regex) |
 | `know add <type> <key> <json>` | Add entity or reference (auto-detects) |
-| `know link <from> <to>` | Add dependency (top-level for convenience) |
-| `know unlink <from> <to>` | Remove dependency (top-level for convenience) |
-| `know nodes` | Node operations: deprecate, merge, rename, delete, cut, clone |
+| `know link <from> <to>` | Add dependency (top-level shortcut) |
+| `know unlink <from> <to>` | Remove dependency (top-level shortcut) |
+| `know nodes` | Node operations: deprecate, merge, rename, delete, cut, clone, update |
 | `know meta get/set` | Get or set meta sections |
-| `know graph` | Traverse, uses, used-by, connect, clean, suggest, build-order, diff |
-| `know check` | Validate, health, stats, gaps, orphans |
-| `know gen` | Generate specs, maps, traces, rules |
-| `know feature` | Contracts, coverage, block, complete |
-| `know phases` | Phase management |
+| `know graph` | Traverse, uses, used-by, connect, clean, suggest, diff, migrate |
+| `know check` | Validate, health, stats, gaps, orphans, cycles, completeness |
+| `know gen` | Specs, feature-specs, docs, traces, rules, codemap, code-graph, sitemap |
+| `know feature` | Lifecycle: status, connect, review, done, impact, validate, contracts, coverage |
+| `know req` | Requirements: add, list, status, block, complete |
+| `know op` | Op-level progress: start, done, next, reset, status |
+| `know phases` | Phase management: list, add, move, status, remove |
 | `know init` | Initialize know workflow (installs graph protection hooks) |
 
 ## Using know gen rules Commands
@@ -147,15 +149,38 @@ know check health                   # Comprehensive check
 know check cycles                   # Find circular dependencies
 ```
 
-### Requirements Management
+### Requirements (`know req`)
 ```bash
-know feature block <requirement-id> --by "reason"   # Mark requirement blocked
-know feature complete <requirement-id>              # Mark requirement complete
+know req list feature:auth              # List requirements with status
+know req add feature:auth req-name '{"description":"..."}' # Add requirement
+know req status feature:auth req-name in-progress          # Update status
+know req block feature:auth req-name --by "reason"         # Mark blocked
+know req complete feature:auth req-name                    # Mark complete
 ```
 
-**Requirement status values:** pending, in-progress, blocked, complete, verified
+**Status values:** pending, in-progress, blocked, complete, verified
 
-Requirements are managed through `meta.requirements` in the graph. Use `know meta get requirements` to view all.
+### Op-Level Progress (`know op`)
+```bash
+know op status feature:auth             # Show op status for a feature
+know op next feature:auth               # Print the next op number
+know op start feature:auth              # Mark current op as in-progress
+know op done feature:auth               # Mark current op as complete with commits
+know op reset feature:auth              # Reset an op to pending
+```
+
+### Feature Lifecycle (`know feature`)
+```bash
+know feature connect feature:auth       # Create bidirectional spec ↔ code linkage
+know feature review feature:auth        # Review for completion: validate graph, check coverage
+know feature done feature:auth          # Complete: tag commits, update phase, archive
+know feature impact entity:x            # Show features depending on an entity or file
+know feature validate feature:auth      # Check if codebase changes warrant revisiting
+know feature contract feature:auth      # Display contract info
+know feature validate-contracts         # Validate for drift between contracts
+know feature coverage feature           # Aggregate coverage from feature level
+know feature coverage feature --detail  # Per-component breakdown
+```
 
 ### Node Operations (`know nodes`)
 ```bash
@@ -192,13 +217,7 @@ know unlink feature:x action:y -y    # Skip confirmation
 
 **Important:** All destructive operations (`delete`, `cut`, `rename`, `merge`, `unlink`) now show detailed confirmation prompts by default. Use `-y` or `--yes` to skip confirmation in scripts.
 
-### Test Coverage
-```bash
-know feature coverage feature           # Aggregate coverage from feature level
-know feature coverage feature --detail  # Per-component breakdown
-```
-
-**Note:** Validation errors now include example fix commands. For example:
+**Note:** Validation errors include fix commands. For example:
 ```
 ✗ Invalid dependency: feature:x → component:y. feature can only depend on: action
   Fix: know unlink feature:x component:y
@@ -215,25 +234,29 @@ know graph suggest                 # Suggest connections for orphaned references
 know graph clean                   # Clean up unused references (dry run)
 know graph clean --remove --execute # Actually remove unused references
 know graph build-order             # Topological sort
-know gen trace entity:x            # Trace entity across product-code boundary
 know graph connect entity:x        # Suggest valid connections for an entity
 ```
 
-### Specification Generation
+### Generation (`know gen`)
 ```bash
-know gen spec entity:x              # Generate complete spec deterministically
+know gen spec entity:x              # Generate spec for a single entity
+know gen feature-spec feature:x     # Generate detailed feature specification
+know gen docs feature:x             # Generate .md files from graph for a feature
+know gen trace entity:x             # Trace entity across product-code boundary
 know gen trace-matrix               # Show requirement traceability matrix
 know gen trace-matrix -t component  # Trace specific entity type
 know gen sitemap                    # Generate sitemap of all interfaces
+know gen codemap                    # Generate code structure map
+know gen code-graph                 # Generate code-graph from codemap
 ```
 
-**`know gen spec` produces comprehensive output:**
-- Phase and status information
-- Auto-generated user story (As a [user], I want to [action] so that [objective])
-- Full traceability chain (user → objective → feature → component)
-- Dependencies grouped by type with descriptions
-- Requirements list with status icons
-- Related references (data-models, business_logic, etc.)
+### Migration (`know graph migrate`)
+```bash
+know graph migrate                  # Check graph structure against current rules
+know graph migrate --format json    # Structured output for LLM consumption
+know graph migrate-rules /path/to/new-rules.json  # Analyze impact of rules change
+know graph migrate-rules /path/to/new-rules.json --format json --verbose
+```
 
 ### Advanced
 ```bash
@@ -360,14 +383,70 @@ Phase III (Polish)
 
 **Note:** "--" indicates no requirements exist yet for that feature.
 
+## Feature Status Tracking
+
+**Virtual flags** computed from graph state (not stored, derived):
+
+```bash
+know feature status feature:auth        # Show all three status flags
+know phases list                        # Shows status icons inline
+```
+
+### Status Flags
+
+1. **📋 Planned** - Feature exists in `meta.phases` (any phase)
+   - Set by: `/know:add` or `/know:plan` adding to phases
+   - Computed: Check if feature_id in any phase
+
+2. **✅ Implemented** - Code-graph links exist for this feature
+   - Set by: `/know:build` creating bidirectional spec↔code links
+   - Computed: Check for `graph-link` references pointing to this feature
+   - Auto-detected via graph traversal
+
+3. **✅ Reviewed** - Git commit with `[feature:id]` merged to main
+   - Set by: Merging to main with feature tag in commit message
+   - Computed: `git log --grep "\[feature:auth\]" main`
+   - Pattern: `feat: implement auth [feature:auth]` in commit message
+
+### Workflow Integration
+
+```bash
+/know:add     → meta.phases[pending][feature:x]   → 📋 planned
+/know:build   → creates graph-links               → ✅ implemented
+git merge     → [feature:x] in commit msg         → ✅ reviewed
+/know:done    → removes from phases, archives     → done
+```
+
+### Example Output
+
+```
+$ know feature status feature:auth
+
+Feature Status: feature:auth
+
+✅ Planned: Yes
+   Phase: I
+   Status: in-progress
+
+✅ Implemented: Yes
+   Modules: module:auth-handler, module:session-store
+
+✅ Reviewed: Yes
+   Commit: abc123f
+   Date: 2026-02-13
+
+✓ Feature is fully complete!
+```
+
+**Important:** Always include `[feature:name]` in merge commit messages to enable automatic reviewed status detection.
+
 ## Requirements vs Todo.md
 
 **Requirements replace todo.md** for progress tracking:
 - Requirements are stored in `meta.requirements`
 - Each feature links to requirement entities via depends_on
-- Status tracked in `meta.requirements[key].status`
-- Query requirements: `know meta get requirements`
-- Update status: `know feature complete <req-id>` or `know feature block <req-id> --by "reason"`
+- Manage with `know req` commands (add, list, status, block, complete)
+- Query all: `know req list feature:x` or `know meta get requirements`
 
 ## Implementation Patterns
 
