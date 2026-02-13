@@ -39,10 +39,8 @@ class SectionedGroup(click.Group):
         super().__init__(*args, **kwargs)
         self.section_commands = {
             'Initialization': ['init'],
-            'Graph Management': ['add', 'get', 'list', 'graph', 'check', 'gen'],
-            'Feature Lifecycle': ['feature'],
-            'Project Planning': ['phases', 'req', 'op', 'meta'],
-            'Maintenance': ['nodes'],
+            'Graph': ['add', 'get', 'list', 'search', 'link', 'unlink', 'graph', 'check', 'gen', 'nodes'],
+            'Project': ['feature', 'phases', 'req', 'op', 'meta'],
         }
 
     def format_commands(self, ctx, formatter):
@@ -70,7 +68,7 @@ class SectionedGroup(click.Group):
                 unassigned.append((name, cmd))
 
         # Format sections
-        for section in ['Initialization', 'Graph Management', 'Feature Lifecycle', 'Project Planning', 'Maintenance']:
+        for section in ['Initialization', 'Graph', 'Project']:
             if section in sections:
                 with formatter.section(section):
                     self._format_command_list(formatter, sections[section])
@@ -471,6 +469,222 @@ def list_items(ctx, type_filter):
                     table.add_row("", key, "")
 
         console.print(table)
+
+
+@cli.command(name='search')
+@click.argument('pattern')
+@click.option('--regex', '-r', is_flag=True, help='Treat pattern as regex')
+@click.option('--case-sensitive', '-c', is_flag=True, help='Case-sensitive search')
+@click.option('--section', '-s', type=click.Choice(['entities', 'references', 'meta', 'all']),
+              default='all', help='Section to search')
+@click.option('--field', '-f', help='Specific field to search (name, description, etc.)')
+@click.pass_context
+def search(ctx, pattern, regex, case_sensitive, section, field):
+    """Search through all text content in the graph
+
+    Searches entity names, descriptions, and all text fields in the graph.
+    Supports plain text and regex patterns.
+
+    Examples:
+        know search "authentication"              # Plain text search
+        know search "auth.*login" --regex         # Regex search
+        know search "API" --section references    # Search only references
+        know search "user" --field description    # Search only descriptions
+        know search "Feature.*" -rc               # Regex, case-sensitive
+    """
+    import re
+
+    graph_data = ctx.obj['graph'].load()
+
+    # Compile pattern
+    if regex:
+        try:
+            flags = 0 if case_sensitive else re.IGNORECASE
+            compiled_pattern = re.compile(pattern, flags)
+        except re.error as e:
+            console.print(f"[red]✗ Invalid regex pattern: {e}[/red]")
+            sys.exit(1)
+    else:
+        # Plain text search - escape regex special chars and use simple match
+        if case_sensitive:
+            compiled_pattern = re.compile(re.escape(pattern))
+        else:
+            compiled_pattern = re.compile(re.escape(pattern), re.IGNORECASE)
+
+    results = {'entities': [], 'references': [], 'meta': []}
+
+    def search_dict(data, path=""):
+        """Recursively search through dictionary values"""
+        matches = []
+        if isinstance(data, dict):
+            for key, value in data.items():
+                current_path = f"{path}.{key}" if path else key
+
+                # Check if we should search this field
+                if field and key != field:
+                    # If field filter is set and this isn't the field, skip (unless nested)
+                    if isinstance(value, (dict, list)):
+                        matches.extend(search_dict(value, current_path))
+                    continue
+
+                if isinstance(value, str):
+                    if compiled_pattern.search(value):
+                        matches.append({
+                            'field': current_path,
+                            'value': value,
+                            'match': compiled_pattern.search(value).group(0)
+                        })
+                elif isinstance(value, (dict, list)):
+                    matches.extend(search_dict(value, current_path))
+        elif isinstance(data, list):
+            for i, item in enumerate(data):
+                current_path = f"{path}[{i}]"
+                if isinstance(item, str):
+                    if compiled_pattern.search(item):
+                        matches.append({
+                            'field': current_path,
+                            'value': item,
+                            'match': compiled_pattern.search(item).group(0)
+                        })
+                elif isinstance(item, (dict, list)):
+                    matches.extend(search_dict(item, current_path))
+        return matches
+
+    # Search entities
+    if section in ['entities', 'all']:
+        entities = graph_data.get('entities', {})
+        for entity_type, entities_of_type in entities.items():
+            for entity_key, entity_data in entities_of_type.items():
+                entity_id = f"{entity_type}:{entity_key}"
+
+                # Check entity ID itself
+                if compiled_pattern.search(entity_id):
+                    results['entities'].append({
+                        'id': entity_id,
+                        'field': 'id',
+                        'value': entity_id,
+                        'match': compiled_pattern.search(entity_id).group(0)
+                    })
+
+                # Search entity data
+                matches = search_dict(entity_data)
+                for match in matches:
+                    results['entities'].append({
+                        'id': entity_id,
+                        'field': match['field'],
+                        'value': match['value'],
+                        'match': match['match']
+                    })
+
+    # Search references
+    if section in ['references', 'all']:
+        references = graph_data.get('references', {})
+        for ref_type, refs_of_type in references.items():
+            for ref_key, ref_data in refs_of_type.items():
+                ref_id = f"{ref_type}:{ref_key}"
+
+                # Check reference ID itself
+                if compiled_pattern.search(ref_id):
+                    results['references'].append({
+                        'id': ref_id,
+                        'field': 'id',
+                        'value': ref_id,
+                        'match': compiled_pattern.search(ref_id).group(0)
+                    })
+
+                # Search reference data
+                matches = search_dict(ref_data)
+                for match in matches:
+                    results['references'].append({
+                        'id': ref_id,
+                        'field': match['field'],
+                        'value': match['value'],
+                        'match': match['match']
+                    })
+
+    # Search meta
+    if section in ['meta', 'all']:
+        meta = graph_data.get('meta', {})
+        matches = search_dict(meta, 'meta')
+        for match in matches:
+            results['meta'].append({
+                'field': match['field'],
+                'value': match['value'],
+                'match': match['match']
+            })
+
+    # Display results
+    total_matches = sum(len(v) for v in results.values())
+
+    if total_matches == 0:
+        console.print(f"[yellow]No matches found for '{pattern}'[/yellow]")
+        return
+
+    mode = "regex" if regex else "text"
+    sensitivity = "case-sensitive" if case_sensitive else "case-insensitive"
+    console.print(f"\n[bold cyan]Search Results:[/bold cyan] {total_matches} matches for '{pattern}' ({mode}, {sensitivity})\n")
+
+    # Display entities results
+    if results['entities']:
+        console.print(f"[bold]Entities ({len(results['entities'])} matches):[/bold]")
+        for result in results['entities']:
+            console.print(f"  [green]{result['id']}[/green]")
+            console.print(f"    field: [cyan]{result['field']}[/cyan]")
+
+            # Truncate long values
+            value = result['value']
+            if len(value) > 100:
+                value = value[:100] + "..."
+
+            # Highlight match in value
+            match = result['match']
+            if match in value:
+                highlighted = value.replace(match, f"[yellow]{match}[/yellow]")
+                console.print(f"    match: {highlighted}")
+            else:
+                console.print(f"    match: [yellow]{match}[/yellow]")
+        console.print()
+
+    # Display references results
+    if results['references']:
+        console.print(f"[bold]References ({len(results['references'])} matches):[/bold]")
+        for result in results['references']:
+            console.print(f"  [green]{result['id']}[/green]")
+            console.print(f"    field: [cyan]{result['field']}[/cyan]")
+
+            # Truncate long values
+            value = result['value']
+            if len(value) > 100:
+                value = value[:100] + "..."
+
+            # Highlight match
+            match = result['match']
+            if match in value:
+                highlighted = value.replace(match, f"[yellow]{match}[/yellow]")
+                console.print(f"    match: {highlighted}")
+            else:
+                console.print(f"    match: [yellow]{match}[/yellow]")
+        console.print()
+
+    # Display meta results
+    if results['meta']:
+        console.print(f"[bold]Meta ({len(results['meta'])} matches):[/bold]")
+        for result in results['meta']:
+            console.print(f"  field: [cyan]{result['field']}[/cyan]")
+
+            # Truncate long values
+            value = result['value']
+            if len(value) > 100:
+                value = value[:100] + "..."
+
+            # Highlight match
+            match = result['match']
+            if match in value:
+                highlighted = value.replace(match, f"[yellow]{match}[/yellow]")
+                console.print(f"    match: {highlighted}")
+            else:
+                console.print(f"    match: [yellow]{match}[/yellow]")
+        console.print()
 
 
 # =============================================================================
@@ -1032,12 +1246,17 @@ def graph(ctx):
     pass
 
 
-@graph.command(name='link')
+@cli.command(name='link')
 @click.argument('from_entity')
 @click.argument('to_entity')
 @click.pass_context
-def graph_link(ctx, from_entity, to_entity):
-    """Add a dependency between entities"""
+def link(ctx, from_entity, to_entity):
+    """Add a dependency between entities
+
+    Examples:
+        know link feature:auth action:login
+        know link component:ui data-model:endpoints
+    """
     success = ctx.obj['entities'].add_dependency(from_entity, to_entity)
 
     if success:
@@ -1047,17 +1266,17 @@ def graph_link(ctx, from_entity, to_entity):
         sys.exit(1)
 
 
-@graph.command(name='unlink')
+@cli.command(name='unlink')
 @click.argument('from_entity')
 @click.argument('to_entity')
 @click.option('--yes', '-y', is_flag=True, help='Skip confirmation prompt')
 @click.pass_context
-def graph_unlink(ctx, from_entity, to_entity, yes):
+def unlink(ctx, from_entity, to_entity, yes):
     """Remove a dependency between entities
 
     Examples:
-        know graph unlink feature:auth action:login
-        know graph unlink component:ui api-contract:endpoints -y
+        know unlink feature:auth action:login
+        know unlink component:ui api-contract:endpoints -y
     """
     if not yes:
         if not click.confirm(f"Remove dependency: {from_entity} -> {to_entity}?"):
@@ -1838,12 +2057,18 @@ def check_link_usage(ctx):
     console.print(table)
 
 
-@check.command(name='clean')
+@graph.command(name='clean')
 @click.option('--remove/--keep', default=False, help='Remove unused references')
 @click.option('--dry-run/--execute', default=True, help='Dry run mode')
 @click.pass_context
-def check_link_clean(ctx, remove, dry_run):
-    """Clean up unused references"""
+def graph_clean(ctx, remove, dry_run):
+    """Clean up unused references
+
+    Examples:
+        know graph clean                    # Dry run
+        know graph clean --execute          # Show what would be removed
+        know graph clean --remove --execute # Actually remove
+    """
     from src.reference_tools import ReferenceManager
 
     ref_mgr = ReferenceManager(ctx.obj['graph'], ctx.obj['entities'], ctx.obj['deps'])
@@ -1864,11 +2089,16 @@ def check_link_clean(ctx, remove, dry_run):
         console.print("\n[dim]This was a dry run. Use --execute to apply changes.[/dim]")
 
 
-@check.command(name='suggest')
+@graph.command(name='suggest')
 @click.option('--max', '-m', default=10, help='Maximum suggestions')
 @click.pass_context
-def check_link_suggest(ctx, max):
-    """Suggest connections for orphaned references"""
+def graph_suggest(ctx, max):
+    """Suggest connections for orphaned references
+
+    Examples:
+        know graph suggest              # Show top 10 suggestions
+        know graph suggest --max 20     # Show top 20
+    """
     from src.reference_tools import ReferenceManager
 
     ref_mgr = ReferenceManager(ctx.obj['graph'], ctx.obj['entities'], ctx.obj['deps'])
@@ -2099,6 +2329,375 @@ def gen_feature_spec(ctx, feature_id, output, format):
         console.print(f"[green]✓ Feature spec written to {output}[/green]")
     else:
         console.print(spec_text)
+
+
+@gen.command(name='docs')
+@click.argument('feature_id')
+@click.option('--compare', is_flag=True, help='Compare with existing .md files and show differences')
+@click.pass_context
+def gen_docs(ctx, feature_id, compare):
+    """Generate .md files from graph for a feature (validation baseline)
+
+    Generates markdown files from the graph structure to validate completeness.
+    Output goes to .ai/know/features/<feature-name>/.generated/
+
+    Examples:
+        know gen docs feature:auth
+        know gen docs feature:auth --compare
+    """
+    from pathlib import Path
+    import json
+
+    graph = ctx.obj['graph']
+    graph_data = graph.load()
+
+    # Parse feature ID
+    if not feature_id.startswith('feature:'):
+        console.print(f"[red]✗ Must be a feature entity (e.g., feature:auth)[/red]")
+        return
+
+    feature_key = feature_id.split(':', 1)[1]
+
+    # Get feature entity
+    features = graph_data.get('entities', {}).get('feature', {})
+    if feature_key not in features:
+        console.print(f"[red]✗ Feature not found: {feature_id}[/red]")
+        return
+
+    feature_data = features[feature_key]
+    feature_name = feature_data.get('name', feature_key)
+    feature_desc = feature_data.get('description', '')
+
+    # Create output directory
+    output_dir = Path(f".ai/know/features/{feature_key}/.generated")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    console.print(f"[cyan]Generating docs for {feature_id}...[/cyan]\n")
+
+    # Get dependencies
+    deps = graph_data.get('graph', {}).get(feature_id, {}).get('depends_on', [])
+
+    # Separate by type
+    users = [d for d in deps if d.startswith('user:')]
+    objectives = [d for d in deps if d.startswith('objective:')]
+    actions = [d for d in deps if d.startswith('action:')]
+    components = []
+    operations = []
+    references = [d for d in deps if ':' in d and d.split(':')[0] in graph_data.get('references', {})]
+
+    # Get components and operations from actions
+    for action_id in actions:
+        action_deps = graph_data.get('graph', {}).get(action_id, {}).get('depends_on', [])
+        for dep in action_deps:
+            if dep.startswith('component:'):
+                components.append(dep)
+                # Get operations from components
+                comp_deps = graph_data.get('graph', {}).get(dep, {}).get('depends_on', [])
+                operations.extend([d for d in comp_deps if d.startswith('operation:')])
+
+    # Get meta data
+    meta = graph_data.get('meta', {})
+    phases = meta.get('phases', {})
+    requirements = meta.get('requirements', {})
+    qa_sessions = meta.get('qa_sessions', {})
+    architecture = meta.get('architecture', {})
+
+    # Find feature phase and status
+    feature_phase = None
+    feature_status = None
+    for phase_name, phase_features in phases.items():
+        if feature_id in phase_features or feature_key in phase_features:
+            feature_phase = phase_name
+            phase_data = phase_features.get(feature_id) or phase_features.get(feature_key)
+            if isinstance(phase_data, dict):
+                feature_status = phase_data.get('status', 'unknown')
+            break
+
+    # === GENERATE overview.md ===
+    overview_content = f"""# Feature: {feature_name}
+
+## Description
+
+{feature_desc}
+
+## Users
+
+"""
+
+    # Add users
+    if users:
+        for user_id in users:
+            user_key = user_id.split(':', 1)[1]
+            user_data = graph_data.get('entities', {}).get('user', {}).get(user_key, {})
+            user_name = user_data.get('name', user_key)
+            user_desc = user_data.get('description', '')
+            overview_content += f"- `{user_id}` - {user_desc}\n"
+    else:
+        overview_content += "To be determined during `/know:add` phase.\n"
+
+    overview_content += "\n## Objectives\n\n"
+
+    # Add objectives
+    if objectives:
+        for obj_id in objectives:
+            obj_key = obj_id.split(':', 1)[1]
+            obj_data = graph_data.get('entities', {}).get('objective', {}).get(obj_key, {})
+            obj_name = obj_data.get('name', obj_key)
+            obj_desc = obj_data.get('description', '')
+            overview_content += f"- `{obj_id}` - {obj_desc}\n"
+    else:
+        overview_content += "To be determined during `/know:add` phase.\n"
+
+    overview_content += "\n## Components\n\n"
+
+    # Add components
+    if components:
+        for comp_id in sorted(set(components)):
+            comp_key = comp_id.split(':', 1)[1]
+            comp_data = graph_data.get('entities', {}).get('component', {}).get(comp_key, {})
+            comp_name = comp_data.get('name', comp_key)
+            comp_desc = comp_data.get('description', '')
+            overview_content += f"- `{comp_id}` - {comp_desc}\n"
+    else:
+        overview_content += "To be determined during `/know:build` phase.\n"
+
+    # Add success criteria from feature data or requirements
+    overview_content += "\n## Success Criteria\n\n"
+    if 'success_criteria' in feature_data:
+        for i, criterion in enumerate(feature_data['success_criteria'], 1):
+            overview_content += f"{i}. {criterion}\n"
+    elif requirements:
+        feature_reqs = [k for k, v in requirements.items() if v.get('feature') == feature_id]
+        for i, req_key in enumerate(feature_reqs, 1):
+            req = requirements[req_key]
+            status_icon = "✅" if req.get('status') == 'complete' else "⏳"
+            overview_content += f"{i}. {status_icon} {req.get('description', req_key)}\n"
+    else:
+        overview_content += "To be determined during `/know:add` phase.\n"
+
+    # Add constraints
+    overview_content += "\n## Constraints\n\n"
+    if 'constraints' in feature_data:
+        for constraint in feature_data['constraints']:
+            overview_content += f"- **{constraint.get('name', 'Constraint')}**: {constraint.get('description', '')}\n"
+    else:
+        overview_content += "To be determined during `/know:add` phase.\n"
+
+    # Add status
+    overview_content += f"\n## Status\n\n"
+    if feature_phase:
+        overview_content += f"- **Phase**: {feature_phase}\n"
+    if feature_status:
+        overview_content += f"- **Status**: {feature_status}\n"
+    if not feature_phase and not feature_status:
+        overview_content += "- **Phase**: Not yet scheduled\n"
+
+    # Write overview.md
+    overview_path = output_dir / "overview.md"
+    overview_path.write_text(overview_content)
+    console.print(f"[green]✓[/green] {overview_path}")
+
+    # === GENERATE spec.md ===
+    spec_content = f"""# Spec: {feature_name}
+
+_Generated from graph structure_
+
+## Architecture
+
+See [plan.md](./plan.md) for detailed architecture.
+
+## Components
+
+"""
+
+    if components:
+        for comp_id in sorted(set(components)):
+            comp_key = comp_id.split(':', 1)[1]
+            comp_data = graph_data.get('entities', {}).get('component', {}).get(comp_key, {})
+            comp_name = comp_data.get('name', comp_key)
+            comp_desc = comp_data.get('description', '')
+            spec_content += f"### {comp_name}\n\n{comp_desc}\n\n"
+
+            # Get operations for this component
+            comp_ops = [op for op in operations if op in graph_data.get('graph', {}).get(comp_id, {}).get('depends_on', [])]
+            if comp_ops:
+                spec_content += "**Operations:**\n\n"
+                for op_id in comp_ops:
+                    op_key = op_id.split(':', 1)[1]
+                    op_data = graph_data.get('entities', {}).get('operation', {}).get(op_key, {})
+                    op_name = op_data.get('name', op_key)
+                    spec_content += f"- `{op_id}`: {op_name}\n"
+                spec_content += "\n"
+    else:
+        spec_content += "To be determined during `/know:build` phase.\n\n"
+
+    # Add references if any
+    if references:
+        spec_content += "## References\n\n"
+        for ref_id in references:
+            ref_type, ref_key = ref_id.split(':', 1)
+            ref_data = graph_data.get('references', {}).get(ref_type, {}).get(ref_key, {})
+            if isinstance(ref_data, dict):
+                ref_title = ref_data.get('title') or ref_data.get('name') or ref_key
+                spec_content += f"- `{ref_id}`: {ref_title}\n"
+
+    # Write spec.md
+    spec_path = output_dir / "spec.md"
+    spec_path.write_text(spec_content)
+    console.print(f"[green]✓[/green] {spec_path}")
+
+    # === GENERATE plan.md ===
+    plan_content = f"""# Plan: {feature_name}
+
+## Objective
+
+{feature_desc}
+
+## Architecture
+
+"""
+
+    # Add architecture decisions if exist
+    if feature_id in architecture or feature_key in architecture:
+        arch_data = architecture.get(feature_id) or architecture.get(feature_key)
+        if isinstance(arch_data, dict):
+            if 'approach' in arch_data:
+                plan_content += f"### Chosen Approach\n\n{arch_data['approach']}\n\n"
+            if 'alternatives' in arch_data:
+                plan_content += "### Alternatives Considered\n\n"
+                for alt in arch_data['alternatives']:
+                    plan_content += f"- {alt}\n"
+                plan_content += "\n"
+            if 'rationale' in arch_data:
+                plan_content += f"### Rationale\n\n{arch_data['rationale']}\n\n"
+    else:
+        plan_content += "To be determined during `/know:build` phase.\n\n"
+
+    plan_content += "## Implementation Approach\n\n"
+
+    # List components and their operations
+    if components:
+        for comp_id in sorted(set(components)):
+            comp_key = comp_id.split(':', 1)[1]
+            comp_data = graph_data.get('entities', {}).get('component', {}).get(comp_key, {})
+            comp_name = comp_data.get('name', comp_key)
+            plan_content += f"### {comp_name}\n\n"
+
+            # Get operations
+            comp_deps = graph_data.get('graph', {}).get(comp_id, {}).get('depends_on', [])
+            comp_ops = [d for d in comp_deps if d.startswith('operation:')]
+
+            if comp_ops:
+                for op_id in comp_ops:
+                    op_key = op_id.split(':', 1)[1]
+                    op_data = graph_data.get('entities', {}).get('operation', {}).get(op_key, {})
+                    op_name = op_data.get('name', op_key)
+                    op_desc = op_data.get('description', '')
+                    plan_content += f"**{op_name}**\n\n{op_desc}\n\n"
+            else:
+                plan_content += "Operations to be determined.\n\n"
+    else:
+        plan_content += "To be determined during `/know:build` phase.\n\n"
+
+    # Write plan.md
+    plan_path = output_dir / "plan.md"
+    plan_path.write_text(plan_content)
+    console.print(f"[green]✓[/green] {plan_path}")
+
+    # === GENERATE todo.md (if requirements exist) ===
+    feature_reqs = {k: v for k, v in requirements.items() if v.get('feature') == feature_id}
+    if feature_reqs:
+        todo_content = f"""# TODO: {feature_name}
+
+## Requirements
+
+"""
+        for req_key, req_data in feature_reqs.items():
+            status = req_data.get('status', 'pending')
+            status_icons = {
+                'pending': '⏳',
+                'in-progress': '🔄',
+                'blocked': '🚫',
+                'complete': '✅',
+                'verified': '✅'
+            }
+            icon = status_icons.get(status, '⏳')
+            desc = req_data.get('description', req_key)
+            todo_content += f"- [{icon}] {desc} ({status})\n"
+
+        todo_path = output_dir / "todo.md"
+        todo_path.write_text(todo_content)
+        console.print(f"[green]✓[/green] {todo_path}")
+
+    # === GENERATE adrs.md (if architecture decisions exist) ===
+    if feature_id in architecture or feature_key in architecture:
+        arch_data = architecture.get(feature_id) or architecture.get(feature_key)
+        if isinstance(arch_data, dict) and arch_data:
+            adrs_content = f"""# Architecture Decisions: {feature_name}
+
+"""
+            if 'decisions' in arch_data:
+                for i, decision in enumerate(arch_data['decisions'], 1):
+                    adrs_content += f"## ADR-{i}: {decision.get('title', 'Decision')}\n\n"
+                    adrs_content += f"**Status**: {decision.get('status', 'accepted')}\n\n"
+                    adrs_content += f"### Context\n\n{decision.get('context', '')}\n\n"
+                    adrs_content += f"### Decision\n\n{decision.get('decision', '')}\n\n"
+                    if 'consequences' in decision:
+                        adrs_content += f"### Consequences\n\n{decision['consequences']}\n\n"
+            else:
+                adrs_content += "## Primary Architecture Decision\n\n"
+                if 'approach' in arch_data:
+                    adrs_content += f"**Chosen Approach**: {arch_data['approach']}\n\n"
+                if 'rationale' in arch_data:
+                    adrs_content += f"**Rationale**: {arch_data['rationale']}\n\n"
+                if 'alternatives' in arch_data:
+                    adrs_content += "**Alternatives Considered**:\n\n"
+                    for alt in arch_data['alternatives']:
+                        adrs_content += f"- {alt}\n"
+
+            adrs_path = output_dir / "adrs.md"
+            adrs_path.write_text(adrs_content)
+            console.print(f"[green]✓[/green] {adrs_path}")
+
+    # === GENERATE exploration.md (if qa_sessions exist) ===
+    feature_qa = {k: v for k, v in qa_sessions.items() if feature_id in str(v)}
+    if feature_qa:
+        exploration_content = f"""# Exploration: {feature_name}
+
+## Questions & Answers
+
+"""
+        for qa_key, qa_data in feature_qa.items():
+            if isinstance(qa_data, dict):
+                exploration_content += f"### {qa_data.get('question', qa_key)}\n\n"
+                exploration_content += f"{qa_data.get('answer', '')}\n\n"
+
+        exploration_path = output_dir / "exploration.md"
+        exploration_path.write_text(exploration_content)
+        console.print(f"[green]✓[/green] {exploration_path}")
+
+    console.print(f"\n[green]✓ Generated docs in {output_dir}[/green]")
+
+    # === COMPARE with existing files if requested ===
+    if compare:
+        console.print(f"\n[cyan]Comparing with existing files...[/cyan]\n")
+        existing_dir = output_dir.parent
+
+        for gen_file in output_dir.glob("*.md"):
+            existing_file = existing_dir / gen_file.name
+            if existing_file.exists():
+                # Simple line count comparison
+                gen_lines = gen_file.read_text().strip().split('\n')
+                existing_lines = existing_file.read_text().strip().split('\n')
+
+                if gen_lines == existing_lines:
+                    console.print(f"[green]✓[/green] {gen_file.name}: Identical")
+                else:
+                    console.print(f"[yellow]△[/yellow] {gen_file.name}: Differs ({len(gen_lines)} vs {len(existing_lines)} lines)")
+                    console.print(f"  [dim]Generated: {gen_file}[/dim]")
+                    console.print(f"  [dim]Existing:  {existing_file}[/dim]")
+            else:
+                console.print(f"[blue]○[/blue] {gen_file.name}: No existing file to compare")
 
 
 @gen.command(name='sitemap')
@@ -2647,65 +3246,110 @@ def rules_after(ctx, entity_type):
 @rules.command(name='graph')
 @click.pass_context
 def rules_graph(ctx):
-    """Visualize the high-level dependency graph structure
+    """Visualize the dual-graph architecture (spec ↔ code)
+
+    Shows dependency structure for the current graph and how it links to its counterpart.
 
     Examples:
-        know -g .ai/know/spec-graph.json gen rules graph
-        know -g .ai/know/code-graph.json gen rules graph
+        know -g .ai/spec-graph.json gen rules graph     # Show spec graph structure
+        know -g .ai/code-graph.json gen rules graph     # Show code graph structure
     """
     rules_path = ctx.obj.get('rules_path') if ctx.obj else None
     rules = _load_rules(rules_path)
 
-    console.print("\n[bold cyan]Dependency Graph Structure[/bold cyan]\n")
+    # Detect graph type
+    is_code_graph = 'code-graph' in rules_path if rules_path else False
+    is_spec_graph = not is_code_graph
 
-    # Show WHAT chain
-    console.print("[bold yellow]WHAT Chain (User Intent → Actions):[/bold yellow]")
-    what_chain = rules.get('notes', {}).get('what', [])
-    console.print("  " + " → ".join(what_chain))
-    console.print()
+    if is_spec_graph:
+        console.print("\n[bold cyan]Spec Graph Structure[/bold cyan] (Product Intent)\n")
 
-    # Show HOW chain
-    console.print("[bold yellow]HOW Chain (Implementation):[/bold yellow]")
-    how_chain = rules.get('notes', {}).get('how', [])
-    console.print("  " + " → ".join(how_chain))
-    console.print()
+        # Show main chain
+        console.print("[bold yellow]Product Chain:[/bold yellow]")
+        chain = rules.get('notes', {}).get('chain', [])
+        if chain:
+            console.print("  " + " → ".join(chain))
+        console.print()
 
-    # Show dependency rules as graph (non-redundant)
-    console.print("[bold yellow]Entity Relationships:[/bold yellow]\n")
+        # Show entity relationships
+        console.print("[bold yellow]Entity Dependencies:[/bold yellow]\n")
+        allowed = rules.get('allowed_dependencies', {})
 
-    allowed = rules.get('allowed_dependencies', {})
+        # Build reverse lookup
+        depended_on_by = {}
+        for entity_type, deps in allowed.items():
+            for dep in deps:
+                if dep not in depended_on_by:
+                    depended_on_by[dep] = []
+                depended_on_by[dep].append(entity_type)
 
-    # Build reverse lookup: what depends on each type
-    depended_on_by = {}
-    for entity_type, deps in allowed.items():
-        for dep in deps:
-            if dep not in depended_on_by:
-                depended_on_by[dep] = []
-            depended_on_by[dep].append(entity_type)
+        all_types = set(allowed.keys()) | set(depended_on_by.keys())
 
-    # Get all entity types (both as sources and targets)
-    all_types = set(allowed.keys()) | set(depended_on_by.keys())
+        for entity_type in sorted(all_types):
+            deps = allowed.get(entity_type, [])
+            dependents = depended_on_by.get(entity_type, [])
 
-    # Print each entity type once with both relationships
-    for entity_type in sorted(all_types):
-        deps = allowed.get(entity_type, [])
-        dependents = depended_on_by.get(entity_type, [])
+            line = f"[cyan]{entity_type}[/cyan]"
+            if deps:
+                line += f" → [green]{', '.join(deps)}[/green]"
+            if dependents:
+                line += f" [dim](← {', '.join(dependents)})[/dim]"
 
-        # Build the line
-        line = f"[cyan]{entity_type}[/cyan]"
+            console.print(f"  {line}")
 
-        if deps:
-            line += f" → [green]{', '.join(deps)}[/green]"
+        console.print("\n[bold yellow]Cross-Graph Linking:[/bold yellow]")
+        console.print("  [cyan]feature[/cyan] → [green]implementation[/green] → [yellow]graph-link[/yellow] (in code-graph)")
+        console.print("  Spec features link to code via implementation references")
+        console.print("  Implementation references point to graph-link IDs in code-graph")
 
-        if dependents:
-            line += f" [dim](← {', '.join(dependents)})[/dim]"
+    else:  # code-graph
+        console.print("\n[bold cyan]Code Graph Structure[/bold cyan] (Codebase Architecture)\n")
 
-        if not deps and not dependents:
-            line += " [dim](isolated)[/dim]"
+        console.print("[bold yellow]Purpose:[/bold yellow]")
+        purpose = rules.get('notes', {}).get('purpose', 'Universal code architecture graph')
+        console.print(f"  {purpose}\n")
 
-        console.print(f"  {line}")
+        # Show entity relationships
+        console.print("[bold yellow]Entity Dependencies:[/bold yellow]\n")
+        allowed = rules.get('allowed_dependencies', {})
 
-    console.print("\n[dim]Legend: → depends on | ← depended on by[/dim]")
+        # Build reverse lookup
+        depended_on_by = {}
+        for entity_type, deps in allowed.items():
+            for dep in deps:
+                if dep not in depended_on_by:
+                    depended_on_by[dep] = []
+                depended_on_by[dep].append(entity_type)
+
+        all_types = set(allowed.keys()) | set(depended_on_by.keys())
+
+        for entity_type in sorted(all_types):
+            deps = allowed.get(entity_type, [])
+            dependents = depended_on_by.get(entity_type, [])
+
+            line = f"[cyan]{entity_type}[/cyan]"
+            if deps:
+                line += f" → [green]{', '.join(deps)}[/green]"
+            if dependents:
+                line += f" [dim](← {', '.join(dependents)})[/dim]"
+
+            console.print(f"  {line}")
+
+        console.print("\n[bold yellow]Implementation Metadata:[/bold yellow]")
+        console.print("  [cyan]implementation_type[/cyan]: full | partial | stub | aspirational")
+        console.print("  [cyan]implementation_status[/cyan]: complete | in-progress | planned | deprecated")
+        console.print("  [cyan]aspirational[/cyan]: true = preserve during code-graph regeneration")
+
+        console.print("\n[bold yellow]Cross-Graph Linking:[/bold yellow]")
+        console.print("  [cyan]graph-link[/cyan] reference → points to spec [yellow]feature[/yellow] and [yellow]component[/yellow]")
+        console.print("  Code modules reference graph-link to indicate what spec feature they implement")
+
+    console.print("\n[dim]═══════════════════════════════════════════════════════════[/dim]")
+    console.print("\n[bold]Dual Graph Architecture:[/bold]")
+    console.print("  [yellow]spec-graph.json[/yellow] ← [cyan]implementation[/cyan] → [green]graph-link[/green] ← [yellow]code-graph.json[/yellow]")
+    console.print("  Bidirectional: spec features ↔ code modules")
+    console.print("\n[dim]Use 'know graph traverse' to navigate between graphs[/dim]")
+    console.print("[dim]Legend: → depends on | ← depended on by[/dim]")
 
 
 # =============================================================================

@@ -21,13 +21,14 @@
       "source-file", "external-dep", "api-surface", "product-component", "signature",
       "execution-trace", "call-graph", "control-flow", "data-flow",
       "side-effect", "error-path", "code-module", "test-spec",
-      "requirement", "interface"
+      "requirement", "interface", "permission"
     ],
     "validation": "References are always valid dependencies and bypass entity-to-entity dependency rules",
     "examples": [
       "feature:analytics can depend on data-model:analytics-model",
       "component:auth-form can depend on business_logic:login-workflow",
-      "action:export can depend on api_contract:export-endpoint"
+      "action:export can depend on api_contract:export-endpoint",
+      "user:admin can depend on permission:admin-full-access (grants access to features)"
     ]
   },
   "reference_description": {
@@ -82,7 +83,8 @@
     "code-module": "Cross-reference to code-level modules in code-graph.json",
     "test-spec": "Reusable test specification that may apply to multiple components",
     "requirement": "Functional or non-functional specification that the system must satisfy",
-    "interface": "User interface screen or page in the application"
+    "interface": "User interface screen or page in the application",
+    "permission": "Access control mapping from user roles to features. Value is '*' for all features, array of feature IDs, or negated IDs with '!feature:x' for exclusion"
   },
   "reference_note": {
     "purpose": "References are terminal graph nodes used for template generation and detailed specifications",
@@ -90,6 +92,23 @@
     "naming": "Reference keys use plaintext naming (not key_object_notation) for final nodes",
     "usage": "Entities in the graph can reference these nodes for implementation details and specifications",
     "dependency_rule": "References can be dependencies of ANY entity type (see reference_dependency_rule)",
+    "permissions_example": {
+      "references": {
+        "permission": {
+          "admin-full-access": "*",
+          "editor": ["feature:user-management", "feature:content-editor"],
+          "viewer": ["feature:dashboard", "feature:reports"],
+          "trusted-user": ["*", "!feature:admin-panel", "!feature:billing"]
+        }
+      },
+      "graph": {
+        "user:admin": {"depends_on": ["permission:admin-full-access"]},
+        "user:editor": {"depends_on": ["permission:editor"]},
+        "user:viewer": {"depends_on": ["permission:viewer"]},
+        "user:trusted": {"depends_on": ["permission:trusted-user"]}
+      },
+      "note": "Permissions link users to features. Use '*' for all, array of IDs, or '!feature:x' for exclusion (e.g., ['*', '!feature:admin'] = all except admin)"
+    },
     "design_keys": [
       "colors-css",
       "typography-css",
