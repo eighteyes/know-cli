@@ -1,6 +1,8 @@
 # Graph Connection Workflow
 
-Your goal is to improve the spec-graph's **coverage percentage** by connecting disconnected entities to the root users via dependency chains.
+Your goal is to:
+1. Improve spec-graph **coverage percentage** by connecting disconnected entities to root users
+2. Create **cross-graph connections** between spec-graph features and code-graph modules (bidirectional linking)
 
 ## Process Overview
 
@@ -65,7 +67,7 @@ Your goal is to improve the spec-graph's **coverage percentage** by connecting d
 11. Check coverage: 100% ✓
 ```
 
-## Important Notes
+## Important Notes (Spec-Graph Connection)
 
 - **Remove irrelevant entities first** before connecting (ask user to confirm)
 - Use AskUserQuestion for ambiguous connections (don't guess)
@@ -75,18 +77,126 @@ Your goal is to improve the spec-graph's **coverage percentage** by connecting d
 - Stop when coverage >= 80% OR no more logical connections possible
 - Validation may show warnings for existing schema violations - focus on coverage metric
 
+---
+
+# Cross-Graph Connection (Spec ↔ Code)
+
+Connect spec-graph features to code-graph modules for implementation tracking.
+
+## Process Overview
+
+1. **Identify Unlinked Features**
+   - Check which features lack implementation links
+   - Run: `know -g .ai/spec-graph.json feature status <feature-id>`
+   - Look for features with "Implemented: No"
+
+2. **Map Features to Code Modules**
+   - Ask user: "Which modules/packages implement feature:<name>?"
+   - Identify relevant code-graph entities (modules, packages, classes)
+
+3. **Create Bidirectional Links**
+
+   For each feature→module connection:
+
+   **Step 1: Create implementation reference in spec-graph**
+   ```bash
+   # Add implementation reference
+   know -g .ai/spec-graph.json add implementation <feature-name>-impl '["graph-link:<module-key>"]'
+
+   # Link feature to implementation
+   know -g .ai/spec-graph.json link feature:<name> implementation:<feature-name>-impl
+   ```
+
+   **Step 2: Create graph-link in code-graph**
+   ```bash
+   # Add graph-link pointing back to feature
+   know -g .ai/code-graph.json add graph-link <module-key> '{
+     "feature": "feature:<name>",
+     "component": "component:<component-name>",
+     "status": "complete"
+   }'
+   ```
+
+4. **Verify Connection**
+   ```bash
+   # Check implementation status updated
+   know -g .ai/spec-graph.json feature status feature:<name>
+   # Should show: ✅ Implemented: Yes
+
+   # Verify bidirectional traversal
+   know -g .ai/spec-graph.json graph traverse feature:<name> --direction impl
+   know -g .ai/code-graph.json graph traverse module:<name> --direction spec
+   ```
+
+## Cross-Graph Connection Rules
+
+**Spec-graph side:**
+- Feature depends on `implementation:<name>-impl` reference
+- Implementation reference contains array of `graph-link:<key>` IDs
+
+**Code-graph side:**
+- `graph-link` reference points to:
+  - `feature`: The spec feature ID
+  - `component`: The spec component ID (optional)
+  - `status`: "complete" | "in-progress" | "planned"
+
+## Example Cross-Graph Workflow
+
+```
+# Feature: Authentication System
+# Code modules: auth-handler, session-store
+
+1. Add implementation reference in spec-graph:
+   know -g .ai/spec-graph.json add implementation auth-impl \
+     '["graph-link:auth-handler", "graph-link:session-store"]'
+
+2. Link feature to implementation:
+   know -g .ai/spec-graph.json link feature:auth implementation:auth-impl
+
+3. Add graph-links in code-graph:
+   know -g .ai/code-graph.json add graph-link auth-handler '{
+     "feature": "feature:auth",
+     "component": "component:auth-manager",
+     "status": "complete"
+   }'
+
+   know -g .ai/code-graph.json add graph-link session-store '{
+     "feature": "feature:auth",
+     "component": "component:session-handler",
+     "status": "complete"
+   }'
+
+4. Verify:
+   know -g .ai/spec-graph.json feature status feature:auth
+   # ✅ Implemented: Yes
+   # Modules: module:auth-handler, module:session-store
+```
+
+## Connection Priority
+
+1. **Spec-graph coverage** (connect entities to users) - Do this first
+2. **Cross-graph linking** (connect features to code) - Do this second
+3. **Validation** - Run on both graphs
+
 ## Your Task
 
-Start the connection workflow now. Use TodoWrite to track:
-- Current coverage: {X}%
-- Target coverage: 80%
-- Entities to review/connect: {list}
+Choose workflow based on context:
 
-Begin with:
-1. Identifying and removing irrelevant entities
-2. Connecting highest-priority disconnected chains
+**If improving spec-graph coverage:**
+- Start with spec-graph connection workflow (above)
+- Track coverage % improvement
+
+**If linking features to code:**
+- Start with cross-graph connection workflow
+- Track features with "Implemented: No" status
+- Create bidirectional links for each feature
+
+**If doing both:**
+1. Complete spec-graph coverage first (>= 80%)
+2. Then create cross-graph links for all features
 
 ---
+r4 - Added cross-graph connection workflow (spec ↔ code bidirectional linking)
 r3 - Updated to use `know coverage` command instead of python script
 r2 - Updated terminology to "coverage", added removal step, clarified leaf components
 r1 - Initial version with coverage-driven connection workflow
