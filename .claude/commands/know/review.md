@@ -282,7 +282,7 @@ Step 1: [PASS/FAIL/SKIP]
 
 **Using haiku agent**:
 - If Approved:
-  - `know -g .ai/spec-graph.json update feature:<name> '{"status": "done"}'` (or similar update)
+  - `know -g .ai/know/spec-graph.json update feature:<name> '{"status": "done"}'` (or similar update)
   - Add review completion date to meta if possible
 - If Needs Work:
   - Keep status as "in-progress"

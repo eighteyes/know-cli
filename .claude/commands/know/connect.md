@@ -7,7 +7,7 @@ Your goal is to:
 ## Process Overview
 
 1. **Measure Current Coverage**
-   - Run: `know -g .ai/spec-graph.json coverage`
+   - Run: `know -g .ai/know/spec-graph.json coverage`
    - Note the current coverage percentage
 
 2. **Identify Connection Targets**
@@ -30,17 +30,17 @@ Your goal is to:
       - "Which feature(s) should use {entity-name}?" (for components/actions)
 
    c. **Create the Link**
-      - Use `know -g .ai/spec-graph.json link <from> <to>` to create dependency
-      - Validate: `know -g .ai/spec-graph.json validate`
+      - Use `know -g .ai/know/spec-graph.json link <from> <to>` to create dependency
+      - Validate: `know -g .ai/know/spec-graph.json validate`
 
 4. **Track Progress**
-   - After each connection, re-run coverage check with `know -g .ai/spec-graph.json coverage`
+   - After each connection, re-run coverage check with `know -g .ai/know/spec-graph.json coverage`
    - Show: "Coverage: {old}% → {new}%"
    - Continue until coverage >= 80% or all logical connections made
 
 5. **Final Validation**
-   - Run: `know -g .ai/spec-graph.json coverage`
-   - Run: `know -g .ai/spec-graph.json validate` (note: may show warnings for existing schema violations)
+   - Run: `know -g .ai/know/spec-graph.json coverage`
+   - Run: `know -g .ai/know/spec-graph.json validate` (note: may show warnings for existing schema violations)
    - Show final coverage percentage
 
 ## Connection Rules (follow dependency-rules.json)
@@ -87,7 +87,7 @@ Connect spec-graph features to code-graph modules for implementation tracking.
 
 1. **Identify Unlinked Features**
    - Check which features lack implementation links
-   - Run: `know -g .ai/spec-graph.json feature status <feature-id>`
+   - Run: `know -g .ai/know/spec-graph.json feature status <feature-id>`
    - Look for features with "Implemented: No"
 
 2. **Map Features to Code Modules**
@@ -101,16 +101,16 @@ Connect spec-graph features to code-graph modules for implementation tracking.
    **Step 1: Create implementation reference in spec-graph**
    ```bash
    # Add implementation reference
-   know -g .ai/spec-graph.json add implementation <feature-name>-impl '["graph-link:<module-key>"]'
+   know -g .ai/know/spec-graph.json add implementation <feature-name>-impl '["graph-link:<module-key>"]'
 
    # Link feature to implementation
-   know -g .ai/spec-graph.json link feature:<name> implementation:<feature-name>-impl
+   know -g .ai/know/spec-graph.json link feature:<name> implementation:<feature-name>-impl
    ```
 
    **Step 2: Create graph-link in code-graph**
    ```bash
    # Add graph-link pointing back to feature
-   know -g .ai/code-graph.json add graph-link <module-key> '{
+   know -g .ai/know/code-graph.json add graph-link <module-key> '{
      "feature": "feature:<name>",
      "component": "component:<component-name>",
      "status": "complete"
@@ -120,12 +120,12 @@ Connect spec-graph features to code-graph modules for implementation tracking.
 4. **Verify Connection**
    ```bash
    # Check implementation status updated
-   know -g .ai/spec-graph.json feature status feature:<name>
+   know -g .ai/know/spec-graph.json feature status feature:<name>
    # Should show: ✅ Implemented: Yes
 
    # Verify bidirectional traversal
-   know -g .ai/spec-graph.json graph traverse feature:<name> --direction impl
-   know -g .ai/code-graph.json graph traverse module:<name> --direction spec
+   know -g .ai/know/spec-graph.json graph traverse feature:<name> --direction impl
+   know -g .ai/know/code-graph.json graph traverse module:<name> --direction spec
    ```
 
 ## Cross-Graph Connection Rules
@@ -147,27 +147,27 @@ Connect spec-graph features to code-graph modules for implementation tracking.
 # Code modules: auth-handler, session-store
 
 1. Add implementation reference in spec-graph:
-   know -g .ai/spec-graph.json add implementation auth-impl \
+   know -g .ai/know/spec-graph.json add implementation auth-impl \
      '["graph-link:auth-handler", "graph-link:session-store"]'
 
 2. Link feature to implementation:
-   know -g .ai/spec-graph.json link feature:auth implementation:auth-impl
+   know -g .ai/know/spec-graph.json link feature:auth implementation:auth-impl
 
 3. Add graph-links in code-graph:
-   know -g .ai/code-graph.json add graph-link auth-handler '{
+   know -g .ai/know/code-graph.json add graph-link auth-handler '{
      "feature": "feature:auth",
      "component": "component:auth-manager",
      "status": "complete"
    }'
 
-   know -g .ai/code-graph.json add graph-link session-store '{
+   know -g .ai/know/code-graph.json add graph-link session-store '{
      "feature": "feature:auth",
      "component": "component:session-handler",
      "status": "complete"
    }'
 
 4. Verify:
-   know -g .ai/spec-graph.json feature status feature:auth
+   know -g .ai/know/spec-graph.json feature status feature:auth
    # ✅ Implemented: Yes
    # Modules: module:auth-handler, module:session-store
 ```

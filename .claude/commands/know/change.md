@@ -28,7 +28,7 @@ Create a structured change request for a feature (enhancement, improvement, or m
 2. Create changes directory if it doesn't exist: `.ai/know/features/<feature>/changes/`
 3. Determine next change number by reading existing change files
 4. Check current feature status in spec-graph (using **haiku agent**):
-   - `know -g .ai/spec-graph.json show feature:<name>`
+   - `know -g .ai/know/spec-graph.json show feature:<name>`
 
 ### 2. Collect Change Information
 

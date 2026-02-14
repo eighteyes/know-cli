@@ -27,18 +27,30 @@ Guide feature development through a structured 7-phase workflow adapted from Cla
 **Initialization Logic**
 
 ```
-IF feature directory exists (.ai/know/<feature>/):
-  → Load context from overview.md, todo.md, plan.md
-  → Verify feature exists in spec-graph.json
-  → Update meta.phases status to "in-progress"
-  → Proceed to Phase 1
+1. Check if feature exists in spec-graph.json:
+   IF NOT in graph:
+     → Delegate to /know:add (HITL workflow to build proper graph)
+     → Wait for completion
+     → Continue below
 
-ELSE (inline feature description or non-existent feature):
-  → Delegate to /know:add to scaffold feature
-  → Wait for /know:add completion
-  → Load created context
-  → Proceed to Phase 1
+2. Check if feature directory exists (.ai/know/<feature>/):
+   IF directory exists:
+     → Load context from overview.md, todo.md, plan.md
+   ELSE (graph exists, directory doesn't):
+     → Create directory: .ai/know/<feature>/
+     → Generate overview.md from spec-graph data:
+       - name, description from feature entity
+       - objectives from graph dependencies
+       - users from objective→user chains
+     → Create empty todo.md, plan.md
+     → Create qa/, architecture/, bugs/, changes/ subdirectories
+
+3. Update meta.phases status to "in-progress"
+
+4. Proceed to Phase 1
 ```
+
+**Key principle:** Graph is source of truth. Directory is human-level documentation. `/know:build` can work from graph-only state.
 
 ---
 
@@ -58,8 +70,8 @@ ELSE (inline feature description or non-existent feature):
    - What are the edge cases?
 3. Update `.ai/know/<feature>/qa/discovery.md` with Q&A
 4. Query spec-graph (using **haiku agents**):
-   - `know -g .ai/spec-graph.json graph uses feature:<name>` - What does this feature depend on?
-   - `know -g .ai/spec-graph.json graph used-by feature:<name>` - What depends on this feature?
+   - `know -g .ai/know/spec-graph.json graph uses feature:<name>` - What does this feature depend on?
+   - `know -g .ai/know/spec-graph.json graph used-by feature:<name>` - What depends on this feature?
 5. Update `.ai/know/<feature>/overview.md` with refined requirements
 
 **Outputs**:
@@ -83,11 +95,11 @@ ELSE (inline feature description or non-existent feature):
      - Agent 3: "Map UI/UX conventions and existing abstractions"
    - Launch ALL agents in a single message for true parallelism
 2. **Know-enhanced exploration** (using **haiku agents**):
-   - Query code-graph: `know -g .ai/code-graph.json list --type module`
+   - Query code-graph: `know -g .ai/know/code-graph.json list --type module`
    - Find related components via product-component references
-   - Query: `know -g .ai/code-graph.json graph uses component:<name> --recursive`
+   - Query: `know -g .ai/know/code-graph.json graph uses component:<name> --recursive`
 3. **Spec-graph exploration** (using **haiku agents**):
-   - Query related actions: `know -g .ai/spec-graph.json list --type action`
+   - Query related actions: `know -g .ai/know/spec-graph.json list --type action`
    - Find component dependencies
    - Check data-model references
 4. **Consolidate findings** from all explorers (Explore + custom Task agents)
@@ -226,9 +238,55 @@ Send SINGLE message with:
 
 6. Update phase status in spec-graph: `"status": "in-progress"` (using **haiku agent**)
 
-7. As code is written, link modules to spec-graph components:
-   - Add to code-graph: `know -g .ai/code-graph.json add module <name> {...}`
-   - Link via product-component references
+7. **Cross-Graph Linking** - As code is written, establish bidirectional spec↔code connections:
+
+   **For each new module/package/class:**
+
+   a. **Add to code-graph** with implementation metadata:
+   ```bash
+   know -g .ai/know/code-graph.json add module <name> '{
+     "name": "Module Name",
+     "description": "...",
+     "file_path": "src/path/to/module.js",
+     "implementation_type": "full|partial|stub|aspirational",
+     "implementation_status": "complete|in-progress|planned"
+   }'
+   ```
+
+   **Implementation Types:**
+   - `full` - Complete implementation of all functionality
+   - `partial` - Some functionality implemented, some pending
+   - `stub` - Interface defined, implementation placeholder
+   - `aspirational` - Planned but not yet started (preserved during code-graph regeneration)
+
+   b. **Update graph-link** in code-graph to reference this module:
+   ```bash
+   # Get current graph-link
+   current=$(know -g .ai/know/code-graph.json get graph-link:<feature>-link)
+
+   # Add module reference
+   know -g .ai/know/code-graph.json add graph-link <feature>-link '{
+     "component": "component:<component-name>",
+     "feature": "feature:<feature-name>",
+     "modules": ["module:<name>"],
+     "status": "in-progress"
+   }'
+   ```
+
+   c. **Update implementation reference** in spec-graph:
+   ```bash
+   know -g .ai/know/spec-graph.json add implementation <feature>-impl '["graph-link:<feature>-link"]'
+   ```
+
+   d. **Link code entities to components** (if component exists):
+   ```bash
+   know -g .ai/know/code-graph.json graph link module:<name> component:<component-name>
+   ```
+
+   **Aspirational Entities:**
+   - Mark planned/future code entities as `"implementation_status": "planned"` and `"aspirational": true`
+   - These will be preserved when regenerating code-graph from source code
+   - Used for design-ahead: documenting intended architecture before implementation
 
 8. Track implementation in `.ai/know/<feature>/implementation.md`
 
@@ -255,7 +313,7 @@ Send SINGLE message with:
    - **Reviewer 3 (Conventions)**: "Review for consistency with existing patterns, naming conventions, architectural violations. Report only high-confidence issues (≥80%)."
    - Launch ALL 3 in a single message for true parallelism
 2. **Know-enhanced validation** (using **haiku agents**):
-   - Gap analysis: `know -g .ai/spec-graph.json check gap-analysis feature:<name>`
+   - Gap analysis: `know -g .ai/know/spec-graph.json check gap-analysis feature:<name>`
    - Verify all component dependencies satisfied
    - Check code-graph completeness
    - Validate both graphs: `know check validate`
@@ -294,7 +352,7 @@ Send SINGLE message with:
    - Mark feature phase as "complete" (or move to "done" if fully deployed)
    - Update code-graph with all new modules
    - Validate both graphs
-   - Run gap-summary: `know -g .ai/spec-graph.json check gap-summary`
+   - Run gap-summary: `know -g .ai/know/spec-graph.json check gap-summary`
 7. Save summary to `.ai/know/<feature>/summary.md`
 8. **Inform user**: "Feature complete. Run `/know:review <feature>` to test, or `/know:done` to archive."
 
@@ -315,16 +373,16 @@ Send SINGLE message with:
 Task tool with:
   model: "haiku"
   subagent_type: "general-purpose"
-  prompt: "Run this know command and return the output: know -g .ai/spec-graph.json graph uses feature:auth"
+  prompt: "Run this know command and return the output: know -g .ai/know/spec-graph.json graph uses feature:auth"
 ```
 
 **Common know queries to launch as haiku agents:**
-- `know -g .ai/spec-graph.json graph uses feature:<name>`
-- `know -g .ai/spec-graph.json graph used-by feature:<name>`
-- `know -g .ai/spec-graph.json check gap-analysis feature:<name>`
-- `know -g .ai/spec-graph.json check gap-summary`
-- `know -g .ai/code-graph.json list --type module`
-- `know -g .ai/code-graph.json graph uses component:<name> --recursive`
+- `know -g .ai/know/spec-graph.json graph uses feature:<name>`
+- `know -g .ai/know/spec-graph.json graph used-by feature:<name>`
+- `know -g .ai/know/spec-graph.json check gap-analysis feature:<name>`
+- `know -g .ai/know/spec-graph.json check gap-summary`
+- `know -g .ai/know/code-graph.json list --type module`
+- `know -g .ai/know/code-graph.json graph uses component:<name> --recursive`
 - `know check validate`
 
 ---
@@ -504,6 +562,10 @@ User: /know:build auth
 
 ## Notes
 
+- **Graph-first design** - `/know:build` works from spec-graph, with or without `/know:add`
+  - If feature in graph but no directory: creates directory from graph data
+  - If feature not in graph: delegates to `/know:add` for HITL clarification
+  - Directory is human documentation, graph is source of truth
 - **Structured workflow** prevents jumping to code prematurely
 - **Know integration** ensures spec-graph and code-graph stay synchronized
 - **Haiku agents** keep graph queries fast and cost-effective
@@ -511,3 +573,36 @@ User: /know:build auth
 - **Resumable** - Can pause and resume at any phase
 - **Documentation-driven** - All decisions captured in `.ai/know/<feature>/`
 - When complete, use `/know:done` to archive and mark in "done" phase
+
+## Code Graph Regeneration
+
+When regenerating code-graph from source files (e.g., with AST parsers):
+
+**Preserve Aspirational Entities:**
+- Before regeneration: `know -g .ai/know/code-graph.json list --type module > aspirational-backup.json`
+- Filter for entities with `"aspirational": true` or `"implementation_status": "planned"`
+- After regeneration: Re-add aspirational entities that weren't found in source
+- Command: `know -g .ai/know/code-graph.json add module <name> <json>`
+
+**Why this matters:**
+- Aspirational entities represent planned architecture
+- They document design intent before code exists
+- Preserving them maintains the spec→code roadmap
+- Prevents losing architectural decisions during sync
+
+**Regeneration Strategy:**
+```bash
+# 1. Backup aspirational entities
+know -g .ai/know/code-graph.json search "aspirational.*true" --field aspirational > aspirational.txt
+
+# 2. Regenerate from source (your codemap tool)
+./scripts/codemap/generate.sh
+
+# 3. Restore aspirational entities
+# (Manual step - read aspirational.txt and re-add planned entities)
+```
+
+---
+`r3` - Graph-first initialization: can work from spec-graph without requiring /know:add first
+`r2` - Added implementation types, cross-graph linking, and aspirational entity preservation
+`r1` - Initial 7-phase workflow

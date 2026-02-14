@@ -24,26 +24,26 @@ This triggers the full feature workflow: duplicate check → HITL clarification 
 
 **Adding Other Entities** - Use `know add`:
 ```bash
-know -g .ai/spec-graph.json add user <key> '{"name":"...","description":"..."}'
-know -g .ai/spec-graph.json add objective <key> '{"name":"...","description":"..."}'
-know -g .ai/spec-graph.json add component <key> '{"name":"...","description":"..."}'
-know -g .ai/spec-graph.json add action <key> '{"name":"...","description":"..."}'
-know -g .ai/spec-graph.json add operation <key> '{"name":"...","description":"..."}'
-know -g .ai/spec-graph.json add interface <key> '{"name":"...","description":"..."}'
-know -g .ai/spec-graph.json add requirement <key> '{"name":"...","description":"..."}'
+know -g .ai/know/spec-graph.json add user <key> '{"name":"...","description":"..."}'
+know -g .ai/know/spec-graph.json add objective <key> '{"name":"...","description":"..."}'
+know -g .ai/know/spec-graph.json add component <key> '{"name":"...","description":"..."}'
+know -g .ai/know/spec-graph.json add action <key> '{"name":"...","description":"..."}'
+know -g .ai/know/spec-graph.json add operation <key> '{"name":"...","description":"..."}'
+know -g .ai/know/spec-graph.json add interface <key> '{"name":"...","description":"..."}'
+know -g .ai/know/spec-graph.json add requirement <key> '{"name":"...","description":"..."}'
 ```
 
 **Linking Dependencies** - Use `know link`:
 ```bash
-know -g .ai/spec-graph.json link user:developer objective:manage-data
-know -g .ai/spec-graph.json link objective:manage-data feature:data-import
-know -g .ai/spec-graph.json link feature:data-import action:upload-file
-know -g .ai/spec-graph.json link action:upload-file component:file-processor
+know -g .ai/know/spec-graph.json link user:developer objective:manage-data
+know -g .ai/know/spec-graph.json link objective:manage-data feature:data-import
+know -g .ai/know/spec-graph.json link feature:data-import action:upload-file
+know -g .ai/know/spec-graph.json link action:upload-file component:file-processor
 ```
 
 **Validation** - Always validate after modifications:
 ```bash
-know -g .ai/spec-graph.json validate
+know -g .ai/know/spec-graph.json validate
 ```
 
 **Exploration Strategy**
@@ -96,7 +96,7 @@ Each mode follows this pattern:
 5. **Add entities to spec-graph using know CLI** (see Graph Operations above)
 6. **Link dependencies using `know link`**
 7. **Confirm with user before executing commands**
-8. Validate graph: `know -g .ai/spec-graph.json validate`
+8. Validate graph: `know -g .ai/know/spec-graph.json validate`
 9. Save QA session results
 
 ---
@@ -164,21 +164,21 @@ For each assumption: confidence ≥95% → state and proceed. <95% → ask user.
 - **Graph Commands to Execute**:
   ```bash
   # Add users
-  know -g .ai/spec-graph.json add user developer '{"name":"Developer","description":"..."}'
-  know -g .ai/spec-graph.json add user end-user '{"name":"End User","description":"..."}'
+  know -g .ai/know/spec-graph.json add user developer '{"name":"Developer","description":"..."}'
+  know -g .ai/know/spec-graph.json add user end-user '{"name":"End User","description":"..."}'
 
   # Add objectives
-  know -g .ai/spec-graph.json add objective manage-data '{"name":"Manage Data","description":"..."}'
+  know -g .ai/know/spec-graph.json add objective manage-data '{"name":"Manage Data","description":"..."}'
 
   # Link users to objectives
-  know -g .ai/spec-graph.json link user:developer objective:manage-data
+  know -g .ai/know/spec-graph.json link user:developer objective:manage-data
 
   # Add features via /know:add (triggers full workflow)
   /know:add data-import
   /know:add user-auth
 
   # Validate
-  know -g .ai/spec-graph.json validate
+  know -g .ai/know/spec-graph.json validate
   ```
 
 ---
@@ -223,29 +223,29 @@ For each assumption: confidence ≥95% → state and proceed. <95% → ask user.
 - **Graph Commands to Execute**:
   ```bash
   # Add components
-  know -g .ai/spec-graph.json add component auth-handler '{"name":"Auth Handler","description":"..."}'
-  know -g .ai/spec-graph.json add component data-processor '{"name":"Data Processor","description":"..."}'
+  know -g .ai/know/spec-graph.json add component auth-handler '{"name":"Auth Handler","description":"..."}'
+  know -g .ai/know/spec-graph.json add component data-processor '{"name":"Data Processor","description":"..."}'
 
   # Add actions
-  know -g .ai/spec-graph.json add action login '{"name":"Login","description":"..."}'
-  know -g .ai/spec-graph.json add action export-report '{"name":"Export Report","description":"..."}'
+  know -g .ai/know/spec-graph.json add action login '{"name":"Login","description":"..."}'
+  know -g .ai/know/spec-graph.json add action export-report '{"name":"Export Report","description":"..."}'
 
   # Add operations
-  know -g .ai/spec-graph.json add operation validate-token '{"name":"Validate Token","description":"..."}'
+  know -g .ai/know/spec-graph.json add operation validate-token '{"name":"Validate Token","description":"..."}'
 
   # Add interfaces
-  know -g .ai/spec-graph.json add interface api-gateway '{"name":"API Gateway","description":"..."}'
+  know -g .ai/know/spec-graph.json add interface api-gateway '{"name":"API Gateway","description":"..."}'
 
   # Add requirements
-  know -g .ai/spec-graph.json add requirement auth '{"name":"Authentication","description":"..."}'
+  know -g .ai/know/spec-graph.json add requirement auth '{"name":"Authentication","description":"..."}'
 
   # Link the chain: feature → action → component → operation
-  know -g .ai/spec-graph.json link feature:user-auth action:login
-  know -g .ai/spec-graph.json link action:login component:auth-handler
-  know -g .ai/spec-graph.json link component:auth-handler operation:validate-token
+  know -g .ai/know/spec-graph.json link feature:user-auth action:login
+  know -g .ai/know/spec-graph.json link action:login component:auth-handler
+  know -g .ai/know/spec-graph.json link component:auth-handler operation:validate-token
 
   # Validate
-  know -g .ai/spec-graph.json validate
+  know -g .ai/know/spec-graph.json validate
   ```
 
 - Spec-graph references:
@@ -278,15 +278,15 @@ For each assumption: confidence ≥95% → state and proceed. <95% → ask user.
 - **Graph Commands to Execute**:
   ```bash
   # Add API interfaces
-  know -g .ai/spec-graph.json add interface rest-api '{"name":"REST API","description":"..."}'
-  know -g .ai/spec-graph.json add interface graphql-endpoint '{"name":"GraphQL Endpoint","description":"..."}'
+  know -g .ai/know/spec-graph.json add interface rest-api '{"name":"REST API","description":"..."}'
+  know -g .ai/know/spec-graph.json add interface graphql-endpoint '{"name":"GraphQL Endpoint","description":"..."}'
 
   # Link interfaces to actions
-  know -g .ai/spec-graph.json link interface:rest-api action:login
-  know -g .ai/spec-graph.json link interface:rest-api action:export-report
+  know -g .ai/know/spec-graph.json link interface:rest-api action:login
+  know -g .ai/know/spec-graph.json link interface:rest-api action:export-report
 
   # Validate
-  know -g .ai/spec-graph.json validate
+  know -g .ai/know/spec-graph.json validate
   ```
 
 ---
@@ -314,15 +314,15 @@ For each assumption: confidence ≥95% → state and proceed. <95% → ask user.
 - **Graph Commands to Execute**:
   ```bash
   # Add UI interfaces (screens)
-  know -g .ai/spec-graph.json add interface dashboard '{"name":"Dashboard","description":"Main overview screen"}'
-  know -g .ai/spec-graph.json add interface settings '{"name":"Settings","description":"User preferences screen"}'
+  know -g .ai/know/spec-graph.json add interface dashboard '{"name":"Dashboard","description":"Main overview screen"}'
+  know -g .ai/know/spec-graph.json add interface settings '{"name":"Settings","description":"User preferences screen"}'
 
   # Link screens to actions they enable
-  know -g .ai/spec-graph.json link interface:dashboard action:view-reports
-  know -g .ai/spec-graph.json link interface:settings action:update-profile
+  know -g .ai/know/spec-graph.json link interface:dashboard action:view-reports
+  know -g .ai/know/spec-graph.json link interface:settings action:update-profile
 
   # Validate
-  know -g .ai/spec-graph.json validate
+  know -g .ai/know/spec-graph.json validate
   ```
 
 ---
@@ -455,9 +455,9 @@ For each assumption: confidence ≥95% → state and proceed. <95% → ask user.
    h. **Ask for confirmation before executing**
    i. **Execute commands**:
       - For features: `/know:add <feature-name>` (full workflow)
-      - For other entities: `know -g .ai/spec-graph.json add <type> <key> '{...}'`
-      - For dependencies: `know -g .ai/spec-graph.json link <from> <to>`
-   j. Validate graph: `know -g .ai/spec-graph.json validate`
+      - For other entities: `know -g .ai/know/spec-graph.json add <type> <key> '{...}'`
+      - For dependencies: `know -g .ai/know/spec-graph.json link <from> <to>`
+   j. Validate graph: `know -g .ai/know/spec-graph.json validate`
    k. Save QA session with answers to `.ai/know/qa/[mode-name].md`
 4. **Final delivery mode** - validate and generate project.md
 

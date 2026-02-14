@@ -42,10 +42,10 @@ Use `/know:fill-out` when:
 ```bash
 # Activate the know-tool skill
 # Then measure current state
-know -g .ai/spec-graph.json stats
-know -g .ai/spec-graph.json coverage
-know -g .ai/spec-graph.json gap-summary
-know -g .ai/code-graph.json stats
+know -g .ai/know/spec-graph.json stats
+know -g .ai/know/spec-graph.json coverage
+know -g .ai/know/spec-graph.json gap-summary
+know -g .ai/know/code-graph.json stats
 ```
 
 **Create TodoWrite tracker**:
@@ -114,12 +114,12 @@ Based on exploration findings, systematically expand the spec-graph:
 
 ```bash
 # Add users
-know -g .ai/spec-graph.json add user <user-id> '{"name":"...","description":"..."}'
+know -g .ai/know/spec-graph.json add user <user-id> '{"name":"...","description":"..."}'
 
 # Examples:
-know -g .ai/spec-graph.json add user ai-assistant '{"name":"AI Assistant","description":"LLM-based coding assistant managing project specs"}'
-know -g .ai/spec-graph.json add user developer '{"name":"Software Developer","description":"Developer using know to manage product specs"}'
-know -g .ai/spec-graph.json add user software-architect '{"name":"Software Architect","description":"System architect designing and planning architecture"}'
+know -g .ai/know/spec-graph.json add user ai-assistant '{"name":"AI Assistant","description":"LLM-based coding assistant managing project specs"}'
+know -g .ai/know/spec-graph.json add user developer '{"name":"Software Developer","description":"Developer using know to manage product specs"}'
+know -g .ai/know/spec-graph.json add user software-architect '{"name":"Software Architect","description":"System architect designing and planning architecture"}'
 ```
 
 #### 3B. Add/Enrich Objectives
@@ -134,11 +134,11 @@ know -g .ai/spec-graph.json add user software-architect '{"name":"Software Archi
 
 ```bash
 # Add objectives
-know -g .ai/spec-graph.json add objective <obj-id> '{"name":"...","description":"..."}'
+know -g .ai/know/spec-graph.json add objective <obj-id> '{"name":"...","description":"..."}'
 
 # Link users to objectives
-know -g .ai/spec-graph.json link user:ai-assistant objective:query-graph
-know -g .ai/spec-graph.json link user:developer objective:manage-specs
+know -g .ai/know/spec-graph.json link user:ai-assistant objective:query-graph
+know -g .ai/know/spec-graph.json link user:developer objective:manage-specs
 ```
 
 #### 3C. Add/Enrich Features
@@ -149,11 +149,11 @@ know -g .ai/spec-graph.json link user:developer objective:manage-specs
 
 ```bash
 # Add features
-know -g .ai/spec-graph.json add feature <feature-id> '{"name":"...","description":"..."}'
+know -g .ai/know/spec-graph.json add feature <feature-id> '{"name":"...","description":"..."}'
 
 # Link objectives to features
-know -g .ai/spec-graph.json link objective:query-graph feature:cli-operations
-know -g .ai/spec-graph.json link objective:manage-specs feature:graph-validation
+know -g .ai/know/spec-graph.json link objective:query-graph feature:cli-operations
+know -g .ai/know/spec-graph.json link objective:manage-specs feature:graph-validation
 ```
 
 #### 3D. Add Actions for Each Feature
@@ -166,12 +166,12 @@ For each feature, identify 3-5 key actions:
 
 ```bash
 # Add actions
-know -g .ai/spec-graph.json add action <action-id> '{"name":"...","description":"..."}'
+know -g .ai/know/spec-graph.json add action <action-id> '{"name":"...","description":"..."}'
 
 # Link features to actions
-know -g .ai/spec-graph.json link feature:cli-operations action:add-entity
-know -g .ai/spec-graph.json link feature:cli-operations action:query-dependencies
-know -g .ai/spec-graph.json link feature:cli-operations action:list-entities
+know -g .ai/know/spec-graph.json link feature:cli-operations action:add-entity
+know -g .ai/know/spec-graph.json link feature:cli-operations action:query-dependencies
+know -g .ai/know/spec-graph.json link feature:cli-operations action:list-entities
 ```
 
 #### 3E. Add Components for Each Action
@@ -182,11 +182,11 @@ know -g .ai/spec-graph.json link feature:cli-operations action:list-entities
 
 ```bash
 # Add components
-know -g .ai/spec-graph.json add component <comp-id> '{"name":"...","description":"..."}'
+know -g .ai/know/spec-graph.json add component <comp-id> '{"name":"...","description":"..."}'
 
 # Link actions to components
-know -g .ai/spec-graph.json link action:add-entity component:graph-operations
-know -g .ai/spec-graph.json link action:query-dependencies component:graph-operations
+know -g .ai/know/spec-graph.json link action:add-entity component:graph-operations
+know -g .ai/know/spec-graph.json link action:query-dependencies component:graph-operations
 ```
 
 #### 3F. Add Operations for Each Component
@@ -197,20 +197,20 @@ know -g .ai/spec-graph.json link action:query-dependencies component:graph-opera
 
 ```bash
 # Add operations
-know -g .ai/spec-graph.json add operation <op-id> '{"name":"...","description":"..."}'
+know -g .ai/know/spec-graph.json add operation <op-id> '{"name":"...","description":"..."}'
 
 # Link components to operations
-know -g .ai/spec-graph.json link component:graph-operations operation:add_entity_to_graph
-know -g .ai/spec-graph.json link component:graph-operations operation:get_entity_dependencies
+know -g .ai/know/spec-graph.json link component:graph-operations operation:add_entity_to_graph
+know -g .ai/know/spec-graph.json link component:graph-operations operation:get_entity_dependencies
 ```
 
 #### 3G. Validate Spec-Graph
 
 ```bash
-know -g .ai/spec-graph.json validate
-know -g .ai/spec-graph.json gap-missing     # Check for missing connections
-know -g .ai/spec-graph.json gap-summary     # Check completeness
-know -g .ai/spec-graph.json coverage        # Measure coverage percentage
+know -g .ai/know/spec-graph.json validate
+know -g .ai/know/spec-graph.json gap-missing     # Check for missing connections
+know -g .ai/know/spec-graph.json gap-summary     # Check completeness
+know -g .ai/know/spec-graph.json coverage        # Measure coverage percentage
 ```
 
 **Target**: 70%+ completion, all features have actions, most components have operations
@@ -231,18 +231,18 @@ find <src-dir> -name "*.py" -o -name "*.js" -o -name "*.ts" | sed 's|<src-dir>/|
 
 Add each module:
 ```bash
-know -g .ai/code-graph.json add module <module-id> '{"name":"...","description":"...","file":"path/to/file"}'
+know -g .ai/know/code-graph.json add module <module-id> '{"name":"...","description":"...","file":"path/to/file"}'
 ```
 
 #### 4B. Add/Organize Packages
 
 **Group modules into logical packages**:
 ```bash
-know -g .ai/code-graph.json add package <package-id> '{"name":"...","description":"..."}'
+know -g .ai/know/code-graph.json add package <package-id> '{"name":"...","description":"..."}'
 
 # Link modules to packages
-know -g .ai/code-graph.json link module:graph package:src
-know -g .ai/code-graph.json link module:validation package:src
+know -g .ai/know/code-graph.json link module:graph package:src
+know -g .ai/know/code-graph.json link module:validation package:src
 ```
 
 #### 4C. Map Inter-Module Dependencies
@@ -252,7 +252,7 @@ know -g .ai/code-graph.json link module:validation package:src
 For each module, add dependencies based on imports:
 ```bash
 # Module A imports Module B
-know -g .ai/code-graph.json link module:A module:B
+know -g .ai/know/code-graph.json link module:A module:B
 
 # Module uses external dependency
 # (external deps should already exist in references)
@@ -261,21 +261,21 @@ know -g .ai/code-graph.json link module:A module:B
 **Example dependency mapping**:
 ```bash
 # CLI depends on core modules
-know -g .ai/code-graph.json link module:cli module:graph
-know -g .ai/code-graph.json link module:cli module:entities
-know -g .ai/code-graph.json link module:cli module:validation
+know -g .ai/know/code-graph.json link module:cli module:graph
+know -g .ai/know/code-graph.json link module:cli module:entities
+know -g .ai/know/code-graph.json link module:cli module:validation
 
 # Graph depends on entities and cache
-know -g .ai/code-graph.json link module:graph module:entities
-know -g .ai/code-graph.json link module:graph module:cache
+know -g .ai/know/code-graph.json link module:graph module:entities
+know -g .ai/know/code-graph.json link module:graph module:cache
 ```
 
 #### 4D. Validate Code-Graph
 
 ```bash
-know -g .ai/code-graph.json validate
-know -g .ai/code-graph.json cycles        # Check for circular dependencies
-know -g .ai/code-graph.json stats         # Verify entity counts and dependencies
+know -g .ai/know/code-graph.json validate
+know -g .ai/know/code-graph.json cycles        # Check for circular dependencies
+know -g .ai/know/code-graph.json stats         # Verify entity counts and dependencies
 ```
 
 **If cycles detected**: Break them by removing the least important dependencies.
@@ -288,7 +288,7 @@ know -g .ai/code-graph.json stats         # Verify entity counts and dependencie
 
 **Use product-component references in code-graph.json**:
 
-Edit `.ai/code-graph.json` → `references.product-component`:
+Edit `.ai/know/code-graph.json` → `references.product-component`:
 
 ```json
 "product-component": {
@@ -317,16 +317,16 @@ Edit `.ai/code-graph.json` → `references.product-component`:
 
 ```bash
 # Validate structure
-know -g .ai/spec-graph.json validate
-know -g .ai/code-graph.json validate
+know -g .ai/know/spec-graph.json validate
+know -g .ai/know/code-graph.json validate
 
 # Check quality metrics
-know -g .ai/spec-graph.json stats
-know -g .ai/spec-graph.json gap-summary
-know -g .ai/spec-graph.json coverage      # AIM FOR 100%
+know -g .ai/know/spec-graph.json stats
+know -g .ai/know/spec-graph.json gap-summary
+know -g .ai/know/spec-graph.json coverage      # AIM FOR 100%
 
-know -g .ai/code-graph.json stats
-know -g .ai/code-graph.json ref-usage     # Check references are used
+know -g .ai/know/code-graph.json stats
+know -g .ai/know/code-graph.json ref-usage     # Check references are used
 ```
 
 **Quality Checklist**:
@@ -347,7 +347,7 @@ know -g .ai/code-graph.json ref-usage     # Check references are used
 ### STEP 7: Run Coverage Analysis & Connect Disconnected Entities
 
 ```bash
-know -g .ai/spec-graph.json coverage
+know -g .ai/know/spec-graph.json coverage
 ```
 
 **If coverage < 100%**:
@@ -366,21 +366,21 @@ know -g .ai/spec-graph.json coverage
 
 ```bash
 # Query for project.md content
-know -g .ai/spec-graph.json list-type user
-know -g .ai/spec-graph.json list-type objective
-know -g .ai/spec-graph.json list-type feature
-know -g .ai/code-graph.json list-type package
-know -g .ai/code-graph.json list-type module
+know -g .ai/know/spec-graph.json list-type user
+know -g .ai/know/spec-graph.json list-type objective
+know -g .ai/know/spec-graph.json list-type feature
+know -g .ai/know/code-graph.json list-type package
+know -g .ai/know/code-graph.json list-type module
 
 # Get details
-know -g .ai/spec-graph.json get user:developer
-know -g .ai/spec-graph.json uses user:developer
+know -g .ai/know/spec-graph.json get user:developer
+know -g .ai/know/spec-graph.json uses user:developer
 
 # Get stats
-know -g .ai/spec-graph.json stats
-know -g .ai/spec-graph.json gap-summary
-know -g .ai/spec-graph.json coverage
-know -g .ai/code-graph.json stats
+know -g .ai/know/spec-graph.json stats
+know -g .ai/know/spec-graph.json gap-summary
+know -g .ai/know/spec-graph.json coverage
+know -g .ai/know/code-graph.json stats
 ```
 
 **Write `.ai/know/project.md`** with:
@@ -406,17 +406,17 @@ know -g .ai/code-graph.json stats
 
 ```bash
 # Final checks
-know -g .ai/spec-graph.json validate
-know -g .ai/spec-graph.json coverage
-know -g .ai/code-graph.json validate
+know -g .ai/know/spec-graph.json validate
+know -g .ai/know/spec-graph.json coverage
+know -g .ai/know/code-graph.json validate
 
 # Display final stats
 echo "=== SPEC-GRAPH ==="
-know -g .ai/spec-graph.json stats
-know -g .ai/spec-graph.json gap-summary
+know -g .ai/know/spec-graph.json stats
+know -g .ai/know/spec-graph.json gap-summary
 
 echo "=== CODE-GRAPH ==="
-know -g .ai/code-graph.json stats
+know -g .ai/know/code-graph.json stats
 ```
 
 **Present to user**:
@@ -472,7 +472,7 @@ know -g .ai/code-graph.json stats
 
 ```bash
 # Step 1: Measure current state
-know -g .ai/spec-graph.json coverage
+know -g .ai/know/spec-graph.json coverage
 # Output: 42% coverage, 25 entities, 18 dependencies
 
 # Step 2: Launch parallel exploration agents
@@ -489,7 +489,7 @@ know -g .ai/spec-graph.json coverage
 # Add 8 product-component references
 
 # Step 6: Validate
-know -g .ai/spec-graph.json coverage
+know -g .ai/know/spec-graph.json coverage
 # Output: 100% coverage, 85 entities, 92 dependencies ✅
 
 # Step 7: Generate project.md from queries

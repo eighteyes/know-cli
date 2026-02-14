@@ -23,7 +23,7 @@ tags: [know, validate, drift-detection]
    ```
 3. Verify feature exists in spec-graph:
    ```bash
-   know -g .ai/spec-graph.json get feature:<feature-name>
+   know -g .ai/know/spec-graph.json get feature:<feature-name>
    ```
 
 ### 2. Determine Baseline
@@ -51,7 +51,7 @@ tags: [know, validate, drift-detection]
 2. **Code-graph product-component refs**:
    ```bash
    # Find modules linked to this feature
-   jq '.references["product-component"] | to_entries[] | select(.value.feature == "feature:<feature-name>") | .key' .ai/code-graph.json
+   jq '.references["product-component"] | to_entries[] | select(.value.feature == "feature:<feature-name>") | .key' .ai/know/code-graph.json
    ```
 
 3. **Feature directory** (always included):

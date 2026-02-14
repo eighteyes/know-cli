@@ -290,7 +290,7 @@ The hook automatically blocks direct Read/Edit/Write access to `*-graph.json` fi
 ```
 ❌ Direct Edit access to graph files is not allowed
 
-Graph file: .ai/spec-graph.json
+Graph file: .ai/know/spec-graph.json
 
 ⚠️  Use the know CLI instead:
    • Read: know get <entity-id>

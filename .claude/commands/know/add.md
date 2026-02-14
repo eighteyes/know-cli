@@ -33,9 +33,25 @@ Ask user essential questions using AskUserQuestion:
 
 ## 4. Register
 Add feature to spec-graph using answers from step 2:
-- `know -g .ai/spec-graph.json add feature <name> '{"name":"...","description":"..."}'`
-- `know -g .ai/spec-graph.json graph link objective:<name> feature:<name>` for each objective
-- `know -g .ai/spec-graph.json phases add pending feature:<name>`
+- `know -g .ai/know/spec-graph.json add feature <name> '{"name":"...","description":"..."}'`
+- `know -g .ai/know/spec-graph.json graph link objective:<name> feature:<name>` for each objective
+- `know -g .ai/know/spec-graph.json phases add pending feature:<name>`
+
+**Cross-Graph Setup** (prepare for implementation tracking):
+- Create implementation reference in spec-graph:
+  ```bash
+  know -g .ai/know/spec-graph.json add implementation <name>-impl '[]'
+  ```
+- Link feature to implementation reference:
+  ```bash
+  know -g .ai/know/spec-graph.json graph link feature:<name> implementation:<name>-impl
+  ```
+- Prepare graph-link stub in code-graph (to be populated during `/know:build`):
+  ```bash
+  know -g .ai/know/code-graph.json add graph-link <name>-link '{"feature":"feature:<name>","status":"pending"}'
+  ```
+
+**Note:** The graph-link will be populated with actual module/package references during Phase 5 of `/know:build`
 
 ## 5. Connect
 - Run `/know:connect` to validate graph coverage
@@ -61,6 +77,7 @@ Assistant:
 - Use `/know:connect` to maintain graph coverage
 
 ---
+`r5` - Added cross-graph setup (implementation references and graph-link stubs)
 `r4` - Consolidated to 5 steps with HITL clarification flow
 `r3` - Added /know:connect step to ensure graph coverage
 `r2`

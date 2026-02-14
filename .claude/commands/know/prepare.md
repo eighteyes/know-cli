@@ -43,8 +43,8 @@ The graph is the **SOURCE OF TRUTH** - build it first, then derive documentation
 2. **Explore codebase in parallel** (see Exploration Strategy above)
 
 3. **Create graph files** if they don't exist:
-   - Create `.ai/spec-graph.json` with basic structure (meta, references, entities, graph)
-   - Create `.ai/code-graph.json` with basic structure (meta, references, entities, graph)
+   - Create `.ai/know/spec-graph.json` with basic structure (meta, references, entities, graph)
+   - Create `.ai/know/code-graph.json` with basic structure (meta, references, entities, graph)
 
 3. **STEP 1: Populate spec-graph.json FIRST**:
    - Infer user objectives from README, docs, feature documentation
@@ -60,7 +60,7 @@ The graph is the **SOURCE OF TRUTH** - build it first, then derive documentation
      - Example: `"meta.phases.done.feature:auth": {"status": "complete"}`
 
 4. **STEP 2: Populate code-graph.json SECOND**:
-   - **CRITICAL**: Use `-g .ai/code-graph.json` flag (auto-detects code rules)
+   - **CRITICAL**: Use `-g .ai/know/code-graph.json` flag (auto-detects code rules)
 
    **Programmatic Code Graph Generation** (RECOMMENDED):
    1. **Generate codemap with AST parsing**:
@@ -70,7 +70,7 @@ The graph is the **SOURCE OF TRUTH** - build it first, then derive documentation
 
    2. **Generate code-graph from codemap** (preserves product-component refs!):
       ```bash
-      know gen code-graph -c .ai/codemap.json -e .ai/code-graph.json -o .ai/code-graph.json
+      know gen code-graph -c .ai/codemap.json -e .ai/know/code-graph.json -o .ai/know/code-graph.json
       ```
 
       **What this does:**
@@ -82,33 +82,33 @@ The graph is the **SOURCE OF TRUTH** - build it first, then derive documentation
 
    3. **Verify code-graph quality**:
       ```bash
-      know -g .ai/code-graph.json stats  # Should show >0 dependencies!
-      know -g .ai/code-graph.json check ref-usage  # Check refs are used
+      know -g .ai/know/code-graph.json stats  # Should show >0 dependencies!
+      know -g .ai/know/code-graph.json check ref-usage  # Check refs are used
       ```
 
    **Manual Code Graph Creation** (if codemap not available):
    1. **Scan actual imports first**: `rg "require\(|import |from " src/` to find real dependencies
    2. **Create module per file**: `module:auth-handler` (for auth-handler.js) - use actual file names
-   3. **Link every import**: If file A imports B, run `know -g .ai/code-graph.json link module:A module:B`
+   3. **Link every import**: If file A imports B, run `know -g .ai/know/code-graph.json link module:A module:B`
    4. **Use packages for grouping**: `package:auth` contains multiple auth-related modules
    5. **Add classes/functions optionally**: `class:UserAuth`, `function:validateToken` within modules
    6. **Map external deps**: `external-dep:express` and link modules that use it
-   7. **Verify non-zero dependencies**: Run `know -g .ai/code-graph.json stats` - should show >0 dependencies!
+   7. **Verify non-zero dependencies**: Run `know -g .ai/know/code-graph.json stats` - should show >0 dependencies!
 
 5. **STEP 3: Link the two graphs**:
    - Add product-component references in code-graph to link modules → spec components
 
 6. **STEP 4: Validate BOTH graphs (validation ≠ quality!)**:
-   - `know -g .ai/spec-graph.json validate`
-   - `know -g .ai/code-graph.json validate`
+   - `know -g .ai/know/spec-graph.json validate`
+   - `know -g .ai/know/code-graph.json validate`
    - Ensure no errors before proceeding
 
    **CRITICAL**: Validation passing means structure is valid, NOT that the graph is useful!
 
    **Quality Checks** (do these AFTER validation):
-   - `know -g .ai/spec-graph.json stats` - Check entity counts are reasonable (not just 2-3 entities)
-   - `know -g .ai/code-graph.json stats` - **Dependencies MUST be >0** (otherwise graph is useless!)
-   - `know -g .ai/code-graph.json ref-usage` - Check references are actually used
+   - `know -g .ai/know/spec-graph.json stats` - Check entity counts are reasonable (not just 2-3 entities)
+   - `know -g .ai/know/code-graph.json stats` - **Dependencies MUST be >0** (otherwise graph is useless!)
+   - `know -g .ai/know/code-graph.json ref-usage` - Check references are actually used
    - If dependencies = 0, you created entities but never linked them - go back and add links!
 
 7. **STEP 5: Query the graphs to derive project.md content**:
@@ -116,19 +116,19 @@ The graph is the **SOURCE OF TRUTH** - build it first, then derive documentation
    **CRITICAL**: The graphs are the SOURCE OF TRUTH. Query them, don't bypass them!
 
    **For Purpose section**:
-   - `know -g .ai/spec-graph.json list-type user` - Who are the users?
-   - `know -g .ai/spec-graph.json list-type objective` - What do users want?
+   - `know -g .ai/know/spec-graph.json list-type user` - Who are the users?
+   - `know -g .ai/know/spec-graph.json list-type objective` - What do users want?
    - Derive project purpose from user objectives, NOT from README
 
    **For Architecture section**:
-   - `know -g .ai/spec-graph.json list-type feature` - What features exist?
-   - `know -g .ai/code-graph.json list-type module` - What modules implement them?
-   - `know -g .ai/code-graph.json uses --recursive feature:X` - Full dependency chains
+   - `know -g .ai/know/spec-graph.json list-type feature` - What features exist?
+   - `know -g .ai/know/code-graph.json list-type module` - What modules implement them?
+   - `know -g .ai/know/code-graph.json uses --recursive feature:X` - Full dependency chains
    - Use dependency tree to structure architecture, NOT manual code analysis
 
    **For Tech Stack section**:
-   - `know -g .ai/code-graph.json list-type external-dep` - All dependencies from graph
-   - `know -g .ai/code-graph.json used-by external-dep:X` - See usage patterns
+   - `know -g .ai/know/code-graph.json list-type external-dep` - All dependencies from graph
+   - `know -g .ai/know/code-graph.json used-by external-dep:X` - See usage patterns
 
 8. **STEP 6: Scan codebase for non-graph information**:
 
