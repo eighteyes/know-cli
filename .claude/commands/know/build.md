@@ -240,7 +240,9 @@ Send SINGLE message with:
 
 7. **Cross-Graph Linking** - As code is written, establish bidirectional spec↔code connections:
 
-   **For each new module/package/class:**
+   **NOTE**: Code-graph is automatically regenerated in Phase 7. The steps below are for manual linking during implementation if you want immediate graph updates. Otherwise, all code entities will be detected and added automatically at the end.
+
+   **For each new module/package/class (optional during implementation):**
 
    a. **Add to code-graph** with implementation metadata:
    ```bash
@@ -348,11 +350,43 @@ Send SINGLE message with:
      - Numbered test steps with expected outcomes
      - Acceptance criteria (clear pass/fail)
    - Use checkbox format for tracking during `/know:review`
-6. **Update spec-graph** (using **haiku agents**):
-   - Mark feature phase as "complete" (or move to "done" if fully deployed)
-   - Update code-graph with all new modules
-   - Validate both graphs
-   - Run gap-summary: `know -g .ai/know/spec-graph.json check gap-summary`
+6. **Update graphs and regenerate code-graph** (using **haiku agents**):
+
+   a. **Regenerate code-graph automatically**:
+   ```bash
+   # Scan codebase (detects all modules, classes, functions)
+   know gen codemap know/src --output .ai/codemap.json --heat
+
+   # Regenerate code-graph (preserves manual graph-links and aspirational entities)
+   know gen code-graph \
+     --codemap .ai/codemap.json \
+     --existing .ai/know/code-graph.json \
+     --output .ai/know/code-graph.json
+   ```
+
+   b. **Verify graph-links created** during implementation are preserved:
+   ```bash
+   # Check that feature still shows as implemented
+   know -g .ai/know/spec-graph.json feature status feature:<name>
+   # Should show: ✅ Implemented: Yes
+   ```
+
+   c. **Update spec-graph phase status**:
+   ```bash
+   # Mark as review-ready
+   know -g .ai/know/spec-graph.json phases status feature:<name> review-ready
+   ```
+
+   d. **Validate both graphs**:
+   ```bash
+   know -g .ai/know/spec-graph.json check validate
+   know -g .ai/know/code-graph.json check validate
+   ```
+
+   e. **Run gap analysis**:
+   ```bash
+   know -g .ai/know/spec-graph.json check gap-summary
+   ```
 7. Save summary to `.ai/know/<feature>/summary.md`
 8. **Inform user**: "Feature complete. Run `/know:review <feature>` to test, or `/know:done` to archive."
 
