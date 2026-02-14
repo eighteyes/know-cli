@@ -1,0 +1,333 @@
+# ast-grep patterns for TypeScript/JavaScript - use with: sg scan --inline-rules "$(cat typescript.yml)"
+# Multiple rules separated by ---
+---
+id: class-declaration
+language: typescript
+rule:
+  pattern: |
+    class $NAME {
+      $$$BODY
+    }
+message: "class:$NAME"
+---
+id: class-extends
+language: typescript
+rule:
+  pattern: |
+    class $NAME extends $BASE {
+      $$$BODY
+    }
+message: "class:$NAME:extends:$BASE"
+---
+id: export-class
+language: typescript
+rule:
+  pattern: |
+    export class $NAME {
+      $$$BODY
+    }
+message: "export:class:$NAME"
+---
+id: function-declaration
+language: typescript
+rule:
+  pattern: |
+    function $NAME($$$PARAMS) {
+      $$$BODY
+    }
+message: "function:$NAME"
+---
+id: async-function
+language: typescript
+rule:
+  pattern: |
+    async function $NAME($$$PARAMS) {
+      $$$BODY
+    }
+message: "async-function:$NAME"
+---
+id: export-function
+language: typescript
+rule:
+  pattern: |
+    export function $NAME($$$PARAMS) {
+      $$$BODY
+    }
+message: "export:function:$NAME"
+---
+id: arrow-function-const
+language: typescript
+rule:
+  pattern: const $NAME = ($$$PARAMS) => $$$BODY
+message: "arrow-function:$NAME"
+---
+id: export-arrow-function
+language: typescript
+rule:
+  pattern: export const $NAME = ($$$PARAMS) => $$$BODY
+message: "export:arrow-function:$NAME"
+---
+id: interface-declaration
+language: typescript
+rule:
+  pattern: |
+    interface $NAME {
+      $$$BODY
+    }
+message: "schema:interface:$NAME"
+---
+id: interface-extends
+language: typescript
+rule:
+  pattern: |
+    interface $NAME extends $$$BASES {
+      $$$BODY
+    }
+message: "schema:interface:$NAME:extends"
+---
+id: export-interface
+language: typescript
+rule:
+  pattern: |
+    export interface $NAME {
+      $$$BODY
+    }
+message: "export:schema:interface:$NAME"
+---
+id: type-alias
+language: typescript
+rule:
+  pattern: type $NAME = $TYPE
+message: "schema:type:$NAME"
+---
+id: export-type-alias
+language: typescript
+rule:
+  pattern: export type $NAME = $TYPE
+message: "export:schema:type:$NAME"
+---
+id: enum-declaration
+language: typescript
+rule:
+  pattern: |
+    enum $NAME {
+      $$$BODY
+    }
+message: "schema:enum:$NAME"
+---
+id: export-enum
+language: typescript
+rule:
+  pattern: |
+    export enum $NAME {
+      $$$BODY
+    }
+message: "export:schema:enum:$NAME"
+---
+id: zod-schema
+language: typescript
+rule:
+  pattern: const $NAME = z.object($$$BODY)
+message: "schema:zod:$NAME"
+---
+id: zod-schema-export
+language: typescript
+rule:
+  pattern: export const $NAME = z.object($$$BODY)
+message: "export:schema:zod:$NAME"
+---
+id: import-default
+language: typescript
+rule:
+  pattern: import $NAME from '$MODULE'
+message: "import:default:$NAME:from:$MODULE"
+---
+id: import-named
+language: typescript
+rule:
+  pattern: import { $$$NAMES } from '$MODULE'
+message: "import:named:from:$MODULE"
+---
+id: import-star
+language: typescript
+rule:
+  pattern: import * as $NAME from '$MODULE'
+message: "import:namespace:$NAME:from:$MODULE"
+---
+id: export-const
+language: typescript
+rule:
+  pattern: export const $NAME = $VALUE
+message: "export:const:$NAME"
+---
+id: export-default
+language: typescript
+rule:
+  pattern: export default $EXPR
+message: "export:default"
+---
+# TSX variants (same patterns but language: tsx for .tsx files with JSX support)
+id: class-declaration-tsx
+language: tsx
+rule:
+  pattern: |
+    class $NAME {
+      $$$BODY
+    }
+message: "class:$NAME"
+---
+id: class-extends-tsx
+language: tsx
+rule:
+  pattern: |
+    class $NAME extends $BASE {
+      $$$BODY
+    }
+message: "class:$NAME:extends:$BASE"
+---
+id: export-class-tsx
+language: tsx
+rule:
+  pattern: |
+    export class $NAME {
+      $$$BODY
+    }
+message: "export:class:$NAME"
+---
+id: function-declaration-tsx
+language: tsx
+rule:
+  pattern: |
+    function $NAME($$$PARAMS) {
+      $$$BODY
+    }
+message: "function:$NAME"
+---
+id: async-function-tsx
+language: tsx
+rule:
+  pattern: |
+    async function $NAME($$$PARAMS) {
+      $$$BODY
+    }
+message: "async-function:$NAME"
+---
+id: export-function-tsx
+language: tsx
+rule:
+  pattern: |
+    export function $NAME($$$PARAMS) {
+      $$$BODY
+    }
+message: "export:function:$NAME"
+---
+id: arrow-function-const-tsx
+language: tsx
+rule:
+  pattern: const $NAME = ($$$PARAMS) => $$$BODY
+message: "arrow-function:$NAME"
+---
+id: export-arrow-function-tsx
+language: tsx
+rule:
+  pattern: export const $NAME = ($$$PARAMS) => $$$BODY
+message: "export:arrow-function:$NAME"
+---
+id: interface-declaration-tsx
+language: tsx
+rule:
+  pattern: |
+    interface $NAME {
+      $$$BODY
+    }
+message: "schema:interface:$NAME"
+---
+id: interface-extends-tsx
+language: tsx
+rule:
+  pattern: |
+    interface $NAME extends $$$BASES {
+      $$$BODY
+    }
+message: "schema:interface:$NAME:extends"
+---
+id: export-interface-tsx
+language: tsx
+rule:
+  pattern: |
+    export interface $NAME {
+      $$$BODY
+    }
+message: "export:schema:interface:$NAME"
+---
+id: type-alias-tsx
+language: tsx
+rule:
+  pattern: type $NAME = $TYPE
+message: "schema:type:$NAME"
+---
+id: export-type-alias-tsx
+language: tsx
+rule:
+  pattern: export type $NAME = $TYPE
+message: "export:schema:type:$NAME"
+---
+id: enum-declaration-tsx
+language: tsx
+rule:
+  pattern: |
+    enum $NAME {
+      $$$BODY
+    }
+message: "schema:enum:$NAME"
+---
+id: export-enum-tsx
+language: tsx
+rule:
+  pattern: |
+    export enum $NAME {
+      $$$BODY
+    }
+message: "export:schema:enum:$NAME"
+---
+id: zod-schema-tsx
+language: tsx
+rule:
+  pattern: const $NAME = z.object($$$BODY)
+message: "schema:zod:$NAME"
+---
+id: zod-schema-export-tsx
+language: tsx
+rule:
+  pattern: export const $NAME = z.object($$$BODY)
+message: "export:schema:zod:$NAME"
+---
+id: import-default-tsx
+language: tsx
+rule:
+  pattern: import $NAME from '$MODULE'
+message: "import:default:$NAME:from:$MODULE"
+---
+id: import-named-tsx
+language: tsx
+rule:
+  pattern: import { $$$NAMES } from '$MODULE'
+message: "import:named:from:$MODULE"
+---
+id: import-star-tsx
+language: tsx
+rule:
+  pattern: import * as $NAME from '$MODULE'
+message: "import:namespace:$NAME:from:$MODULE"
+---
+id: export-const-tsx
+language: tsx
+rule:
+  pattern: export const $NAME = $VALUE
+message: "export:const:$NAME"
+---
+id: export-default-tsx
+language: tsx
+rule:
+  pattern: export default $EXPR
+message: "export:default"
