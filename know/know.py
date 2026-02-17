@@ -39,7 +39,7 @@ class SectionedGroup(click.Group):
         super().__init__(*args, **kwargs)
         self.section_commands = {
             'Initialization': ['init'],
-            'Graph': ['add', 'get', 'list', 'search', 'link', 'unlink', 'graph', 'check', 'gen', 'nodes'],
+            'Graph': ['add', 'get', 'list', 'search', 'find', 'related', 'suggest-links', 'link', 'unlink', 'graph', 'check', 'gen', 'nodes'],
             'Project': ['feature', 'phases', 'req', 'op', 'meta'],
         }
 
@@ -745,6 +745,126 @@ def search(ctx, pattern, regex, case_sensitive, section, field):
                 console.print(f"    match: {highlighted}")
             else:
                 console.print(f"    match: [yellow]{match}[/yellow]")
+        console.print()
+
+
+@cli.command(name='find')
+@click.argument('query')
+@click.option('--limit', '-n', type=int, default=10, help='Maximum results to return')
+@click.option('--threshold', '-t', type=float, default=0.3, help='Minimum similarity score (0-1)')
+@click.option('--section', '-s', type=click.Choice(['all', 'entities', 'references']),
+              default='all', help='Section to search')
+@click.pass_context
+def find(ctx, query, limit, threshold, section):
+    """Semantic search for entities by meaning
+
+    Uses TF-IDF to find conceptually related entities beyond exact text matches.
+    More powerful than 'search' for discovering related concepts.
+
+    Examples:
+        know find "user authentication flow"
+        know find "API endpoints" --limit 20
+        know find "data validation" --section entities
+    """
+    from src import SearchIndex, SemanticSearcher
+
+    # Initialize search index
+    search_index = SearchIndex(str(ctx.obj["graph"].cache.graph_path))
+    searcher = SemanticSearcher(search_index)
+
+    # Execute search
+    results = searcher.find(query, limit=limit, threshold=threshold, section=section)
+
+    if not results:
+        console.print(f"[dim]No results found for '{query}'[/dim]")
+        return
+
+    console.print(f"[bold]Found {len(results)} semantic matches:[/bold]\n")
+
+    for result in results:
+        score_pct = int(result['score'] * 100)
+        console.print(f"  [green]{result['id']}[/green] [dim]({score_pct}% match)[/dim]")
+
+        # Truncate long text
+        text = result['text']
+        if len(text) > 100:
+            text = text[:100] + "..."
+        console.print(f"    {text}")
+        console.print()
+
+
+@cli.command(name='related')
+@click.argument('entity_id')
+@click.option('--limit', '-n', type=int, default=10, help='Maximum results')
+@click.pass_context
+def related(ctx, entity_id, limit):
+    """Find entities related to a given entity
+
+    Discovers entities with similar descriptions and concepts.
+
+    Examples:
+        know related feature:auth
+        know related component:api-client --limit 20
+    """
+    from src import SearchIndex, SemanticSearcher
+
+    # Initialize search index
+    search_index = SearchIndex(str(ctx.obj["graph"].cache.graph_path))
+    searcher = SemanticSearcher(search_index)
+
+    # Find related entities
+    results = searcher.related(entity_id, limit=limit, include_graph_proximity=True)
+
+    if not results:
+        console.print(f"[dim]No related entities found for '{entity_id}'[/dim]")
+        return
+
+    console.print(f"[bold]Related to {entity_id}:[/bold]\n")
+
+    for result in results:
+        score_pct = int(result['score'] * 100)
+        console.print(f"  [green]{result['id']}[/green] [dim]({score_pct}% similar)[/dim]")
+
+        # Show snippet
+        text = result['text']
+        if len(text) > 100:
+            text = text[:100] + "..."
+        console.print(f"    {text}")
+        console.print()
+
+
+@cli.command(name='suggest-links')
+@click.argument('entity_id')
+@click.option('--limit', '-n', type=int, default=10, help='Maximum suggestions')
+@click.option('--llm', is_flag=True, help='Use LLM for re-ranking (slower)')
+@click.pass_context
+def suggest_links(ctx, entity_id, limit, llm):
+    """Suggest valid dependency links for an entity
+
+    Uses dependency rules + semantic similarity to suggest links.
+
+    Examples:
+        know suggest-links feature:new-feature
+        know suggest-links component:api --llm
+    """
+    from src import SearchIndex, SemanticSearcher
+
+    # Initialize search index
+    search_index = SearchIndex(str(ctx.obj["graph"].cache.graph_path))
+    searcher = SemanticSearcher(search_index)
+
+    # Get suggestions
+    results = searcher.suggest_links(entity_id, limit=limit, use_llm=llm)
+
+    if not results:
+        console.print(f"[dim]No link suggestions available for '{entity_id}' (feature coming soon)[/dim]")
+        return
+
+    console.print(f"[bold]Suggested links for {entity_id}:[/bold]\n")
+
+    for result in results:
+        console.print(f"  [green]{result['target']}[/green] [dim]({result['score']})[/dim]")
+        console.print(f"    Reason: {result['reason']}")
         console.print()
 
 
@@ -1943,26 +2063,8 @@ def check(ctx):
     pass
 
 
-@check.command(name='validate')
-@click.pass_context
-def check_validate(ctx):
-    """Validate graph structure and dependencies
-
-    Examples:
-        know check validate
-        know -g .ai/know/code-graph.json check validate
-    """
-    # Run comprehensive validation
-    is_valid, results = ctx.obj['validator'].validate_all()
-
-    # Also validate dependencies
-    dep_valid, dep_errors = ctx.obj['deps'].validate_graph()
-
-    if not dep_valid:
-        results['errors'].extend(dep_errors)
-        is_valid = False
-
-    # Display results
+def _display_validation_results(results: dict, is_valid: bool) -> None:
+    """Display validation results in a formatted way."""
     if results['errors']:
         console.print("[red]✗ Errors:[/red]")
         for error in results['errors']:
@@ -1983,7 +2085,86 @@ def check_validate(ctx):
 
     if is_valid:
         console.print("[green]✓ Graph validation passed![/green]")
-    else:
+
+
+@check.command(name='syntax')
+@click.pass_context
+def check_syntax(ctx):
+    """Fast syntax validation (~ms) - structure and format only
+
+    Examples:
+        know check syntax
+        know -g .ai/know/code-graph.json check syntax
+    """
+    is_valid, results = ctx.obj['validator'].validate_syntax()
+    _display_validation_results(results, is_valid)
+
+    if not is_valid:
+        sys.exit(1)
+
+
+@check.command(name='structure')
+@click.pass_context
+def check_structure(ctx):
+    """Structure validation (~50ms) - schema and relationships
+
+    Examples:
+        know check structure
+        know -g .ai/know/code-graph.json check structure
+    """
+    is_valid, results = ctx.obj['validator'].validate_structure()
+    _display_validation_results(results, is_valid)
+
+    if not is_valid:
+        sys.exit(1)
+
+
+@check.command(name='semantics')
+@click.pass_context
+def check_semantics(ctx):
+    """Semantic validation (~200ms) - dependencies and conventions
+
+    Examples:
+        know check semantics
+        know -g .ai/know/code-graph.json check semantics
+    """
+    is_valid, results = ctx.obj['validator'].validate_semantics(ctx.obj['deps'])
+    _display_validation_results(results, is_valid)
+
+    if not is_valid:
+        sys.exit(1)
+
+
+@check.command(name='full')
+@click.pass_context
+def check_full(ctx):
+    """Full validation (all layers) - comprehensive check
+
+    Examples:
+        know check full
+        know -g .ai/know/code-graph.json check full
+    """
+    is_valid, results = ctx.obj['validator'].validate_full(ctx.obj['deps'])
+    _display_validation_results(results, is_valid)
+
+    if not is_valid:
+        sys.exit(1)
+
+
+@check.command(name='validate')
+@click.pass_context
+def check_validate(ctx):
+    """Validate graph structure and dependencies (alias for 'full')
+
+    Examples:
+        know check validate
+        know -g .ai/know/code-graph.json check validate
+    """
+    # Redirect to full validation for backward compatibility
+    is_valid, results = ctx.obj['validator'].validate_full(ctx.obj['deps'])
+    _display_validation_results(results, is_valid)
+
+    if not is_valid:
         sys.exit(1)
 
 
@@ -1997,11 +2178,8 @@ def check_health(ctx):
     """
     console.print("[bold]Running health checks...[/bold]\n")
 
-    # Validation
-    is_valid, results = ctx.obj['validator'].validate_all()
-
-    # Cycles
-    cycles = ctx.obj['deps'].detect_cycles()
+    # Full validation (includes cycles via validate_semantics)
+    is_valid, results = ctx.obj['validator'].validate_full(ctx.obj['deps'])
 
     # Disconnected subgraphs (informational only)
     disconnected = ctx.obj['validator'].find_disconnected_subgraphs()
@@ -2010,7 +2188,7 @@ def check_health(ctx):
     console.print("[bold cyan]Health Summary:[/bold cyan]\n")
 
     # Critical issues (cause failure)
-    has_critical_issues = not is_valid or cycles
+    has_critical_issues = not is_valid
 
     if not has_critical_issues and not results['warnings']:
         console.print("[green]✓ Graph is healthy![/green]")
@@ -2021,16 +2199,13 @@ def check_health(ctx):
     if not is_valid:
         console.print(f"[red]✗ {len(results['errors'])} validation errors[/red]")
 
-    if cycles:
-        console.print(f"[red]✗ {len(cycles)} circular dependencies[/red]")
-
     if disconnected:
         console.print(f"[cyan]ℹ {len(disconnected)} disconnected subgraphs (expected for initial/incremental graphs)[/cyan]")
 
     if results['warnings']:
         console.print(f"[yellow]⚠ {len(results['warnings'])} warnings[/yellow]")
 
-    console.print("\n[dim]Run 'know check validate' for detailed results[/dim]")
+    console.print("\n[dim]Run 'know check full' for detailed results[/dim]")
 
     # Only exit with error if there are critical issues
     if has_critical_issues:
@@ -5494,6 +5669,10 @@ def init(project_dir):
     5. Initializes project.md with template
     6. Creates initial graphs if they don't exist
     7. Installs graph protection hook (prevents direct file edits)
+
+    Examples:
+        know init .
+        know init /path/to/project
     """
     project_path = Path(project_dir).resolve()
 
@@ -5529,10 +5708,9 @@ def init(project_dir):
     if skill_source.exists():
         skill_dest.parent.mkdir(parents=True, exist_ok=True)
         if skill_dest.exists():
-            console.print(f"[yellow]⚠[/yellow] know-tool skill already exists at {skill_dest}")
-        else:
-            shutil.copytree(skill_source, skill_dest)
-            console.print(f"[green]✓[/green] Installed know-tool skill")
+            shutil.rmtree(skill_dest)
+        shutil.copytree(skill_source, skill_dest)
+        console.print(f"[green]✓[/green] Installed know-tool skill (replaced)")
     else:
         console.print(f"[yellow]⚠[/yellow] know-tool skill not found at {skill_source}")
 

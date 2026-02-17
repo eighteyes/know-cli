@@ -18,7 +18,8 @@ class GraphCache:
         self._cache: Optional[Dict[str, Any]] = None
         self._last_mtime: Optional[float] = None
         self._lock = threading.RLock()
-        self._write_lock_file = Path(".spec-graph.lock")
+        # Lock file lives next to the graph file, named per graph
+        self._write_lock_file = self.graph_path.parent / f".{self.graph_path.stem}.lock"
 
     def get(self) -> Dict[str, Any]:
         """Get cached graph, reloading if file changed"""
@@ -38,39 +39,29 @@ class GraphCache:
             self._last_mtime = None
 
     def write(self, data: Dict[str, Any], wait_for_lock: bool = True) -> bool:
-        """Write graph data atomically with simple lock file coordination"""
+        """Write graph data atomically using fcntl.flock for process-safe locking."""
+        import fcntl
         import tempfile
-        import time
 
-        # Wait for any existing write to complete
-        if wait_for_lock:
-            wait_count = 0
-            while self._write_lock_file.exists():
-                time.sleep(0.1)
-                wait_count += 1
-                if wait_count > 50:  # 5 second timeout
-                    # Check if lock is stale (older than 5 seconds)
-                    try:
-                        lock_age = time.time() - self._write_lock_file.stat().st_mtime
-                        if lock_age > 5:
-                            self._write_lock_file.unlink()  # Remove stale lock
-                            break
-                    except:
-                        break
-                    return False
+        # Ensure parent directory exists (needed before opening lock file)
+        self.graph_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Create lock file
-        try:
-            self._write_lock_file.touch(exist_ok=False)
-        except FileExistsError:
-            if not wait_for_lock:
-                return False
+        lock_flag = fcntl.LOCK_EX if wait_for_lock else fcntl.LOCK_EX | fcntl.LOCK_NB
 
         try:
-            # Ensure parent directory exists
-            self.graph_path.parent.mkdir(parents=True, exist_ok=True)
+            lock_fd = open(self._write_lock_file, 'w')
+        except OSError:
+            return False
 
-            # Write atomically using temp file
+        try:
+            # Block until exclusive lock acquired (or fail immediately if non-blocking)
+            fcntl.flock(lock_fd, lock_flag)
+        except BlockingIOError:
+            lock_fd.close()
+            return False
+
+        try:
+            # Write atomically using temp file + rename
             with tempfile.NamedTemporaryFile(
                 mode='w',
                 dir=self.graph_path.parent,
@@ -80,19 +71,13 @@ class GraphCache:
                 json.dump(data, tmp, indent=2)
                 temp_path = tmp.name
 
-            # Atomic rename
             os.replace(temp_path, self.graph_path)
-
-            # Invalidate cache after successful write
             self.invalidate()
             return True
 
         finally:
-            # Always remove lock file
-            try:
-                self._write_lock_file.unlink()
-            except:
-                pass
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            lock_fd.close()
 
     def _get_mtime(self) -> Optional[float]:
         """Get file modification time"""

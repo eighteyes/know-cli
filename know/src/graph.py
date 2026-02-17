@@ -1,9 +1,17 @@
 """
 Core graph operations and management
+
+Responsibilities:
+- Graph load/save with caching
+- NetworkX graph construction and algorithms
+- Cross-graph traversal (spec ↔ code)
+- Structural diff logging to diff-graph.jsonl
 """
 
+import json
 from typing import Dict, List, Any, Optional, Set, Tuple
 from pathlib import Path
+from datetime import datetime, timezone
 import networkx as nx
 from .cache import GraphCache
 
@@ -25,9 +33,113 @@ class GraphManager:
         return self.get_graph()
 
     def save_graph(self, data: Dict[str, Any]) -> bool:
-        """Save the complete graph"""
+        """Save the complete graph, appending a structural diff to diff-graph.jsonl."""
         self._nx_graph = None  # Invalidate NetworkX cache
-        return self.cache.write(data)
+
+        # Read before-state from disk (callers mutate the cached dict in-place,
+        # so cache.get() already reflects the new state by call time).
+        # Disk file still holds the old state until the atomic rename in cache.write().
+        before = None
+        if self._is_spec_graph() and self.cache.graph_path.exists():
+            try:
+                with open(self.cache.graph_path) as f:
+                    before = json.load(f)
+            except (json.JSONDecodeError, IOError):
+                before = None
+
+        result = self.cache.write(data)
+
+        if result and before is not None:
+            diff = self._diff_graphs(before, data)
+            if diff:
+                self._append_diff(diff)
+
+        return result
+
+    def _is_spec_graph(self) -> bool:
+        """Return True if this graph is a spec graph (by filename)."""
+        return self.cache.graph_path.name == 'spec-graph.json'
+
+    def _diff_graphs(self, before: Dict[str, Any], after: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """
+        Compute structural diff between two in-memory graph dicts.
+
+        Returns None if no relevant changes.
+        """
+        def flatten_entities(entities: Dict) -> Dict[str, Any]:
+            flat = {}
+            for etype, elist in entities.items():
+                if isinstance(elist, dict):
+                    for ename, edata in elist.items():
+                        flat[f"{etype}:{ename}"] = edata
+            return flat
+
+        def flatten_refs(refs: Dict) -> Dict[str, Any]:
+            flat = {}
+            for rtype, rlist in refs.items():
+                if isinstance(rlist, dict):
+                    for rname in rlist:
+                        flat[f"{rtype}:{rname}"] = rlist[rname]
+            return flat
+
+        def extract_links(graph: Dict) -> Set[tuple]:
+            links = set()
+            for node, node_data in graph.items():
+                if isinstance(node_data, dict):
+                    for dep in node_data.get('depends_on', []):
+                        links.add((node, dep))
+            return links
+
+        # Entities diff
+        ents_before = flatten_entities(before.get('entities', {}))
+        ents_after = flatten_entities(after.get('entities', {}))
+
+        keys_b, keys_a = set(ents_before), set(ents_after)
+        entities_added = sorted(keys_a - keys_b)
+        entities_removed = sorted(keys_b - keys_a)
+        entities_modified = [
+            {'id': k, 'before': ents_before[k], 'after': ents_after[k]}
+            for k in keys_b & keys_a
+            if ents_before[k] != ents_after[k]
+        ]
+
+        # Graph links diff
+        links_before = extract_links(before.get('graph', {}))
+        links_after = extract_links(after.get('graph', {}))
+
+        links_added = [{'from': f, 'to': t} for f, t in sorted(links_after - links_before)]
+        links_removed = [{'from': f, 'to': t} for f, t in sorted(links_before - links_after)]
+
+        # References diff (key-level only)
+        refs_before = flatten_refs(before.get('references', {}))
+        refs_after = flatten_refs(after.get('references', {}))
+
+        refs_added = sorted(set(refs_after) - set(refs_before))
+        refs_removed = sorted(set(refs_before) - set(refs_after))
+
+        # Only write if something changed
+        if not any([entities_added, entities_removed, entities_modified,
+                    links_added, links_removed, refs_added, refs_removed]):
+            return None
+
+        return {
+            'ts': datetime.now(timezone.utc).isoformat(),
+            'entities_added': entities_added,
+            'entities_removed': entities_removed,
+            'entities_modified': entities_modified,
+            'links_added': links_added,
+            'links_removed': links_removed,
+            'refs_added': refs_added,
+            'refs_removed': refs_removed,
+        }
+
+    def _append_diff(self, diff: Dict[str, Any]) -> None:
+        """Append a diff entry to diff-graph.jsonl."""
+        diff_path = Path('.ai/know/diff-graph.jsonl')
+        diff_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(diff_path, 'a') as f:
+            f.write(json.dumps(diff) + '\n')
 
     def get_meta(self) -> Dict[str, Any]:
         """Get meta information"""

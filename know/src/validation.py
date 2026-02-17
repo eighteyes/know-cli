@@ -85,7 +85,8 @@ class GraphValidator:
 
     def validate_all(self) -> Tuple[bool, Dict[str, List[str]]]:
         """
-        Run all validation checks on the graph.
+        Run all validation checks on the graph (syntax + structure layers only).
+        For backward compatibility, this matches original behavior.
 
         Returns:
             Tuple of (is_valid, dict of validation results by category)
@@ -96,15 +97,14 @@ class GraphValidator:
             'info': []
         }
 
-        # Run all validation checks
+        # Run all validation checks (syntax + structure layers)
         checks = [
             self._validate_structure,
+            self._validate_graph_key_format,
             self._validate_entity_schema,
             self._validate_reference_usage,
             self._validate_orphaned_nodes,
-            self._validate_missing_descriptions,
             self._validate_entity_types,
-            self._validate_graph_keys
         ]
 
         for check in checks:
@@ -113,6 +113,123 @@ class GraphValidator:
                 results[level].extend(messages)
 
         is_valid = len(results['errors']) == 0
+
+        return is_valid, results
+
+    def _merge_results(self, *result_sets) -> Dict[str, List[str]]:
+        """
+        Merge multiple result dictionaries.
+
+        Args:
+            *result_sets: Variable number of result dicts with 'errors', 'warnings', 'info' keys
+
+        Returns:
+            Merged result dictionary
+        """
+        merged = {'errors': [], 'warnings': [], 'info': []}
+
+        for results in result_sets:
+            for level in ['errors', 'warnings', 'info']:
+                merged[level].extend(results.get(level, []))
+
+        return merged
+
+    def validate_syntax(self) -> Tuple[bool, Dict[str, List[str]]]:
+        """
+        Run syntax-level validation (fast, ~ms).
+        Checks basic structure and format correctness.
+
+        Returns:
+            Tuple of (is_valid, dict of validation results by category)
+        """
+        checks = [
+            self._validate_structure,
+            self._validate_graph_key_format,
+        ]
+
+        results = self._merge_results(*[check() for check in checks])
+        is_valid = len(results['errors']) == 0
+
+        return is_valid, results
+
+    def validate_structure(self) -> Tuple[bool, Dict[str, List[str]]]:
+        """
+        Run structure-level validation (~50ms).
+        Checks schema compliance and node relationships.
+
+        Returns:
+            Tuple of (is_valid, dict of validation results by category)
+        """
+        checks = [
+            self._validate_entity_schema,
+            self._validate_orphaned_nodes,
+            self._validate_entity_types,
+            self._validate_reference_usage,
+        ]
+
+        results = self._merge_results(*[check() for check in checks])
+        is_valid = len(results['errors']) == 0
+
+        return is_valid, results
+
+    def validate_semantics(self, deps_manager) -> Tuple[bool, Dict[str, List[str]]]:
+        """
+        Run semantic-level validation (~200ms).
+        Checks dependency rules, cycles, and naming conventions.
+
+        Args:
+            deps_manager: DependencyManager instance for graph validation
+
+        Returns:
+            Tuple of (is_valid, dict of validation results by category)
+        """
+        results = {'errors': [], 'warnings': [], 'info': []}
+
+        # Dependency validation
+        dep_valid, dep_errors = deps_manager.validate_graph()
+        if not dep_valid:
+            results['errors'].extend(dep_errors)
+
+        # Cycle detection
+        cycles = deps_manager.detect_cycles()
+        if cycles:
+            results['errors'].append(f"Found {len(cycles)} circular dependencies")
+            for cycle in cycles[:5]:  # Show first 5
+                cycle_str = " -> ".join(cycle)
+                results['errors'].append(f"  Cycle: {cycle_str}")
+
+        # Naming conventions
+        naming_results = self._validate_graph_key_naming()
+        for level, messages in naming_results.items():
+            results[level].extend(messages)
+
+        # Missing descriptions
+        desc_results = self._validate_missing_descriptions()
+        for level, messages in desc_results.items():
+            results[level].extend(messages)
+
+        is_valid = len(results['errors']) == 0
+
+        return is_valid, results
+
+    def validate_full(self, deps_manager) -> Tuple[bool, Dict[str, List[str]]]:
+        """
+        Run full validation (all layers combined).
+
+        Args:
+            deps_manager: DependencyManager instance for graph validation
+
+        Returns:
+            Tuple of (is_valid, dict of validation results by category)
+        """
+        # Run all layers
+        syntax_valid, syntax_results = self.validate_syntax()
+        structure_valid, structure_results = self.validate_structure()
+        semantics_valid, semantics_results = self.validate_semantics(deps_manager)
+
+        # Merge all results
+        results = self._merge_results(syntax_results, structure_results, semantics_results)
+        is_valid = syntax_valid and structure_valid and semantics_valid
 
         return is_valid, results
 
@@ -361,8 +478,8 @@ class GraphValidator:
 
         return results
 
-    def _validate_graph_keys(self) -> Dict[str, List[str]]:
-        """Validate that graph node keys match entity/reference keys."""
+    def _validate_graph_key_format(self) -> Dict[str, List[str]]:
+        """Validate graph node key format (syntax check)."""
         results = {'errors': [], 'warnings': [], 'info': []}
 
         data = self.graph.load()
@@ -374,11 +491,28 @@ class GraphValidator:
                 results['errors'].append(f"Invalid graph node ID format: {node_id} (missing ':')")
                 continue
 
-            # Check for snake-case naming
+            # Check for correct number of parts
             parts = node_id.split(':')
             if len(parts) != 2:
                 results['errors'].append(f"Invalid graph node ID format: {node_id}")
                 continue
+
+        return results
+
+    def _validate_graph_key_naming(self) -> Dict[str, List[str]]:
+        """Validate graph node naming conventions (semantic check)."""
+        results = {'errors': [], 'warnings': [], 'info': []}
+
+        data = self.graph.load()
+        graph = data.get('graph', {})
+
+        for node_id in graph.keys():
+            if ':' not in node_id:
+                continue  # Format errors caught in syntax layer
+
+            parts = node_id.split(':')
+            if len(parts) != 2:
+                continue  # Format errors caught in syntax layer
 
             node_type, node_name = parts
 

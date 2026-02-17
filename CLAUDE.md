@@ -92,3 +92,5 @@ Before acting, evaluate the chances of success. If you are < 75% confident in su
 Validate the graph after every change with `npm run validate-graph`.
 
 When modifying know commands, increment the revision counter at the bottom.
+
+<!-- know commands revision: 2 -->

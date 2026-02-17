@@ -21,6 +21,7 @@ from .requirements import RequirementManager
 from .coverage import CoverageAnalyzer
 from .op_manager import OpManager
 from .migration import GraphConformanceChecker, RulesDiffAnalyzer
+from .semantic_search import SearchIndex, SemanticSearcher
 from .utils import (
     parse_entity_id,
     format_entity_id,
@@ -54,6 +55,8 @@ __all__ = [
     "OpManager",
     "GraphConformanceChecker",
     "RulesDiffAnalyzer",
+    "SearchIndex",
+    "SemanticSearcher",
     "parse_entity_id",
     "format_entity_id",
     "normalize_entity_type",
