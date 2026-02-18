@@ -5,6 +5,38 @@ All notable changes to the Know Tool will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-02-17
+
+### Added
+
+#### Layered Validation
+- `know check syntax` — fast structural + format check (~ms)
+- `know check structure` — schema, orphaned nodes, entity types, reference usage (~50ms)
+- `know check semantics` — dependency rules, cycles, naming conventions (~200ms)
+- `know check full` — all layers combined
+- `know check validate` now aliases `check full` (backward compatible)
+- `know check health` updated to use `validate_full()`
+
+#### Semantic Search
+- `know find "<query>"` — TF-IDF semantic search across entity names and descriptions
+- `know related <entity>` — find entities with similar text to a given entity
+- `know suggest-links <entity>` — placeholder for rule-aware link suggestions (phase 5)
+- Search index cached at `{graph}-search-index.json`, stale-checked via SHA256 graph hash
+- Pure Python TF-IDF, zero new dependencies
+
+#### Spec Graph Diff Log
+- Every write to `spec-graph.json` appends a structured diff entry to `.ai/know/diff-graph.jsonl`
+- Each entry records: timestamp, entities added/removed/modified, graph links added/removed, references added/removed
+- Skips empty diffs (no-op saves produce no entry)
+
+### Fixed
+
+#### Concurrent Write Safety
+- Replaced polling lock file with `fcntl.flock(LOCK_EX)` — concurrent writers now queue instead of silently dropping writes
+- Lock file co-located with graph file (`.{graph-stem}.lock`) instead of cwd
+
+---
+
 ## [0.1.0] - 2026-01-25
 
 ### Added
