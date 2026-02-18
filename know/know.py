@@ -39,7 +39,7 @@ class SectionedGroup(click.Group):
         super().__init__(*args, **kwargs)
         self.section_commands = {
             'Initialization': ['init'],
-            'Graph': ['add', 'get', 'list', 'search', 'find', 'related', 'suggest-links', 'link', 'unlink', 'graph', 'check', 'gen', 'nodes'],
+            'Graph': ['add', 'get', 'list', 'search', 'find', 'related', 'link', 'unlink', 'graph', 'check', 'gen', 'nodes'],
             'Project': ['feature', 'phases', 'req', 'op', 'meta'],
         }
 
@@ -832,40 +832,6 @@ def related(ctx, entity_id, limit):
         console.print(f"    {text}")
         console.print()
 
-
-@cli.command(name='suggest-links')
-@click.argument('entity_id')
-@click.option('--limit', '-n', type=int, default=10, help='Maximum suggestions')
-@click.option('--llm', is_flag=True, help='Use LLM for re-ranking (slower)')
-@click.pass_context
-def suggest_links(ctx, entity_id, limit, llm):
-    """Suggest valid dependency links for an entity
-
-    Uses dependency rules + semantic similarity to suggest links.
-
-    Examples:
-        know suggest-links feature:new-feature
-        know suggest-links component:api --llm
-    """
-    from src import SearchIndex, SemanticSearcher
-
-    # Initialize search index
-    search_index = SearchIndex(str(ctx.obj["graph"].cache.graph_path))
-    searcher = SemanticSearcher(search_index)
-
-    # Get suggestions
-    results = searcher.suggest_links(entity_id, limit=limit, use_llm=llm)
-
-    if not results:
-        console.print(f"[dim]No link suggestions available for '{entity_id}' (feature coming soon)[/dim]")
-        return
-
-    console.print(f"[bold]Suggested links for {entity_id}:[/bold]\n")
-
-    for result in results:
-        console.print(f"  [green]{result['target']}[/green] [dim]({result['score']})[/dim]")
-        console.print(f"    Reason: {result['reason']}")
-        console.print()
 
 
 # =============================================================================
@@ -2378,6 +2344,75 @@ def graph_clean(ctx, remove, dry_run):
         console.print("\n[dim]This was a dry run. Use --execute to apply changes.[/dim]")
 
 
+@graph.command(name='coverage')
+@click.option('--json', 'json_output', is_flag=True, help='Machine-readable JSON output')
+@click.pass_context
+def graph_coverage(ctx, json_output):
+    """Show what percentage of entities are reachable from root users
+
+    Measures spec-graph coverage: how many entities are connected to the
+    root user chain (project → user → objective → feature → ...).
+
+    Examples:
+        know graph coverage
+        know -g .ai/know/spec-graph.json graph coverage
+        know graph coverage --json
+    """
+    graph_data = ctx.obj['graph'].load()
+    entities = graph_data.get('entities', {})
+    deps = graph_data.get('graph', {})
+
+    # Find root users: entities with type 'user' or reachable from 'project'
+    all_entity_ids = set()
+    for etype, emap in entities.items():
+        for key in emap:
+            all_entity_ids.add(f"{etype}:{key}")
+
+    # BFS from all project/user nodes to find reachable entities
+    roots = set()
+    for etype in ('project', 'user'):
+        for key in entities.get(etype, {}):
+            roots.add(f"{etype}:{key}")
+
+    reachable = set(roots)
+    queue = list(roots)
+    while queue:
+        node = queue.pop()
+        for dep in deps.get(node, {}).get('depends_on', []):
+            # Only traverse entity→entity edges (skip references)
+            dep_type = dep.split(':')[0] if ':' in dep else ''
+            entity_types = set(entities.keys())
+            if dep_type in entity_types and dep not in reachable:
+                reachable.add(dep)
+                queue.append(dep)
+
+    total = len(all_entity_ids)
+    covered = len(reachable & all_entity_ids)
+    disconnected = sorted(all_entity_ids - reachable)
+    pct = round(covered / total * 100, 1) if total > 0 else 0.0
+
+    if json_output:
+        import json as json_mod
+        console.print(json_mod.dumps({
+            'total': total,
+            'covered': covered,
+            'coverage_percent': pct,
+            'disconnected': sorted(disconnected)
+        }))
+        return
+
+    color = 'green' if pct >= 80 else 'yellow' if pct >= 50 else 'red'
+    console.print(f"\n[bold]Spec-Graph Entity Coverage[/bold]")
+    console.print(f"[{color}]{covered}/{total} entities reachable ({pct}%)[/{color}]\n")
+
+    if disconnected:
+        console.print(f"[yellow]Disconnected ({len(disconnected)}):[/yellow]")
+        for eid in disconnected:
+            console.print(f"  • {eid}")
+    else:
+        console.print("[green]All entities connected to root users.[/green]")
+
+
 @graph.command(name='suggest')
 @click.option('--max', '-m', default=10, help='Maximum suggestions')
 @click.pass_context
@@ -2509,6 +2544,281 @@ def check_link_gap_summary(ctx):
     rate = summary['completion_rate']
     color = "green" if rate >= 80 else "yellow" if rate >= 50 else "red"
     console.print(f"\nOverall Completion: [{color}]{rate}%[/{color}]")
+
+
+# =============================================================================
+# GRAPH CROSS subgroup — cross-graph (spec ↔ code) operations
+# =============================================================================
+@graph.group(name='cross', context_settings=CONTEXT_SETTINGS)
+@click.pass_context
+def graph_cross(ctx):
+    """Cross-graph operations linking spec-graph ↔ code-graph"""
+    pass
+
+
+@graph_cross.command(name='connect')
+@click.argument('feature', required=False)
+@click.option('--dry-run', is_flag=True, help='Show what would be linked without writing')
+@click.option('--spec-graph', 'spec_graph_path', default='.ai/know/spec-graph.json',
+              help='Path to spec-graph.json')
+@click.option('--code-graph', 'code_graph_path', default='.ai/know/code-graph.json',
+              help='Path to code-graph.json')
+@click.pass_context
+def graph_cross_connect(ctx, feature, dry_run, spec_graph_path, code_graph_path):
+    """Auto-connect spec features/components to code modules/classes via code-link refs
+
+    Uses token overlap matching on entity keys to find likely matches.
+    Operates on ALL unlinked features if no feature argument given.
+
+    Examples:
+        know graph cross connect                          # Connect all unlinked features
+        know graph cross connect feature:auth             # Connect one feature
+        know graph cross connect --dry-run                # Preview matches
+        know graph cross connect --spec-graph .ai/know/spec-graph.json
+    """
+    import json as json_mod
+    from pathlib import Path
+
+    spec_path = Path(spec_graph_path)
+    code_path = Path(code_graph_path)
+
+    if not spec_path.exists():
+        console.print(f"[red]✗ spec-graph not found: {spec_path}[/red]")
+        return
+    if not code_path.exists():
+        console.print(f"[red]✗ code-graph not found: {code_path}[/red]")
+        return
+
+    with open(spec_path) as f:
+        spec_data = json_mod.load(f)
+    with open(code_path) as f:
+        code_data = json_mod.load(f)
+
+    spec_entities = spec_data.get('entities', {})
+    code_entities = code_data.get('entities', {})
+    spec_refs = spec_data.get('references', {})
+    code_refs = code_data.get('references', {})
+    spec_graph = spec_data.get('graph', {})
+    code_graph_section = code_data.get('graph', {})
+
+    def tokenize(key):
+        """Split entity key into tokens, strip type prefix."""
+        bare = key.split(':', 1)[-1] if ':' in key else key
+        return set(bare.replace('_', '-').split('-'))
+
+    def has_code_link(entity_id, graph_section, refs):
+        """Return True if entity already has a code-link dependency."""
+        deps = graph_section.get(entity_id, {}).get('depends_on', [])
+        return any(d.startswith('code-link:') for d in deps)
+
+    # Collect spec entities to process
+    spec_entity_types = ('feature', 'component')
+    spec_targets = []
+    for etype in spec_entity_types:
+        for key in spec_entities.get(etype, {}):
+            eid = f"{etype}:{key}"
+            if feature and eid != feature and not key == feature:
+                continue
+            if not has_code_link(eid, spec_graph, spec_refs):
+                spec_targets.append(eid)
+
+    if not spec_targets:
+        console.print("[green]All spec entities already have code-link refs.[/green]")
+        return
+
+    # Collect code entities to match against
+    code_entity_types = ('module', 'class', 'package', 'function')
+    code_candidates = []
+    for etype in code_entity_types:
+        for key in code_entities.get(etype, {}):
+            code_candidates.append((f"{etype}:{key}", tokenize(key)))
+
+    console.print(f"\n[bold cyan]Cross-Graph Auto-Connect{'  (dry run)' if dry_run else ''}[/bold cyan]\n")
+
+    matched_count = 0
+    unmatched = []
+
+    for spec_eid in spec_targets:
+        spec_tokens = tokenize(spec_eid)
+        # Score each code candidate by token overlap
+        scored = []
+        for (code_eid, code_tokens) in code_candidates:
+            overlap = len(spec_tokens & code_tokens)
+            if overlap > 0:
+                scored.append((overlap, code_eid))
+        scored.sort(reverse=True)
+
+        if not scored:
+            unmatched.append(spec_eid)
+            console.print(f"  [yellow]⚠[/yellow]  {spec_eid} — no match")
+            continue
+
+        matched_code = [eid for _, eid in scored]
+        score_display = ", ".join(f"{eid}(+{s})" for s, eid in scored[:3])
+        console.print(f"  [green]✓[/green]  {spec_eid} → {score_display}")
+        matched_count += 1
+
+        if dry_run:
+            continue
+
+        # --- Write spec-graph code-link ---
+        link_key = spec_eid.replace(':', '-') + '-code'
+        modules = [e for e in matched_code if e.startswith('module:')]
+        classes = [e for e in matched_code if e.startswith('class:')]
+        packages = [e for e in matched_code if e.startswith('package:')]
+
+        spec_refs.setdefault('code-link', {})[link_key] = {
+            'modules': modules,
+            'classes': classes,
+            'packages': packages,
+            'status': 'in-progress'
+        }
+        ref_id = f"code-link:{link_key}"
+        spec_graph.setdefault(spec_eid, {}).setdefault('depends_on', [])
+        if ref_id not in spec_graph[spec_eid]['depends_on']:
+            spec_graph[spec_eid]['depends_on'].append(ref_id)
+
+        # --- Write code-graph code-link for each matched entity ---
+        spec_type, spec_key = spec_eid.split(':', 1)
+        for code_eid in matched_code[:3]:  # top 3 matches
+            code_link_key = code_eid.replace(':', '-') + '-spec'
+            existing = code_refs.get('code-link', {}).get(code_link_key, {})
+            # Merge: don't overwrite existing feature/component if already set
+            code_refs.setdefault('code-link', {})[code_link_key] = {
+                'feature': existing.get('feature') or (spec_eid if spec_type == 'feature' else ''),
+                'component': existing.get('component') or (spec_eid if spec_type == 'component' else ''),
+                'status': 'in-progress'
+            }
+            code_ref_id = f"code-link:{code_link_key}"
+            code_graph_section.setdefault(code_eid, {}).setdefault('depends_on', [])
+            if code_ref_id not in code_graph_section[code_eid]['depends_on']:
+                code_graph_section[code_eid]['depends_on'].append(code_ref_id)
+
+    if not dry_run:
+        spec_data['references'] = spec_refs
+        spec_data['graph'] = spec_graph
+        with open(spec_path, 'w') as f:
+            json_mod.dump(spec_data, f, indent=2)
+
+        code_data['references'] = code_refs
+        code_data['graph'] = code_graph_section
+        with open(code_path, 'w') as f:
+            json_mod.dump(code_data, f, indent=2)
+
+    console.print(f"\n[bold]Matched: {matched_count}/{len(spec_targets)}[/bold]")
+    if unmatched:
+        console.print(f"[yellow]Unmatched ({len(unmatched)}): {', '.join(unmatched)}[/yellow]")
+    if not dry_run and matched_count > 0:
+        console.print("[dim]Run 'know graph cross coverage' to see updated metrics.[/dim]")
+
+
+@graph_cross.command(name='coverage')
+@click.option('--spec-graph', 'spec_graph_path', default='.ai/know/spec-graph.json',
+              help='Path to spec-graph.json')
+@click.option('--code-graph', 'code_graph_path', default='.ai/know/code-graph.json',
+              help='Path to code-graph.json')
+@click.option('--spec-only', is_flag=True, help='Show only spec-side coverage')
+@click.option('--code-only', is_flag=True, help='Show only code-side coverage')
+@click.option('--json', 'json_output', is_flag=True, help='Machine-readable JSON output')
+def graph_cross_coverage(spec_graph_path, code_graph_path, spec_only, code_only, json_output):
+    """Show cross-graph code-link coverage: which entities lack spec↔code links
+
+    Reports what percentage of features/components have code-link refs (spec side)
+    and what percentage of modules/classes have code-link refs (code side).
+
+    Examples:
+        know graph cross coverage
+        know graph cross coverage --spec-only
+        know graph cross coverage --json
+    """
+    import json as json_mod
+    from pathlib import Path
+
+    spec_path = Path(spec_graph_path)
+    code_path = Path(code_graph_path)
+
+    def load_graph(path):
+        if not path.exists():
+            return None
+        with open(path) as f:
+            return json_mod.load(f)
+
+    def has_code_link(entity_id, graph_section):
+        deps = graph_section.get(entity_id, {}).get('depends_on', [])
+        return any(d.startswith('code-link:') for d in deps)
+
+    def coverage_for(entities, graph_section, entity_types):
+        results = {}
+        for etype in entity_types:
+            emap = entities.get(etype, {})
+            total = list(emap.keys())
+            linked = [k for k in total if has_code_link(f"{etype}:{k}", graph_section)]
+            missing = [f"{etype}:{k}" for k in total if f"{etype}:{k}" not in [f"{etype}:{x}" for x in linked]]
+            results[etype] = {
+                'total': len(total),
+                'linked': len(linked),
+                'missing': missing,
+                'pct': round(len(linked) / len(total) * 100, 1) if total else 0.0
+            }
+        return results
+
+    spec_data = load_graph(spec_path)
+    code_data = load_graph(code_path)
+
+    spec_results = {}
+    code_results = {}
+
+    if spec_data and not code_only:
+        spec_results = coverage_for(
+            spec_data.get('entities', {}),
+            spec_data.get('graph', {}),
+            ('feature', 'component')
+        )
+
+    if code_data and not spec_only:
+        code_results = coverage_for(
+            code_data.get('entities', {}),
+            code_data.get('graph', {}),
+            ('module', 'class')
+        )
+
+    if json_output:
+        console.print(json_mod.dumps({'spec': spec_results, 'code': code_results}, indent=2))
+        return
+
+    console.print("\n[bold]Cross-Graph Coverage[/bold]")
+    console.print("─" * 44)
+
+    def print_section(label, results):
+        console.print(f"\n[bold]{label}[/bold]")
+        for etype, data in results.items():
+            pct = data['pct']
+            color = 'green' if pct >= 80 else 'yellow' if pct >= 50 else 'red'
+            console.print(
+                f"  {etype.capitalize():12s} {data['linked']:3d}/{data['total']:3d}  "
+                f"[{color}]({pct}%)[/{color}]  ← has code-link"
+            )
+
+    def print_missing(label, results):
+        all_missing = []
+        for data in results.values():
+            all_missing.extend(data['missing'])
+        if all_missing:
+            console.print(f"\n[yellow]Missing code-link ({label}, {len(all_missing)}):[/yellow]")
+            for eid in all_missing:
+                console.print(f"  • {eid}")
+
+    if spec_results:
+        print_section("Spec → Code", spec_results)
+    if code_results:
+        print_section("Code → Spec", code_results)
+
+    if spec_results:
+        print_missing("spec side", spec_results)
+    if code_results:
+        print_missing("code side", code_results)
+
+    console.print()
 
 
 # =============================================================================

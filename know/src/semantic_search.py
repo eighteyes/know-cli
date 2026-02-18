@@ -414,22 +414,3 @@ class SemanticSearcher:
 
         return results[:limit]
 
-    def suggest_links(
-        self,
-        entity_id: str,
-        limit: int = 10,
-        use_llm: bool = False
-    ) -> List[Dict]:
-        """
-        Suggest valid dependency links for an entity.
-
-        Args:
-            entity_id: Entity to suggest links for
-            limit: Maximum suggestions
-            use_llm: Use LLM for re-ranking (TODO: phase 5)
-
-        Returns:
-            List of suggestions with target, score, reason
-        """
-        # TODO: Phase 5 - implement with rule validation
-        return []

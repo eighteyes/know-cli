@@ -20,7 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Semantic Search
 - `know find "<query>"` — TF-IDF semantic search across entity names and descriptions
 - `know related <entity>` — find entities with similar text to a given entity
-- `know suggest-links <entity>` — placeholder for rule-aware link suggestions (phase 5)
 - Search index cached at `{graph}-search-index.json`, stale-checked via SHA256 graph hash
 - Pure Python TF-IDF, zero new dependencies
 
