@@ -2,6 +2,48 @@
 
 ---
 
+## Batch Operations
+**Date:** 2026-02-18
+**Session:** 94bdd7a6-db71-4ba6-8622-b403ad53e48d
+**Commit:** eb7c519
+
+### Multi-key add (shared data)
+
+```bash
+know add feature x y z '{"name":"Test","description":"Temp"}'
+```
+Expected: 3 entities created, `✓ Added entity 'feature:x'` for each
+
+### Single-key add backward compat
+
+```bash
+know add feature solo '{"name":"Solo","description":"One"}'
+```
+Expected: 1 entity created, same behavior as before
+
+### Multi-target link
+
+```bash
+know link feature:solo feature:x feature:y feature:z
+```
+Expected: 3 `✓ Added dependency: feature:solo -> feature:*` lines
+
+### Multi-target unlink (single confirm)
+
+```bash
+know unlink feature:solo feature:x feature:y feature:z -y
+```
+Expected: 3 `✓ Removed dependency` lines, no prompt with `-y`
+
+### Batch delete (validate-all-first)
+
+```bash
+know nodes delete feature:x feature:y feature:z feature:solo -y
+```
+Expected: all 4 deleted in one pass, no partial failures
+
+---
+
 ## Layered Validation + Semantic Search
 **Date:** 2026-02-16
 **Session:** b3e55e00-403f-40ff-bc81-84f453642904
@@ -108,7 +150,7 @@ Every write to any `spec-graph.json` appends one line to `.ai/know/diff-graph.js
 ### Verify — entity add is logged
 
 ```bash
-know -g .ai/spec-graph.json add feature review-diff-test '{"name": "Review", "description": "test"}'
+know -g .ai/know/spec-graph.json add feature review-diff-test '{"name": "Review", "description": "test"}'
 tail -1 .ai/know/diff-graph.jsonl | python3 -m json.tool
 ```
 Expected: `entities_added: ["feature:review-diff-test"]`
@@ -116,7 +158,7 @@ Expected: `entities_added: ["feature:review-diff-test"]`
 ### Verify — link change is logged
 
 ```bash
-know -g .ai/spec-graph.json link feature:review-diff-test feature:<any-existing>
+know -g .ai/know/spec-graph.json link feature:review-diff-test feature:<any-existing>
 tail -1 .ai/know/diff-graph.jsonl | python3 -m json.tool
 ```
 Expected: `links_added` contains the added edge.
@@ -124,7 +166,7 @@ Expected: `links_added` contains the added edge.
 ### Verify — entity remove is logged
 
 ```bash
-know -g .ai/spec-graph.json nodes delete feature:review-diff-test --yes
+know -g .ai/know/spec-graph.json nodes delete feature:review-diff-test --yes
 tail -1 .ai/know/diff-graph.jsonl | python3 -m json.tool
 ```
 Expected: `entities_removed: ["feature:review-diff-test"]`
@@ -133,7 +175,7 @@ Expected: `entities_removed: ["feature:review-diff-test"]`
 
 ```bash
 line_count=$(wc -l < .ai/know/diff-graph.jsonl)
-know -g .ai/code-graph.json add module test-no-log '{"name": "no log"}' 2>/dev/null || true
+know -g .ai/know/code-graph.json add module test-no-log '{"name": "no log"}' 2>/dev/null || true
 [[ $(wc -l < .ai/know/diff-graph.jsonl) -eq $line_count ]] && echo "PASS: code graph write not logged"
 ```
 

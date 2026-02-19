@@ -93,4 +93,4 @@ Validate the graph after every change with `npm run validate-graph`.
 
 When modifying know commands, increment the revision counter at the bottom.
 
-<!-- know commands revision: 2 -->
+<!-- know commands revision: 6 -->
