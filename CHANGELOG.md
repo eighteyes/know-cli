@@ -5,6 +5,18 @@ All notable changes to the Know Tool will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-02-19
+
+### Added
+
+#### Batch Graph Operations
+- `know link <from> <to>...` — link one source to multiple targets in a single call
+- `know unlink <from> <to>... -y` — unlink multiple targets with a single confirmation
+- `know add <type> <key>... [JSON]` — add multiple keys sharing the same inline data; trailing `{...}` arg detected as shared data for backward compat
+- `know nodes delete <id>... -y` — validate all nodes first, single confirmation, then batch delete
+
+---
+
 ## [0.1.1] - 2026-02-17
 
 ### Added

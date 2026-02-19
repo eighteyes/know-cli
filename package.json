@@ -1,6 +1,6 @@
 {
   "name": "know-cli",
-  "version": "0.0.1",
+  "version": "0.1.2",
   "description": "Product / development graph management tool",
   "bin": {
     "know": "./bin/know.js"
