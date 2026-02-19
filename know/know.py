@@ -152,72 +152,83 @@ def cli(ctx, graph_path, rules_path):
 # =============================================================================
 @cli.command(name='add')
 @click.argument('type_name')
-@click.argument('key')
-@click.argument('data', required=False)
+@click.argument('keys', nargs=-1, required=True)
 @click.option('--json-file', '-f', help='Read data from JSON file')
 @click.option('--skip-validation', is_flag=True, help='Skip validation (entities only)')
 @click.pass_context
-def add_item(ctx, type_name, key, data, json_file, skip_validation):
-    """Add an entity or reference to the graph (auto-detects based on type)
+def add_item(ctx, type_name, keys, json_file, skip_validation):
+    """Add one or more entities or references to the graph (auto-detects based on type)
+
+    For a single item, trailing JSON is treated as inline data (backward compat).
+    For multiple items, all share the same data (from --json-file or empty).
 
     Examples:
         know add feature auth '{"name":"Auth","description":"User authentication"}'
+        know add feature auth dashboard profile
         know add component login-form '{"name":"Login Form"}'
-        know add business_logic login-flow '{"pre_conditions":[],"workflow":[]}'
-        know add documentation auth-rfc '{"title":"RFC 7519","url":"https://..."}'
         know add -f entity.json feature analytics
     """
-    # Parse data
+    # Detect trailing inline JSON arg (backward compat for single-item case)
+    inline_data = None
+    if keys and keys[-1].strip().startswith('{'):
+        try:
+            inline_data = json.loads(keys[-1])
+            keys = keys[:-1]
+        except json.JSONDecodeError:
+            pass  # Not JSON, treat as a key
+
+    if not keys:
+        console.print("[red]✗ No keys provided[/red]")
+        sys.exit(1)
+
+    # Parse shared data
     if json_file:
         with open(json_file, 'r') as f:
             item_data = json.load(f)
-    elif data:
-        try:
-            item_data = json.loads(data)
-        except json.JSONDecodeError as e:
-            console.print(f"[red]✗ Invalid JSON data: {e}[/red]")
-            sys.exit(1)
+    elif inline_data is not None:
+        item_data = inline_data
     else:
         item_data = {}
 
     # Determine if entity or reference
     category = _get_type_category(ctx.obj['rules_path'], type_name)
 
-    if category == 'entity':
-        success, error = ctx.obj['entities'].add_entity(
-            type_name, key, item_data, skip_validation=skip_validation
-        )
-
-        if success:
-            console.print(f"[green]✓ Added entity '{type_name}:{key}'[/green]")
-        else:
-            console.print(f"[red]✗ Failed to add entity: {error}[/red]")
-            sys.exit(1)
-
-    elif category == 'reference':
-        # Load graph and add reference
-        graph_data = ctx.obj['graph'].load()
-
-        if 'references' not in graph_data:
-            graph_data['references'] = {}
-
-        if type_name not in graph_data['references']:
-            graph_data['references'][type_name] = {}
-
-        # Check for duplicates
-        if key in graph_data['references'][type_name]:
-            console.print(f"[red]✗ Reference '{type_name}:{key}' already exists[/red]")
-            sys.exit(1)
-
-        graph_data['references'][type_name][key] = item_data
-        ctx.obj['graph'].save_graph(graph_data)
-
-        console.print(f"[green]✓ Added reference '{type_name}:{key}'[/green]")
-
-    else:
+    if category not in ('entity', 'reference'):
         console.print(f"[red]✗ Unknown type '{type_name}'[/red]")
         console.print(f"[dim]Use 'know gen rules describe entities' to list entity types[/dim]")
         console.print(f"[dim]Use 'know gen rules describe references' to list reference types[/dim]")
+        sys.exit(1)
+
+    failed = False
+
+    for key in keys:
+        if category == 'entity':
+            success, error = ctx.obj['entities'].add_entity(
+                type_name, key, item_data, skip_validation=skip_validation
+            )
+            if success:
+                console.print(f"[green]✓ Added entity '{type_name}:{key}'[/green]")
+            else:
+                console.print(f"[red]✗ Failed to add entity '{type_name}:{key}': {error}[/red]")
+                failed = True
+
+        else:  # reference
+            graph_data = ctx.obj['graph'].load()
+            if 'references' not in graph_data:
+                graph_data['references'] = {}
+            if type_name not in graph_data['references']:
+                graph_data['references'][type_name] = {}
+
+            if key in graph_data['references'][type_name]:
+                console.print(f"[red]✗ Reference '{type_name}:{key}' already exists[/red]")
+                failed = True
+                continue
+
+            graph_data['references'][type_name][key] = item_data
+            ctx.obj['graph'].save_graph(graph_data)
+            console.print(f"[green]✓ Added reference '{type_name}:{key}'[/green]")
+
+    if failed:
         sys.exit(1)
 
 
@@ -1100,103 +1111,79 @@ def nodes_rename(ctx, entity_id, new_key, yes):
 
 
 @nodes.command(name='delete')
-@click.argument('entity_id')
+@click.argument('entity_ids', nargs=-1, required=True)
 @click.option('--yes', '-y', is_flag=True, help='Skip confirmation prompt')
 @click.pass_context
-def nodes_delete(ctx, entity_id, yes):
-    """Remove an entity or reference AND clean up all its dependencies.
+def nodes_delete(ctx, entity_ids, yes):
+    """Remove one or more entities or references and clean up their dependencies.
 
-    Removes the node from entities or references section.
-    Removes all dependencies to/from this node in graph section.
+    Removes nodes from entities or references section.
+    Removes all dependencies to/from each node in graph section.
     Use 'cut' if you want to preserve orphaned dependencies.
 
     Examples:
         know nodes delete component:obsolete
         know nodes delete feature:cancelled -y
-        know nodes delete data-model:old-schema
+        know nodes delete feature:a feature:b feature:c -y
     """
     graph_data = ctx.obj['graph'].load()
-
-    # Parse node path
-    node_type, node_key = entity_id.split(':', 1)
-
-    # Determine if this is an entity or reference
-    is_entity = False
-    is_reference = False
-
-    if node_type in graph_data.get('entities', {}) and \
-       node_key in graph_data['entities'].get(node_type, {}):
-        is_entity = True
-    elif node_type in graph_data.get('references', {}) and \
-         node_key in graph_data['references'].get(node_type, {}):
-        is_reference = True
-    else:
-        console.print(f"[red]✗ Node not found: {entity_id}[/red]")
-        console.print(f"[dim]Not found in entities or references sections[/dim]")
-        sys.exit(1)
-
-    node_category = "entity" if is_entity else "reference"
-
-    # Collect dependencies
     graph_section = graph_data.get('graph', {})
-    outgoing_deps = graph_section.get(entity_id, {}).get('depends_on', [])
-    incoming_deps = [eid for eid, deps in graph_section.items()
-                     if entity_id in deps.get('depends_on', [])]
+
+    # Validate and collect info for all nodes first
+    nodes_info = []
+    for entity_id in entity_ids:
+        node_type, node_key = entity_id.split(':', 1)
+        is_entity = (node_type in graph_data.get('entities', {}) and
+                     node_key in graph_data['entities'].get(node_type, {}))
+        is_reference = (node_type in graph_data.get('references', {}) and
+                        node_key in graph_data['references'].get(node_type, {}))
+
+        if not is_entity and not is_reference:
+            console.print(f"[red]✗ Node not found: {entity_id}[/red]")
+            sys.exit(1)
+
+        outgoing = graph_section.get(entity_id, {}).get('depends_on', [])
+        incoming = [eid for eid, deps in graph_section.items()
+                    if entity_id in deps.get('depends_on', [])]
+
+        nodes_info.append({
+            'id': entity_id,
+            'type': node_type,
+            'key': node_key,
+            'is_entity': is_entity,
+            'outgoing': outgoing,
+            'incoming': incoming,
+        })
 
     if not yes:
-        console.print(f"[yellow]Will delete {node_category} '{entity_id}':[/yellow]")
-
-        if outgoing_deps:
-            console.print(f"\n[dim]Outgoing dependencies ({len(outgoing_deps)}):[/dim]")
-            for dep in outgoing_deps:
-                console.print(f"  • {dep}")
-        else:
-            console.print(f"\n[dim]No outgoing dependencies[/dim]")
-
-        if incoming_deps:
-            console.print(f"\n[dim]Incoming dependencies ({len(incoming_deps)}):[/dim]")
-            for dep in incoming_deps:
-                console.print(f"  • {dep}")
-        else:
-            console.print(f"\n[dim]No incoming dependencies[/dim]")
+        console.print(f"[yellow]Will delete {len(nodes_info)} node(s):[/yellow]")
+        for n in nodes_info:
+            category = "entity" if n['is_entity'] else "reference"
+            total_links = len(n['outgoing']) + len(n['incoming'])
+            console.print(f"  • {n['id']} ({category}, {total_links} links affected)")
 
         if not click.confirm("\nProceed?"):
             console.print("[dim]Cancelled[/dim]")
             return
 
-    # Track what we're removing
-    removed_outgoing = outgoing_deps.copy()
-    removed_incoming = incoming_deps.copy()
+    # Delete all nodes
+    for n in nodes_info:
+        if n['is_entity']:
+            del graph_data['entities'][n['type']][n['key']]
+        else:
+            del graph_data['references'][n['type']][n['key']]
 
-    # Remove from entities or references
-    if is_entity:
-        del graph_data['entities'][node_type][node_key]
-    else:
-        del graph_data['references'][node_type][node_key]
+        if n['id'] in graph_section:
+            del graph_section[n['id']]
 
-    # Remove from graph (outgoing)
-    if entity_id in graph_section:
-        del graph_section[entity_id]
-
-    # Remove incoming references
-    for eid in removed_incoming:
-        if eid in graph_section and entity_id in graph_section[eid].get('depends_on', []):
-            graph_section[eid]['depends_on'].remove(entity_id)
+        for eid in n['incoming']:
+            if eid in graph_section and n['id'] in graph_section[eid].get('depends_on', []):
+                graph_section[eid]['depends_on'].remove(n['id'])
 
     ctx.obj['graph'].save_graph(graph_data)
 
-    # Show what was actually removed
-    console.print(f"\n[green]✓ Deleted {node_category} '{entity_id}'[/green]")
-
-    if removed_outgoing:
-        console.print(f"\n[dim]Removed outgoing links ({len(removed_outgoing)}):[/dim]")
-        for dep in removed_outgoing:
-            console.print(f"  • {entity_id} → {dep}")
-
-    if removed_incoming:
-        console.print(f"\n[dim]Removed incoming links ({len(removed_incoming)}):[/dim]")
-        for dep in removed_incoming:
-            console.print(f"  • {dep} → {entity_id}")
+    for n in nodes_info:
+        console.print(f"[green]✓ Deleted '{n['id']}'[/green]")
 
 
 @nodes.command(name='cut')
@@ -1395,47 +1382,56 @@ def graph(ctx):
 
 @cli.command(name='link')
 @click.argument('from_entity')
-@click.argument('to_entity')
+@click.argument('to_entities', nargs=-1, required=True)
 @click.pass_context
-def link(ctx, from_entity, to_entity):
-    """Add a dependency between entities
+def link(ctx, from_entity, to_entities):
+    """Add one or more dependencies from an entity
 
     Examples:
         know link feature:auth action:login
-        know link component:ui data-model:endpoints
+        know link feature:auth action:login action:logout component:session
     """
-    success = ctx.obj['entities'].add_dependency(from_entity, to_entity)
+    failed = False
+    for to_entity in to_entities:
+        success = ctx.obj['entities'].add_dependency(from_entity, to_entity)
+        if success:
+            console.print(f"[green]✓ Added dependency: {from_entity} -> {to_entity}[/green]")
+        else:
+            console.print(f"[red]✗ Already exists or failed: {from_entity} -> {to_entity}[/red]")
+            failed = True
 
-    if success:
-        console.print(f"[green]✓ Added dependency: {from_entity} -> {to_entity}[/green]")
-    else:
-        console.print(f"[red]✗ Dependency already exists or failed to add[/red]")
+    if failed:
         sys.exit(1)
 
 
 @cli.command(name='unlink')
 @click.argument('from_entity')
-@click.argument('to_entity')
+@click.argument('to_entities', nargs=-1, required=True)
 @click.option('--yes', '-y', is_flag=True, help='Skip confirmation prompt')
 @click.pass_context
-def unlink(ctx, from_entity, to_entity, yes):
-    """Remove a dependency between entities
+def unlink(ctx, from_entity, to_entities, yes):
+    """Remove one or more dependencies from an entity
 
     Examples:
         know unlink feature:auth action:login
-        know unlink component:ui api-contract:endpoints -y
+        know unlink feature:auth action:login action:logout -y
     """
     if not yes:
-        if not click.confirm(f"Remove dependency: {from_entity} -> {to_entity}?"):
+        targets = ', '.join(to_entities)
+        if not click.confirm(f"Remove {len(to_entities)} link(s) from {from_entity} -> {targets}?"):
             console.print("[dim]Cancelled[/dim]")
             return
 
-    success = ctx.obj['entities'].remove_dependency(from_entity, to_entity)
+    failed = False
+    for to_entity in to_entities:
+        success = ctx.obj['entities'].remove_dependency(from_entity, to_entity)
+        if success:
+            console.print(f"[green]✓ Removed dependency: {from_entity} -> {to_entity}[/green]")
+        else:
+            console.print(f"[red]✗ Not found or failed: {from_entity} -> {to_entity}[/red]")
+            failed = True
 
-    if success:
-        console.print(f"[green]✓ Removed dependency: {from_entity} -> {to_entity}[/green]")
-    else:
-        console.print(f"[red]✗ Dependency not found or failed to remove[/red]")
+    if failed:
         sys.exit(1)
 
 
@@ -2022,7 +2018,7 @@ def graph_traverse(ctx, entity_id, direction):
 # =============================================================================
 # CHECK group
 # =============================================================================
-@cli.group(context_settings=CONTEXT_SETTINGS)
+@graph.group(name='check', context_settings=CONTEXT_SETTINGS)
 @click.pass_context
 def check(ctx):
     """Validate graph structure and analyze health"""
@@ -2544,6 +2540,66 @@ def check_link_gap_summary(ctx):
     rate = summary['completion_rate']
     color = "green" if rate >= 80 else "yellow" if rate >= 50 else "red"
     console.print(f"\nOverall Completion: [{color}]{rate}%[/{color}]")
+
+
+@check.command(name='ref-types')
+@click.option('--filter', '-f', 'filter_term', default='', help='Filter by name or description')
+@click.pass_context
+def check_ref_types(ctx, filter_term):
+    """List all available reference types and their descriptions
+
+    Shows every valid reference type from the active dependency rules,
+    with descriptions. Use this when deciding which reference type to
+    add to an entity.
+
+    Examples:
+        know check ref-types
+        know -g .ai/know/code-graph.json check ref-types
+        know check ref-types --filter config
+        know check ref-types --filter model
+    """
+    rules_path = ctx.obj.get('rules_path')
+    if not rules_path:
+        console.print("[red]✗ No rules file loaded. Use -g to specify a graph.[/red]")
+        return
+
+    import json as json_mod
+    from pathlib import Path
+
+    rp = Path(rules_path)
+    if not rp.exists():
+        console.print(f"[red]✗ Rules file not found: {rules_path}[/red]")
+        return
+
+    with open(rp) as f:
+        rules = json_mod.load(f)
+
+    ref_types = rules.get('reference_dependency_rule', {}).get('reference_types', [])
+    descriptions = rules.get('reference_description', {})
+
+    term = filter_term.lower()
+    rows = []
+    for rt in sorted(ref_types):
+        desc = descriptions.get(rt, '')
+        if term and term not in rt.lower() and term not in desc.lower():
+            continue
+        deprecated = '[DEPRECATED' in desc
+        rows.append((rt, desc, deprecated))
+
+    table = Table(
+        title=f"Reference Types ({rp.name}){f'  filter: {filter_term}' if term else ''}",
+        show_header=True,
+        header_style="bold magenta"
+    )
+    table.add_column("Type", style="cyan", no_wrap=True)
+    table.add_column("Description")
+
+    for rt, desc, deprecated in rows:
+        style = "dim" if deprecated else ""
+        table.add_row(rt, desc, style=style)
+
+    console.print(table)
+    console.print(f"\n[dim]{len(rows)} types shown. Add with: know add <type> <key> '<json>'[/dim]")
 
 
 # =============================================================================
@@ -3875,8 +3931,8 @@ def rules_graph(ctx):
     Shows dependency structure for the current graph and how it links to its counterpart.
 
     Examples:
-        know -g .ai/spec-graph.json gen rules graph     # Show spec graph structure
-        know -g .ai/code-graph.json gen rules graph     # Show code graph structure
+        know -g .ai/know/spec-graph.json gen rules graph     # Show spec graph structure
+        know -g .ai/know/code-graph.json gen rules graph     # Show code graph structure
     """
     rules_path = ctx.obj.get('rules_path') if ctx.obj else None
     rules = _load_rules(rules_path)
