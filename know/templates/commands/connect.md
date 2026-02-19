@@ -5,7 +5,7 @@ Your goal is to improve the spec-graph's **coverage percentage** by connecting d
 ## Process Overview
 
 1. **Measure Current Coverage**
-   - Run: `know -g .ai/spec-graph.json coverage`
+   - Run: `know -g .ai/know/spec-graph.json coverage`
    - Note the current coverage percentage
 
 2. **Identify Connection Targets**
@@ -28,17 +28,17 @@ Your goal is to improve the spec-graph's **coverage percentage** by connecting d
       - "Which feature(s) should use {entity-name}?" (for components/actions)
 
    c. **Create the Link**
-      - Use `know -g .ai/spec-graph.json link <from> <to>` to create dependency
-      - Validate: `know -g .ai/spec-graph.json validate`
+      - Use `know -g .ai/know/spec-graph.json link <from> <to>` to create dependency
+      - Validate: `know -g .ai/know/spec-graph.json validate`
 
 4. **Track Progress**
-   - After each connection, re-run coverage check with `know -g .ai/spec-graph.json coverage`
+   - After each connection, re-run coverage check with `know -g .ai/know/spec-graph.json coverage`
    - Show: "Coverage: {old}% → {new}%"
    - Continue until coverage >= 80% or all logical connections made
 
 5. **Final Validation**
-   - Run: `know -g .ai/spec-graph.json coverage`
-   - Run: `know -g .ai/spec-graph.json validate` (note: may show warnings for existing schema violations)
+   - Run: `know -g .ai/know/spec-graph.json coverage`
+   - Run: `know -g .ai/know/spec-graph.json validate` (note: may show warnings for existing schema violations)
    - Show final coverage percentage
 
 ## Connection Rules (follow dependency-rules.json)

@@ -7,7 +7,7 @@
 | `know/config/dependency-rules.json` | Schema definitions, reference types, meta schemas |
 | `know/src/generators.py` | Spec generation logic |
 | `know/know.py` | CLI commands including `spec` and `feature-spec` |
-| `.ai/spec-graph.json` | Example graph to test against |
+| `.ai/know/spec-graph.json` | Example graph to test against |
 
 ## Design Decisions
 

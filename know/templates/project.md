@@ -1,6 +1,6 @@
 # Project Context
 
-> **Note**: This document references entities in `.ai/spec-graph.json` and `.ai/code-graph.json`. Use the **know-tool skill** to query these graphs for detailed information.
+> **Note**: This document references entities in `.ai/know/spec-graph.json` and `.ai/know/code-graph.json`. Use the **know-tool skill** to query these graphs for detailed information.
 
 ## Purpose
 

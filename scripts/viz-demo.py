@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Quick demo of graph visualization using Mermaid.
-Usage: python scripts/viz-demo.py .ai/spec-graph.json
+Usage: python scripts/viz-demo.py .ai/know/spec-graph.json
 """
 
 import json
@@ -79,7 +79,7 @@ def generate_mermaid(graph_path, entity_types=None, max_nodes=50):
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print("Usage: python scripts/viz-demo.py <graph-path> [entity-types]")
-        print("Example: python scripts/viz-demo.py .ai/spec-graph.json feature,action")
+        print("Example: python scripts/viz-demo.py .ai/know/spec-graph.json feature,action")
         sys.exit(1)
 
     graph_path = sys.argv[1]

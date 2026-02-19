@@ -71,14 +71,14 @@
       "know unlink [type:key] [type:key]"
     ],
     "validation": [
-      "know check validate",
+      "know graph check validate",
       "know health",
       "know cycles"
     ],
     "analysis": [
-      "know check link gap-analysis [type:key]",
-      "know check link gap-summary",
-      "know check link orphans",
+      "know graph check link gap-analysis [type:key]",
+      "know graph check link gap-summary",
+      "know graph check link orphans",
       "know build-order"
     ],
     "rules": [
@@ -121,7 +121,7 @@
     "Run gap-analysis regularly - catches incomplete product specifications",
     "Keep relationships explicit in graph section - no implied dependencies",
     "Reference detailed specs without duplication - single source of truth principle",
-    "Validate completeness with 'know check link gap-analysis' - ensure features trace to user needs"
+    "Validate completeness with 'know graph check link gap-analysis' - ensure features trace to user needs"
   ],
   "referenceGuides": [
     {
@@ -155,7 +155,7 @@
       "Add the product requirement: know add feature new-feature '{\"name\":\"...\", \"description\":\"...\"}'",
       "Check what implementation pieces it needs: know rules after feature",
       "Connect to user objectives and components: know link feature:new-feature action:user-action",
-      "Validate product-code alignment: know check validate && know check link gap-analysis feature:new-feature"
+      "Validate product-code alignment: know graph check validate && know graph check link gap-analysis feature:new-feature"
     ],
     "philosophy": "Start with user objectives, map to features, connect to components. The graph enforces traceability."
   },

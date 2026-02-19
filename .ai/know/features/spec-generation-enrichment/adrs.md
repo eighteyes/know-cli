@@ -359,8 +359,8 @@ We could enforce new reference types with:
 ⚠ Component 'component:X' lacks source-file reference
 
 Suggested fix:
-  know -g .ai/spec-graph.json add-ref source-file X '{"path":"src/X.py"}'
-  know -g .ai/spec-graph.json link component:X source-file:X
+  know -g .ai/know/spec-graph.json add-ref source-file X '{"path":"src/X.py"}'
+  know -g .ai/know/spec-graph.json link component:X source-file:X
 ```
 
 ### Consequences

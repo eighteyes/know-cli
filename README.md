@@ -1,15 +1,15 @@
-# KNOW CLI - v 0.0.1
-Opinionated LLM tooling for product driven software development. 
+# KNOW CLI / Spec Graphs - v 0.1.2
+Opinionated LLM tooling and knowledge base for product driven software development. 
 
-Know CLI is mainly for AI-driven *feature management*. 
+Know CLI turns conversations into context construction for AI-driven *feature development* . 
 
-Know commands are for end users. 
+Know commands are for end users to manually utilize the Know graph.
 
 ## Why Know?
 Every AI toolset for making software implicitly carries the creator's mental model for software development. This is a point of friction for experienced developers, and my recommendation is to roll your own tooling for the best results. My model is not your model, and that's ok. I made `know` to give my mental model hands to work with, and it works for me.
 
 ### The Model
-My background is not in Computer Science and has as little enterprise exposure as was affordable. Mostly startups and small businesses, including a stint with an incubator / venture builder studio. I've done a few 0->1s but mostly 0->0.1s, usually in a client / customer / founder facing role as the technical lead. Rapid prototyping to learn quickly is my typical objective.
+My background is entirely with startups, including a stint with an incubator / venture builder studio. I've done a few 0->1s but mostly 0->0.1s, usually in a client / customer / founder facing role as the technical lead. Rapid prototyping to learn quickly is my typical objective
 
 `know` was designed to find and capture context around what you're asking an AI to accomplish. The WHAT and WHY in addition to the HOW.
 
@@ -19,7 +19,7 @@ Just like humans, LLMs need to make decisions as they go, as the map is not the 
 
 *Why not spec files?*
 
-I started with spec files, then I hit a wall. Spec files are BRITTLE, they represent your thinking and the project at a point in history, and they get bloated and are not adaptable. Necessarily, you store information in multiple places, and that information is subject to rot. What we need to defeat this are data structures which are not flat, which support branching and nesting. What we need are spec graphs.
+I started with spec files, then I hit a wall. Spec files are fine for humans, token overhead for language exists when you use these for AI. Spec files are BRITTLE, they represent your thinking and the project at a point in history, and they get bloated and are not adaptable. Necessarily, you store information in multiple places, and that information is subject to rot. What we need to defeat this are data structures which are not flat, which support branching and nesting. What we need are spec graphs.
 
 *Spec graphs...*
 
@@ -30,16 +30,19 @@ With `know` feature delivery is not a checklist, it is a deterministic state of 
 *... cool ... what's next?*
 
 ```
+```
+```
 npm install -g know-cli
 
 # cd to your project
-know init
+know init - installs skill and commands 
 ```
 
-## Workflow
+## LLM Workflow
 ```
 # main
 /know:add - Add more features as you go
+/know:prebuild - Ensure the specs are aligned with the graph
 /know:build <feature> - Spin up some agents to knock it out
 /know:review <feature> - Your checklist for validation
 /know:done <feature> - Mark it as finished. 
@@ -47,7 +50,7 @@ know init
 # as needed
 /know:prepare - init on an existing codebase, runs know:plan after setup
 /know:plan - Kick off a new project with a phased Product discovery conversation.
-/know:bug - track an issue witha feature
+/know:bug - track an issue with a feature
 /know:connect - if the graph gets sparse
 /know:list - whats out there to work on
 /know:change <feature> - things change
@@ -56,21 +59,9 @@ know init
 # skills
 know-tool - teaches AI how to use Know CLI
 ```
-## Why? 
-Task based workflows are very granular, looking at medium sized project with a minor task backlog can reach into the hundreds and becomes overwhelming very quickly even with AI and tooling assistance. Grouping tasks into Features is an intuitive approach and lets us approach tasks in aggregates.
 
-`spec.md` is a brittle approach to defining projects for LLM understanding. Having built with spec files for months, they are brittle, prone to hallucination, resistant to change, and never internally consistent. despite how "production-ready" and "Perfect!" they are. 
-
-Introducing **SPEC GRAPHS**
-
-Specs can be *queryable*, *internally consistent*, *generated* and with *inherent references*.
-
-## Spec Graphs solve for brittle specs. 
-Every piece of information lives in one place, and is referenced by others. Functionally, this approach uses a simple graph with a single relationship type "depends_on" to map the connection between a User, their Objectives, into how they Act on software Components.
-
-These components serve as the link to a second graph in the same vein, one which describes the software architecture and how components link together. In this way, we can map from a user objective and determine all the software pieces involved in making that happen.
-
-AI, reinforced with tooling, help you make these graphs driven by feature development conversations. ( `/know:add` )
+### My model is not your model
+Perfect! You can modify the `dependency-rules.yaml` file to change the paradigm to work for you! I would be especially interested to see if this approach could apply to domains outside of software.  
 
 ## Pure Alpha
 This is a work in progress. Primary intents:
@@ -78,7 +69,7 @@ This is a work in progress. Primary intents:
 2) Output current spec files for "traditional" spec-driven development.
 3) Create a kick-ass `project.md` file.
  
-Generally speaking, this is not designed for human use, as the ergonomics are somewhere between `tar` and `aws-cli`. That being said, a skill is provided for use `.claude/skills/know-tool/marketplace.json`, give it a spin.
+Generally speaking, the cli is not intended for human use, as the ergonomics are somewhere between `tar` and `aws-cli`. That being said, a skill is provided for use `.claude/skills/know-tool/marketplace.json`, give it a spin with `know init` in your project directory.
 
 ## Results
 I get considerably better plans made with `know` then with other tools used by generalist agents. Instead of assuming my intent, the plans intuit where I want to go. I spend less time guiding the agent when it has a prepared knowledgebase that understands both the codebase and how it connects to features.
@@ -98,21 +89,21 @@ npm install -g know-cli
 
 Know supports two types of graphs with separate validation rules:
 
-1. **Spec Graph** (`.ai/spec-graph.json`): Maps user intent to features
+1. **Spec Graph** (`.ai/know/spec-graph.json`): Maps user intent to features
    - Entity types: user, objective, feature, component, action, operation, etc.
    - Rules: `config/dependency-rules.json`
 
-2. **Code Graph** (`.ai/code-graph.json`): Maps codebase architecture
+2. **Code Graph** (`.ai/know/code-graph.json`): Maps codebase architecture
    - Entity types: module, package, class, function, layer, interface, etc.
    - Rules: `config/code-dependency-rules.json`
 
 **Auto-detection**: The CLI automatically selects the correct rules based on graph filename:
 ```bash
 # Spec graph - auto-uses dependency-rules.json
-know -g .ai/spec-graph.json add entity user developer '{"name":"Developer","description":"..."}'
+know -g .ai/know/spec-graph.json add entity user developer '{"name":"Developer","description":"..."}'
 
 # Code graph - auto-uses code-dependency-rules.json
-know -g .ai/code-graph.json add entity module auth '{"name":"Auth Module","description":"..."}'
+know -g .ai/know/code-graph.json add entity module auth '{"name":"Auth Module","description":"..."}'
 ```
 
 **Manual override**: Use `-r` to specify custom rules:
@@ -122,15 +113,13 @@ know -g custom-graph.json -r my-rules.json add entity entity-type key '{"name":"
 
 ## Commands Reference
 
-**Note**: Most commands accept `-g/--graph-path` to specify which graph to operate on. The `-r/--rules-path` flag is optional as rules are auto-detected from the graph filename.
-
 ### Adding to Graph (`know add`)
 
 ```bash
 # Add entities
 know add entity <type> <key> '{"name":"Name","description":"Description"}'
-know -g .ai/code-graph.json add entity module auth-handler '{"name":"Auth Handler","description":"..."}'
-know -g .ai/spec-graph.json add entity feature user-login '{"name":"User Login","description":"..."}'
+know -g .ai/know/code-graph.json add entity module auth-handler '{"name":"Auth Handler","description":"..."}'
+know -g .ai/know/spec-graph.json add entity feature user-login '{"name":"User Login","description":"..."}'
 
 # Add references (validated against dependency-rules.json)
 know add reference <ref_type> <key> '{"field":"value"}'
@@ -155,7 +144,7 @@ know get <entity_id>                # Get details of a specific entity
 # Deprecation
 know nodes deprecate <entity_id> --reason "..." [--replacement <entity>] [--removal-date YYYY-MM-DD]
 know nodes undeprecate <entity_id>
-know nodes deprecated               # List all deprecated entities
+know nodes deprecated               # List all deprecated entities[]
 know nodes deprecated --overdue     # List overdue for removal
 
 # Modification
@@ -203,7 +192,7 @@ know check completeness <entity_id> # Completeness score
 know check link orphans             # Find orphaned references
 know check link usage               # Reference usage statistics
 know check link suggest             # Suggest connections for orphans
-know check link clean [--remove]    # Clean up unused references
+know check link clean [--remove]    # Clean up unused referencesb
 know check link gap-analysis [entity_id]  # Analyze gaps
 know check link gap-missing         # List missing connections
 know check link gap-summary         # Implementation summary
@@ -236,98 +225,7 @@ know feature tag <name>             # Tag commits with git notes
 know feature done <name>            # Complete and archive feature
 know feature impact <target>        # Show affected features
 know feature coverage <name>        # Test coverage from feature level
-```
-
-### User-Friendly Workflow
-
-Know provides a workflow system for managing features with linked documentation and graph integration.
-
-```bash
-# Initialize know workflow in a project (one-time setup)
-know init
-
-# This creates:
-# - .claude/commands/know/ with slash commands
-# - .ai/know/ directory structure
-# - .ai/know/project.md template
-```
-
-Once initialized, use these Claude slash commands:
-
-```bash
-# Start a new feature
-/know-add <feature-name>
-# Creates .ai/know/<feature-name>/{proposal,todo,plan,spec}.md
-# Adds stub graph entries immediately
-
-# List all features (planned, in-progress, completed)
-/know-list
-
-# Complete and archive a feature
-/know-done <feature-name>
-# Moves feature to .ai/know/archive/
-```
-
-**Workflow Example:**
-
-```bash
-# 1. Initialize (one time)
-know init
-
-# 2. Start a feature
-/know-add user-authentication
-
-# 3. Fill out overview, todo, and plan files
-
-# 4. Generate specs for each component
-know gen spec feature:login-form >> .ai/know/user-authentication/spec.md
-know gen spec component:auth-button >> .ai/know/user-authentication/spec.md
-know gen spec action:submit-credentials >> .ai/know/user-authentication/spec.md
-
-# 5. Complete the feature
-/know-done user-authentication
-```
-
-**File Structure:**
-
-```
-.ai/know/
-├── project.md                    # Project context
-├── user-auth/                    # Active feature
-│   ├── overview.md              # User request + requirements
-│   ├── todo.md                  # Checklist → [links to plan]
-│   ├── plan.md                  # Implementation → [links to spec]
-│   └── spec.md                  # Generated via know spec
-└── archive/                     # Completed features
-    └── initial-setup/
-```
-
-### LLM Workflows
-
-```bash
-# List available LLM providers
-know llm-providers
-
-# List available LLM workflows
-know llm-workflows
-
-# List available workflow chains
-know llm-chains
-
-# Show detailed information about a workflow
-know llm-info <workflow_name>
-
-# Test LLM provider connection
-know llm-test <provider> <prompt>
-
-# Run an LLM workflow with JSON inputs
-know llm-run <workflow_name> <json_inputs>
-
-# Run an LLM workflow chain
-know llm-chain <chain_name>
-```
-
-## Graph Structure
+```## Graph Structure
 
 ### Product Specification Graph (spec-graph.json)
 Maps user intent to implementation with a unidirectional dependency model.

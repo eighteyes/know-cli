@@ -21,7 +21,7 @@ Know-CLI is an opinionated graph knowledgebase for product-driven software devel
 
 ## Graph Architecture
 
-### Spec Graph (.ai/spec-graph.json)
+### Spec Graph (.ai/know/spec-graph.json)
 **Status**: ✓ Populated & Validated, **Coverage**: 100%
 **Entities**: 121 total (5 users, 8 objectives, 9 features, 28 actions, 20 components, 51 operations)
 **Dependencies**: 144 mapped relationships
@@ -62,7 +62,7 @@ Maps user intent to product features through dependency chains:
 
 **Operations** (51): Low-level operations like add_entity_to_graph, get_entity_dependencies, create_dependency_link, validate_dag_structure, check_dependency_rules, detect_cycles, compute_health_score, find_missing_chains, compute_completeness, and more.
 
-### Code Graph (.ai/code-graph.json)
+### Code Graph (.ai/know/code-graph.json)
 **Status**: ✓ Populated & Validated
 **Entities**: 31 total (26 modules, 5 packages)
 **Dependencies**: 58 mapped relationships
@@ -198,18 +198,18 @@ From code-graph `external-dep` references:
 
 Query spec-graph:
 ```bash
-know -g .ai/spec-graph.json list              # List all entities
-know -g .ai/spec-graph.json uses feature:X    # Show feature dependencies
-know -g .ai/spec-graph.json gap-summary       # Implementation status
-know -g .ai/spec-graph.json coverage          # Coverage analysis
-know -g .ai/spec-graph.json feature-spec X    # Rich feature spec
+know -g .ai/know/spec-graph.json list              # List all entities
+know -g .ai/know/spec-graph.json uses feature:X    # Show feature dependencies
+know -g .ai/know/spec-graph.json gap-summary       # Implementation status
+know -g .ai/know/spec-graph.json coverage          # Coverage analysis
+know -g .ai/know/spec-graph.json feature-spec X    # Rich feature spec
 ```
 
 Query code-graph:
 ```bash
-know -g .ai/code-graph.json list              # List all modules
-know -g .ai/code-graph.json trace module:X    # Trace across boundary
-know -g .ai/code-graph.json stats             # Graph statistics
+know -g .ai/know/code-graph.json list              # List all modules
+know -g .ai/know/code-graph.json trace module:X    # Trace across boundary
+know -g .ai/know/code-graph.json stats             # Graph statistics
 ```
 
 For detailed graph operations and workflows, use the `/know-tool` skill or refer to `.claude/skills/know-tool/` documentation.

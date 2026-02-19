@@ -65,12 +65,15 @@ Know CLI uses a flat structure with auto-detection:
 | `know get <type:key>` | Get entity or reference (auto-detects) |
 | `know list [--type TYPE]` | List entities or references (auto-detects) |
 | `know search <pattern>` | Search all text content (supports regex) |
-| `know add <type> <key> <json>` | Add entity or reference (auto-detects) |
-| `know link <from> <to>` | Add dependency (top-level shortcut) |
-| `know unlink <from> <to>` | Remove dependency (top-level shortcut) |
+| `know add <type> <key> [key2 ...]` | Add one or more entities/references (auto-detects) |
+| `know link <from> <to> [to2 ...]` | Add one or more dependencies |
+| `know unlink <from> <to> [to2 ...]` | Remove one or more dependencies |
 | `know nodes` | Node operations: deprecate, merge, rename, delete, cut, clone, update |
 | `know meta` | Get, set, and delete meta sections (project, phases, decisions) |
-| `know graph` | Traverse, uses, used-by, connect, clean, suggest, diff, migrate |
+| `know graph` | Traverse, uses, used-by, connect, clean, suggest, diff, migrate, coverage, cross connect, cross coverage |
+| `know graph coverage` | Show % of spec entities reachable from root users |
+| `know graph cross connect [feature]` | Auto-connect spec features/components to code via token matching |
+| `know graph cross coverage` | Show spec↔code link coverage (% with code-link refs) |
 | `know check` | Validate, health, stats, gaps, orphans, cycles, completeness |
 | `know gen` | Specs, feature-specs, docs, traces, rules, codemap, code-graph, sitemap |
 | `know feature` | Lifecycle: status, connect, review, done, impact, validate, contracts, coverage |
@@ -128,27 +131,29 @@ know graph traverse module:auth --direction spec     # Show spec feature
 know graph traverse feature:profile                  # Auto-detects direction
 
 # Statistics
-know check stats                    # Graph statistics (entity counts, dependencies)
-know check completeness feature:x   # Completeness score for an entity
+know graph check stats                    # Graph statistics (entity counts, dependencies)
+know graph check completeness feature:x   # Completeness score for an entity
 ```
 
 ### Modification
 ```bash
-know add feature new-feature '{"name":"...", "description":"..."}'       # Add entity (auto-detects)
+know add feature new-feature '{"name":"...", "description":"..."}'       # Add single entity
+know add feature feat-a feat-b feat-c -f data.json                      # Add multiple (shared data from file)
 know add documentation new-doc '{"title":"...", "url":"..."}'            # Add reference (auto-detects)
 know meta set project key '{"value":"..."}'                              # Set meta value
 know meta get project                                                    # Get meta section
 know meta delete phases I                                                # Delete meta key (prompts)
 know meta delete requirements auth-login -y                              # Delete meta key (skip prompt)
-know link feature:analytics action:export-report     # Add dependency
-know unlink feature:analytics action:export-report   # Remove dependency
+know link feature:auth action:login                                      # Add single dependency
+know link feature:auth action:login action:logout component:session      # Add multiple at once
+know unlink feature:auth action:login action:logout                      # Remove multiple at once
 ```
 
 ### Validation
 ```bash
-know check validate                 # Must run after changes (includes fix commands in errors)
-know check health                   # Comprehensive check
-know check cycles                   # Find circular dependencies
+know graph check validate                 # Must run after changes (includes fix commands in errors)
+know graph check health                   # Comprehensive check
+know graph check cycles                   # Find circular dependencies
 ```
 
 ### Requirements (`know req`)
@@ -173,7 +178,8 @@ know op reset feature:auth              # Reset an op to pending
 
 ### Feature Lifecycle (`know feature`)
 ```bash
-know feature connect feature:auth       # Create bidirectional spec ↔ code linkage
+know graph cross connect feature:auth            # Create bidirectional spec ↔ code linkage
+know feature connect auth module:x module:y      # Link feature to multiple code entities at once
 know feature review feature:auth        # Review for completion: validate graph, check coverage
 know feature done feature:auth          # Complete: tag commits, update phase, archive
 know feature impact entity:x            # Show features depending on an entity or file
@@ -201,6 +207,7 @@ know nodes clone entity:id new-key --no-upstream  # Clone without incoming deps
 
 # Removal (works with entities AND references)
 know nodes delete feature:old              # Remove entity, clean up dependencies
+know nodes delete feature:old action:bar   # Remove multiple at once
 know nodes delete data-model:old-schema    # Remove reference, clean up dependencies
 know nodes delete component:temp -y        # Skip confirmation
 know nodes cut entity:id                   # Remove node only, leave deps orphaned
@@ -212,9 +219,9 @@ know nodes merge from:entity into:entity -y   # Skip confirmation
 know nodes merge from:entity into:entity --keep  # Keep source after merge
 
 # Graph Operations
-know link feature:x action:y         # Add dependency
-know unlink feature:x action:y       # Remove dependency (shows confirmation)
-know unlink feature:x action:y -y    # Skip confirmation
+know link feature:x action:y action:z    # Add one or more dependencies
+know unlink feature:x action:y action:z  # Remove one or more (shows confirmation)
+know unlink feature:x action:y -y        # Skip confirmation
 ```
 
 **Important:** All destructive operations (`delete`, `cut`, `rename`, `merge`, `unlink`) now show detailed confirmation prompts by default. Use `-y` or `--yes` to skip confirmation in scripts.
@@ -227,11 +234,11 @@ know unlink feature:x action:y -y    # Skip confirmation
 
 ### Analysis
 ```bash
-know check gap-analysis feature:x  # Find missing dependencies
-know check gap-missing             # List missing connections in chains
-know check gap-summary             # Overall implementation status
-know check orphans                 # Find unused references
-know check usage                   # Reference usage statistics
+know graph check gap-analysis feature:x  # Find missing dependencies
+know graph check gap-missing             # List missing connections in chains
+know graph check gap-summary             # Overall implementation status
+know graph check orphans                 # Find unused references
+know graph check usage                   # Reference usage statistics
 know graph suggest                 # Suggest connections for orphaned references
 know graph clean                   # Clean up unused references (dry run)
 know graph clean --remove --execute # Actually remove unused references
@@ -297,7 +304,7 @@ Graph file: .ai/know/spec-graph.json
    • List: know list
    • Edit: know add <type> <key> <data>
    • Link: know link <from> <to>
-   • Validate: know check validate
+   • Validate: know graph check validate
 ```
 
 **Why this matters:** Direct file editing can corrupt the graph structure. The hook ensures all modifications go through validated CLI commands.
@@ -344,7 +351,7 @@ know gen rules after feature
 know link feature:new-feature action:trigger-action
 
 # 5. Validate
-know check validate
+know graph check validate
 know graph uses feature:new-feature --recursive
 ```
 
@@ -402,8 +409,9 @@ know phases list                        # Shows status icons inline
 
 2. **✅ Implemented** - Code-graph links exist for this feature
    - Set by: `/know:build` creating bidirectional spec↔code links
-   - Computed: Check for `graph-link` references pointing to this feature
+   - Computed: Check for `code-link` references pointing to this feature
    - Auto-detected via graph traversal
+   - **Deprecated reference types:** `graph-link`, `implementation`, `product-component` are deprecated. Use `code-link` instead.
 
 3. **✅ Reviewed** - Git commit with `[feature:id]` merged to main
    - Set by: Merging to main with feature tag in commit message
@@ -414,7 +422,7 @@ know phases list                        # Shows status icons inline
 
 ```bash
 /know:add     → meta.phases[pending][feature:x]   → 📋 planned
-/know:build   → creates graph-links               → ✅ implemented
+/know:build   → creates code-links                → ✅ implemented
 git merge     → [feature:x] in commit msg         → ✅ reviewed
 /know:done    → removes from phases, archives     → done
 ```
@@ -462,6 +470,19 @@ know gen rules before <entity-type>     # What can depend on this entity?
 
 Run these before adding references. The rules file is the canonical source for what types exist and what they mean.
 
+### Cross-Graph Reference Type: `code-link`
+
+`code-link` is the current reference type for linking spec and code graphs:
+
+| Graph | Schema |
+|-------|--------|
+| spec-graph | `{ modules, classes, packages, status }` |
+| code-graph | `{ feature, component, status }` |
+
+**Usage:** Cross-graph link between spec entities (feature/component) and code entities (module/class).
+
+**Deprecated:** `graph-link`, `implementation`, and `product-component` are deprecated cross-graph reference types. Use `code-link` instead.
+
 ### Permissions (Access Control)
 The `permission` reference type links users to features for access control:
 
@@ -504,22 +525,23 @@ Applies to any reference type with an external rendering, not just interfaces.
 3. **Multi-screen journey → sequence reference.** One per journey, not per screen
 4. **Spec change → verify design. Design change → verify spec.** Never update one in isolation
 5. **Requirements describe what.** Decompose how into typed references (data-model, business_logic, sequence, api_contract)
-6. **Verify connectivity after every addition.** `know graph uses` + `know graph used-by` + `know check orphans`
+6. **Verify connectivity after every addition.** `know graph uses` + `know graph used-by` + `know graph check orphans`
 7. **Keep implementation details out of requirements.** That detail belongs in design artifact references
 8. **Extract shared references.** Do not duplicate field definitions — one reference, multiple links
 
 ## Critical Rules for LLMs
 
 1. **NEVER directly read/edit graph files** - Always use `know` CLI commands (enforced by hooks)
-2. **Always validate after modifications** - Run `know check validate`
+2. **Always validate after modifications** - Run `know graph check validate`
 3. **Respect entity vs reference distinction** - Entities participate in dependencies, references don't
 4. **Follow dependency rules** - Use `know gen rules` to check before adding dependencies
-5. **Maintain DAG properties** - No cycles allowed, check with `know check cycles`
+5. **Maintain DAG properties** - No cycles allowed, check with `know graph check cycles`
 6. **Use full paths** - Always use `type:key` format (e.g., `feature:real-time-telemetry`)
 7. **Never add dependencies to entity objects** - Only in the `graph` section
-8. **Check completeness** - Use `know check gap-analysis` to ensure full dependency chains
+8. **Check completeness** - Use `know graph check gap-analysis` to ensure full dependency chains
 9. **Use search for discovery** - `know search <pattern>` is faster than reading the entire graph
 10. **Confirm destructive operations** - Use `-y` flag to skip confirmation in automated scripts
+11. **Run write operations sequentially** - The graph file is not concurrency-safe. Running `know unlink`, `know add`, `know link`, or any other write command in parallel (e.g., with `&` in bash) causes race conditions where the last writer overwrites earlier changes. Always chain write commands with `&&` or run them in a single sequential script.
 
 ## Installation Note
 

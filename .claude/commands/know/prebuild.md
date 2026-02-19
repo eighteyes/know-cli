@@ -16,6 +16,26 @@ Validate that spec-graph contains all information needed for build by generating
 
 **Workflow**
 
+## Phase 0: Cross-Graph Link Check
+
+**Before generating specs, verify cross-graph code-link placeholders exist:**
+
+```bash
+know graph cross coverage \
+  --spec-graph .ai/know/spec-graph.json \
+  --code-graph .ai/know/code-graph.json \
+  --spec-only
+```
+
+**If feature has no code-link ref (0% spec coverage):**
+- Warn: "No code-link placeholder found for feature:<name>. Creating placeholder..."
+- Create it:
+  ```bash
+  know -g .ai/know/spec-graph.json add code-link <feature>-code '{"modules":[],"classes":[],"packages":[],"status":"planned"}'
+  know -g .ai/know/spec-graph.json link feature:<name> code-link:<feature>-code
+  ```
+- Note: Placeholder with `status: "planned"` is acceptable. Empty modules/classes list means AI will fill during build.
+
 ## Phase 1: Generate Specs from Graph
 
 **Steps:**

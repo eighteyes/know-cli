@@ -28,7 +28,10 @@
       "control-flow",
       "data-flow",
       "side-effect",
-      "error-path"
+      "error-path",
+      "graph-link",
+      "spec-link",
+      "code-link"
     ],
     "validation": "References are always valid dependencies and bypass entity-to-entity dependency rules",
     "examples": [
@@ -56,7 +59,11 @@
     "control-flow": "Conditional logic, branches, loops, and decision points in code",
     "data-flow": "Data transformations and how data moves through the system",
     "side-effect": "Observable effects beyond return values: file I/O, state changes, processes",
-    "error-path": "Exception handling, error propagation, and recovery strategies"
+    "error-path": "Exception handling, error propagation, and recovery strategies",
+    "graph-link": "[DEPRECATED: use code-link] Bidirectional links to spec-graph entities (features, components) for cross-graph traceability",
+    "product-component": "[DEPRECATED: use code-link] Links code modules to product components they implement in spec-graph.json",
+    "spec-link": "Alias for code-link in code-graph context. Cross-graph link from a code entity (module/class) to the spec entities it implements.",
+    "code-link": "Cross-graph link from a code entity (module/class) to the spec entities it implements. Shape: { feature: 'feature:x', component: 'component:y', status: 'planned|in-progress|complete' }"
   },
   "reference_note": {
     "purpose": "References are terminal graph nodes containing concrete implementation details",
@@ -79,18 +86,20 @@
     "instances": "module:auth, package:api, class:User are instances within entity sets",
     "granularity": "Choose entity granularity based on what you want to track and validate",
     "flexibility": "Not all entity types required - use what makes sense for your architecture",
-    "allowed_metadata": ["path", "package", "layer"]
+    "allowed_metadata": ["path", "package", "layer", "implementation_type", "implementation_status", "aspirational"],
+    "implementation_tracking": "Use implementation_type and implementation_status to track how code fulfills spec requirements",
+    "aspirational_entities": "Mark entities as aspirational:true to preserve them during code-graph regeneration from source"
   },
   "entity_schema": {
     "module": {
       "required": ["name", "description"],
-      "optional": ["path", "package", "layer"],
-      "notes": "path/package/layer allow quick navigation without needing separate source-file references"
+      "optional": ["path", "package", "layer", "file_path", "implementation_type", "implementation_status", "aspirational"],
+      "notes": "path/package/layer allow quick navigation. implementation_type tracks how module fulfills spec (full|partial|stub|aspirational). aspirational=true preserves entity during code-graph regeneration"
     },
     "package": {
       "required": ["name", "description"],
-      "optional": ["layer"],
-      "notes": "layer indicates architectural positioning"
+      "optional": ["layer", "implementation_type", "implementation_status", "aspirational"],
+      "notes": "layer indicates architectural positioning. implementation_type tracks fulfillment status"
     },
     "layer": {
       "required": ["name", "description"],
@@ -98,19 +107,44 @@
     },
     "namespace": {
       "required": ["name", "description"],
-      "optional": []
+      "optional": ["implementation_type", "implementation_status", "aspirational"]
     },
     "interface": {
       "required": ["name", "description"],
-      "optional": []
+      "optional": ["implementation_type", "implementation_status", "aspirational"]
     },
     "class": {
       "required": ["name", "description"],
-      "optional": []
+      "optional": ["implementation_type", "implementation_status", "aspirational"]
     },
     "function": {
       "required": ["name", "description"],
-      "optional": []
+      "optional": ["implementation_type", "implementation_status", "aspirational"]
+    }
+  },
+  "implementation_metadata": {
+    "implementation_type": {
+      "description": "How the code entity fulfills its specification",
+      "values": {
+        "full": "Complete implementation of all functionality",
+        "partial": "Some functionality implemented, some pending",
+        "stub": "Interface defined, implementation is placeholder",
+        "aspirational": "Planned but not yet started"
+      }
+    },
+    "implementation_status": {
+      "description": "Current development status of the entity",
+      "values": {
+        "complete": "Fully implemented and tested",
+        "in-progress": "Currently being developed",
+        "planned": "Documented design, not yet started",
+        "deprecated": "Scheduled for removal"
+      }
+    },
+    "aspirational": {
+      "description": "Boolean flag - if true, preserve this entity during code-graph regeneration from source files",
+      "type": "boolean",
+      "usage": "Set to true for planned entities that don't exist in source yet. Code-graph generators should preserve these entities."
     }
   },
   "source_file_schema": {

@@ -137,10 +137,10 @@ know graph uses feature:analytics-dashboard --recursive
 
 ```bash
 # Check if entity has complete dependencies
-know check completeness feature:analytics-dashboard
+know graph check completeness feature:analytics-dashboard
 
 # Find gaps
-know check gap-analysis feature:analytics-dashboard
+know graph check gap-analysis feature:analytics-dashboard
 ```
 
 ### 5. Generate Spec
@@ -205,7 +205,7 @@ know gen rules describe acceptance_criteria
 
 ```bash
 # See which references are used
-know check usage
+know graph check usage
 
 # Find specific reference in graph
 know get business_logic:export_data_logic
@@ -310,10 +310,10 @@ Spec graph is already JSON:
 
 ```bash
 # Full graph
-cat .ai/spec-graph.json
+cat .ai/know/spec-graph.json
 
 # Specific entity (using jq)
-jq '.entities.feature."analytics-dashboard"' .ai/spec-graph.json
+jq '.entities.feature."analytics-dashboard"' .ai/know/spec-graph.json
 
 # With dependencies
 know graph uses feature:analytics --recursive | jq -R . | jq -s .
@@ -348,10 +348,10 @@ know graph used-by requirement:low-latency-teleoperation --recursive
 know gen feature-spec feature:new-feature
 
 # 2. Check completeness
-know check completeness feature:new-feature
+know graph check completeness feature:new-feature
 
 # 3. Find gaps
-know check gap-analysis feature:new-feature
+know graph check gap-analysis feature:new-feature
 
 # 4. Get build order
 know graph build-order | grep new-feature
@@ -381,7 +381,7 @@ Shows:
 
 ```bash
 # Implementation status
-know check link gap-summary
+know graph check link gap-summary
 ```
 
 Shows:
@@ -418,7 +418,7 @@ done
 ```bash
 # Only generate for complete entities
 know list --type feature | tail -n +3 | while read feat; do
-  completeness=$(know check completeness feature:$feat | grep "Completeness:" | awk '{print $2}')
+  completeness=$(know graph check completeness feature:$feat | grep "Completeness:" | awk '{print $2}')
   if [ "$completeness" = "100%" ]; then
     know gen feature-spec feature:$feat > specs/complete/${feat}.md
   fi
@@ -427,10 +427,10 @@ done
 
 ## Best Practices
 
-1. **Validate before generating**: Run `know check validate` to ensure graph is correct
-2. **Check completeness**: Use `know check completeness` to ensure full dependency chains
+1. **Validate before generating**: Run `know graph check validate` to ensure graph is correct
+2. **Check completeness**: Use `know graph check completeness` to ensure full dependency chains
 3. **Use feature-spec for features**: Provides richer context than basic `spec`
 4. **Follow dependencies**: Use `deps --recursive` to understand full context
 5. **Include references**: Mention references in entity descriptions for auto-inclusion
 6. **Discover dynamically**: Use `know gen rules describe` to discover available types
-7. **Verify gaps**: Run `know check gap-analysis` before generating implementation specs
+7. **Verify gaps**: Run `know graph check gap-analysis` before generating implementation specs

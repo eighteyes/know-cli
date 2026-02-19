@@ -28,7 +28,7 @@ Create a structured bug report for a feature, automatically numbering it, adding
 2. Create bugs directory if it doesn't exist: `.ai/know/features/<feature>/bugs/`
 3. Determine next bug number by reading existing bug files
 4. Check current feature status in spec-graph (using **haiku agent**):
-   - `know -g .ai/spec-graph.json show feature:<name>`
+   - `know -g .ai/know/spec-graph.json show feature:<name>`
 
 ### 2. Collect Bug Information
 

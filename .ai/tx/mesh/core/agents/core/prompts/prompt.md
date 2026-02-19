@@ -120,7 +120,7 @@ When a remote user connects, their messages arrive with `from: <username>:<agent
 # Available Meshes
 
 - ambient-garden: Living meditation space that evolves with conversations and lunar cycles
-- brain: System awareness, knowledge keeper, and strategic advisor. Maintains project memory through observations, patterns, and learnings. Uses spec-graph (.ai/spec-graph.json via know-cli) to structure codebase knowledge. Provides context to agents and formulates development plans.
+- brain: System awareness, knowledge keeper, and strategic advisor. Maintains project memory through observations, patterns, and learnings. Uses spec-graph (.ai/know/spec-graph.json via know-cli) to structure codebase knowledge. Provides context to agents and formulates development plans.
 - code-review: Parallel code review workflow: coordinator distributes review tasks to SOLID checker, doc/config consistency checker, test coverage analyzer, and maintainability analyzer. All analyzers work in parallel and report findings back to coordinator, which saves comprehensive report to .ai/reports
 - codebase-mythology: Constructs epic mythological narratives explaining codebase origins and evolution
 - core: Core/brain mesh - entry point for TX

@@ -240,9 +240,9 @@ Send SINGLE message with:
 
 7. **Cross-Graph Linking** - As code is written, establish bidirectional spec↔code connections:
 
-   **NOTE**: Code-graph is automatically regenerated in Phase 7. The steps below are for manual linking during implementation if you want immediate graph updates. Otherwise, all code entities will be detected and added automatically at the end.
+   **REQUIRED**: Create code-link refs for every new module/class written during implementation. Do not skip this step.
 
-   **For each new module/package/class (optional during implementation):**
+   **For each new module/package/class:**
 
    a. **Add to code-graph** with implementation metadata:
    ```bash
@@ -261,28 +261,29 @@ Send SINGLE message with:
    - `stub` - Interface defined, implementation placeholder
    - `aspirational` - Planned but not yet started (preserved during code-graph regeneration)
 
-   b. **Update graph-link** in code-graph to reference this module:
+   b. **Create code-link** in spec-graph linking feature to code entities:
    ```bash
-   # Get current graph-link
-   current=$(know -g .ai/know/code-graph.json get graph-link:<feature>-link)
-
-   # Add module reference
-   know -g .ai/know/code-graph.json add graph-link <feature>-link '{
-     "component": "component:<component-name>",
-     "feature": "feature:<feature-name>",
-     "modules": ["module:<name>"],
-     "status": "in-progress"
-   }'
+   # Spec-graph: link feature to code entities
+   know -g .ai/know/spec-graph.json add code-link <feature>-code '{"modules":["module:<name>"],"classes":[],"status":"in-progress"}'
+   know -g .ai/know/spec-graph.json link feature:<name> code-link:<feature>-code
    ```
 
-   c. **Update implementation reference** in spec-graph:
+   c. **Create code-link** in code-graph linking module back to spec:
    ```bash
-   know -g .ai/know/spec-graph.json add implementation <feature>-impl '["graph-link:<feature>-link"]'
+   # Code-graph: link module back to spec
+   know -g .ai/know/code-graph.json add code-link <module>-spec '{"feature":"feature:<name>","component":"component:<component-name>","status":"in-progress"}'
+   know -g .ai/know/code-graph.json link module:<name> code-link:<module>-spec
    ```
 
    d. **Link code entities to components** (if component exists):
    ```bash
    know -g .ai/know/code-graph.json graph link module:<name> component:<component-name>
+   ```
+
+   e. **Check cross-graph coverage after linking**:
+   ```bash
+   # Check cross-graph coverage after linking
+   know graph cross coverage --spec-graph .ai/know/spec-graph.json --code-graph .ai/know/code-graph.json
    ```
 
    **Aspirational Entities:**
@@ -315,10 +316,10 @@ Send SINGLE message with:
    - **Reviewer 3 (Conventions)**: "Review for consistency with existing patterns, naming conventions, architectural violations. Report only high-confidence issues (≥80%)."
    - Launch ALL 3 in a single message for true parallelism
 2. **Know-enhanced validation** (using **haiku agents**):
-   - Gap analysis: `know -g .ai/know/spec-graph.json check gap-analysis feature:<name>`
+   - Gap analysis: `know -g .ai/know/spec-graph.json graph check gap-analysis feature:<name>`
    - Verify all component dependencies satisfied
    - Check code-graph completeness
-   - Validate both graphs: `know check validate`
+   - Validate both graphs: `know graph check validate`
 3. Present issues to user with confidence levels
 4. User chooses: "Fix now", "Fix later", or "Proceed"
 5. Save review to `.ai/know/<feature>/review.md`
@@ -364,12 +365,24 @@ Send SINGLE message with:
      --output .ai/know/code-graph.json
    ```
 
-   b. **Verify graph-links created** during implementation are preserved:
+   b. **Verify cross-graph links** created during implementation are preserved:
    ```bash
    # Check that feature still shows as implemented
    know -g .ai/know/spec-graph.json feature status feature:<name>
    # Should show: ✅ Implemented: Yes
+
+   # Verify cross-graph links exist
+   know graph cross coverage \
+     --spec-graph .ai/know/spec-graph.json \
+     --code-graph .ai/know/code-graph.json
+
+   # If feature shows 0% spec coverage, run auto-connect before proceeding:
+   know graph cross connect feature:<name> \
+     --spec-graph .ai/know/spec-graph.json \
+     --code-graph .ai/know/code-graph.json
    ```
+
+   **BLOCK RULE**: If `know graph cross coverage` shows 0% spec coverage for this feature → BLOCK phase completion. Run `know graph cross connect feature:<name>` to create links, then re-check.
 
    c. **Update spec-graph phase status**:
    ```bash
@@ -379,13 +392,13 @@ Send SINGLE message with:
 
    d. **Validate both graphs**:
    ```bash
-   know -g .ai/know/spec-graph.json check validate
-   know -g .ai/know/code-graph.json check validate
+   know -g .ai/know/spec-graph.json graph check validate
+   know -g .ai/know/code-graph.json graph check validate
    ```
 
    e. **Run gap analysis**:
    ```bash
-   know -g .ai/know/spec-graph.json check gap-summary
+   know -g .ai/know/spec-graph.json graph check gap-summary
    ```
 7. Save summary to `.ai/know/<feature>/summary.md`
 8. **Inform user**: "Feature complete. Run `/know:review <feature>` to test, or `/know:done` to archive."
@@ -413,11 +426,11 @@ Task tool with:
 **Common know queries to launch as haiku agents:**
 - `know -g .ai/know/spec-graph.json graph uses feature:<name>`
 - `know -g .ai/know/spec-graph.json graph used-by feature:<name>`
-- `know -g .ai/know/spec-graph.json check gap-analysis feature:<name>`
-- `know -g .ai/know/spec-graph.json check gap-summary`
+- `know -g .ai/know/spec-graph.json graph check gap-analysis feature:<name>`
+- `know -g .ai/know/spec-graph.json graph check gap-summary`
 - `know -g .ai/know/code-graph.json list --type module`
 - `know -g .ai/know/code-graph.json graph uses component:<name> --recursive`
-- `know check validate`
+- `know graph check validate`
 
 ---
 
@@ -637,6 +650,7 @@ know -g .ai/know/code-graph.json search "aspirational.*true" --field aspirationa
 ```
 
 ---
+`r4` - Made cross-graph linking mandatory in Phase 5; added cross-coverage gate to Phase 7; updated to code-link type
 `r3` - Graph-first initialization: can work from spec-graph without requiring /know:add first
 `r2` - Added implementation types, cross-graph linking, and aspirational entity preservation
 `r1` - Initial 7-phase workflow

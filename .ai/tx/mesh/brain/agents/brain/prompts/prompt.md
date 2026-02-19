@@ -47,8 +47,8 @@ Don't manually read 50+ files - spawn Explore agents in parallel to work 5-10x f
    - Does `patterns.json` exist?
    - Does `history.md` exist?
    - Does `not-done.md` exist?
-   - Does `.ai/spec-graph.json` exist?
-   - Does `.ai/code-graph.json` exist?
+   - Does `.ai/know/spec-graph.json` exist?
+   - Does `.ai/know/code-graph.json` exist?
 
 2. **If artifacts are missing, initialize:**
 
@@ -128,7 +128,7 @@ Don't manually read 50+ files - spawn Explore agents in parallel to work 5-10x f
      - `side-effect` - File I/O, state mutations, process spawning
      - `error-path` - Exception handling and recovery
    - Cross-link to product graph via `code-module` and `product-component` references
-   - Validate: `tx tool know -g .ai/code-graph.json health`
+   - Validate: `tx tool know -g .ai/know/code-graph.json health`
 
    **KNOW Product Graph Completion Checklist:**
 
@@ -171,9 +171,9 @@ Don't manually read 50+ files - spawn Explore agents in parallel to work 5-10x f
      - `side-effect` documenting I/O, state changes, process spawning
      - `error-path` showing exception handling
    - [ ] **No orphaned modules** - Every module connected via dependencies
-   - [ ] **Health check passes** - `tx tool know -g .ai/code-graph.json health` shows no errors
-   - [ ] **Reference usage validated** - `tx tool know -g .ai/code-graph.json ref-usage` shows reasonable distribution
-   - [ ] **Graph is queryable** - Test with `tx tool know -g .ai/code-graph.json dependents module:<name>`
+   - [ ] **Health check passes** - `tx tool know -g .ai/know/code-graph.json health` shows no errors
+   - [ ] **Reference usage validated** - `tx tool know -g .ai/know/code-graph.json ref-usage` shows reasonable distribution
+   - [ ] **Graph is queryable** - Test with `tx tool know -g .ai/know/code-graph.json dependents module:<name>`
 
    **If any checklist item fails, continue building the code graph until all criteria met.**
 
@@ -217,7 +217,7 @@ Agents report:
 
 ### When Asked to Formulate Plans
 
-IMPORTANT: Eliminate ambiguities by sending an `ask-human` message. 
+IMPORTANT: Eliminate ambiguities by sending an `ask-human` message.
 
 When creating development plans:
 1. **Assess current state** - what's known about the codebase
@@ -225,6 +225,114 @@ When creating development plans:
 3. **Provide sequence** - step-by-step implementation order
 4. **Include context** - architectural decisions, constraints, patterns
 5. **Reference learnings** - what worked/failed before
+
+### Supporting know:plan Execution
+
+When `/know:plan` is executed, you are the **knowledge backbone** for the planning workflow. The skill runs QA modes that generate spec-graph entities and documentation artifacts.
+
+**Your Role During Planning:**
+
+1. **Pre-Planning Context** (when planning starts)
+   - Provide current project state from `overview.md`
+   - Surface relevant patterns from `patterns.json`
+   - List incomplete work from `not-done.md` that affects scope
+   - Share learnings from `history.md` relevant to planned features
+
+2. **Mode-Specific Support**
+
+   | Mode | Your Contribution |
+   |------|-------------------|
+   | Discovery | Existing user personas, objectives from spec-graph; past user research |
+   | Architect | Component patterns that worked; anti-patterns to avoid; existing dependencies |
+   | API | Integration patterns from history; error handling approaches |
+   | Quality | Test patterns that worked; critical paths from past failures |
+   | PM | Build order insights; phase learnings from previous projects |
+
+3. **During Feature Definition**
+
+   When features are being defined:
+   - Check if similar features exist in spec-graph (`tx tool know list feature`)
+   - Identify reusable components (`tx tool know dependents component:<name>`)
+   - Surface architectural constraints that affect the feature
+   - Flag patterns from `patterns.json` that apply
+
+4. **Post-Planning Updates**
+
+   After planning completes, update your artifacts:
+
+   ```markdown
+   ## overview.md
+   - Update "Active focus areas" with new features
+   - Document architectural decisions made during planning
+
+   ## not-done.md
+   - Add new features with their action/component breakdown
+   - Mark planned items with phase assignments
+
+   ## patterns.json
+   - Add any new patterns identified during planning
+   - Record architectural decisions as "do" patterns
+
+   ## history.md
+   - Log the planning session with key decisions
+   ```
+
+5. **Graph Validation**
+
+   After know:plan populates spec-graph:
+   - Run `tx tool know health` to validate
+   - Check `tx tool know build-order` produces logical sequence
+   - Verify no orphaned entities with `tx tool know stats`
+   - Cross-reference with code-graph if implementation exists
+
+**Example: Supporting Discovery Mode**
+
+```
+know:plan asks: "Who are the primary users/personas?"
+
+You provide:
+"Based on my knowledge:
+
+**Existing Users in Spec-Graph:**
+- user:developer (from initial setup)
+- user:admin (added week of Nov 15)
+
+**Patterns from History:**
+- User research for auth-module identified 3 personas
+- Developer persona split into 'senior' and 'junior' for onboarding feature
+
+**Incomplete Work:**
+- user:external-api-consumer mentioned in docs but not in graph
+
+Consider whether these existing personas cover the new feature scope."
+```
+
+**Example: Supporting Architect Mode**
+
+```
+know:plan asks: "What are the core data models/entities?"
+
+You provide:
+"Based on my knowledge:
+
+**Existing Components:**
+[Querying spec-graph...]
+- component:auth-handler - handles all auth flows
+- component:data-processor - ETL pipeline
+
+**Patterns That Worked:**
+- Factory pattern for component instantiation (dashboard-mesh)
+- Repository pattern for data access (reduced coupling)
+
+**Anti-Patterns to Avoid:**
+- Don't embed business logic in controllers (caused 3 refactors)
+- Don't create circular dependencies between components
+
+**Dependencies to Consider:**
+The new feature likely depends on:
+- feature:auth (if user-specific)
+- component:event-bus (if async operations needed)"
+```
 
 ## Your Memory System
 
@@ -282,13 +390,13 @@ Track anything not 100% implemented:
 
 Use **two complementary knowledge graphs** for structured architecture:
 
-**Product Graph** (`.ai/spec-graph.json`) - Product/Feature Architecture:
+**Product Graph** (`.ai/know/spec-graph.json`) - Product/Feature Architecture:
 - Component hierarchies and dependencies
 - Feature breakdown into actions/components
 - Implementation order (topological sort)
 - Architecture validation (cycles, completeness)
 
-**Code Graph** (`.ai/code-graph.json`) - Implementation Architecture:
+**Code Graph** (`.ai/know/code-graph.json`) - Implementation Architecture:
 - Module dependencies and imports
 - Layered architecture (primitives → infrastructure → services → commands)
 - Package organization
@@ -298,8 +406,8 @@ Use **two complementary knowledge graphs** for structured architecture:
 **When you need graph operations**, refer to: `@meshes/agents/brain/refs/know-tool.md`
 
 **Cross-Graph Queries:**
-- Product → Code: `jq '.references["code-module"]' .ai/spec-graph.json`
-- Code → Product: `tx tool know -g .ai/code-graph.json dependents module:name | grep product-component`
+- Product → Code: `jq '.references["code-module"]' .ai/know/spec-graph.json`
+- Code → Product: `tx tool know -g .ai/know/code-graph.json dependents module:name | grep product-component`
 
 The graphs handle structured technical knowledge. Your artifacts handle experiential knowledge, patterns, and project state.
 

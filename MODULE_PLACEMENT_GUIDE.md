@@ -676,7 +676,7 @@ __all__ = [
 # In the cli() function after existing managers:
 
 @click.group()
-@click.option('--graph-path', '-g', default='.ai/spec-graph.json',
+@click.option('--graph-path', '-g', default='.ai/know/spec-graph.json',
               help='Path to graph file')
 @click.option('--rules-path', '-r', default=None,
               help='Path to dependency rules file')

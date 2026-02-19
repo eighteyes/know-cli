@@ -112,9 +112,9 @@ interface EmbeddingVector {
 
 Suggested fix:
   1. Add source-file reference:
-     know -g .ai/spec-graph.json add-ref source-file X '{"path":"src/path/to/file.ts","module":"modulename"}'
+     know -g .ai/know/spec-graph.json add-ref source-file X '{"path":"src/path/to/file.ts","module":"modulename"}'
   2. Link component to file:
-     know -g .ai/spec-graph.json link component:X source-file:X
+     know -g .ai/know/spec-graph.json link component:X source-file:X
 ```
 
 **AI-friendly format** (machine-parseable):
@@ -125,8 +125,8 @@ Suggested fix:
   "entity": "component:X",
   "missing": "source-file",
   "suggested_commands": [
-    "know -g .ai/spec-graph.json add-ref source-file X '{...}'",
-    "know -g .ai/spec-graph.json link component:X source-file:X"
+    "know -g .ai/know/spec-graph.json add-ref source-file X '{...}'",
+    "know -g .ai/know/spec-graph.json link component:X source-file:X"
   ]
 }
 ```
@@ -143,9 +143,9 @@ Suggested fix:
 
 Suggested fix:
   1. Add signature reference:
-     know -g .ai/spec-graph.json add-ref signature generate_embedding '{"name":"generateEmbedding","params":[{"name":"text","type":"string"}],"returns":"Promise<number[]>"}'
+     know -g .ai/know/spec-graph.json add-ref signature generate_embedding '{"name":"generateEmbedding","params":[{"name":"text","type":"string"}],"returns":"Promise<number[]>"}'
   2. Link operation to signature:
-     know -g .ai/spec-graph.json link operation:generate_embedding signature:generate_embedding
+     know -g .ai/know/spec-graph.json link operation:generate_embedding signature:generate_embedding
 ```
 
 ### Hint 3: Features → meta.feature_specs

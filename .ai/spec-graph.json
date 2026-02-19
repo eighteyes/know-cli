@@ -63,7 +63,8 @@
         "description": "Completed and deployed"
       }
     },
-    "project": {}
+    "project": {},
+    "code_graph_path": ".ai/know/code-graph.json"
   },
   "references": {
     "technical_architecture": {}

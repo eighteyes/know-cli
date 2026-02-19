@@ -187,7 +187,7 @@ know meta set project tagline '{"value": "Does cool things"}'
 know meta set decisions auth-choice '{"title": "JWT Auth", "rationale": "Stateless, scalable"}'
 ```
 
-Meta sections are stored in `.ai/spec-graph.json` under `meta`:
+Meta sections are stored in `.ai/know/spec-graph.json` under `meta`:
 
 ```json
 {
@@ -242,12 +242,12 @@ know add business_logic analyze_data_logic '{"workflow": ["Load model", "Process
 know graph uses feature:new-analytics --recursive
 
 # 11. Validate
-know check validate
+know graph check validate
 ```
 
 ## Modifying Existing Entities
 
-Entities are modified by editing `.ai/spec-graph.json` directly:
+Entities are modified by editing `.ai/know/spec-graph.json` directly:
 
 ```json
 {
@@ -270,7 +270,7 @@ know unlink feature:old-feature action:obsolete-action
 
 ## Removing Entities
 
-Currently requires manual editing of `.ai/spec-graph.json`. Remove from:
+Currently requires manual editing of `.ai/know/spec-graph.json`. Remove from:
 1. `entities` section
 2. `graph` section (all references to it)
 
@@ -284,17 +284,17 @@ know graph connect feature:new-feature
 know graph build-order
 
 # Find orphaned references
-know check orphans
+know graph check orphans
 
 # Get suggestions for connecting orphans
-know check suggest
+know graph check suggest
 ```
 
 ## Best Practices
 
 1. **Always check rules first**: Use `know gen rules describe` before adding entities
-2. **Validate incrementally**: Run `know check validate` after each change
+2. **Validate incrementally**: Run `know graph check validate` after each change
 3. **Follow dependency chains**: Use `know graph uses --recursive` to see full context
 4. **Use meaningful keys**: Descriptive kebab-case keys (real-time-telemetry, not rtt)
 5. **Reference details**: Put implementation details in references, not entity descriptions
-6. **Check completeness**: Use `know check gap-analysis` to find missing connections
+6. **Check completeness**: Use `know graph check gap-analysis` to find missing connections

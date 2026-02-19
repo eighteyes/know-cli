@@ -32,11 +32,11 @@ Know-CLI is an opinionated graph-based knowledge management tool designed primar
 ### The Know-CLI Solution
 
 **Dual Graph Architecture:**
-1. **Spec Graph** (.ai/spec-graph.json): Maps user intent → features → components
+1. **Spec Graph** (.ai/know/spec-graph.json): Maps user intent → features → components
    - Entity types: user, objective, feature, component, action, operation, requirement, interface
    - Answers "WHAT does the product do and WHY?"
 
-2. **Code Graph** (.ai/code-graph.json): Maps implementation structure
+2. **Code Graph** (.ai/know/code-graph.json): Maps implementation structure
    - Entity types: module, package, class, function, layer, interface, namespace
    - Answers "HOW is it built?"
 
@@ -238,7 +238,7 @@ Know-CLI is an opinionated graph-based knowledge management tool designed primar
 - **Two graphs, one truth**: Separate but linked graphs for product intent and code implementation
 - **Bidirectional tracing**: From user objective → code module and back
 - **Product-component references**: Explicit mapping between WHAT and HOW
-- Example: `know trace component:cli-commands -c .ai/code-graph.json` shows both spec and code relationships
+- Example: `know trace component:cli-commands -c .ai/know/code-graph.json` shows both spec and code relationships
 
 **2. LLM-First Design**
 

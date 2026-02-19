@@ -37,7 +37,7 @@ know/src/task_sync.py          - Sync orchestration (TaskSync)
 ```python
 from src import GraphManager
 
-gm = GraphManager(".ai/spec-graph.json")
+gm = GraphManager(".ai/know/spec-graph.json")
 graph = gm.get_graph()
 entities = gm.get_entities()
 refs = gm.get_references()
@@ -49,7 +49,7 @@ dependents = gm.find_dependents("user:admin")
 ```python
 from src import GraphManager, EntityManager
 
-gm = GraphManager(".ai/spec-graph.json")
+gm = GraphManager(".ai/know/spec-graph.json")
 em = EntityManager(gm)
 
 # List
@@ -73,7 +73,7 @@ em.delete_entity("user:viewer")
 ```python
 from src import GraphManager, DependencyManager
 
-gm = GraphManager(".ai/spec-graph.json")
+gm = GraphManager(".ai/know/spec-graph.json")
 dm = DependencyManager(gm)
 
 # Query
@@ -92,7 +92,7 @@ chain = dm.resolve_chain("feature:dashboard")
 ```python
 from src import GraphManager, GraphValidator
 
-gm = GraphManager(".ai/spec-graph.json")
+gm = GraphManager(".ai/know/spec-graph.json")
 gv = GraphValidator(gm)
 
 # Full validation
@@ -431,7 +431,7 @@ know list-type TYPE  # List all entities of that type
 ### Permission Denied
 ```bash
 # Make sure graph file is writable
-chmod 644 .ai/spec-graph.json
+chmod 644 .ai/know/spec-graph.json
 ```
 
 ### Import Errors
@@ -450,8 +450,8 @@ python3 -c "from src import GraphManager"
 | Tests | `tests/` |
 | Configs | `know/config/` |
 | Templates | `know/templates/` |
-| Graph file | `.ai/spec-graph.json` |
-| Code graph | `.ai/code-graph.json` |
+| Graph file | `.ai/know/spec-graph.json` |
+| Code graph | `.ai/know/code-graph.json` |
 | Requirements | `know/requirements.txt` |
 
 ## Performance Tips

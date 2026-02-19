@@ -58,8 +58,8 @@ ELSE (inline feature description or non-existent feature):
    - What are the edge cases?
 3. Update `.ai/know/<feature>/qa/discovery.md` with Q&A
 4. Query spec-graph (using **haiku agents**):
-   - `know -g .ai/spec-graph.json graph uses feature:<name>` - What does this feature depend on?
-   - `know -g .ai/spec-graph.json graph used-by feature:<name>` - What depends on this feature?
+   - `know -g .ai/know/spec-graph.json graph uses feature:<name>` - What does this feature depend on?
+   - `know -g .ai/know/spec-graph.json graph used-by feature:<name>` - What depends on this feature?
 5. Update `.ai/know/<feature>/overview.md` with refined requirements
 
 **Outputs**:
@@ -83,11 +83,11 @@ ELSE (inline feature description or non-existent feature):
      - Agent 3: "Map UI/UX conventions and existing abstractions"
    - Launch ALL agents in a single message for true parallelism
 2. **Know-enhanced exploration** (using **haiku agents**):
-   - Query code-graph: `know -g .ai/code-graph.json list --type module`
+   - Query code-graph: `know -g .ai/know/code-graph.json list --type module`
    - Find related components via product-component references
-   - Query: `know -g .ai/code-graph.json graph uses component:<name> --recursive`
+   - Query: `know -g .ai/know/code-graph.json graph uses component:<name> --recursive`
 3. **Spec-graph exploration** (using **haiku agents**):
-   - Query related actions: `know -g .ai/spec-graph.json list --type action`
+   - Query related actions: `know -g .ai/know/spec-graph.json list --type action`
    - Find component dependencies
    - Check data-model references
 4. **Consolidate findings** from all explorers (Explore + custom Task agents)
@@ -183,7 +183,7 @@ Send SINGLE message with:
    - Update immediately after completing each task (don't batch updates)
 5. Update phase status in spec-graph: `"status": "in-progress"` (using **haiku agent**)
 6. As code is written, link modules to spec-graph components:
-   - Add to code-graph: `know -g .ai/code-graph.json add module <name> {...}`
+   - Add to code-graph: `know -g .ai/know/code-graph.json add module <name> {...}`
    - Link via product-component references
 7. Track implementation in `.ai/know/<feature>/implementation.md`
 
@@ -209,7 +209,7 @@ Send SINGLE message with:
    - **Reviewer 3 (Conventions)**: "Review for consistency with existing patterns, naming conventions, architectural violations. Report only high-confidence issues (≥80%)."
    - Launch ALL 3 in a single message for true parallelism
 2. **Know-enhanced validation** (using **haiku agents**):
-   - Gap analysis: `know -g .ai/spec-graph.json check gap-analysis feature:<name>`
+   - Gap analysis: `know -g .ai/know/spec-graph.json check gap-analysis feature:<name>`
    - Verify all component dependencies satisfied
    - Check code-graph completeness
    - Validate both graphs: `know check validate`
@@ -248,7 +248,7 @@ Send SINGLE message with:
    - Mark feature phase as "complete" (or move to "done" if fully deployed)
    - Update code-graph with all new modules
    - Validate both graphs
-   - Run gap-summary: `know -g .ai/spec-graph.json check gap-summary`
+   - Run gap-summary: `know -g .ai/know/spec-graph.json check gap-summary`
 7. Save summary to `.ai/know/<feature>/summary.md`
 8. **Inform user**: "Feature complete. Run `/know:review <feature>` to test, or `/know:done` to archive."
 
@@ -269,16 +269,16 @@ Send SINGLE message with:
 Task tool with:
   model: "haiku"
   subagent_type: "general-purpose"
-  prompt: "Run this know command and return the output: know -g .ai/spec-graph.json graph uses feature:auth"
+  prompt: "Run this know command and return the output: know -g .ai/know/spec-graph.json graph uses feature:auth"
 ```
 
 **Common know queries to launch as haiku agents:**
-- `know -g .ai/spec-graph.json graph uses feature:<name>`
-- `know -g .ai/spec-graph.json graph used-by feature:<name>`
-- `know -g .ai/spec-graph.json check gap-analysis feature:<name>`
-- `know -g .ai/spec-graph.json check gap-summary`
-- `know -g .ai/code-graph.json list --type module`
-- `know -g .ai/code-graph.json graph uses component:<name> --recursive`
+- `know -g .ai/know/spec-graph.json graph uses feature:<name>`
+- `know -g .ai/know/spec-graph.json graph used-by feature:<name>`
+- `know -g .ai/know/spec-graph.json check gap-analysis feature:<name>`
+- `know -g .ai/know/spec-graph.json check gap-summary`
+- `know -g .ai/know/code-graph.json list --type module`
+- `know -g .ai/know/code-graph.json graph uses component:<name> --recursive`
 - `know check validate`
 
 ---

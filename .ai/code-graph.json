@@ -6,7 +6,8 @@
       "language": "python",
       "architecture": "cli-tool"
     },
-    "phases": {}
+    "phases": {},
+    "spec_graph_path": ".ai/know/spec-graph.json"
   },
   "references": {
     "external-dep": {

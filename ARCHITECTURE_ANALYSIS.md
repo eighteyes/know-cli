@@ -357,7 +357,7 @@ def temp_graph_setup():
 ```python
 # know.py: Global Click group sets up all managers
 @click.group()
-@click.option('--graph-path', '-g', default='.ai/spec-graph.json')
+@click.option('--graph-path', '-g', default='.ai/know/spec-graph.json')
 @click.option('--rules-path', '-r', default=None)
 @click.pass_context
 def cli(ctx, graph_path, rules_path):

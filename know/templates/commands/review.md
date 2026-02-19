@@ -43,7 +43,7 @@ This is NOT just a code review. The assistant should:
 1. Verify feature directory exists at `.ai/know/<feature>/`
 2. Check that `QA_STEPS.md` exists (if not, inform user to run `/know:build` Phase 7 first)
 3. Check spec-graph status (using **haiku agent**):
-   - `know -g .ai/spec-graph.json show feature:<name>`
+   - `know -g .ai/know/spec-graph.json show feature:<name>`
    - Verify status is "complete", "review-ready", or "in-progress"
 4. Load `QA_STEPS.md` content
 
@@ -279,7 +279,7 @@ Step 1: [PASS/FAIL/SKIP]
 
 **Using haiku agent**:
 - If Approved:
-  - `know -g .ai/spec-graph.json update feature:<name> '{"status": "done"}'` (or similar update)
+  - `know -g .ai/know/spec-graph.json update feature:<name> '{"status": "done"}'` (or similar update)
   - Add review completion date to meta if possible
 - If Needs Work:
   - Keep status as "in-progress"

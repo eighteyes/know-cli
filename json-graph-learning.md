@@ -170,7 +170,7 @@ Flattened references to granular, specific items:
 ### Dynamic Path Resolution
 - Fixed hardcoded `/workspace/lb-www` paths
 - Pattern: `PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"`
-- Environment variables with fallbacks: `${KNOWLEDGE_MAP:-$PROJECT_ROOT/.ai/spec-graph.json}`
+- Environment variables with fallbacks: `${KNOWLEDGE_MAP:-$PROJECT_ROOT/.ai/know/spec-graph.json}`
 - **Learning**: Always use relative paths or environment variables
 
 ### Graph Dependency Recovery

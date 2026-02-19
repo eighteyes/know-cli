@@ -19,7 +19,7 @@ Implemented graph-based feature completion tracking replacing fragile markdown c
 ```json
 // spec-graph.json
 {
-  "meta": {"code_graph_path": ".ai/code-graph.json"},
+  "meta": {"code_graph_path": ".ai/know/code-graph.json"},
   "references": {
     "implementation": {
       "auth-impl": ["graph-link:auth-module", "graph-link:user-service"]
@@ -32,7 +32,7 @@ Implemented graph-based feature completion tracking replacing fragile markdown c
 
 // code-graph.json
 {
-  "meta": {"spec_graph_path": ".ai/spec-graph.json"},
+  "meta": {"spec_graph_path": ".ai/know/spec-graph.json"},
   "references": {
     "graph-link": {
       "auth-module": {
@@ -157,8 +157,8 @@ know feature connect checkout module:payment --component component:payment
 **Example flow**:
 ```bash
 # 1. Create code entities in code-graph
-know -g .ai/code-graph.json add entity module auth '{"name":"Auth Module"}'
-know -g .ai/code-graph.json add entity function authenticate '{"name":"Authenticate User"}'
+know -g .ai/know/code-graph.json add entity module auth '{"name":"Auth Module"}'
+know -g .ai/know/code-graph.json add entity function authenticate '{"name":"Authenticate User"}'
 
 # 2. Connect to feature
 know feature connect user-auth module:auth function:authenticate

@@ -16,7 +16,7 @@ The graph must satisfy multiple levels of correctness:
 
 ```bash
 # Must run after any graph modification
-know check validate
+know graph check validate
 ```
 
 This checks:
@@ -44,7 +44,7 @@ This checks:
 
 ```bash
 # Deep validation with statistics
-know check health
+know graph check health
 ```
 
 Provides:
@@ -59,7 +59,7 @@ Provides:
 
 ```bash
 # Detect cycles (graph must be DAG)
-know check cycles
+know graph check cycles
 ```
 
 **Valid output:**
@@ -76,7 +76,7 @@ know check cycles
 **To fix cycles:**
 1. Identify the cycle path
 2. Remove one dependency to break the cycle: `know graph unlink entity:x entity:y`
-3. Re-validate: `know check cycles`
+3. Re-validate: `know graph check cycles`
 
 ## Completeness Checking
 
@@ -84,7 +84,7 @@ know check cycles
 
 ```bash
 # See completeness score and missing dependencies
-know check completeness feature:analytics-dashboard
+know graph check completeness feature:analytics-dashboard
 ```
 
 **Output:**
@@ -100,7 +100,7 @@ Missing dependencies:
 
 ```bash
 # Overall implementation status
-know check gap-summary
+know graph check gap-summary
 ```
 
 Shows:
@@ -112,10 +112,10 @@ Shows:
 
 ```bash
 # Find incomplete dependency chains for specific entity
-know check gap-analysis feature:analytics-dashboard
+know graph check gap-analysis feature:analytics-dashboard
 
 # Analyze specific entity type
-know check gap-analysis
+know graph check gap-analysis
 ```
 
 **Output shows:**
@@ -171,7 +171,7 @@ Shows valid entity types this can depend on based on rules.
 
 ```bash
 # Find references not used by any entity
-know check orphans
+know graph check orphans
 ```
 
 **Output:**
@@ -194,7 +194,7 @@ data-models:
 
 ```bash
 # See which references are used and how often
-know check usage
+know graph check usage
 ```
 
 Shows usage count for each reference.
@@ -203,17 +203,17 @@ Shows usage count for each reference.
 
 ```bash
 # Dry run (preview what would be removed)
-know check clean --dry-run
+know graph check clean --dry-run
 
 # Actually remove unused references
-know check clean --remove --execute
+know graph check clean --remove --execute
 ```
 
 ### Suggest Reference Connections
 
 ```bash
 # Get suggestions for connecting orphaned references
-know check suggest --max 20
+know graph check suggest --max 20
 ```
 
 Shows potential entity-reference connections based on name similarity.
@@ -255,7 +255,7 @@ know graph link feature:x action:trigger-y
 know graph link action:trigger-y component:y
 
 # Validate
-know check validate
+know graph check validate
 ```
 
 ### Issue: Circular Dependency
@@ -274,8 +274,8 @@ know graph uses entity:b
 know graph unlink entity:c entity:a
 
 # Validate
-know check cycles
-know check validate
+know graph check cycles
+know graph check validate
 ```
 
 ### Issue: Missing Entity
@@ -292,7 +292,7 @@ know add action missing-action '{"name": "...", "description": "..."}'
 # Or remove the invalid reference (must be done via graph editing)
 
 # Validate
-know check validate
+know graph check validate
 ```
 
 ### Issue: Incomplete Dependency Chain
@@ -315,7 +315,7 @@ know add component csv-exporter '{"name": "CSV Exporter", "description": "..."}'
 know graph link action:export-data component:csv-exporter
 
 # Validate
-know check completeness action:export-data
+know graph check completeness action:export-data
 ```
 
 ### Issue: Orphaned References
@@ -330,14 +330,14 @@ Orphaned: business_logic:old_workflow
 know list --type action
 
 # Update entity description to reference it
-# Edit .ai/spec-graph.json:
+# Edit .ai/know/spec-graph.json:
 # "description": "Does X (see business_logic:old_workflow)"
 ```
 
 **Fix Option 2 - Remove it:**
 ```bash
 # If truly unused
-know check clean --remove --execute
+know graph check clean --remove --execute
 ```
 
 ## Validation Workflow
@@ -346,54 +346,54 @@ know check clean --remove --execute
 
 ```bash
 # 1. Basic validation
-know check validate
+know graph check validate
 
 # 2. Check for cycles
-know check cycles
+know graph check cycles
 
 # 3. Check completeness of changed entities
-know check completeness feature:modified-feature
+know graph check completeness feature:modified-feature
 ```
 
 ### Before Committing Changes
 
 ```bash
 # 1. Comprehensive check
-know check health
+know graph check health
 
 # 2. Verify build order makes sense
 know graph build-order
 
 # 3. Check for orphans
-know check orphans
+know graph check orphans
 
 # 4. Verify gap analysis
-know check gap-summary
+know graph check gap-summary
 ```
 
 ### Periodic Deep Validation
 
 ```bash
 # Run all validation checks
-know check validate
-know check health
-know check cycles
-know check gap-summary
-know check orphans
+know graph check validate
+know graph check health
+know graph check cycles
+know graph check gap-summary
+know graph check orphans
 know graph build-order
 
 # Check specific entities
-know check completeness feature:critical-feature
-know check gap-analysis feature:critical-feature
+know graph check completeness feature:critical-feature
+know graph check gap-analysis feature:critical-feature
 ```
 
 ## Validation Checklist
 
-- [ ] `know check validate` passes
-- [ ] `know check cycles` finds no circular dependencies
-- [ ] `know check health` shows no errors
-- [ ] `know check gap-summary` shows acceptable completion %
-- [ ] `know check orphans` shows no (or minimal) orphaned references
+- [ ] `know graph check validate` passes
+- [ ] `know graph check cycles` finds no circular dependencies
+- [ ] `know graph check health` shows no errors
+- [ ] `know graph check gap-summary` shows acceptable completion %
+- [ ] `know graph check orphans` shows no (or minimal) orphaned references
 - [ ] `know graph build-order` produces sensible order
-- [ ] Critical features pass `know check completeness`
+- [ ] Critical features pass `know graph check completeness`
 - [ ] Dependency chains are complete: `know graph uses --recursive`

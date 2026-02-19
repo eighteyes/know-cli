@@ -355,8 +355,8 @@ def _get_component_operations(self, component_id: str) -> list:
               │
 ┌─────────────┴───────────────────────┐
 │ 3. Data Storage                     │
-│    - .ai/spec-graph.json            │
-│    - .ai/code-graph.json            │
+│    - .ai/know/spec-graph.json            │
+│    - .ai/know/code-graph.json            │
 │    - .ai/tasks/tasks.jsonl          │
 └─────────────┬───────────────────────┘
               │

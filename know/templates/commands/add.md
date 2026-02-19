@@ -33,9 +33,9 @@ Ask user essential questions using AskUserQuestion:
 
 ## 4. Register
 Add feature to spec-graph using answers from step 2:
-- `know -g .ai/spec-graph.json add feature <name> '{"name":"...","description":"..."}'`
-- `know -g .ai/spec-graph.json link objective:<name> feature:<name>` for each objective
-- `know -g .ai/spec-graph.json phases add pending feature:<name>`
+- `know -g .ai/know/spec-graph.json add feature <name> '{"name":"...","description":"..."}'`
+- `know -g .ai/know/spec-graph.json link objective:<name> feature:<name>` for each objective
+- `know -g .ai/know/spec-graph.json phases add pending feature:<name>`
 
 ## 5. Connect
 - Run `/know:connect` to validate graph coverage

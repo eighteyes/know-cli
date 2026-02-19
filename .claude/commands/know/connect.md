@@ -7,7 +7,7 @@ Your goal is to:
 ## Process Overview
 
 1. **Measure Current Coverage**
-   - Run: `know -g .ai/know/spec-graph.json coverage`
+   - Run: `know graph coverage`
    - Note the current coverage percentage
 
 2. **Identify Connection Targets**
@@ -34,12 +34,12 @@ Your goal is to:
       - Validate: `know -g .ai/know/spec-graph.json validate`
 
 4. **Track Progress**
-   - After each connection, re-run coverage check with `know -g .ai/know/spec-graph.json coverage`
+   - After each connection, re-run coverage check with `know graph coverage`
    - Show: "Coverage: {old}% → {new}%"
    - Continue until coverage >= 80% or all logical connections made
 
 5. **Final Validation**
-   - Run: `know -g .ai/know/spec-graph.json coverage`
+   - Run: `know graph coverage`
    - Run: `know -g .ai/know/spec-graph.json validate` (note: may show warnings for existing schema violations)
    - Show final coverage percentage
 
@@ -98,28 +98,23 @@ Connect spec-graph features to code-graph modules for implementation tracking.
 
    For each feature→module connection:
 
-   **Step 1: Create implementation reference in spec-graph**
+   **Step 1: Create code-link reference in spec-graph**
    ```bash
-   # Add implementation reference
-   know -g .ai/know/spec-graph.json add implementation <feature-name>-impl '["graph-link:<module-key>"]'
-
-   # Link feature to implementation
-   know -g .ai/know/spec-graph.json link feature:<name> implementation:<feature-name>-impl
+   # Spec-graph side
+   know -g .ai/know/spec-graph.json add code-link <feature>-code '{"modules":["module:<key>"],"classes":[],"status":"complete"}'
+   know -g .ai/know/spec-graph.json link feature:<name> code-link:<feature>-code
    ```
 
-   **Step 2: Create graph-link in code-graph**
+   **Step 2: Create code-link in code-graph**
    ```bash
-   # Add graph-link pointing back to feature
-   know -g .ai/know/code-graph.json add graph-link <module-key> '{
-     "feature": "feature:<name>",
-     "component": "component:<component-name>",
-     "status": "complete"
-   }'
+   # Code-graph side
+   know -g .ai/know/code-graph.json add code-link <module>-spec '{"feature":"feature:<name>","component":"component:<component-name>","status":"complete"}'
+   know -g .ai/know/code-graph.json link module:<key> code-link:<module>-spec
    ```
 
 4. **Verify Connection**
    ```bash
-   # Check implementation status updated
+   # Check implementation status updated (requires code-link refs to exist)
    know -g .ai/know/spec-graph.json feature status feature:<name>
    # Should show: ✅ Implemented: Yes
 
@@ -131,11 +126,11 @@ Connect spec-graph features to code-graph modules for implementation tracking.
 ## Cross-Graph Connection Rules
 
 **Spec-graph side:**
-- Feature depends on `implementation:<name>-impl` reference
-- Implementation reference contains array of `graph-link:<key>` IDs
+- Feature depends on `code-link:<feature>-code` reference
+- `code-link` reference contains `modules` array, `classes` array, and `status`
 
 **Code-graph side:**
-- `graph-link` reference points to:
+- `code-link` reference points to:
   - `feature`: The spec feature ID
   - `component`: The spec component ID (optional)
   - `status`: "complete" | "in-progress" | "planned"
@@ -146,29 +141,25 @@ Connect spec-graph features to code-graph modules for implementation tracking.
 # Feature: Authentication System
 # Code modules: auth-handler, session-store
 
-1. Add implementation reference in spec-graph:
-   know -g .ai/know/spec-graph.json add implementation auth-impl \
-     '["graph-link:auth-handler", "graph-link:session-store"]'
+1. Add code-link reference in spec-graph:
+   know -g .ai/know/spec-graph.json add code-link auth-code \
+     '{"modules":["module:auth-handler","module:session-store"],"classes":[],"status":"complete"}'
 
-2. Link feature to implementation:
-   know -g .ai/know/spec-graph.json link feature:auth implementation:auth-impl
+2. Link feature to code-link:
+   know -g .ai/know/spec-graph.json link feature:auth code-link:auth-code
 
-3. Add graph-links in code-graph:
-   know -g .ai/know/code-graph.json add graph-link auth-handler '{
-     "feature": "feature:auth",
-     "component": "component:auth-manager",
-     "status": "complete"
-   }'
+3. Add code-links in code-graph:
+   know -g .ai/know/code-graph.json add code-link auth-handler-spec \
+     '{"feature":"feature:auth","component":"component:auth-manager","status":"complete"}'
+   know -g .ai/know/code-graph.json link module:auth-handler code-link:auth-handler-spec
 
-   know -g .ai/know/code-graph.json add graph-link session-store '{
-     "feature": "feature:auth",
-     "component": "component:session-handler",
-     "status": "complete"
-   }'
+   know -g .ai/know/code-graph.json add code-link session-store-spec \
+     '{"feature":"feature:auth","component":"component:session-handler","status":"complete"}'
+   know -g .ai/know/code-graph.json link module:session-store code-link:session-store-spec
 
 4. Verify:
    know -g .ai/know/spec-graph.json feature status feature:auth
-   # ✅ Implemented: Yes
+   # ✅ Implemented: Yes (requires code-link refs to exist)
    # Modules: module:auth-handler, module:session-store
 ```
 
@@ -196,6 +187,7 @@ Choose workflow based on context:
 2. Then create cross-graph links for all features
 
 ---
+r5 - Updated to use code-link type and know graph cross connect/coverage commands
 r4 - Added cross-graph connection workflow (spec ↔ code bidirectional linking)
 r3 - Updated to use `know coverage` command instead of python script
 r2 - Updated terminology to "coverage", added removal step, clarified leaf components

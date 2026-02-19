@@ -74,7 +74,7 @@ know viz --serve                      # Start web server at localhost:8080
 know viz --serve --port 3000 --watch  # Auto-reload on changes
 
 # Multiple graphs
-know viz --compare .ai/spec-graph.json .ai/code-graph.json
+know viz --compare .ai/know/spec-graph.json .ai/know/code-graph.json
 ```
 
 ## Use Cases

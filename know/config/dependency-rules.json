@@ -21,7 +21,8 @@
       "source-file", "external-dep", "api-surface", "product-component", "signature",
       "execution-trace", "call-graph", "control-flow", "data-flow",
       "side-effect", "error-path", "code-module", "test-spec",
-      "requirement", "interface", "permission"
+      "requirement", "interface", "permission",
+      "code-link"
     ],
     "validation": "References are always valid dependencies and bypass entity-to-entity dependency rules",
     "examples": [
@@ -80,7 +81,8 @@
     "data-flow": "Data transformations and how data moves through the system",
     "side-effect": "Observable effects beyond return values: file I/O, state changes, process spawning",
     "error-path": "Exception handling, error propagation, and recovery strategies",
-    "code-module": "Cross-reference to code-level modules in code-graph.json",
+    "code-module": "[DEPRECATED: use code-link] Cross-reference to code-level modules in code-graph.json",
+    "code-link": "Cross-graph link from a spec entity (feature/component) to implementing code entities. Shape: { modules: [...], classes: [...], packages: [...], status: 'planned|in-progress|complete' }",
     "test-spec": "Reusable test specification that may apply to multiple components",
     "requirement": "Functional or non-functional specification that the system must satisfy",
     "interface": "User interface screen or page in the application",
