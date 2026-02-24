@@ -1,0 +1,21 @@
+{
+  "name": "know-cli",
+  "owner": {
+    "name": "god"
+  },
+  "metadata": {
+    "description": "Product-code alignment for LLMs using specification graphs",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "know-tool",
+      "source": "./plugins/know-tool",
+      "description": "Specification graph management for Claude Code. Maps user objectives to software components via the know CLI with slash commands, skill, and agents.",
+      "version": "1.0.0",
+      "category": "development-tools",
+      "tags": ["spec-graph", "product-code-alignment", "llm-first", "requirements", "traceability"],
+      "license": "MIT"
+    }
+  ]
+}

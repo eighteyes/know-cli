@@ -1,0 +1,15 @@
+{
+  "name": "know-tool",
+  "description": "Product-code alignment for LLMs using specification graphs",
+  "version": "1.0.0",
+  "author": {
+    "name": "god"
+  },
+  "commands": [
+    "./commands/know/",
+    "./commands/openspec/"
+  ],
+  "agents": [
+    "./agents/feature-effort-estimator.md"
+  ]
+}
