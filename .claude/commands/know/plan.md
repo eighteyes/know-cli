@@ -4,6 +4,7 @@ description: Walk through QA-based planning workflow to build complete product v
 category: Know
 tags: [know, planning, qa, vision]
 ---
+Interactive QA-based planning to build product vision and populate spec-graph.
 
 **Main Objective**
 

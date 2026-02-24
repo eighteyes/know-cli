@@ -1,3 +1,11 @@
+---
+name: Know: Connect Graphs
+description: Connect disconnected entities and cross-link spec-graph with code-graph
+category: Know
+tags: [know, connect, coverage, cross-link]
+---
+Connect disconnected entities and cross-link spec-graph with code-graph.
+
 # Graph Connection Workflow
 
 Your goal is to:
@@ -29,8 +37,9 @@ Your goal is to:
       - "Which objective(s) does {entity-name} support?"
       - "Which feature(s) should use {entity-name}?" (for components/actions)
 
-   c. **Create the Link**
-      - Use `know -g .ai/know/spec-graph.json link <from> <to>` to create dependency
+   c. **Create the Link(s)**
+      - Use `know -g .ai/know/spec-graph.json link <from> <to1> [<to2> <to3>...]` — pass all targets in one call
+      - Cross-link freely: an entity can depend on multiple parents, and a node can be shared across different branches (e.g. both feature:A and feature:B can link the same action or component)
       - Validate: `know -g .ai/know/spec-graph.json validate`
 
 4. **Track Progress**
@@ -60,11 +69,14 @@ Your goal is to:
 4. Remove irrelevant features
 5. Check coverage: 46.7% ✓
 6. Found: 3 disconnected feature chains
-7. Ask user: "Which objectives does feature:schema-agnostic-know support?"
-8. User: All 4 objectives
-9. Link objectives → feature:schema-agnostic-know
-10. Repeat for remaining features
-11. Check coverage: 100% ✓
+7. Ask user: "Which objectives do these features support?"
+8. User: schema-agnostic-know supports all 4 objectives; graph-viz supports 2
+9. Batch link: know link feature:schema-agnostic-know objective:a objective:b objective:c objective:d
+10. Batch link: know link feature:graph-viz objective:b objective:c
+11. Cross-link: action:parse-graph is shared — link it from both features:
+    know link feature:schema-agnostic-know action:parse-graph
+    know link feature:graph-viz action:parse-graph
+12. Check coverage: 100% ✓
 ```
 
 ## Important Notes (Spec-Graph Connection)

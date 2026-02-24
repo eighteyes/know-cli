@@ -4,6 +4,7 @@ description: 5-step workflow to add a feature to spec-graph with HITL clarificat
 category: Know
 tags: [know, feature, overview]
 ---
+Add a feature to spec-graph with guided 5-step clarification workflow.
 
 **Prerequisites**
 - Activate the know-tool skill for graph operations

@@ -13,6 +13,8 @@ import sys
 import json
 import click
 import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 from rich.console import Console
 from rich.table import Table
@@ -24,9 +26,41 @@ from src import (
     GraphValidator, SpecGenerator, GraphDiff,
     GraphConformanceChecker, RulesDiffAnalyzer, get_graph_stats
 )
+from src.workflow import WorkflowManager
 
 
 console = Console()
+
+
+def suggest_did_you_mean(graph_data, query, include_refs=True):
+    """Print 'did you mean?' suggestions for a failed node lookup."""
+    from src.utils import find_fuzzy_match
+
+    candidates = []
+    for etype, elist in graph_data.get('entities', {}).items():
+        if isinstance(elist, dict):
+            candidates.extend(f"{etype}:{k}" for k in elist)
+    if include_refs:
+        for rtype, rlist in graph_data.get('references', {}).items():
+            if isinstance(rlist, dict):
+                candidates.extend(f"{rtype}:{k}" for k in rlist)
+
+    # Match against full ID and also just the key portion
+    query_key = query.split(':', 1)[1] if ':' in query else query
+    matches = find_fuzzy_match(query, candidates, threshold=3)
+    if not matches:
+        matches = find_fuzzy_match(query_key, [c.split(':', 1)[1] for c in candidates], threshold=2)
+        # Map back to full IDs
+        if matches:
+            key_to_ids = {}
+            for c in candidates:
+                key_to_ids.setdefault(c.split(':', 1)[1], []).append(c)
+            matches = [cid for m in matches for cid in key_to_ids.get(m, [])]
+
+    if matches:
+        console.print("[yellow]  Did you mean:[/yellow]")
+        for m in matches[:5]:
+            console.print(f"[yellow]    {m}[/yellow]")
 
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -39,7 +73,7 @@ class SectionedGroup(click.Group):
         super().__init__(*args, **kwargs)
         self.section_commands = {
             'Initialization': ['init'],
-            'Graph': ['add', 'get', 'list', 'search', 'find', 'related', 'link', 'unlink', 'graph', 'check', 'gen', 'nodes'],
+            'Graph': ['add', 'get', 'list', 'search', 'find', 'related', 'link', 'unlink', 'graph', 'check', 'gen', 'nodes', 'viz'],
             'Project': ['feature', 'phases', 'req', 'op', 'meta'],
         }
 
@@ -145,6 +179,7 @@ def cli(ctx, graph_path, rules_path):
         ctx.obj['entities'],
         ctx.obj['deps']
     )
+    ctx.obj['workflow'] = WorkflowManager(ctx.obj['graph'], ctx.obj['entities'])
 
 
 # =============================================================================
@@ -288,7 +323,7 @@ def meta_set(ctx, section, key, data, json_file):
     """Set a meta section key
 
     Examples:
-        know meta set project name '{"value":"My Project"}'
+        know meta set project name "My Project"
         know meta set decisions auth-approach '{"title":"JWT vs Sessions"}'
         know meta set assumptions user-volume '{"description":"<1000 concurrent users"}'
         know meta set -f decision.json decisions caching
@@ -300,9 +335,8 @@ def meta_set(ctx, section, key, data, json_file):
     elif data:
         try:
             meta_data = json.loads(data)
-        except json.JSONDecodeError as e:
-            console.print(f"[red]✗ Invalid JSON data: {e}[/red]")
-            sys.exit(1)
+        except (json.JSONDecodeError, ValueError):
+            meta_data = data
     else:
         meta_data = {}
 
@@ -314,6 +348,10 @@ def meta_set(ctx, section, key, data, json_file):
 
     if section not in graph_data['meta']:
         graph_data['meta'][section] = {}
+    elif not isinstance(graph_data['meta'][section], dict):
+        old_val = graph_data['meta'][section]
+        graph_data['meta'][section] = {'_previous': old_val}
+        console.print(f"[yellow]⚠ meta.{section} was a bare value ({old_val!r}), promoted to dict[/yellow]")
 
     # Check if overwriting
     if key in graph_data['meta'][section]:
@@ -415,6 +453,7 @@ def get_item(ctx, path):
         e = ctx.obj['entities'].get_entity(path)
         if not e:
             console.print(f"[red]Entity '{path}' not found[/red]")
+            suggest_did_you_mean(ctx.obj['graph'].load(), path)
             sys.exit(1)
         console.print(f"\n[bold cyan]{path}[/bold cyan]")
         rprint(e)
@@ -426,6 +465,7 @@ def get_item(ctx, path):
 
         if ref_type not in refs or ref_key not in refs[ref_type]:
             console.print(f"[red]Reference '{path}' not found[/red]")
+            suggest_did_you_mean(graph_data, path)
             sys.exit(1)
 
         console.print(f"\n[bold cyan]{path}[/bold cyan]")
@@ -885,6 +925,7 @@ def nodes_deprecate(ctx, entity_id, reason, replacement, remove_by):
             console.print(f"  Removal target: {remove_by}")
     else:
         console.print(f"[red]✗ Entity not found: {entity_id}[/red]")
+        suggest_did_you_mean(ctx.obj['graph'].load(), entity_id)
         sys.exit(1)
 
 
@@ -976,11 +1017,13 @@ def nodes_merge(ctx, from_entity, into_entity, keep, yes):
     if from_type not in graph_data.get('entities', {}) or \
        from_key not in graph_data['entities'].get(from_type, {}):
         console.print(f"[red]✗ Source entity not found: {from_entity}[/red]")
+        suggest_did_you_mean(graph_data, from_entity)
         sys.exit(1)
 
     if into_type not in graph_data.get('entities', {}) or \
        into_key not in graph_data['entities'].get(into_type, {}):
         console.print(f"[red]✗ Target entity not found: {into_entity}[/red]")
+        suggest_did_you_mean(graph_data, into_entity)
         sys.exit(1)
 
     # Preview changes before merge
@@ -1051,21 +1094,30 @@ def nodes_merge(ctx, from_entity, into_entity, keep, yes):
 def nodes_rename(ctx, entity_id, new_key, yes):
     """Rename an entity's key, updating all graph references.
 
+    NEW_KEY can be a bare key or a fully-qualified id — both are accepted:
+
     Examples:
-        know nodes rename component:old-name component:new-name
-        know nodes rename feature:auth feature:authentication
+        know nodes rename objective:foo bar
+        know nodes rename objective:foo objective:bar
+        know nodes rename feature:auth authentication
         know nodes rename action:setup action:initialize -y
     """
     graph_data = ctx.obj['graph'].load()
 
     # Parse entity path
     entity_type, old_key = entity_id.split(':', 1)
+
+    # Strip redundant type prefix if user passed "type:key" instead of just "key"
+    if new_key.startswith(f"{entity_type}:"):
+        new_key = new_key[len(entity_type) + 1:]
+
     new_entity_id = f"{entity_type}:{new_key}"
 
     # Verify entity exists
     if entity_type not in graph_data.get('entities', {}) or \
        old_key not in graph_data['entities'].get(entity_type, {}):
         console.print(f"[red]✗ Entity not found: {entity_id}[/red]")
+        suggest_did_you_mean(graph_data, entity_id)
         sys.exit(1)
 
     # Check new key doesn't exist
@@ -1140,6 +1192,7 @@ def nodes_delete(ctx, entity_ids, yes):
 
         if not is_entity and not is_reference:
             console.print(f"[red]✗ Node not found: {entity_id}[/red]")
+            suggest_did_you_mean(graph_data, entity_id)
             sys.exit(1)
 
         outgoing = graph_section.get(entity_id, {}).get('depends_on', [])
@@ -1219,7 +1272,7 @@ def nodes_cut(ctx, entity_id, yes):
         is_reference = True
     else:
         console.print(f"[red]✗ Node not found: {entity_id}[/red]")
-        console.print(f"[dim]Not found in entities or references sections[/dim]")
+        suggest_did_you_mean(graph_data, entity_id)
         sys.exit(1)
 
     node_category = "entity" if is_entity else "reference"
@@ -1284,6 +1337,7 @@ def nodes_update(ctx, entity_id, data):
     if entity_type not in graph_data.get('entities', {}) or \
        entity_key not in graph_data['entities'].get(entity_type, {}):
         console.print(f"[red]✗ Entity not found: {entity_id}[/red]")
+        suggest_did_you_mean(graph_data, entity_id)
         sys.exit(1)
 
     # Parse update data
@@ -1331,6 +1385,7 @@ def nodes_clone(ctx, entity_id, new_key, no_upstream, no_downstream):
     if entity_type not in graph_data.get('entities', {}) or \
        old_key not in graph_data['entities'].get(entity_type, {}):
         console.print(f"[red]✗ Entity not found: {entity_id}[/red]")
+        suggest_did_you_mean(graph_data, entity_id)
         sys.exit(1)
 
     # Check new key doesn't exist
@@ -1383,25 +1438,55 @@ def graph(ctx):
 @cli.command(name='link')
 @click.argument('from_entity')
 @click.argument('to_entities', nargs=-1, required=True)
+@click.option('--position', type=int, help='Insert at this position (workflow only)')
+@click.option('--after', help='Insert after this action ID (workflow only)')
+@click.option('--auto-create', is_flag=True, help='Auto-create missing actions with minimal data (workflow only)')
 @click.pass_context
-def link(ctx, from_entity, to_entities):
+def link(ctx, from_entity, to_entities, position, after, auto_create):
     """Add one or more dependencies from an entity
 
     Examples:
         know link feature:auth action:login
         know link feature:auth action:login action:logout component:session
+        know link workflow:onboarding action:signup action:verify --position 0
+        know link workflow:onboarding action:welcome --after action:verify
+        know link workflow:onboarding action:new-step --auto-create
     """
-    failed = False
-    for to_entity in to_entities:
-        success = ctx.obj['entities'].add_dependency(from_entity, to_entity)
+    # Check if this is a workflow (ordered dependencies)
+    if from_entity.startswith('workflow:'):
+        # Use WorkflowManager for ordered linking
+        success, errors = ctx.obj['workflow'].link_actions(
+            from_entity,
+            list(to_entities),
+            position=position,
+            after_action=after,
+            auto_create=auto_create
+        )
         if success:
-            console.print(f"[green]✓ Added dependency: {from_entity} -> {to_entity}[/green]")
+            console.print(f"[green]✓ Added {len(to_entities)} ordered action(s) to {from_entity}[/green]")
+            ordered = ctx.obj['workflow'].get_ordered_actions(from_entity)
+            console.print(f"[dim]Order: {' → '.join(ordered)}[/dim]")
         else:
-            console.print(f"[red]✗ Already exists or failed: {from_entity} -> {to_entity}[/red]")
-            failed = True
+            console.print(f"[red]✗ Failed to link actions:[/red]")
+            for error in errors:
+                console.print(f"  • {error}")
+            sys.exit(1)
+    else:
+        # Use regular entity linking (unordered)
+        if position is not None or after is not None or auto_create:
+            console.print("[yellow]⚠ Workflow flags ignored for non-workflow entities[/yellow]")
 
-    if failed:
-        sys.exit(1)
+        failed = False
+        for to_entity in to_entities:
+            success = ctx.obj['entities'].add_dependency(from_entity, to_entity)
+            if success:
+                console.print(f"[green]✓ Added dependency: {from_entity} -> {to_entity}[/green]")
+            else:
+                console.print(f"[red]✗ Already exists or failed: {from_entity} -> {to_entity}[/red]")
+                failed = True
+
+        if failed:
+            sys.exit(1)
 
 
 @cli.command(name='unlink')
@@ -1415,6 +1500,7 @@ def unlink(ctx, from_entity, to_entities, yes):
     Examples:
         know unlink feature:auth action:login
         know unlink feature:auth action:login action:logout -y
+        know unlink workflow:onboarding action:signup -y
     """
     if not yes:
         targets = ', '.join(to_entities)
@@ -1422,17 +1508,35 @@ def unlink(ctx, from_entity, to_entities, yes):
             console.print("[dim]Cancelled[/dim]")
             return
 
-    failed = False
-    for to_entity in to_entities:
-        success = ctx.obj['entities'].remove_dependency(from_entity, to_entity)
+    # Check if this is a workflow (ordered dependencies)
+    if from_entity.startswith('workflow:'):
+        # Use WorkflowManager for ordered unlinking
+        success, errors = ctx.obj['workflow'].unlink_actions(from_entity, list(to_entities))
         if success:
-            console.print(f"[green]✓ Removed dependency: {from_entity} -> {to_entity}[/green]")
+            console.print(f"[green]✓ Removed {len(to_entities)} action(s) from {from_entity}[/green]")
+            ordered = ctx.obj['workflow'].get_ordered_actions(from_entity)
+            if ordered:
+                console.print(f"[dim]New order: {' → '.join(ordered)}[/dim]")
+            else:
+                console.print(f"[dim]Workflow now empty[/dim]")
         else:
-            console.print(f"[red]✗ Not found or failed: {from_entity} -> {to_entity}[/red]")
-            failed = True
+            console.print(f"[red]✗ Failed to unlink actions:[/red]")
+            for error in errors:
+                console.print(f"  • {error}")
+            sys.exit(1)
+    else:
+        # Use regular entity unlinking (unordered)
+        failed = False
+        for to_entity in to_entities:
+            success = ctx.obj['entities'].remove_dependency(from_entity, to_entity)
+            if success:
+                console.print(f"[green]✓ Removed dependency: {from_entity} -> {to_entity}[/green]")
+            else:
+                console.print(f"[red]✗ Not found or failed: {from_entity} -> {to_entity}[/red]")
+                failed = True
 
-    if failed:
-        sys.exit(1)
+        if failed:
+            sys.exit(1)
 
 
 @graph.command(name='uses')
@@ -1559,22 +1663,86 @@ def graph_build_order(ctx):
 
 
 @graph.command(name='diff')
-@click.argument('graph1', type=click.Path(exists=True))
-@click.argument('graph2', type=click.Path(exists=True))
+@click.argument('graph1', type=click.Path(exists=True), required=False, default=None)
+@click.argument('graph2', type=click.Path(exists=True), required=False, default=None)
+@click.option('--base', '-b', default=None, metavar='REF',
+              help='Git ref to compare against (e.g. main, origin/main, HEAD~1). '
+                   'Uses current graph file vs that ref. Mutually exclusive with GRAPH2.')
 @click.option('--verbose', '-v', is_flag=True, help='Show detailed diff')
 @click.option('--format', '-f', type=click.Choice(['terminal', 'json']), default='terminal',
               help='Output format')
-def graph_diff(graph1, graph2, verbose, format):
+@click.pass_context
+def graph_diff(ctx, graph1, graph2, base, verbose, format):
     """Compare two graph files and show differences
 
     Shows added/removed/modified entities, dependencies, and references.
 
-    Examples:
-        know graph diff spec-graph.json spec-graph-backup.json
+    Two-file mode:
+        know graph diff old-graph.json new-graph.json
         know graph diff .ai/know/spec-graph.json /tmp/spec-graph.json --verbose
+
+    Git mode (compare current graph vs a git ref):
+        know graph diff --base main
+        know graph diff --base origin/main --verbose
+        know graph diff --base HEAD~1 --format json
+
+    Examples:
         know graph diff graph1.json graph2.json --format json
     """
+    # Resolve which files to compare
+    tmp_file = None
     try:
+        if base is not None:
+            if graph2 is not None:
+                console.print("[red]✗ --base and GRAPH2 are mutually exclusive[/red]")
+                sys.exit(1)
+
+            # Infer current graph path from context
+            current_graph_path = str(ctx.obj['graph'].cache.graph_path)
+            if graph1 is None:
+                graph1 = current_graph_path
+
+            # Compute git-root-relative path for git show
+            try:
+                git_root = subprocess.check_output(
+                    ['git', 'rev-parse', '--show-toplevel'],
+                    stderr=subprocess.DEVNULL
+                ).decode().strip()
+            except subprocess.CalledProcessError:
+                console.print("[red]✗ Not inside a git repository[/red]")
+                sys.exit(1)
+
+            graph1_abs = str(Path(graph1).resolve())
+            try:
+                rel_path = Path(graph1_abs).relative_to(git_root)
+            except ValueError:
+                console.print(f"[red]✗ Graph file is outside the git root: {graph1_abs}[/red]")
+                sys.exit(1)
+
+            try:
+                base_content = subprocess.check_output(
+                    ['git', 'show', f'{base}:{rel_path}'],
+                    stderr=subprocess.PIPE
+                )
+            except subprocess.CalledProcessError as e:
+                err = e.stderr.decode().strip()
+                console.print(f"[red]✗ Could not read {rel_path} at ref '{base}': {err}[/red]")
+                sys.exit(1)
+
+            tmp = tempfile.NamedTemporaryFile(mode='wb', suffix='.json', delete=False)
+            tmp.write(base_content)
+            tmp.close()
+            tmp_file = tmp.name
+
+            # base is the OLD version; graph1 (current) is the NEW version
+            graph2 = graph1
+            graph1 = tmp_file
+
+        else:
+            if graph1 is None or graph2 is None:
+                console.print("[red]✗ Provide GRAPH1 and GRAPH2, or use --base <ref>[/red]")
+                sys.exit(1)
+
         differ = GraphDiff(graph1, graph2)
         diff_result = differ.compute_diff()
 
@@ -1587,7 +1755,11 @@ def graph_diff(graph1, graph2, verbose, format):
         summary = diff_result['summary']
 
         # Header
-        console.print(f"\n[bold cyan]Graph Diff:[/bold cyan] {differ.graph1_path} → {differ.graph2_path}\n")
+        if base is not None:
+            header_label = f"[dim]{base}[/dim] → [dim]current[/dim]"
+        else:
+            header_label = f"{differ.graph1_path} → {differ.graph2_path}"
+        console.print(f"\n[bold cyan]Graph Diff:[/bold cyan] {header_label}\n")
 
         # Summary
         if not any([
@@ -1717,6 +1889,9 @@ def graph_diff(graph1, graph2, verbose, format):
         import traceback
         console.print(f"[dim]{traceback.format_exc()}[/dim]")
         sys.exit(1)
+    finally:
+        if tmp_file is not None:
+            Path(tmp_file).unlink(missing_ok=True)
 
 
 @graph.command(name='migrate')
@@ -2219,6 +2394,7 @@ def check_completeness(ctx, entity_id):
 
     if score['total'] == 0:
         console.print(f"[red]Entity {entity_id} not found[/red]")
+        suggest_did_you_mean(ctx.obj['graph'].load(), entity_id)
         sys.exit(1)
 
     console.print(f"\n[bold]Completeness Score for {entity_id}:[/bold]")
@@ -2910,6 +3086,7 @@ def gen_spec(ctx, entity_id, format):
         entity_data = ctx.obj['entities'].get_entity(entity_id)
         if not entity_data:
             console.print(f"[red]✗ Entity not found: {entity_id}[/red]")
+            suggest_did_you_mean(ctx.obj['graph'].load(), entity_id)
             return
     except Exception as e:
         console.print(f"[red]✗ Error: {e}[/red]")
@@ -3398,7 +3575,7 @@ def gen_sitemap(ctx, output):
 @click.option('--codemap', '-c', default='.ai/codemap.json', help='Input codemap.json path')
 @click.option('--existing', '-e', help='Existing code-graph.json to preserve references')
 @click.option('--output', '-o', default='.ai/know/code-graph.json', help='Output code-graph.json path')
-@click.option('--source-dir', '-s', default='know/src', help='Source directory for file paths')
+@click.option('--source-dir', '-s', default='src', help='Source directory for file paths')
 def gen_code_graph(codemap, existing, output, source_dir):
     """Generate code-graph from codemap AST parsing.
 
@@ -3421,7 +3598,8 @@ def gen_code_graph(codemap, existing, output, source_dir):
     # Check if codemap exists
     if not Path(codemap).exists():
         console.print(f"[red]✗ Codemap not found: {codemap}[/red]")
-        console.print(f"[dim]Run: know gen codemap {source_dir}[/dim]")
+        console.print(f"[dim]First generate a codemap:  know gen codemap <src-dir>[/dim]")
+        console.print(f"[dim]Then retry:                 know gen code-graph[/dim]")
         return
 
     # If no existing specified but output exists, use output as existing
@@ -6210,6 +6388,7 @@ def init(project_dir):
                 console.print(f"[dim]  Graph protection hook already configured[/dim]")
         else:
             console.print(f"[yellow]⚠[/yellow] Hook script not found: {hook_source_file}")
+
     else:
         console.print(f"[yellow]⚠[/yellow] Hooks template directory not found: {hooks_source}")
 
@@ -6218,6 +6397,264 @@ def init(project_dir):
     console.print(f"  • Edit {project_md} to add project context")
     console.print(f"  • Use /know:add <feature-name> to start a new feature")
     console.print(f"  • Use /know:list to see all features")
+
+
+# =============================================================================
+# VIZ group - Graph visualization
+# =============================================================================
+@cli.group(context_settings=CONTEXT_SETTINGS)
+@click.pass_context
+def viz(ctx):
+    """Visualize the graph in various formats"""
+    pass
+
+
+@viz.command(name='tree')
+@click.argument('entity', required=False)
+@click.option('--type', '-t', 'types', multiple=True, help='Filter to entity type(s)')
+@click.option('--depth', '-d', type=int, default=None, help='Limit traversal depth')
+@click.option('--refs/--no-refs', default=False, help='Include reference nodes')
+@click.option('--entity', '-e', 'entity_opt', default=None, help='Focus on entity neighborhood')
+@click.pass_context
+def viz_tree(ctx, entity, types, depth, refs, entity_opt):
+    """Render graph as a Rich tree in the terminal
+
+    Examples:
+        know viz tree
+        know viz tree feature:auth
+        know viz tree --type feature --type action
+        know viz tree -e feature:auth --depth 2
+    """
+    from src.visualizers.tree import RichTreeVisualizer
+
+    focus = entity or entity_opt
+    v = RichTreeVisualizer(
+        ctx.obj['graph'],
+        entity_types=types or None,
+        entity_focus=focus,
+        depth=depth,
+        include_refs=refs,
+    )
+    tree = v.run()
+    console.print(tree)
+
+
+@viz.command(name='mermaid')
+@click.option('--output', '-o', default=None, help='Write to file instead of stdout')
+@click.option('--type', '-t', 'types', multiple=True, help='Filter to entity type(s)')
+@click.option('--depth', '-d', type=int, default=None, help='Limit traversal depth')
+@click.option('--refs/--no-refs', default=False, help='Include reference nodes')
+@click.option('--entity', '-e', default=None, help='Focus on entity neighborhood')
+@click.pass_context
+def viz_mermaid(ctx, output, types, depth, refs, entity):
+    """Generate Mermaid flowchart syntax
+
+    Examples:
+        know viz mermaid
+        know viz mermaid -o graph.mmd
+        know viz mermaid --type feature --type action
+    """
+    from src.visualizers.mermaid import MermaidVisualizer
+
+    v = MermaidVisualizer(
+        ctx.obj['graph'],
+        entity_types=types or None,
+        entity_focus=entity,
+        depth=depth,
+        include_refs=refs,
+    )
+    result = v.run()
+
+    if output:
+        with open(output, 'w') as f:
+            f.write(result)
+        console.print(f"[green]✓ Written to {output}[/green]")
+    else:
+        click.echo(result)
+
+
+@viz.command(name='dot')
+@click.option('--output', '-o', default='graph', help='Output file path (without extension)')
+@click.option('--format', '-f', 'fmt', default='svg',
+              type=click.Choice(['svg', 'png', 'pdf']), help='Output format')
+@click.option('--type', '-t', 'types', multiple=True, help='Filter to entity type(s)')
+@click.option('--depth', '-d', type=int, default=None, help='Limit traversal depth')
+@click.option('--refs/--no-refs', default=False, help='Include reference nodes')
+@click.option('--entity', '-e', default=None, help='Focus on entity neighborhood')
+@click.pass_context
+def viz_dot(ctx, output, fmt, types, depth, refs, entity):
+    """Render graph using Graphviz (SVG/PNG/PDF)
+
+    Requires: pip install graphviz + system graphviz
+
+    Examples:
+        know viz dot -o graph -f svg
+        know viz dot --entity feature:auth --depth 3
+    """
+    from src.visualizers.dot import DotVisualizer
+
+    ok, msg = DotVisualizer.check_available()
+    if not ok:
+        console.print(f"[red]✗ Graphviz not available: {msg}[/red]")
+        sys.exit(1)
+
+    v = DotVisualizer(
+        ctx.obj['graph'],
+        entity_types=types or None,
+        entity_focus=entity,
+        depth=depth,
+        include_refs=refs,
+    )
+    data = v.extract()
+    rendered = v.render_to_file(data, output, fmt=fmt)
+    console.print(f"[green]✓ Rendered to {rendered}[/green]")
+
+
+@viz.command(name='html')
+@click.option('--output', '-o', default='graph.html', help='Output HTML file')
+@click.option('--open', 'open_browser', is_flag=True, help='Open in browser after rendering')
+@click.option('--type', '-t', 'types', multiple=True, help='Filter to entity type(s)')
+@click.option('--depth', '-d', type=int, default=None, help='Limit traversal depth')
+@click.option('--refs/--no-refs', default=False, help='Include reference nodes')
+@click.option('--entity', '-e', default=None, help='Focus on entity neighborhood')
+@click.pass_context
+def viz_html(ctx, output, open_browser, types, depth, refs, entity):
+    """Generate interactive HTML graph using PyVis
+
+    Requires: pip install pyvis
+
+    Examples:
+        know viz html -o graph.html --open
+        know viz html --type feature --depth 2
+    """
+    from src.visualizers.html import HtmlVisualizer
+
+    ok, msg = HtmlVisualizer.check_available()
+    if not ok:
+        console.print(f"[red]✗ PyVis not available: {msg}[/red]")
+        sys.exit(1)
+
+    v = HtmlVisualizer(
+        ctx.obj['graph'],
+        entity_types=types or None,
+        entity_focus=entity,
+        depth=depth,
+        include_refs=refs,
+    )
+    data = v.extract()
+    rendered = v.render_to_file(data, output)
+    console.print(f"[green]✓ Written to {rendered}[/green]")
+
+    if open_browser:
+        import webbrowser
+        webbrowser.open(f"file://{Path(rendered).resolve()}")
+
+
+@viz.command(name='d3')
+@click.option('--output', '-o', default='graph.html', help='Output HTML file')
+@click.option('--open', 'open_browser', is_flag=True, help='Open in browser after rendering')
+@click.option('--type', '-t', 'types', multiple=True, help='Filter to entity type(s)')
+@click.option('--depth', '-d', type=int, default=None, help='Limit traversal depth')
+@click.option('--refs/--no-refs', default=False, help='Include reference nodes')
+@click.option('--entity', '-e', default=None, help='Focus on entity neighborhood')
+@click.pass_context
+def viz_d3(ctx, output, open_browser, types, depth, refs, entity):
+    """Generate interactive D3 force-directed graph (standalone HTML)
+
+    No Python dependencies required — uses D3.js via CDN.
+
+    Examples:
+        know viz d3
+        know viz d3 -o my-graph.html --open
+        know viz d3 --entity feature:auth --depth 3
+        know viz d3 --type feature --type action --refs
+    """
+    from src.visualizers.d3 import D3Visualizer
+
+    v = D3Visualizer(
+        ctx.obj['graph'],
+        entity_types=types or None,
+        entity_focus=entity,
+        depth=depth,
+        include_refs=refs,
+    )
+    data = v.extract()
+    rendered = v.render_to_file(data, output)
+    console.print(f"[green]✓ Written to {rendered}[/green]")
+
+    if open_browser:
+        import webbrowser
+        webbrowser.open(f"file://{Path(rendered).resolve()}")
+
+
+@viz.command(name='d3-tree')
+@click.option('--output', '-o', default='graph-tree.html', help='Output HTML file')
+@click.option('--open', 'open_browser', is_flag=True, help='Open in browser after rendering')
+@click.option('--type', '-t', 'types', multiple=True, help='Filter to entity type(s)')
+@click.option('--depth', '-d', type=int, default=None, help='Limit traversal depth')
+@click.option('--refs/--no-refs', default=False, help='Include reference nodes')
+@click.option('--entity', '-e', default=None, help='Focus on entity neighborhood')
+@click.pass_context
+def viz_d3_tree(ctx, output, open_browser, types, depth, refs, entity):
+    """Generate interactive collapsible D3 tree (standalone HTML)
+
+    Click nodes to expand/collapse branches. No Python deps required.
+
+    Examples:
+        know viz d3-tree
+        know viz d3-tree -o tree.html --open
+        know viz d3-tree --entity feature:auth --depth 3
+    """
+    from src.visualizers.d3_tree import D3TreeVisualizer
+
+    v = D3TreeVisualizer(
+        ctx.obj['graph'],
+        entity_types=types or None,
+        entity_focus=entity,
+        depth=depth,
+        include_refs=refs,
+    )
+    data = v.extract()
+    rendered = v.render_to_file(data, output)
+    console.print(f"[green]✓ Written to {rendered}[/green]")
+
+    if open_browser:
+        import webbrowser
+        webbrowser.open(f"file://{Path(rendered).resolve()}")
+
+
+@viz.command(name='fzf')
+@click.option('--type', '-t', 'types', multiple=True, help='Filter to entity type(s)')
+@click.option('--refs/--no-refs', default=False, help='Include reference nodes')
+@click.pass_context
+def viz_fzf(ctx, types, refs):
+    """Fuzzy-pick an entity with fzf and show its details
+
+    Requires: pip install iterfzf + fzf binary
+
+    Examples:
+        know viz fzf
+        know viz fzf --type feature
+    """
+    from src.visualizers.fzf import FzfPicker
+
+    ok, msg = FzfPicker.check_available()
+    if not ok:
+        console.print(f"[red]✗ fzf not available: {msg}[/red]")
+        sys.exit(1)
+
+    v = FzfPicker(
+        ctx.obj['graph'],
+        entity_types=types or None,
+        include_refs=refs,
+    )
+    selected = v.run()
+
+    if selected:
+        # Invoke the existing get_item command to show details
+        ctx.invoke(get_item, path=selected)
+    else:
+        console.print("[dim]No selection made[/dim]")
 
 
 if __name__ == '__main__':

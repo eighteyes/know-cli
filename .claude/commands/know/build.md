@@ -4,6 +4,7 @@ description: Structured 7-phase workflow for building features with discovery, e
 category: Know
 tags: [know, build, feature-dev, workflow]
 ---
+Build a feature through a structured 7-phase workflow with spec-graph tracking.
 
 **Main Objective**
 

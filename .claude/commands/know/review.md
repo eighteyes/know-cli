@@ -4,6 +4,7 @@ description: Interactive QA walkthrough for end-user acceptance testing of compl
 category: Know
 tags: [know, review, qa, testing, acceptance]
 ---
+Interactive QA walkthrough for end-user acceptance testing of a completed feature.
 
 **Main Objective**
 

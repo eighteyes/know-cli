@@ -4,6 +4,7 @@ description: Create graph files and populate project.md with context from the co
 category: Know
 tags: [know, prepare, analysis]
 ---
+Create graph files and populate project.md with codebase context.
 
 **Main Objective**
 

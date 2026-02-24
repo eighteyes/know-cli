@@ -4,6 +4,7 @@ description: Archive a completed feature to .ai/know/archive/
 category: Know
 tags: [know, archive, complete]
 ---
+Archive a completed feature and update graph phase status.
 
 **Prerequisites**
 - Activate the know-tool skill for graph validation

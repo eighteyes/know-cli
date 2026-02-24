@@ -4,6 +4,7 @@ description: Create a structured bug report for a feature with automatic trackin
 category: Know
 tags: [know, bug, tracking, issue]
 ---
+Create a structured bug report with automatic numbering and todo.md tracking.
 
 **Main Objective**
 
@@ -126,7 +127,7 @@ Create a structured bug report for a feature, automatically numbering it, adding
 - If Yes (using **haiku agent**):
   - Update `meta.phases` to move feature back to "in-progress" phase
   - Update `meta.feature_specs.<feature>.status` to "in-progress"
-  - Validate: `know check validate`
+  - Validate: `know graph check validate`
 
 ### 6. Confirmation
 

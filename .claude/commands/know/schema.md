@@ -4,6 +4,7 @@ description: Design a custom schema for domain-specific graph modeling with the 
 category: Know
 tags: [know, schema, design, memory, knowledge-graph]
 ---
+Design a custom entity schema for domain-specific graph modeling.
 
 **Main Objective**
 

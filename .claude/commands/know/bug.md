@@ -4,6 +4,7 @@ description: Create a structured bug report for a feature with automatic trackin
 category: Know
 tags: [know, bug, tracking, issue]
 ---
+Create a structured bug report with automatic numbering and todo.md tracking.
 
 **Main Objective**
 
