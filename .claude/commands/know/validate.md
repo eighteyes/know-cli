@@ -105,6 +105,19 @@ Changed Files:
 Recommendation: <based on risk counts>
 ```
 
+### 6b. Reference Drift Detection
+
+Check if specification references linked to this feature may be stale:
+
+1. List feature's references:
+   ```bash
+   know -g .ai/know/spec-graph.json graph uses feature:<feature-name>
+   ```
+2. For each non-code-link reference (data-model, interface, business_logic):
+   - Compare reference description against current code state
+   - Flag references that may be invalidated by detected changes
+   - Report as additional MEDIUM risk items if drift is suspected
+
 ### 7. User Decision
 
 Ask user to choose next action:

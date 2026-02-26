@@ -104,6 +104,20 @@ Step 1: [PASS/FAIL/SKIP]
 3. Calculate pass rate:
    - Passed steps / Total steps (excluding skipped)
 
+### 4b. Reference Accuracy Check
+
+After QA test steps, verify that specification references are still accurate:
+
+1. List all references linked to the feature:
+   ```bash
+   know -g .ai/know/spec-graph.json graph uses feature:<name>
+   ```
+2. For each non-code-link reference (data-model, interface, business_logic, requirement):
+   - Display the reference content
+   - Ask: "Is this reference still accurate post-implementation? [Yes/Outdated/Remove]"
+3. If "Outdated": update via `know nodes update <ref-type>:<ref-key> '{"description":"..."}'`
+4. If "Remove": flag for removal after review completes
+
 ### 5. Final Decision
 
 **Steps**:

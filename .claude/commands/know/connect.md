@@ -79,6 +79,23 @@ Your goal is to:
 12. Check coverage: 100% ✓
 ```
 
+## Reference Orphan Check
+
+After achieving entity coverage, check for orphaned references:
+
+```bash
+# Find references with no parent entity depending on them
+know -g .ai/know/spec-graph.json check orphans
+
+# Show reference usage stats
+know -g .ai/know/spec-graph.json check usage
+```
+
+For each orphaned reference:
+1. Identify which feature or action should depend on it
+2. Connect it: `know link feature:<name> <ref-type>:<ref-key>`
+3. If the reference is stale, remove it: `know nodes delete <ref-type>:<ref-key> -y`
+
 ## Important Notes (Spec-Graph Connection)
 
 - **Remove irrelevant entities first** before connecting (ask user to confirm)
