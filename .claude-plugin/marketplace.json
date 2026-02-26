@@ -1,7 +1,7 @@
 {
   "name": "know-cli",
   "owner": {
-    "name": "god"
+    "name": "eighteyes"
   },
   "metadata": {
     "description": "Product-code alignment for LLMs using specification graphs",
@@ -9,8 +9,8 @@
   },
   "plugins": [
     {
-      "name": "know-tool",
-      "source": "./plugins/know-tool",
+      "name": "know",
+      "source": "./plugins/know",
       "description": "Specification graph management for Claude Code. Maps user objectives to software components via the know CLI with slash commands, skill, and agents.",
       "version": "1.0.0",
       "category": "development-tools",
