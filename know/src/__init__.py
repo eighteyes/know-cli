@@ -27,6 +27,7 @@ from .utils import (
     format_entity_id,
     normalize_entity_type,
     validate_name_format,
+    get_all_deps,
     get_graph_stats
 )
 
@@ -61,5 +62,6 @@ __all__ = [
     "format_entity_id",
     "normalize_entity_type",
     "validate_name_format",
+    "get_all_deps",
     "get_graph_stats"
 ]

@@ -100,6 +100,7 @@ class GraphValidator:
         # Run all validation checks (syntax + structure layers)
         checks = [
             self._validate_structure,
+            self._validate_meta_schema,
             self._validate_graph_key_format,
             self._validate_entity_schema,
             self._validate_reference_usage,
@@ -144,6 +145,7 @@ class GraphValidator:
         """
         checks = [
             self._validate_structure,
+            self._validate_meta_schema,
             self._validate_graph_key_format,
         ]
 
@@ -291,6 +293,84 @@ class GraphValidator:
             else:
                 results['info'].append(f"Found {len(data['graph'])} graph nodes")
 
+                # Validate depends_on_ordered fields
+                for node_id, node_data in data['graph'].items():
+                    if isinstance(node_data, dict) and "depends_on_ordered" in node_data:
+                        ordered_deps = node_data["depends_on_ordered"]
+                        if not isinstance(ordered_deps, list):
+                            results['errors'].append(
+                                f"Node {node_id} has invalid depends_on_ordered type "
+                                f"(expected list, got {type(ordered_deps).__name__})"
+                            )
+
+        return results
+
+    def _validate_meta_schema(self) -> Dict[str, List[str]]:
+        """Validate meta section keys against schema defined in rules."""
+        results = {'errors': [], 'warnings': [], 'info': []}
+
+        data = self.graph.load()
+        meta = data.get('meta', {})
+        if not isinstance(meta, dict):
+            return results  # Structure check already catches this
+
+        # Build allowed meta keys from rules
+        meta_schema = self.rules.get('meta_schema', {})
+        meta_description = self.rules.get('meta_description', {})
+
+        # Keys from meta_schema.top_level (string-typed top-level fields)
+        top_level_keys = set()
+        if 'top_level' in meta_schema:
+            top_level_keys = set(meta_schema['top_level'].keys())
+
+        # Keys from meta_schema sub-objects (everything except top_level)
+        sub_object_keys = set(meta_schema.keys()) - {'top_level'}
+
+        # Keys from meta_description (fallback when meta_schema is absent)
+        description_keys = set(meta_description.keys())
+
+        # Operational keys always allowed (used by the system)
+        operational_keys = {
+            'phases', 'phases_metadata', 'code_graph_path',
+            'spec_graph_path', 'dependency_rules', 'feature_specs'
+        }
+
+        # Standard envelope keys present on all graphs
+        envelope_keys = {
+            'version', 'format', 'description',
+            'generated_at', 'project_root', 'source'
+        }
+
+        allowed_keys = top_level_keys | sub_object_keys | description_keys | operational_keys | envelope_keys
+
+        # Error on unknown meta keys
+        for key in meta.keys():
+            if key not in allowed_keys:
+                results['errors'].append(
+                    f"meta has unknown key '{key}' — allowed: {', '.join(sorted(allowed_keys))}"
+                )
+
+        # Type checks — errors for critical structure
+        if 'project' in meta and not isinstance(meta['project'], dict):
+            results['errors'].append(
+                "meta.project must be a dict"
+            )
+
+        # meta.phases dict check already in _validate_structure, skip here
+
+        # Type checks — warnings for softer constraints
+        if 'out_of_scope' in meta and not isinstance(meta['out_of_scope'], list):
+            results['warnings'].append(
+                "meta.out_of_scope should be an array"
+            )
+
+        # Warn if string-typed top-level keys are not strings
+        for key in top_level_keys:
+            if key in meta and not isinstance(meta[key], str):
+                results['warnings'].append(
+                    f"meta.{key} should be a string"
+                )
+
         return results
 
     def _validate_entity_schema(self) -> Dict[str, List[str]]:
@@ -339,7 +419,7 @@ class GraphValidator:
                             f"{', '.join(problematic)}"
                         )
                     else:
-                        results['warnings'].append(
+                        results['errors'].append(
                             f"Entity {entity_id} has unexpected fields: {', '.join(unexpected)}"
                         )
 
@@ -365,7 +445,8 @@ class GraphValidator:
                 )
                 continue
 
-            for dep in node_data.get('depends_on', []):
+            from .utils import get_all_deps
+            for dep in get_all_deps(node_data):
                 if ':' in dep:
                     ref_type = dep.split(':')[0]
                     if ref_type in references:
@@ -574,8 +655,9 @@ class GraphValidator:
         # Check for dependencies
         score['total'] += 1
         graph = data.get('graph', {})
+        from .utils import get_all_deps
         graph_node = graph.get(entity_id, {})
-        if isinstance(graph_node, dict) and graph_node.get('depends_on'):
+        if isinstance(graph_node, dict) and get_all_deps(graph_node):
             score['checks']['has_dependencies'] = True
             score['completed'] += 1
 
@@ -597,12 +679,13 @@ class GraphValidator:
 
         # Build adjacency list (undirected for connectivity)
         adjacency = defaultdict(set)
+        from .utils import get_all_deps
         for node, node_data in graph_data.items():
             # Defensive check: ensure node_data is a dictionary
             if not isinstance(node_data, dict):
                 continue
 
-            for dep in node_data.get('depends_on', []):
+            for dep in get_all_deps(node_data):
                 adjacency[node].add(dep)
                 adjacency[dep].add(node)
 

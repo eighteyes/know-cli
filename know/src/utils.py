@@ -357,6 +357,13 @@ def count_entity_types(data: Dict) -> Dict[str, int]:
     return counts
 
 
+def get_all_deps(node_data: dict) -> list:
+    """Get all dependencies (ordered + unordered) from a graph node."""
+    deps = list(node_data.get('depends_on', []))
+    deps.extend(node_data.get('depends_on_ordered', []))
+    return deps
+
+
 def get_graph_stats(data: Dict) -> Dict[str, Any]:
     """
     Get statistics about the graph.
@@ -392,7 +399,7 @@ def get_graph_stats(data: Dict) -> Dict[str, Any]:
     total_deps = 0
     for node_data in graph.values():
         if isinstance(node_data, dict):
-            total_deps += len(node_data.get('depends_on', []))
+            total_deps += len(get_all_deps(node_data))
 
     stats['total_dependencies'] = total_deps
 

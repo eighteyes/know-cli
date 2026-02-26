@@ -6,6 +6,9 @@ aiofiles>=0.8        # Async file operations
 python-dotenv>=0.19  # Environment management
 rich>=13.0           # Beautiful CLI output
 pyyaml>=6.0          # YAML parsing for contracts
+graphviz>=0.20       # Graphviz DOT rendering (viz dot)
+pyvis>=0.3           # Interactive HTML graph (viz html)
+iterfzf>=0.8         # Fuzzy picker (viz fzf)
 
 # Development dependencies
 pytest>=7.0          # Testing framework

@@ -35,9 +35,10 @@ class ReferenceManager:
         graph = data.get('graph', {})
 
         # Collect all dependencies
+        from .utils import get_all_deps
         all_dependencies = set()
         for entity_id, entity_graph in graph.items():
-            for dep in entity_graph.get('depends_on', []):
+            for dep in get_all_deps(entity_graph):
                 all_dependencies.add(dep)
 
         orphaned = {}
@@ -85,8 +86,9 @@ class ReferenceManager:
                 count = 0
 
                 # Count in all dependencies
+                from .utils import get_all_deps
                 for entity_id, entity_graph in graph.items():
-                    if ref_id in entity_graph.get('depends_on', []):
+                    if ref_id in get_all_deps(entity_graph):
                         count += 1
 
                 usage_count[ref_category][ref_key] = count

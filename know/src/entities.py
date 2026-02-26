@@ -132,6 +132,63 @@ class EntityManager:
         success = self.graph.save_graph(graph_data)
         return success, None if success else "Failed to save graph"
 
+    def add_entities_batch(self, entities: list[tuple[str, str, dict[str, Any]]],
+                           auto_create_missing: bool = False) -> tuple[bool, list[str]]:
+        """
+        Add multiple entities in a single graph save.
+
+        Args:
+            entities: List of (entity_type, entity_key, entity_data) tuples
+            auto_create_missing: If True, auto-create minimal entity data when missing required fields
+
+        Returns:
+            Tuple of (success, list of error messages)
+        """
+        errors = []
+        graph_data = self.graph.get_graph()
+
+        if "entities" not in graph_data:
+            graph_data["entities"] = {}
+
+        for entity_type, entity_key, entity_data in entities:
+            # Validate
+            is_valid, error = self.validate_entity(entity_type, entity_key, entity_data)
+            if not is_valid:
+                if auto_create_missing and error and ("Missing required fields" in error or "name" in error or "description" in error):
+                    # Auto-create minimal data
+                    entity_data = {
+                        "name": entity_data.get("name", entity_key.replace('-', ' ').title()),
+                        "description": entity_data.get("description", f"Auto-generated for dependency tracking"),
+                        **{k: v for k, v in entity_data.items() if k not in ["name", "description"]}
+                    }
+                    # Re-validate
+                    is_valid, error = self.validate_entity(entity_type, entity_key, entity_data)
+                    if not is_valid:
+                        errors.append(f"{entity_type}:{entity_key} — {error}")
+                        continue
+                else:
+                    errors.append(f"{entity_type}:{entity_key} — {error}")
+                    continue
+
+            # Initialize entity type if needed
+            if entity_type not in graph_data["entities"]:
+                graph_data["entities"][entity_type] = {}
+
+            # Check duplicates
+            if entity_key in graph_data["entities"][entity_type]:
+                errors.append(f"Entity '{entity_type}:{entity_key}' already exists")
+                continue
+
+            # Add
+            graph_data["entities"][entity_type][entity_key] = entity_data
+
+        # Save once
+        if errors:
+            return False, errors
+
+        success = self.graph.save_graph(graph_data)
+        return success, [] if success else ["Failed to save graph"]
+
     def update_entity(self, entity_path: str,
                       entity_data: Dict[str, Any]) -> bool:
         """Update an existing entity"""
@@ -197,9 +254,28 @@ class EntityManager:
         # Save the graph
         return self.graph.save_graph(graph_data)
 
+    def _node_exists(self, node_id: str, graph_data: dict) -> bool:
+        """Check if a node exists in entities or references."""
+        if ':' not in node_id:
+            return False
+        node_type, node_key = node_id.split(':', 1)
+        if node_type in graph_data.get('entities', {}) and \
+           node_key in graph_data['entities'].get(node_type, {}):
+            return True
+        if node_type in graph_data.get('references', {}) and \
+           node_key in graph_data['references'].get(node_type, {}):
+            return True
+        return False
+
     def add_dependency(self, from_entity: str, to_entity: str) -> bool:
         """Add a dependency between entities"""
         graph_data = self.graph.get_graph()
+
+        # Warn on nonexistent nodes
+        if not self._node_exists(from_entity, graph_data):
+            print(f"Warning: source node not found in entities or references: {from_entity}")
+        if not self._node_exists(to_entity, graph_data):
+            print(f"Warning: target node not found in entities or references: {to_entity}")
 
         # Initialize graph section if needed
         if "graph" not in graph_data:

@@ -178,6 +178,7 @@ class DependencyManager:
         for entity_id, node_data in graph.items():
             entity_type = entity_id.split(':')[0] if ':' in entity_id else entity_id
 
+            # Validate unordered depends_on
             for dep_id in node_data.get('depends_on', []):
                 dep_type = dep_id.split(':')[0] if ':' in dep_id else dep_id
 
@@ -192,6 +193,30 @@ class DependencyManager:
                         f"{entity_type} can only depend on: {', '.join(allowed)}\n"
                         f"    Fix: know unlink {entity_id} {dep_id}"
                     )
+
+            # Validate ordered depends_on_ordered
+            if "depends_on_ordered" in node_data:
+                # Only workflows should have ordered dependencies
+                if entity_type != "workflow":
+                    errors.append(
+                        f"{entity_id} cannot have depends_on_ordered (only workflow entities). "
+                        f"Fix: Remove depends_on_ordered or convert to workflow entity"
+                    )
+
+                # Validate ordered dependency targets
+                for dep_id in node_data.get('depends_on_ordered', []):
+                    dep_type = dep_id.split(':')[0] if ':' in dep_id else dep_id
+
+                    # Skip reference dependencies
+                    if dep_type in self.reference_description:
+                        continue
+
+                    if not self.is_valid_dependency(entity_type, dep_type):
+                        allowed = self.get_allowed_targets(entity_type)
+                        errors.append(
+                            f"Invalid ordered dependency: {entity_id} → {dep_id}. "
+                            f"{entity_type} can only depend on: {', '.join(allowed)}"
+                        )
 
         return len(errors) == 0, errors
 

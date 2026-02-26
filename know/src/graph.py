@@ -86,8 +86,12 @@ class GraphManager:
             links = set()
             for node, node_data in graph.items():
                 if isinstance(node_data, dict):
+                    # Unordered dependencies
                     for dep in node_data.get('depends_on', []):
-                        links.add((node, dep))
+                        links.add((node, dep, None))  # None = unordered
+                    # Ordered dependencies (store index)
+                    for idx, dep in enumerate(node_data.get('depends_on_ordered', [])):
+                        links.add((node, dep, idx))
             return links
 
         # Entities diff
@@ -107,8 +111,25 @@ class GraphManager:
         links_before = extract_links(before.get('graph', {}))
         links_after = extract_links(after.get('graph', {}))
 
-        links_added = [{'from': f, 'to': t} for f, t in sorted(links_after - links_before)]
-        links_removed = [{'from': f, 'to': t} for f, t in sorted(links_before - links_after)]
+        # Separate ordered and unordered for diff
+        links_added = []
+        links_removed = []
+
+        for link in sorted(links_after - links_before):
+            if len(link) == 3:
+                f, t, order = link
+                if order is None:
+                    links_added.append({'from': f, 'to': t})
+                else:
+                    links_added.append({'from': f, 'to': t, 'order': order})
+
+        for link in sorted(links_before - links_after):
+            if len(link) == 3:
+                f, t, order = link
+                if order is None:
+                    links_removed.append({'from': f, 'to': t})
+                else:
+                    links_removed.append({'from': f, 'to': t, 'order': order})
 
         # References diff (key-level only)
         refs_before = flatten_refs(before.get('references', {}))
@@ -175,11 +196,21 @@ class GraphManager:
             if not self._nx_graph.has_node(node):
                 self._nx_graph.add_node(node)
 
-            if isinstance(node_deps, dict) and "depends_on" in node_deps:
-                dependencies = node_deps["depends_on"]
-                if isinstance(dependencies, list):
-                    for dep in dependencies:
-                        self._nx_graph.add_edge(node, dep)
+            if isinstance(node_deps, dict):
+                # Handle unordered depends_on
+                if "depends_on" in node_deps:
+                    dependencies = node_deps["depends_on"]
+                    if isinstance(dependencies, list):
+                        for dep in dependencies:
+                            self._nx_graph.add_edge(node, dep)
+
+                # Handle ordered depends_on_ordered
+                if "depends_on_ordered" in node_deps:
+                    ordered_deps = node_deps["depends_on_ordered"]
+                    if isinstance(ordered_deps, list):
+                        for idx, dep in enumerate(ordered_deps):
+                            # Store order as edge attribute
+                            self._nx_graph.add_edge(node, dep, order=idx)
 
         return self._nx_graph
 

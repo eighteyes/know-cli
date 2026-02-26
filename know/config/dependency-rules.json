@@ -3,9 +3,10 @@
     "project": ["user"],
     "user": ["objective"],
     "objective": ["feature"],
-    "feature": ["action"],
+    "feature": ["action", "workflow"],
     "action": ["component"],
-    "component": ["operation"]
+    "component": ["operation"],
+    "workflow": ["action"]
   },
   "reference_dependency_rule": {
     "description": "References (terminal nodes) can be dependencies of ANY entity type",
@@ -277,12 +278,13 @@
     "feature": "Distinct functionality or capability provided to users",
     "action": "Specific user action connected to an objective",
     "component": "Reusable building block of the system architecture",
-    "operation": "Logic and state management for component interactions"
+    "operation": "Logic and state management for component interactions",
+    "workflow": "Ordered sequence of actions forming a complete process"
   },
   "entity_note": {
     "purpose": "provide containers for references and relationship structure",
     "schema": "Entities only have name & description keys.",
-    "allowed_metadata": ["id", "type", "path", "status", "tags", "metadata", "notes"]
+    "allowed_metadata": ["id", "type", "path", "status", "tags", "metadata", "notes", "execution_order"]
   },
   "notes":{
     "names": "reference and entity keys use snake case, use - for keys, not _",
