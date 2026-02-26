@@ -1,0 +1,234 @@
+{
+  "meta": {
+    "project": {
+      "name": "know-cli",
+      "description": "Product knowledge graph CLI for AI-driven software development",
+      "version": "0.1.2"
+    },
+    "phases": {
+      "done": {},
+      "I": {},
+      "II": {},
+      "III": {},
+      "pending": {}
+    },
+    "deprecated": {},
+    "decision": {}
+  },
+  "entities": {
+    "user": {
+      "solo-developer": {
+        "name": "Solo Developer",
+        "description": "Primary user: solo technical lead (including teams-of-one) doing rapid prototyping with AI assistance"
+      },
+      "ai-agent": {
+        "name": "AI Agent",
+        "description": "Secondary user: AI agents (Claude, GPT) consuming structured graph context"
+      },
+      "know-maintainer": {
+        "name": "Know Maintainer",
+        "description": "Contributor maintaining the know-cli tool"
+      }
+    },
+    "objective": {
+      "structure-product-context": {
+        "name": "Structure Product Context",
+        "description": "Convert development conversations into queryable dependency graphs"
+      },
+      "generate-ai-specs": {
+        "name": "Generate AI Specs",
+        "description": "Produce specifications that AI agents understand without token waste"
+      },
+      "track-implementation-progress": {
+        "name": "Track Implementation Progress",
+        "description": "Link features to code and track completion status"
+      },
+      "build-features": {
+        "name": "Build Features",
+        "description": "Use graph to guide feature development"
+      },
+      "review-features": {
+        "name": "Review Features",
+        "description": "Validate features against graph requirements"
+      },
+      "adapt-existing-codebase": {
+        "name": "Adapt Existing Codebase",
+        "description": "Integrate know into existing projects"
+      },
+      "be-source-of-truth": {
+        "name": "Be Source of Truth",
+        "description": "Make graph the authoritative product spec"
+      },
+      "query-graph-intelligence": {
+        "name": "Query Graph Intelligence",
+        "description": "Get product context via structured queries"
+      },
+      "maintain-tool-quality": {
+        "name": "Maintain Tool Quality",
+        "description": "Keep codebase healthy, add features, fix bugs"
+      }
+    },
+    "feature": {
+      "graph-management": {
+        "name": "Graph Management",
+        "description": "CRUD operations, migration, deprecation, phase management"
+      },
+      "graph-validation": {
+        "name": "Graph Validation",
+        "description": "Multi-level validation: syntax, structure, semantics, health, cycles"
+      },
+      "spec-generation": {
+        "name": "Spec Generation",
+        "description": "Generate markdown and XML specs from graph entities"
+      },
+      "feature-lifecycle": {
+        "name": "Feature Lifecycle",
+        "description": "Track features via contracts, git integration, drift analysis"
+      },
+      "graph-visualization": {
+        "name": "Graph Visualization",
+        "description": "Multi-format rendering: tree, mermaid, dot, HTML, fzf"
+      },
+      "search-discovery": {
+        "name": "Search & Discovery",
+        "description": "Semantic search via TF-IDF indexing"
+      },
+      "cross-graph-linking": {
+        "name": "Cross-Graph Linking",
+        "description": "Connect spec-graph to code-graph"
+      },
+      "code-analysis": {
+        "name": "Code Analysis",
+        "description": "Generate code-graph from AST"
+      },
+      "impact-analysis": {
+        "name": "Impact Analysis",
+        "description": "Analyze feature dependencies and blast radius"
+      },
+      "git-pr-graph-compare": {
+        "name": "Git PR Graph Compare",
+        "description": "Compare spec-graph.json or code-graph.json between PR branch and base branch to show what changed in the specification during development"
+      }
+    }
+  },
+  "references": {
+    "configuration": {
+      "git-pr-graph-compare-config": {
+        "description": "Requires git repository with graph file at same path in both refs. Uses -g flag to specify graph path. Extracts base version via git show <ref>:<path>."
+      }
+    },
+    "data-model": {
+      "graph-diff-output": {
+        "description": "GraphDiff output structure with sections: added/removed/modified entities, added/removed/modified dependencies, added/removed references, changed meta fields. Summary counts for each category."
+      }
+    },
+    "business_logic": {
+      "git-ref-resolution": {
+        "description": "Resolves git refs (main, origin/main, HEAD~1) to graph file content. Uses git rev-parse for repo root, git show for file extraction. Tempfile cleanup via finally block ensures no leaked files."
+      }
+    },
+    "acceptance_criterion": {
+      "git-pr-diff-complete": {
+        "description": "Successfully shows added/removed/modified entities, dependencies, and references between base and current. Exit 0 on success, 1 on error. Supports both terminal and JSON output formats."
+      }
+    },
+    "interface": {
+      "cli-graph-diff-base": {
+        "description": "Command: know graph diff --base <ref> [--verbose] [--format terminal|json]. Extends existing graph diff with optional --base flag. Graph path from -g flag. Mutually exclusive with GRAPH2 positional arg."
+      }
+    },
+    "constraint": {
+      "git-repo-required": {
+        "description": "Must be inside git repository. Graph file must exist at same path in base ref. File path must be relative to git root. No cross-repo comparison support."
+      }
+    }
+  },
+  "graph": {
+    "user:solo-developer": {
+      "depends_on": [
+        "objective:structure-product-context",
+        "objective:generate-ai-specs",
+        "objective:track-implementation-progress",
+        "objective:build-features",
+        "objective:review-features",
+        "objective:adapt-existing-codebase",
+        "objective:be-source-of-truth"
+      ]
+    },
+    "user:ai-agent": {
+      "depends_on": [
+        "objective:query-graph-intelligence"
+      ]
+    },
+    "user:know-maintainer": {
+      "depends_on": [
+        "objective:maintain-tool-quality"
+      ]
+    },
+    "objective:structure-product-context": {
+      "depends_on": [
+        "feature:graph-management",
+        "feature:graph-validation"
+      ]
+    },
+    "objective:generate-ai-specs": {
+      "depends_on": [
+        "feature:spec-generation"
+      ]
+    },
+    "objective:track-implementation-progress": {
+      "depends_on": [
+        "feature:feature-lifecycle",
+        "feature:cross-graph-linking"
+      ]
+    },
+    "objective:build-features": {
+      "depends_on": [
+        "feature:feature-lifecycle",
+        "feature:spec-generation"
+      ]
+    },
+    "objective:review-features": {
+      "depends_on": [
+        "feature:graph-validation",
+        "feature:impact-analysis",
+        "feature:git-pr-graph-compare"
+      ]
+    },
+    "objective:adapt-existing-codebase": {
+      "depends_on": [
+        "feature:code-analysis",
+        "feature:cross-graph-linking"
+      ]
+    },
+    "objective:be-source-of-truth": {
+      "depends_on": [
+        "feature:graph-management",
+        "feature:graph-validation",
+        "feature:cross-graph-linking"
+      ]
+    },
+    "objective:query-graph-intelligence": {
+      "depends_on": [
+        "feature:search-discovery",
+        "feature:graph-visualization"
+      ]
+    },
+    "objective:maintain-tool-quality": {
+      "depends_on": [
+        "feature:graph-validation",
+        "feature:code-analysis"
+      ]
+    },
+    "feature:git-pr-graph-compare": {
+      "depends_on": [
+        "configuration:git-pr-graph-compare-config",
+        "data-model:graph-diff-output",
+        "business_logic:git-ref-resolution",
+        "acceptance_criterion:git-pr-diff-complete",
+        "interface:cli-graph-diff-base",
+        "constraint:git-repo-required"
+      ]
+    }
+  }
+}

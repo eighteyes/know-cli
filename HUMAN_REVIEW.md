@@ -2,6 +2,78 @@
 
 ---
 
+## Reference Parity Patches
+**Date:** 2026-02-24
+**Session:** 6859a7d6-9281-4216-91f1-e67cf2441067
+
+### A5: get_all_deps sweep — depends_on_ordered included everywhere
+
+```bash
+know -g .ai/know/spec-graph.json graph check validate
+```
+Expected: passes, no new errors from ordered dep handling
+
+### A1: nodes rename works on references
+
+```bash
+know -g .ai/know/spec-graph.json nodes rename code-link:workflow-branch-entity-code test-rename -y
+know -g .ai/know/spec-graph.json nodes rename code-link:test-rename workflow-branch-entity-code -y
+```
+Expected: first command renames ref + updates graph refs, second reverses it
+
+### A2: nodes update works on references
+
+```bash
+know -g .ai/know/spec-graph.json nodes update code-link:workflow-branch-entity-code '{"status":"tested"}'
+```
+Expected: shows "Updated reference 'code-link:...'" (not "entity")
+
+```bash
+know -g .ai/know/spec-graph.json nodes update code-link:workflow-branch-entity-code '{"status":"complete"}'
+```
+Expected: reverts the test change
+
+### A3: check stats shows references by type
+
+```bash
+know -g .ai/know/spec-graph.json graph check stats
+```
+Expected: table includes ref counts, "References by Type:" section below entities
+
+### A4: link warns on nonexistent targets
+
+```bash
+know -g .ai/know/spec-graph.json link feature:graph-visualization data-model:nonexistent-test
+```
+Expected: "Warning: source/target node not found..." before "Added dependency"
+
+```bash
+know -g .ai/know/spec-graph.json unlink feature:graph-visualization data-model:nonexistent-test -y
+```
+Expected: cleans up test link
+
+### A6: graph coverage --refs includes references
+
+```bash
+know -g .ai/know/spec-graph.json graph coverage
+know -g .ai/know/spec-graph.json graph coverage --refs
+```
+Expected: first shows entity-only count, second shows higher count (entities + references)
+
+### B1-B6: Template patches present
+
+```bash
+grep -c "3G. Add References" know/templates/commands/fill-out.md
+grep -c "Reference Orphan Check" know/templates/commands/connect.md
+grep -c "Reference Completeness Gate" know/templates/commands/done.md
+grep -c "Reference Accuracy Check" know/templates/commands/review.md
+grep -c "Reference Drift Detection" know/templates/commands/validate.md
+grep -c "reference counts" know/templates/commands/list.md
+```
+Expected: all return 1
+
+---
+
 ## Batch Operations
 **Date:** 2026-02-18
 **Session:** 94bdd7a6-db71-4ba6-8622-b403ad53e48d

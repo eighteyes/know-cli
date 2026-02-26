@@ -1,0 +1,16 @@
+{
+  "version": "1.0",
+  "language": "python",
+  "source": "know/src",
+  "stats": {
+    "total_files": 0,
+    "total_classes": 0,
+    "total_functions": 0,
+    "total_methods": 0,
+    "total_schemas": 0,
+    "schema_types": []
+  },
+  "modules": [],
+  "schemas": [],
+  "imports": []
+}

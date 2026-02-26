@@ -1,0 +1,207 @@
+{
+  "meta": {
+    "project": {
+      "name": "know-cli",
+      "description": "Code architecture graph for know-cli Python implementation"
+    },
+    "spec_graph_path": ".ai/know/spec-graph.json",
+    "phases": {
+      "done": {},
+      "I": {},
+      "II": {},
+      "III": {},
+      "pending": {}
+    }
+  },
+  "entities": {
+    "package": {
+      "know-core": {
+        "name": "Know Core",
+        "description": "Core graph management: I/O, caching, entities, dependencies, validation"
+      },
+      "know-advanced": {
+        "name": "Know Advanced",
+        "description": "Advanced features: spec generation, search, contracts, feature tracking"
+      },
+      "know-viz": {
+        "name": "Know Visualization",
+        "description": "Multi-format graph rendering: tree, mermaid, dot, HTML, fzf"
+      },
+      "know-cli": {
+        "name": "Know CLI",
+        "description": "Click-based command-line interface with 80+ commands"
+      }
+    },
+    "module": {
+      "graph": {
+        "name": "Graph Manager",
+        "description": "Core I/O for JSON graph files, NetworkX integration, diff logging"
+      },
+      "cache": {
+        "name": "Graph Cache",
+        "description": "Thread-safe in-memory caching with mtime tracking"
+      },
+      "entities": {
+        "name": "Entity Manager",
+        "description": "CRUD operations for graph entities"
+      },
+      "dependencies": {
+        "name": "Dependency Manager",
+        "description": "Rules-driven dependency validation"
+      },
+      "validation": {
+        "name": "Graph Validator",
+        "description": "Multi-level validation pipeline"
+      },
+      "generators": {
+        "name": "Spec Generator",
+        "description": "Generate markdown/XML specs from graph"
+      },
+      "diff": {
+        "name": "Graph Diff",
+        "description": "Semantic diff between graph versions"
+      },
+      "contract-manager": {
+        "name": "Contract Manager",
+        "description": "Feature contract tracking and drift detection"
+      },
+      "feature-tracker": {
+        "name": "Feature Tracker",
+        "description": "Git integration for feature-to-code mapping"
+      },
+      "semantic-search": {
+        "name": "Semantic Searcher",
+        "description": "TF-IDF search indexing for entities"
+      },
+      "cli": {
+        "name": "CLI Entry Point",
+        "description": "Click framework command definitions"
+      }
+    }
+  },
+  "references": {
+    "external-dep": {
+      "click": {
+        "description": "CLI framework for command-line interface"
+      },
+      "pydantic": {
+        "description": "Data validation library"
+      },
+      "networkx": {
+        "description": "Graph algorithms and data structures"
+      },
+      "rich": {
+        "description": "Terminal formatting and output"
+      },
+      "aiofiles": {
+        "description": "Async file I/O operations"
+      },
+      "pyyaml": {
+        "description": "YAML parsing for contracts"
+      }
+    }
+  },
+  "graph": {
+    "package:know-core": {
+      "depends_on": [
+        "module:graph",
+        "module:cache",
+        "module:entities",
+        "module:dependencies",
+        "module:validation",
+        "external-dep:networkx",
+        "external-dep:pydantic"
+      ]
+    },
+    "package:know-advanced": {
+      "depends_on": [
+        "package:know-core",
+        "module:generators",
+        "module:diff",
+        "module:contract-manager",
+        "module:feature-tracker",
+        "module:semantic-search"
+      ]
+    },
+    "package:know-viz": {
+      "depends_on": [
+        "package:know-core",
+        "external-dep:rich"
+      ]
+    },
+    "package:know-cli": {
+      "depends_on": [
+        "package:know-core",
+        "package:know-advanced",
+        "package:know-viz",
+        "module:cli",
+        "external-dep:click"
+      ]
+    },
+    "module:graph": {
+      "depends_on": [
+        "module:cache",
+        "external-dep:networkx"
+      ]
+    },
+    "module:entities": {
+      "depends_on": [
+        "module:graph",
+        "module:dependencies"
+      ]
+    },
+    "module:dependencies": {
+      "depends_on": [
+        "module:graph"
+      ]
+    },
+    "module:validation": {
+      "depends_on": [
+        "module:graph",
+        "module:entities",
+        "module:dependencies"
+      ]
+    },
+    "module:generators": {
+      "depends_on": [
+        "module:graph",
+        "module:entities",
+        "module:dependencies"
+      ]
+    },
+    "module:diff": {
+      "depends_on": [
+        "module:graph"
+      ]
+    },
+    "module:contract-manager": {
+      "depends_on": [
+        "module:graph",
+        "external-dep:pyyaml"
+      ]
+    },
+    "module:feature-tracker": {
+      "depends_on": [
+        "module:graph",
+        "module:contract-manager"
+      ]
+    },
+    "module:semantic-search": {
+      "depends_on": [
+        "module:graph"
+      ]
+    },
+    "module:cli": {
+      "depends_on": [
+        "module:graph",
+        "module:entities",
+        "module:dependencies",
+        "module:validation",
+        "module:generators",
+        "module:diff",
+        "external-dep:click",
+        "external-dep:rich"
+      ]
+    }
+  }
+}

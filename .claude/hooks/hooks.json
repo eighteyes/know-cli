@@ -1,0 +1,16 @@
+{
+  "BeforeToolCall": [
+    {
+      "matcher": "(Edit|Write|Bash)",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "$PROJECT_DIR/know/templates/hooks/protect-graph-files.sh",
+          "description": "Prevent direct graph file access - enforce know CLI",
+          "blocking": true,
+          "timeout": 5
+        }
+      ]
+    }
+  ]
+}

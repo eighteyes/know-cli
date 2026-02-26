@@ -1,0 +1,84 @@
+# ast-grep patterns for Python - use with: sg scan --inline-rules "$(cat python.yml)"
+# Multiple rules separated by ---
+---
+id: class-definition
+language: python
+rule:
+  kind: class_definition
+message: "class:$NAME"
+---
+id: function-definition
+language: python
+rule:
+  kind: function_definition
+  not:
+    inside:
+      kind: class_definition
+      stopBy: end
+message: "function"
+---
+id: method-definition
+language: python
+rule:
+  kind: function_definition
+  inside:
+    kind: class_definition
+    stopBy: end
+message: "method"
+---
+id: dataclass
+language: python
+rule:
+  all:
+    - kind: decorated_definition
+    - has:
+        kind: decorator
+        has:
+          kind: identifier
+          regex: "^dataclass$"
+message: "schema:dataclass"
+---
+id: pydantic-basemodel
+language: python
+rule:
+  kind: class_definition
+  has:
+    kind: argument_list
+    has:
+      kind: identifier
+      regex: "^BaseModel$"
+message: "schema:pydantic"
+---
+id: typeddict
+language: python
+rule:
+  kind: class_definition
+  has:
+    kind: argument_list
+    has:
+      kind: identifier
+      regex: "^TypedDict$"
+message: "schema:typeddict"
+---
+id: enum-class
+language: python
+rule:
+  kind: class_definition
+  has:
+    kind: argument_list
+    has:
+      kind: identifier
+      regex: "^(Enum|IntEnum|StrEnum)$"
+message: "schema:enum"
+---
+id: import-statement
+language: python
+rule:
+  kind: import_statement
+message: "import"
+---
+id: import-from
+language: python
+rule:
+  kind: import_from_statement
+message: "import-from"
