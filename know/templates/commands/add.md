@@ -115,8 +115,10 @@ After registering the feature, ask the user which reference types apply. This en
 
 **To see all available reference types:**
 ```bash
-know -g .ai/know/spec-graph.json graph check ref-types
-know -g .ai/know/spec-graph.json graph check ref-types --filter <term>
+know check ref-types                    # table with descriptions
+know check ref-types --filter <term>    # filter by name or description
+know gen rules describe references      # list type names
+know gen rules describe <type>          # detail on a specific type
 ```
 
 **For each selected type**, ask for the value and create the reference:
@@ -152,6 +154,7 @@ Assistant:
 - Use `/know:connect` to maintain graph coverage
 
 ---
+`r8` - Step 4b: reference lookup now uses `know check ref-types` and `know gen rules describe`
 `r7` - Step 2: replaced sparse HITL with 4 parallel Task agents → qa.md (min 16 questions), iterate before scaffold
 `r6` - Reference Enrichment phase (4b): HITL checklist + know graph check ref-types; updated cross-graph setup to code-link
 `r5` - Added cross-graph setup (implementation references and graph-link stubs)

@@ -1030,9 +1030,10 @@ def nodes_merge(ctx, from_entity, into_entity, keep, yes):
     graph_section = graph_data.get('graph', {})
 
     if not yes:
-        outgoing_count = len(graph_section.get(from_entity, {}).get('depends_on', []))
+        from src.utils import get_all_deps
+        outgoing_count = len(get_all_deps(graph_section.get(from_entity, {})))
         incoming_count = sum(1 for deps in graph_section.values()
-                           if from_entity in deps.get('depends_on', []))
+                           if from_entity in get_all_deps(deps))
 
         console.print(f"[yellow]Will merge '{from_entity}' into '{into_entity}':[/yellow]")
         console.print(f"  Outgoing dependencies to transfer: {outgoing_count}")
@@ -1048,25 +1049,28 @@ def nodes_merge(ctx, from_entity, into_entity, keep, yes):
 
     # Transfer outgoing dependencies (what FROM depends on)
     if from_entity in graph_section:
-        from_deps = graph_section[from_entity].get('depends_on', [])
-        if from_deps:
-            if into_entity not in graph_section:
-                graph_section[into_entity] = {'depends_on': []}
-            if 'depends_on' not in graph_section[into_entity]:
-                graph_section[into_entity]['depends_on'] = []
+        for dep_key in ('depends_on', 'depends_on_ordered'):
+            from_deps = graph_section[from_entity].get(dep_key, [])
+            if from_deps:
+                if into_entity not in graph_section:
+                    graph_section[into_entity] = {}
+                if dep_key not in graph_section[into_entity]:
+                    graph_section[into_entity][dep_key] = []
 
-            for dep in from_deps:
-                if dep not in graph_section[into_entity]['depends_on']:
-                    graph_section[into_entity]['depends_on'].append(dep)
-                    changes['outgoing'] += 1
+                for dep in from_deps:
+                    if dep not in graph_section[into_entity][dep_key]:
+                        graph_section[into_entity][dep_key].append(dep)
+                        changes['outgoing'] += 1
 
     # Transfer incoming dependencies (what points to FROM)
     for entity_id, entity_deps in graph_section.items():
-        if from_entity in entity_deps.get('depends_on', []):
-            entity_deps['depends_on'].remove(from_entity)
-            if into_entity not in entity_deps['depends_on']:
-                entity_deps['depends_on'].append(into_entity)
-            changes['incoming'] += 1
+        for dep_key in ('depends_on', 'depends_on_ordered'):
+            dep_list = entity_deps.get(dep_key, [])
+            if from_entity in dep_list:
+                dep_list.remove(from_entity)
+                if into_entity not in dep_list:
+                    dep_list.append(into_entity)
+                changes['incoming'] += 1
 
     # Remove FROM entity unless --keep
     if not keep:
@@ -1113,23 +1117,29 @@ def nodes_rename(ctx, entity_id, new_key, yes):
 
     new_entity_id = f"{entity_type}:{new_key}"
 
-    # Verify entity exists
-    if entity_type not in graph_data.get('entities', {}) or \
-       old_key not in graph_data['entities'].get(entity_type, {}):
-        console.print(f"[red]✗ Entity not found: {entity_id}[/red]")
+    # Verify node exists in entities or references
+    in_entities = (entity_type in graph_data.get('entities', {}) and
+                   old_key in graph_data['entities'].get(entity_type, {}))
+    in_references = (entity_type in graph_data.get('references', {}) and
+                     old_key in graph_data['references'].get(entity_type, {}))
+
+    if not in_entities and not in_references:
+        console.print(f"[red]✗ Node not found: {entity_id}[/red]")
         suggest_did_you_mean(graph_data, entity_id)
         sys.exit(1)
 
-    # Check new key doesn't exist
-    if new_key in graph_data['entities'].get(entity_type, {}):
-        console.print(f"[red]✗ Entity already exists: {new_entity_id}[/red]")
+    # Check new key doesn't conflict
+    section = 'entities' if in_entities else 'references'
+    if new_key in graph_data[section].get(entity_type, {}):
+        console.print(f"[red]✗ Node already exists: {new_entity_id}[/red]")
         sys.exit(1)
 
     # Preview changes before rename
     if not yes:
+        from src.utils import get_all_deps
         graph_section = graph_data.get('graph', {})
         ref_count = sum(1 for deps in graph_section.values()
-                       if entity_id in deps.get('depends_on', []))
+                       if entity_id in get_all_deps(deps))
 
         console.print(f"[yellow]Will rename '{entity_id}' to '{new_entity_id}':[/yellow]")
         console.print(f"  References to update: {ref_count}")
@@ -1138,8 +1148,13 @@ def nodes_rename(ctx, entity_id, new_key, yes):
             console.print("[dim]Cancelled[/dim]")
             return
 
-    # Rename in entities section
-    graph_data['entities'][entity_type][new_key] = graph_data['entities'][entity_type].pop(old_key)
+    # Rename in entities or references section
+    if entity_type in graph_data.get('entities', {}) and \
+       old_key in graph_data['entities'].get(entity_type, {}):
+        graph_data['entities'][entity_type][new_key] = graph_data['entities'][entity_type].pop(old_key)
+    elif entity_type in graph_data.get('references', {}) and \
+         old_key in graph_data['references'].get(entity_type, {}):
+        graph_data['references'][entity_type][new_key] = graph_data['references'][entity_type].pop(old_key)
 
     # Update graph section
     graph_section = graph_data.get('graph', {})
@@ -1148,13 +1163,15 @@ def nodes_rename(ctx, entity_id, new_key, yes):
     if entity_id in graph_section:
         graph_section[new_entity_id] = graph_section.pop(entity_id)
 
-    # Update all references to this entity
+    # Update all references to this entity in both dep lists
     ref_count = 0
     for eid, deps in graph_section.items():
-        if entity_id in deps.get('depends_on', []):
-            deps['depends_on'].remove(entity_id)
-            deps['depends_on'].append(new_entity_id)
-            ref_count += 1
+        for dep_key in ('depends_on', 'depends_on_ordered'):
+            dep_list = deps.get(dep_key, [])
+            if entity_id in dep_list:
+                dep_list.remove(entity_id)
+                dep_list.append(new_entity_id)
+                ref_count += 1
 
     ctx.obj['graph'].save_graph(graph_data)
 
@@ -1195,9 +1212,10 @@ def nodes_delete(ctx, entity_ids, yes):
             suggest_did_you_mean(graph_data, entity_id)
             sys.exit(1)
 
-        outgoing = graph_section.get(entity_id, {}).get('depends_on', [])
+        from src.utils import get_all_deps
+        outgoing = get_all_deps(graph_section.get(entity_id, {}))
         incoming = [eid for eid, deps in graph_section.items()
-                    if entity_id in deps.get('depends_on', [])]
+                    if entity_id in get_all_deps(deps)]
 
         nodes_info.append({
             'id': entity_id,
@@ -1230,8 +1248,11 @@ def nodes_delete(ctx, entity_ids, yes):
             del graph_section[n['id']]
 
         for eid in n['incoming']:
-            if eid in graph_section and n['id'] in graph_section[eid].get('depends_on', []):
-                graph_section[eid]['depends_on'].remove(n['id'])
+            if eid in graph_section:
+                for dep_key in ('depends_on', 'depends_on_ordered'):
+                    dep_list = graph_section[eid].get(dep_key, [])
+                    if n['id'] in dep_list:
+                        dep_list.remove(n['id'])
 
     ctx.obj['graph'].save_graph(graph_data)
 
@@ -1278,10 +1299,11 @@ def nodes_cut(ctx, entity_id, yes):
     node_category = "entity" if is_entity else "reference"
 
     # Collect dependencies that will be orphaned
+    from src.utils import get_all_deps
     graph_section = graph_data.get('graph', {})
-    outgoing_deps = graph_section.get(entity_id, {}).get('depends_on', [])
+    outgoing_deps = get_all_deps(graph_section.get(entity_id, {}))
     incoming_deps = [eid for eid, deps in graph_section.items()
-                     if entity_id in deps.get('depends_on', [])]
+                     if entity_id in get_all_deps(deps)]
 
     if not yes and (outgoing_deps or incoming_deps):
         console.print(f"[yellow]Will cut {node_category} '{entity_id}' leaving orphaned dependencies:[/yellow]")
@@ -1320,23 +1342,28 @@ def nodes_cut(ctx, entity_id, yes):
 @click.argument('data')
 @click.pass_context
 def nodes_update(ctx, entity_id, data):
-    """Update an entity's properties (name, description, etc.).
+    """Update a node's properties (name, description, etc.).
 
-    Merges provided JSON with existing entity data.
+    Merges provided JSON with existing entity or reference data.
 
     Examples:
         know nodes update feature:auth '{"name":"Authentication System"}'
         know nodes update component:api '{"description":"Updated description"}'
+        know nodes update code-link:my-ref '{"status":"tested"}'
     """
     graph_data = ctx.obj['graph'].load()
 
-    # Parse entity path
+    # Parse node path
     entity_type, entity_key = entity_id.split(':', 1)
 
-    # Verify entity exists
-    if entity_type not in graph_data.get('entities', {}) or \
-       entity_key not in graph_data['entities'].get(entity_type, {}):
-        console.print(f"[red]✗ Entity not found: {entity_id}[/red]")
+    # Determine section (entities or references)
+    in_entities = (entity_type in graph_data.get('entities', {}) and
+                   entity_key in graph_data['entities'].get(entity_type, {}))
+    in_references = (entity_type in graph_data.get('references', {}) and
+                     entity_key in graph_data['references'].get(entity_type, {}))
+
+    if not in_entities and not in_references:
+        console.print(f"[red]✗ Node not found: {entity_id}[/red]")
         suggest_did_you_mean(graph_data, entity_id)
         sys.exit(1)
 
@@ -1348,12 +1375,17 @@ def nodes_update(ctx, entity_id, data):
         sys.exit(1)
 
     # Merge with existing
-    existing = graph_data['entities'][entity_type][entity_key]
-    existing.update(update_data)
+    section = 'entities' if in_entities else 'references'
+    existing = graph_data[section][entity_type][entity_key]
+    if isinstance(existing, dict):
+        existing.update(update_data)
+    else:
+        graph_data[section][entity_type][entity_key] = update_data
 
     ctx.obj['graph'].save_graph(graph_data)
 
-    console.print(f"[green]✓ Updated '{entity_id}'[/green]")
+    node_label = "entity" if in_entities else "reference"
+    console.print(f"[green]✓ Updated {node_label} '{entity_id}'[/green]")
     for key, value in update_data.items():
         console.print(f"  {key}: {value}")
 
@@ -1405,18 +1437,24 @@ def nodes_clone(ctx, entity_id, new_key, no_upstream, no_downstream):
 
     # Clone downstream dependencies (what entity depends on)
     if not no_downstream and entity_id in graph_section:
-        deps = graph_section[entity_id].get('depends_on', [])
-        if deps:
-            graph_section[new_entity_id] = {'depends_on': list(deps)}
-            downstream_count = len(deps)
+        clone_node = {}
+        for dep_key in ('depends_on', 'depends_on_ordered'):
+            deps = graph_section[entity_id].get(dep_key, [])
+            if deps:
+                clone_node[dep_key] = list(deps)
+                downstream_count += len(deps)
+        if clone_node:
+            graph_section[new_entity_id] = clone_node
 
     # Clone upstream dependencies (things that depend on entity)
     if not no_upstream:
         for eid, edeps in graph_section.items():
-            if entity_id in edeps.get('depends_on', []):
-                if new_entity_id not in edeps['depends_on']:
-                    edeps['depends_on'].append(new_entity_id)
-                    upstream_count += 1
+            for dep_key in ('depends_on', 'depends_on_ordered'):
+                dep_list = edeps.get(dep_key, [])
+                if entity_id in dep_list:
+                    if new_entity_id not in dep_list:
+                        dep_list.append(new_entity_id)
+                        upstream_count += 1
 
     ctx.obj['graph'].save_graph(graph_data)
 
@@ -2379,6 +2417,11 @@ def check_stats(ctx):
     for entity_type, count in sorted(stats['entities_by_type'].items()):
         console.print(f"  • {entity_type}: {count}")
 
+    if stats.get('references_by_type'):
+        console.print("\n[bold]References by Type:[/bold]")
+        for ref_type, count in sorted(stats['references_by_type'].items()):
+            console.print(f"  • {ref_type}: {count}")
+
 
 @check.command(name='completeness')
 @click.argument('entity_id')
@@ -2518,8 +2561,9 @@ def graph_clean(ctx, remove, dry_run):
 
 @graph.command(name='coverage')
 @click.option('--json', 'json_output', is_flag=True, help='Machine-readable JSON output')
+@click.option('--refs', is_flag=True, help='Include reference nodes in coverage metrics')
 @click.pass_context
-def graph_coverage(ctx, json_output):
+def graph_coverage(ctx, json_output, refs):
     """Show what percentage of entities are reachable from root users
 
     Measures spec-graph coverage: how many entities are connected to the
@@ -2527,11 +2571,13 @@ def graph_coverage(ctx, json_output):
 
     Examples:
         know graph coverage
+        know graph coverage --refs
         know -g .ai/know/spec-graph.json graph coverage
         know graph coverage --json
     """
     graph_data = ctx.obj['graph'].load()
     entities = graph_data.get('entities', {})
+    references = graph_data.get('references', {})
     deps = graph_data.get('graph', {})
 
     # Find root users: entities with type 'user' or reachable from 'project'
@@ -2540,49 +2586,67 @@ def graph_coverage(ctx, json_output):
         for key in emap:
             all_entity_ids.add(f"{etype}:{key}")
 
-    # BFS from all project/user nodes to find reachable entities
+    # Optionally include reference IDs in the trackable set
+    all_ref_ids = set()
+    if refs:
+        for rtype, rmap in references.items():
+            if isinstance(rmap, dict):
+                for key in rmap:
+                    all_ref_ids.add(f"{rtype}:{key}")
+
+    all_trackable = all_entity_ids | all_ref_ids
+
+    # BFS from all project/user nodes to find reachable nodes
     roots = set()
     for etype in ('project', 'user'):
         for key in entities.get(etype, {}):
             roots.add(f"{etype}:{key}")
 
+    from src.utils import get_all_deps
+    entity_types = set(entities.keys())
+    ref_types = set(references.keys()) if refs else set()
+    valid_types = entity_types | ref_types
+
     reachable = set(roots)
     queue = list(roots)
     while queue:
         node = queue.pop()
-        for dep in deps.get(node, {}).get('depends_on', []):
-            # Only traverse entity→entity edges (skip references)
+        for dep in get_all_deps(deps.get(node, {})):
             dep_type = dep.split(':')[0] if ':' in dep else ''
-            entity_types = set(entities.keys())
-            if dep_type in entity_types and dep not in reachable:
+            if dep_type in valid_types and dep not in reachable:
                 reachable.add(dep)
                 queue.append(dep)
 
-    total = len(all_entity_ids)
-    covered = len(reachable & all_entity_ids)
-    disconnected = sorted(all_entity_ids - reachable)
+    total = len(all_trackable)
+    covered = len(reachable & all_trackable)
+    disconnected = sorted(all_trackable - reachable)
     pct = round(covered / total * 100, 1) if total > 0 else 0.0
 
     if json_output:
         import json as json_mod
-        console.print(json_mod.dumps({
+        result = {
             'total': total,
             'covered': covered,
             'coverage_percent': pct,
             'disconnected': sorted(disconnected)
-        }))
+        }
+        if refs:
+            result['includes_references'] = True
+        console.print(json_mod.dumps(result))
         return
 
+    label = "Entity + Reference" if refs else "Entity"
     color = 'green' if pct >= 80 else 'yellow' if pct >= 50 else 'red'
-    console.print(f"\n[bold]Spec-Graph Entity Coverage[/bold]")
-    console.print(f"[{color}]{covered}/{total} entities reachable ({pct}%)[/{color}]\n")
+    console.print(f"\n[bold]Spec-Graph {label} Coverage[/bold]")
+    console.print(f"[{color}]{covered}/{total} nodes reachable ({pct}%)[/{color}]\n")
 
     if disconnected:
         console.print(f"[yellow]Disconnected ({len(disconnected)}):[/yellow]")
         for eid in disconnected:
             console.print(f"  • {eid}")
     else:
-        console.print("[green]All entities connected to root users.[/green]")
+        noun = "entity + references" if refs else "entities"
+        console.print(f"[green]All {noun} connected to root users.[/green]")
 
 
 @graph.command(name='suggest')
@@ -4972,8 +5036,9 @@ def feature_connect(ctx, feature_name, code_entities, component):
     feature_id = f"feature:{feature_name}"
 
     # 1. Verify feature exists in spec-graph
-    if feature_id not in graph_data.get('entities', {}).get('feature', {}):
+    if feature_name not in graph_data.get('entities', {}).get('feature', {}):
         console.print(f"[red]✗ Feature not found in spec-graph: {feature_id}[/red]")
+        suggest_did_you_mean(graph_data, feature_id)
         sys.exit(1)
 
     # 2. Load code-graph
@@ -6213,6 +6278,7 @@ def init(project_dir):
     5. Initializes project.md with template
     6. Creates initial graphs if they don't exist
     7. Installs graph protection hook (prevents direct file edits)
+    8. Injects <know-instructions> into CLAUDE.md
 
     Examples:
         know init .
@@ -6391,6 +6457,36 @@ def init(project_dir):
 
     else:
         console.print(f"[yellow]⚠[/yellow] Hooks template directory not found: {hooks_source}")
+
+    # 7. Inject <know-instructions> into CLAUDE.md
+    claude_md = project_path / "CLAUDE.md"
+    know_instructions_template = Path(__file__).parent / "templates" / "know-instructions.md"
+
+    if know_instructions_template.exists():
+        instructions_block = know_instructions_template.read_text()
+        start_marker = "<!-- know:start -->"
+        end_marker = "<!-- know:end -->"
+
+        if claude_md.exists():
+            content = claude_md.read_text()
+            start_idx = content.find(start_marker)
+            end_idx = content.find(end_marker)
+
+            if start_idx != -1 and end_idx != -1:
+                # Replace existing block
+                content = content[:start_idx] + instructions_block + content[end_idx + len(end_marker):]
+                claude_md.write_text(content)
+                console.print(f"[green]✓[/green] Updated <know-instructions> in CLAUDE.md")
+            else:
+                # Append block
+                content = content.rstrip() + "\n\n" + instructions_block + "\n"
+                claude_md.write_text(content)
+                console.print(f"[green]✓[/green] Added <know-instructions> to CLAUDE.md")
+        else:
+            claude_md.write_text(instructions_block + "\n")
+            console.print(f"[green]✓[/green] Created CLAUDE.md with <know-instructions>")
+    else:
+        console.print(f"[yellow]⚠[/yellow] know-instructions template not found")
 
     console.print(f"\n[bold green]✓ Initialization complete![/bold green]")
     console.print(f"\n[dim]Next steps:[/dim]")

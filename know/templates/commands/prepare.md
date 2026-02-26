@@ -126,8 +126,10 @@ The graph is the **SOURCE OF TRUTH** - build it first, then derive documentation
 
    Check available types:
    ```bash
-   know -g .ai/know/spec-graph.json graph check ref-types
-   know -g .ai/know/spec-graph.json graph check ref-types --filter <term>
+   know check ref-types                    # table with descriptions
+   know check ref-types --filter <term>    # filter by name or description
+   know gen rules describe references      # list type names
+   know gen rules describe <type>          # detail on a specific type
    ```
 
    For each feature/component, infer and add references from code/docs:
@@ -359,6 +361,7 @@ fd -g "*test*" -t d                        # Test directories
 - **Run `/know:connect` at the end** to ensure graph coverage and connectivity
 
 ---
+`r5` - Reference lookup now uses `know check ref-types` and `know gen rules describe`
 `r4` - QA Batch Generation phase (step 3): 8 parallel Task agents → 35+ questions → prepare-questions.md → iterate before graph creation
 `r3` - Reference Enrichment: infer and add references from codebase evidence at entity creation time
 `r2` - Added /know:connect step to validate graph coverage
