@@ -1,0 +1,132 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "phases": {
+      "I": {
+        "feature:workflow-branch-entity": {
+          "status": "review-ready"
+        },
+        "feature:code-graph-scoring": {
+          "status": "build-ready"
+        }
+      }
+    },
+    "project": {
+      "name": "My Project"
+    }
+  },
+  "references": {
+    "code-link": {
+      "workflow-branch-entity-code": {
+        "modules": [],
+        "classes": [],
+        "packages": [],
+        "status": "complete"
+      },
+      "code-graph-scoring-code": {
+        "modules": [],
+        "classes": [],
+        "packages": [],
+        "status": "planned"
+      }
+    },
+    "configuration": {
+      "workflow-config": {
+        "description": "Dependency rules configuration for workflow entity type, including allowed dependencies (feature\u2192workflow, workflow\u2192action) and depends_on_ordered field support"
+      },
+      "grade-runtime-config": {
+        "description": "Grade file path (default: sibling to code-graph), agent capture triggers, enabled dimensions"
+      }
+    },
+    "data-model": {
+      "grade-snapshot": {
+        "description": "Fixed schema for a single code-graph health snapshot: timestamp, graph hash, dimension metrics (coverage, connectivity, cross-linking, orphan count, staleness, granularity), raw counts and ratios per dimension"
+      }
+    },
+    "constraint": {
+      "grade-file-integrity": {
+        "description": "Grade file is append-only, must survive graph rebuilds, must not be clobbered by code-graph regeneration. Same graph state must produce identical metrics."
+      }
+    },
+    "acceptance_criterion": {
+      "grade-determinism": {
+        "description": "Given identical code-graph state, grading produces identical snapshot. Grade file persists across graph rebuilds. Metrics improve when gaps are fixed."
+      }
+    },
+    "metric": {
+      "graph-health-dimensions": {
+        "description": "Scoring dimensions captured per snapshot: entity coverage ratio, connectivity (orphan count/ratio), cross-link count (spec-to-code, code-to-spec), dependency edge count, entity counts by type"
+      }
+    }
+  },
+  "entities": {
+    "user": {
+      "developer": {
+        "name": "Developer",
+        "description": "Software developer using know CLI to manage specification graphs"
+      }
+    },
+    "objective": {
+      "enhance-graph-model": {
+        "name": "Enhance Graph Model",
+        "description": "Extend spec-graph capabilities to support complex product requirements"
+      }
+    },
+    "feature": {
+      "workflow-branch-entity": {
+        "name": "Workflow Entity Type",
+        "description": "Add workflow entity with ordered action dependencies to spec-graph model"
+      },
+      "bulk-get-by-type": {
+        "name": "Bulk Get by Type",
+        "description": "Enhanced get command to retrieve all entities of a type with full JSON content using know get --type <typename>"
+      },
+      "list-count": {
+        "name": "List Count",
+        "description": "Add --count flag to list command to count entities by type using know list --type <typename> --count"
+      },
+      "graph-filter-prefix": {
+        "name": "Graph Filter by Prefix",
+        "description": "Add --prefix flag to graph used-by to filter dependencies by prefix using know graph used-by --prefix <prefix>"
+      },
+      "code-graph-scoring": {
+        "name": "Code Graph Scoring",
+        "description": "Automatic structural health capture for code-graph, recorded by agents at runtime. Fixed schema, append-only history in sibling grade file."
+      }
+    },
+    "workflow": {},
+    "action": {}
+  },
+  "graph": {
+    "user:developer": {
+      "depends_on": [
+        "objective:enhance-graph-model"
+      ]
+    },
+    "objective:enhance-graph-model": {
+      "depends_on": [
+        "feature:workflow-branch-entity",
+        "feature:bulk-get-by-type",
+        "feature:list-count",
+        "feature:graph-filter-prefix",
+        "feature:code-graph-scoring"
+      ]
+    },
+    "feature:workflow-branch-entity": {
+      "depends_on": [
+        "configuration:workflow-config",
+        "code-link:workflow-branch-entity-code"
+      ]
+    },
+    "feature:code-graph-scoring": {
+      "depends_on": [
+        "code-link:code-graph-scoring-code",
+        "data-model:grade-snapshot",
+        "constraint:grade-file-integrity",
+        "acceptance_criterion:grade-determinism",
+        "metric:graph-health-dimensions",
+        "configuration:grade-runtime-config"
+      ]
+    }
+  }
+}

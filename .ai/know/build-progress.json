@@ -1,0 +1,11 @@
+{
+  "spec_file": ".ai/know/plans/spec-generation-enrichment.xml",
+  "feature": "feature:spec-generation-enrichment",
+  "started_at": "2026-02-09T23:47:16.137421",
+  "tasks": {
+    "task-1": {
+      "status": "in_progress",
+      "started_at": "2026-02-09T23:47:16.174397"
+    }
+  }
+}

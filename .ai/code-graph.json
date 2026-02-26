@@ -164,6 +164,13 @@
         "graph_path": "spec-graph.json",
         "feature": "feature:gap-detection"
       }
+    },
+    "code-link": {
+      "graph-visualization-spec": {
+        "feature": "feature:graph-visualization",
+        "component": "know/src/visualizers/",
+        "status": "complete"
+      }
     }
   },
   "entities": {

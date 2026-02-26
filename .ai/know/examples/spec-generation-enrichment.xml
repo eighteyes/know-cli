@@ -1,0 +1,176 @@
+<?xml version="1.0" ?>
+<spec version="1.0">
+  <meta>
+    <feature>feature:spec-generation-enrichment</feature>
+    <name>Spec Generation Enrichment</name>
+    <description>Enable rich spec generation with lightweight entities, reusable references, and feature-specific metadata</description>
+    <phase>in-progress</phase>
+    <status>incomplete</status>
+  </meta>
+  <context>
+    <users/>
+    <objectives>
+      <objective id="manage-specs">Create and update spec graphs</objective>
+      <objective id="generate-docs">Generate spec documents from graph</objective>
+    </objectives>
+    <actions>
+      <action id="enrich-feature-specs">
+        <name>Enrich Feature Specs</name>
+        <description>Generate rich feature specifications with metadata, components, operations, and references</description>
+      </action>
+    </actions>
+    <components>
+      <component id="metadata-accessor">
+        <name>Metadata Accessor</name>
+        <description>Helper for accessing meta.feature_specs and other metadata sections</description>
+      </component>
+      <component id="reference-renderer">
+        <name>Reference Renderer</name>
+        <description>Helper methods for rendering TypeScript, signatures, and other reference types</description>
+      </component>
+      <component id="spec-generator">
+        <name>Spec Generator</name>
+        <description>Enhanced SpecGenerator class with helper methods for rich spec generation</description>
+      </component>
+    </components>
+  </context>
+  <dependencies>
+    <code-modules/>
+    <external/>
+  </dependencies>
+  <tasks>
+    <task id="task-1" type="checkpoint:human-verify" wave="1">
+      <operation>operation:get-feature-metadata</operation>
+      <name>Get Feature Metadata</name>
+      <files>
+        <!-- File path to be determined -->
+      </files>
+      <action>Implement Get Feature Metadata:
+
+Component: Metadata Accessor
+Helper for accessing meta.feature_specs and other metadata sections
+
+Operation: Access meta.feature_specs for a feature with graceful degradation
+
+TODO: Add specific implementation guidance with library choices and constraints.
+</action>
+      <verify>
+        <test># TODO: Add test command</test>
+        <assertion># TODO: Add expected outcome</assertion>
+      </verify>
+      <done>Get Feature Metadata implemented and verified.
+CHECKPOINT: Human reviews implementation.</done>
+    </task>
+    <task id="task-2" type="checkpoint:human-verify" wave="2">
+      <operation>operation:get-component-operations</operation>
+      <name>Get Component Operations</name>
+      <files>
+        <!-- File path to be determined -->
+      </files>
+      <action>Implement Get Component Operations:
+
+Component: Metadata Accessor
+Helper for accessing meta.feature_specs and other metadata sections
+
+Operation: Query graph for operations linked to a component
+
+TODO: Add specific implementation guidance with library choices and constraints.
+</action>
+      <verify>
+        <test># TODO: Add test command</test>
+        <assertion># TODO: Add expected outcome</assertion>
+      </verify>
+      <done>Get Component Operations implemented and verified.
+CHECKPOINT: Human reviews implementation.</done>
+    </task>
+    <task id="task-3" type="checkpoint:human-verify" wave="3">
+      <operation>operation:get-component-file</operation>
+      <name>Get Component File</name>
+      <files>
+        <!-- File path to be determined -->
+      </files>
+      <action>Implement Get Component File:
+
+Component: Metadata Accessor
+Helper for accessing meta.feature_specs and other metadata sections
+
+Operation: Query source-file reference for component location
+
+TODO: Add specific implementation guidance with library choices and constraints.
+</action>
+      <verify>
+        <test># TODO: Add test command</test>
+        <assertion># TODO: Add expected outcome</assertion>
+      </verify>
+      <done>Get Component File implemented and verified.
+CHECKPOINT: Human reviews implementation.</done>
+    </task>
+    <task id="task-4" type="checkpoint:human-verify" wave="4">
+      <operation>operation:render-typescript</operation>
+      <name>Render TypeScript</name>
+      <files>
+        <!-- File path to be determined -->
+      </files>
+      <action>Implement Render TypeScript:
+
+Component: Reference Renderer
+Helper methods for rendering TypeScript, signatures, and other reference types
+
+Operation: Convert data-model reference to TypeScript interface
+
+TODO: Add specific implementation guidance with library choices and constraints.
+</action>
+      <verify>
+        <test># TODO: Add test command</test>
+        <assertion># TODO: Add expected outcome</assertion>
+      </verify>
+      <done>Render TypeScript implemented and verified.
+CHECKPOINT: Human reviews implementation.</done>
+    </task>
+    <task id="task-5" type="checkpoint:human-verify" wave="5">
+      <operation>operation:render-signature</operation>
+      <name>Render Signature</name>
+      <files>
+        <!-- File path to be determined -->
+      </files>
+      <action>Implement Render Signature:
+
+Component: Reference Renderer
+Helper methods for rendering TypeScript, signatures, and other reference types
+
+Operation: Format function signature reference as readable string
+
+TODO: Add specific implementation guidance with library choices and constraints.
+</action>
+      <verify>
+        <test># TODO: Add test command</test>
+        <assertion># TODO: Add expected outcome</assertion>
+      </verify>
+      <done>Render Signature implemented and verified.
+CHECKPOINT: Human reviews implementation.</done>
+    </task>
+    <task id="task-6" type="checkpoint:human-verify" wave="6">
+      <operation>operation:generate-rich-feature-spec</operation>
+      <name>Generate Rich Feature Spec</name>
+      <files>
+        <!-- File path to be determined -->
+      </files>
+      <action>Implement Generate Rich Feature Spec:
+
+Component: Spec Generator
+Enhanced SpecGenerator class with helper methods for rich spec generation
+
+Operation: Enhanced feature spec generation with all new sections and metadata
+
+TODO: Add specific implementation guidance with library choices and constraints.
+</action>
+      <verify>
+        <test># TODO: Add test command</test>
+        <assertion># TODO: Add expected outcome</assertion>
+      </verify>
+      <done>Generate Rich Feature Spec implemented and verified.
+CHECKPOINT: Human reviews implementation.</done>
+    </task>
+  </tasks>
+</spec>
+

@@ -67,7 +67,31 @@
     "code_graph_path": ".ai/know/code-graph.json"
   },
   "references": {
-    "technical_architecture": {}
+    "technical_architecture": {},
+    "code-link": {
+      "graph-visualization-code": {
+        "modules": [
+          "visualizers.__init__",
+          "visualizers.theme",
+          "visualizers.base",
+          "visualizers.tree",
+          "visualizers.mermaid",
+          "visualizers.dot",
+          "visualizers.html",
+          "visualizers.fzf"
+        ],
+        "classes": [
+          "RichTreeVisualizer",
+          "MermaidVisualizer",
+          "DotVisualizer",
+          "HtmlVisualizer",
+          "FzfPicker",
+          "BaseVisualizer"
+        ],
+        "packages": [],
+        "status": "complete"
+      }
+    }
   },
   "entities": {
     "user": {
@@ -162,6 +186,10 @@
       "spec-to-jsonl-converter": {
         "name": "Spec to JSONL Converter",
         "description": "Convert spec-graph.json entities into JSONL format with cross-index identifiers for data pipelines"
+      },
+      "graph-visualization": {
+        "name": "Graph Visualization",
+        "description": "Visualize spec-graph and code-graph via know viz commands (tree, mermaid, dot, html, fzf)"
       }
     },
     "component": {
@@ -228,6 +256,22 @@
       "reference-analyzer": {
         "name": "Reference Analyzer",
         "description": "Component for analyzing reference usage"
+      },
+      "viz-base": {
+        "name": "Visualization Base",
+        "description": "BaseVisualizer ABC with extract, filter, BFS focus, and VisualizationData dataclass"
+      },
+      "viz-theme": {
+        "name": "Visualization Theme",
+        "description": "Shared color map for entity types with fill, stroke, rich_style, and Graphviz shapes"
+      },
+      "tree-renderer": {
+        "name": "Tree Renderer",
+        "description": "RichTreeVisualizer rendering graph as rich.Tree with grouped and focused views"
+      },
+      "mermaid-renderer": {
+        "name": "Mermaid Renderer",
+        "description": "MermaidVisualizer generating flowchart syntax with subgraph clustering and class styling"
       }
     },
     "action": {
@@ -330,6 +374,26 @@
       "manage-llm-workflows": {
         "name": "Manage LLM Workflows",
         "description": "Configure and manage workflow definitions"
+      },
+      "render-tree": {
+        "name": "Render Tree",
+        "description": "Render graph as Rich tree in terminal with type filtering, depth limit, and entity focus"
+      },
+      "render-mermaid": {
+        "name": "Render Mermaid",
+        "description": "Generate Mermaid flowchart syntax with subgraph clustering and styling"
+      },
+      "render-dot": {
+        "name": "Render DOT",
+        "description": "Generate Graphviz DOT source and render to SVG/PNG/PDF files"
+      },
+      "render-html": {
+        "name": "Render HTML",
+        "description": "Generate interactive PyVis HTML graph with zoom, pan, and hover"
+      },
+      "pick-entity": {
+        "name": "Pick Entity via fzf",
+        "description": "Fuzzy-pick entity with fzf and display its details"
       }
     },
     "operation": {
@@ -436,6 +500,22 @@
       "load_workflow_definition": {
         "name": "Load Workflow Definition",
         "description": "Load workflow configuration"
+      },
+      "extract_graph_data": {
+        "name": "Extract Graph Data",
+        "description": "Read GraphManager, filter by type/focus/depth, return VisualizationData"
+      },
+      "focus_subgraph": {
+        "name": "Focus Subgraph",
+        "description": "BFS in both directions from focus entity to depth limit"
+      },
+      "render_rich_tree": {
+        "name": "Render Rich Tree",
+        "description": "Build rich.Tree with type grouping, cycle detection, and focused neighborhood view"
+      },
+      "generate_mermaid_syntax": {
+        "name": "Generate Mermaid Syntax",
+        "description": "Build Mermaid flowchart TD with subgraphs, edges, and classDef styling"
       }
     }
   },
@@ -458,7 +538,8 @@
         "feature:cli-operations",
         "feature:schema-agnostic-know",
         "feature:graph-embeddings",
-        "feature:spec-to-jsonl-converter"
+        "feature:spec-to-jsonl-converter",
+        "feature:graph-visualization"
       ]
     },
     "objective:manage-specs": {
@@ -763,7 +844,8 @@
       "depends_on": [
         "feature:graph-validation",
         "feature:gap-detection",
-        "feature:cli-operations"
+        "feature:cli-operations",
+        "feature:graph-visualization"
       ]
     },
     "objective:track-features": {
@@ -772,6 +854,61 @@
     "objective:integrate-tools": {
       "depends_on": [
         "feature:llm-workflows"
+      ]
+    },
+    "feature:graph-visualization": {
+      "depends_on": [
+        "action:render-tree",
+        "action:render-mermaid",
+        "action:render-dot",
+        "action:render-html",
+        "action:pick-entity",
+        "code-link:graph-visualization-code"
+      ]
+    },
+    "action:render-tree": {
+      "depends_on": [
+        "component:tree-renderer"
+      ]
+    },
+    "action:render-mermaid": {
+      "depends_on": [
+        "component:mermaid-renderer"
+      ]
+    },
+    "action:render-dot": {
+      "depends_on": [
+        "component:viz-base"
+      ]
+    },
+    "action:render-html": {
+      "depends_on": [
+        "component:viz-base"
+      ]
+    },
+    "action:pick-entity": {
+      "depends_on": [
+        "component:viz-base"
+      ]
+    },
+    "component:tree-renderer": {
+      "depends_on": [
+        "component:viz-base",
+        "component:viz-theme",
+        "operation:render_rich_tree"
+      ]
+    },
+    "component:mermaid-renderer": {
+      "depends_on": [
+        "component:viz-base",
+        "component:viz-theme",
+        "operation:generate_mermaid_syntax"
+      ]
+    },
+    "component:viz-base": {
+      "depends_on": [
+        "operation:extract_graph_data",
+        "operation:focus_subgraph"
       ]
     }
   }
