@@ -38,9 +38,9 @@ Archive a completed feature and update graph phase status.
    ```bash
    know -g .ai/know/spec-graph.json graph uses feature:<name>
    ```
-2. Look for non-code-link reference types (data-model, interface, business_logic, requirement)
+2. Look for non-code-link reference types (data-model, interface, business-logic, requirement)
 3. If zero non-code-link references exist, warn:
-   > "Feature has no specification references (data-model, interface, business_logic, etc.). Archive anyway?"
+   > "Feature has no specification references (data-model, interface, business-logic, etc.). Archive anyway?"
 4. If user confirms, proceed. Otherwise, add references first via `/know:fill-out`.
 
 ### 3. Execute Done Command

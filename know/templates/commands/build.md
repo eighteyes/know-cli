@@ -103,8 +103,12 @@ Guide feature development through a structured 7-phase workflow adapted from Cla
    - Query related actions: `know -g .ai/know/spec-graph.json list --type action`
    - Find component dependencies
    - Check data-model references
-4. **Consolidate findings** from all explorers (Explore + custom Task agents)
-5. Save to `.ai/know/<feature>/exploration.md`
+4. **Search for AI/LLM prompt files** (if feature involves AI):
+   - Look for prompt files: `.md`, `.txt`, `.yaml` in `prompts/`, `templates/`, `instructions/` dirs
+   - Check for system prompt definitions, prompt templates, or LLM instruction files
+   - Note any existing `prompt` references in the spec-graph
+5. **Consolidate findings** from all explorers (Explore + custom Task agents)
+6. Save to `.ai/know/<feature>/exploration.md`
 
 **Example parallel launch**:
 ```
@@ -170,7 +174,7 @@ Send SINGLE message with:
    - Add/update component entities
    - Add operation entities
    - Link dependencies (feature → action → component → operation)
-   - Add references (business_logic, data-models, tech-decisions)
+   - Add references (business-logic, data-models, tech-decisions)
 
 **Outputs**:
 - `.ai/know/<feature>/architecture/chosen.md` - Approved architecture
@@ -287,6 +291,13 @@ Send SINGLE message with:
    know graph cross coverage --spec-graph .ai/know/spec-graph.json --code-graph .ai/know/code-graph.json
    ```
 
+   f. **Link prompt files** (if feature involves AI/LLM):
+   ```bash
+   # Create prompt reference linking feature to its prompt files
+   know -g .ai/know/spec-graph.json add prompt <feature>-prompt '{"description":"...","file":"prompts/<file>.md"}'
+   know -g .ai/know/spec-graph.json link feature:<name> prompt:<feature>-prompt
+   ```
+
    **Aspirational Entities:**
    - Mark planned/future code entities as `"implementation_status": "planned"` and `"aspirational": true`
    - These will be preserved when regenerating code-graph from source code
@@ -365,6 +376,8 @@ Send SINGLE message with:
      --existing .ai/know/code-graph.json \
      --output .ai/know/code-graph.json
    ```
+
+   **Note:** If the feature includes AI/LLM prompt files, ensure they are tracked as `prompt` references in the spec-graph. Prompt files (`.md`, `.txt`, `.yaml` in prompt/template dirs) should be linked to the feature via `prompt:<feature>-prompt` references.
 
    b. **Verify cross-graph links** created during implementation are preserved:
    ```bash
@@ -651,6 +664,7 @@ know -g .ai/know/code-graph.json search "aspirational.*true" --field aspirationa
 ```
 
 ---
+`r5` - Added AI prompt file discovery (Phase 2), prompt reference linking (Phase 5), prompt tracking note (Phase 7)
 `r4` - Made cross-graph linking mandatory in Phase 5; added cross-coverage gate to Phase 7; updated to code-link type
 `r3` - Graph-first initialization: can work from spec-graph without requiring /know:add first
 `r2` - Added implementation types, cross-graph linking, and aspirational entity preservation

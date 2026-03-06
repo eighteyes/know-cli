@@ -112,7 +112,7 @@ After QA test steps, verify that specification references are still accurate:
    ```bash
    know -g .ai/know/spec-graph.json graph uses feature:<name>
    ```
-2. For each non-code-link reference (data-model, interface, business_logic, requirement):
+2. For each non-code-link reference (data-model, interface, business-logic, requirement):
    - Display the reference content
    - Ask: "Is this reference still accurate post-implementation? [Yes/Outdated/Remove]"
 3. If "Outdated": update via `know nodes update <ref-type>:<ref-key> '{"description":"..."}'`

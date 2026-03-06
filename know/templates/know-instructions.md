@@ -8,8 +8,8 @@ Run `know -h` for commands. Run `know <command> -h` for usage details.
 Spec graph entities: project, user, objective, feature, workflow, action, component, operation
 Code graph entities: module, package, layer, namespace, interface, class, function
 
-Common reference types: data-model, endpoint, api-contract, business_logic,
-  acceptance_criterion, validation_rule, source-file, external-dep, graph-link
+Common reference types: data-model, endpoint, api-contract, business-logic,
+  acceptance-criterion, validation-rule, source-file, external-dep, code-link
 
 Run `know check ref-types` for reference types with descriptions.
 Run `know gen rules describe entities` for entity types.

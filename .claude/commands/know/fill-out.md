@@ -214,13 +214,20 @@ For each feature, check what reference types exist:
 know -g .ai/know/spec-graph.json graph uses feature:<name>
 ```
 
-If the feature lacks specification references (data-model, interface, business_logic, requirement, etc.), add them:
+If the feature lacks specification references, add them. Look up available types:
+```bash
+know check ref-types                    # table with descriptions
+know check ref-types --filter <term>    # filter by name or description
+know gen rules describe <type>          # detail on a specific type
+```
+
+Common reference types for features:
 
 | Reference Type | When to Add |
 |---|---|
 | `data-model` | Feature reads/writes structured data |
 | `interface` | Feature exposes an API, CLI, or UI surface |
-| `business_logic` | Feature enforces rules or policies |
+| `business-logic` | Feature enforces rules or policies |
 | `requirement` | Feature has non-functional requirements (performance, security) |
 
 ```bash

@@ -13,12 +13,13 @@ from typing import Dict, List, Any, Optional
 class CodeGraphGenerator:
     """Generate code-graph entities from codemap AST data."""
 
-    def __init__(self, source_dir: str = "know/src"):
+    def __init__(self, source_dir: Optional[str] = None):
         """
         Initialize code-graph generator.
 
         Args:
-            source_dir: Source directory path for file path resolution
+            source_dir: Source directory path for file path resolution.
+                        If None, reads from codemap.json "source" field.
         """
         self.source_dir = source_dir
 
@@ -42,6 +43,19 @@ class CodeGraphGenerator:
         # Load codemap
         with open(codemap_path) as f:
             codemap = json.load(f)
+
+        # Auto-read source dir from codemap when not explicitly provided
+        if self.source_dir is None:
+            source_field = codemap.get("source", "src")
+            if isinstance(source_field, list):
+                # Multiple source dirs - use first as primary
+                self.source_dir = source_field[0] if source_field else "src"
+                self._source_dirs = source_field
+            else:
+                self.source_dir = source_field
+                self._source_dirs = [source_field]
+        else:
+            self._source_dirs = [self.source_dir]
 
         # Load existing graph for reference preservation
         existing_refs = {}
@@ -114,10 +128,11 @@ class CodeGraphGenerator:
             module_name = module_path.replace('.py', '')
             module_id = module_name.replace('/', '.')
 
+            resolved_dir = self._resolve_source_dir(module_path)
             code_graph['entities']['module'][module_id] = {
                 "name": self._format_name(module_id),
-                "description": f"Module at {self.source_dir}/{module_path}",
-                "file_path": f"{self.source_dir}/{module_path}"
+                "description": f"Module at {resolved_dir}/{module_path}",
+                "file_path": f"{resolved_dir}/{module_path}"
             }
 
             # Class entities
@@ -130,7 +145,7 @@ class CodeGraphGenerator:
                 code_graph['entities']['class'][class_id] = {
                     "name": class_name,
                     "description": f"Class in {module_path}",
-                    "file_path": f"{self.source_dir}/{module_path}",
+                    "file_path": f"{resolved_dir}/{module_path}",
                     "line": cls.get('line')
                 }
 
@@ -150,7 +165,7 @@ class CodeGraphGenerator:
                 code_graph['entities']['function'][func_id] = {
                     "name": func_name,
                     "description": f"Function in {module_path}",
-                    "file_path": f"{self.source_dir}/{module_path}",
+                    "file_path": f"{resolved_dir}/{module_path}",
                     "line": func.get('line')
                 }
 
@@ -264,6 +279,14 @@ class CodeGraphGenerator:
             return import_tail if import_tail else None
         else:
             return None
+
+    def _resolve_source_dir(self, module_path: str) -> str:
+        """Resolve which source directory contains the given module path."""
+        if hasattr(self, '_source_dirs') and len(self._source_dirs) > 1:
+            for src_dir in self._source_dirs:
+                if Path(f"{src_dir}/{module_path}").exists():
+                    return src_dir
+        return self.source_dir
 
     def _format_name(self, module_id: str) -> str:
         """Format module ID into human-readable name."""

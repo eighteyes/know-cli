@@ -16,10 +16,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PATTERNS_DIR="$SCRIPT_DIR/patterns"
 
 # Defaults
-SOURCE_DIR="."
+SOURCE_DIR=""
 LANG="auto"
 OUTPUT=".ai/codemap.json"
 HEAT=false
+SOURCE_DIR_EXPLICIT=false
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -37,20 +38,47 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --help|-h)
-      echo "Usage: codemap.sh <source_dir> [--lang python|typescript|auto] [--output file.json] [--heat]"
+      echo "Usage: codemap.sh [source_dir] [--lang python|typescript|auto] [--output file.json] [--heat]"
       echo ""
       echo "Options:"
-      echo "  --lang     Language to scan (python, typescript, auto)"
-      echo "  --output   Output JSON file (default: .ai/codemap.json)"
-      echo "  --heat     Enrich output with git-based heat scores"
+      echo "  source_dir  Source directory to scan (auto-discovers if omitted)"
+      echo "  --lang      Language to scan (python, typescript, auto)"
+      echo "  --output    Output JSON file (default: .ai/codemap.json)"
+      echo "  --heat      Enrich output with git-based heat scores"
+      echo ""
+      echo "Auto-discovery scans for: src/, api/, www/, lib/, app/"
       exit 0
       ;;
     *)
       SOURCE_DIR="$1"
+      SOURCE_DIR_EXPLICIT=true
       shift
       ;;
   esac
 done
+
+# Auto-discover source directories if none specified
+if [[ "$SOURCE_DIR_EXPLICIT" == "false" ]]; then
+  DISCOVERED_DIRS=()
+  for candidate in src api www lib app; do
+    if [[ -d "$candidate" ]]; then
+      DISCOVERED_DIRS+=("$candidate")
+    fi
+  done
+
+  if [[ ${#DISCOVERED_DIRS[@]} -eq 0 ]]; then
+    echo "No source directories found (checked: src/, api/, www/, lib/, app/). Using '.'." >&2
+    SOURCE_DIR="."
+  elif [[ ${#DISCOVERED_DIRS[@]} -eq 1 ]]; then
+    SOURCE_DIR="${DISCOVERED_DIRS[0]}"
+    echo "Auto-discovered source directory: $SOURCE_DIR" >&2
+  else
+    # Multiple dirs found - scan all and merge
+    echo "Auto-discovered source directories: ${DISCOVERED_DIRS[*]}" >&2
+    SOURCE_DIR="${DISCOVERED_DIRS[0]}"
+    MULTI_SOURCE=true
+  fi
+fi
 
 # Find ast-grep binary (may be installed as 'ast-grep' or 'sg')
 AST_GREP=""
@@ -146,8 +174,44 @@ mkdir -p "$(dirname "$OUTPUT")"
 TEMP_FILE=$(mktemp)
 trap "rm -f $TEMP_FILE" EXIT
 
-# Use --inline-rules with multi-doc YAML
-$AST_GREP scan --inline-rules "$(cat "$PATTERN_FILE")" --json "$SOURCE_DIR" 2>/dev/null > "$TEMP_FILE" || true
+# Scan source directory (or merge multiple directories)
+if [[ "${MULTI_SOURCE:-false}" == "true" ]]; then
+  # Multi-source: scan each dir, merge JSON arrays
+  echo "Scanning multiple source directories..." >&2
+  echo "[" > "$TEMP_FILE"
+  FIRST=true
+  for dir in "${DISCOVERED_DIRS[@]}"; do
+    echo "  Scanning $dir..." >&2
+    DIR_TEMP=$(mktemp)
+    $AST_GREP scan --inline-rules "$(cat "$PATTERN_FILE")" --json "$dir" 2>/dev/null > "$DIR_TEMP" || true
+    if [[ -s "$DIR_TEMP" ]]; then
+      # Strip outer brackets and append
+      CONTENT=$(python3 -c "
+import json, sys
+with open('$DIR_TEMP') as f:
+    data = json.load(f)
+if isinstance(data, list):
+    for item in data:
+        print(json.dumps(item))
+")
+      if [[ -n "$CONTENT" ]]; then
+        if [[ "$FIRST" == "true" ]]; then
+          FIRST=false
+        else
+          echo "," >> "$TEMP_FILE"
+        fi
+        echo "$CONTENT" | sed 's/$/,/' | sed '$ s/,$//' >> "$TEMP_FILE"
+      fi
+    fi
+    rm -f "$DIR_TEMP"
+  done
+  echo "]" >> "$TEMP_FILE"
+  # Update SOURCE_DIR for the Python script to use as array
+  SOURCE_DIR=$(IFS=,; echo "${DISCOVERED_DIRS[*]}")
+else
+  # Single source: scan normally
+  $AST_GREP scan --inline-rules "$(cat "$PATTERN_FILE")" --json "$SOURCE_DIR" 2>/dev/null > "$TEMP_FILE" || true
+fi
 
 # Check if we got any results
 if [[ ! -s "$TEMP_FILE" ]]; then
@@ -366,11 +430,17 @@ def main():
         "schema_types": list(set(s.get("schema_type", "unknown") for s in all_schemas))
     }
 
+    # Handle multi-source: comma-separated dirs become array
+    if ',' in source_dir:
+        source_value = source_dir.split(',')
+    else:
+        source_value = source_dir
+
     # Output structure
     codemap = {
         "version": "1.0",
         "language": lang,
-        "source": source_dir,
+        "source": source_value,
         "stats": stats,
         "modules": modules,
         "schemas": all_schemas,

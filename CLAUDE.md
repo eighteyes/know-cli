@@ -20,7 +20,7 @@ Entities: project, user, objective, feature, workflow, action, component, operat
 - Features can depend on workflows (complex, ordered sequences) or actions directly (simple cases)
 - Actions can be reused across multiple workflows with different orderings
 
-References include: requirement, interface (demoted from entities), plus data-model, business_logic, etc.
+References include: requirement, interface (demoted from entities), plus data-model, business-logic, etc.
 
 ## Code Graph (`.ai/know/code-graph.json`) — Codebase Architecture
 
@@ -173,4 +173,30 @@ Validate the graph after every change with `npm run validate-graph`.
 
 When modifying know commands, increment the revision counter at the bottom.
 
-<!-- know commands revision: 10 - added workflow entity with depends_on_ordered -->
+<!-- know commands revision: 12 - add: codify full QA answers into graph entities/references, open-question reference type for unanswered items -->
+
+<!-- know:start -->
+<know-instructions>
+When discussing architecture, product decisions, features, or system design,
+use the `know` CLI to capture decisions in the spec-graph.
+
+Run `know -h` for commands. Run `know <command> -h` for usage details.
+
+Spec graph entities: project, user, objective, feature, workflow, action, component, operation
+Code graph entities: module, package, layer, namespace, interface, class, function
+
+Common reference types: data-model, endpoint, api-contract, business-logic,
+  acceptance-criterion, validation-rule, source-file, external-dep, code-link
+
+Run `know check ref-types` for reference types with descriptions.
+Run `know gen rules describe entities` for entity types.
+Run `know gen rules graph` for the dependency topology.
+
+Persist architectural decisions as graph entities, not prose.
+The spec-graph is the source of truth for product intent.
+</know-instructions>
+<!-- know:end -->
+
+
+
+

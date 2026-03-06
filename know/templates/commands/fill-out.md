@@ -227,7 +227,7 @@ Common reference types for features:
 |---|---|
 | `data-model` | Feature reads/writes structured data |
 | `interface` | Feature exposes an API, CLI, or UI surface |
-| `business_logic` | Feature enforces rules or policies |
+| `business-logic` | Feature enforces rules or policies |
 | `requirement` | Feature has non-functional requirements (performance, security) |
 
 ```bash

@@ -1,0 +1,439 @@
+{
+  "allowed_dependencies": {
+    "module": ["module", "package", "external-dep"],
+    "package": ["package", "module", "external-dep"],
+    "layer": ["layer"],
+    "namespace": ["namespace", "module", "package"],
+    "interface": ["module", "type-def"],
+    "class": ["class", "interface", "module"],
+    "function": ["function", "module", "class"]
+  },
+  "reference_dependency_rule": {
+    "description": "References (terminal nodes) can be dependencies of ANY entity type",
+    "applies_to": "all_entities",
+    "reference_types": [
+      "source-file",
+      "external-dep",
+      "api-surface",
+      "import-statement",
+      "type-def",
+      "test-suite",
+      "code-metric",
+      "doc-comment",
+      "build-artifact",
+      "dependency-graph",
+      "product-component",
+      "execution-trace",
+      "call-graph",
+      "control-flow",
+      "data-flow",
+      "side-effect",
+      "error-path",
+      "graph-link",
+      "spec-link",
+      "code-link"
+    ],
+    "validation": "References are always valid dependencies and bypass entity-to-entity dependency rules",
+    "examples": [
+      "module:logger can depend on external-dep:fs-extra",
+      "module:event-bus can depend on module:logger",
+      "package:commands can depend on package:core",
+      "class:EventBus can depend on interface:Logger",
+      "layer:application can depend on layer:domain"
+    ]
+  },
+  "reference_description": {
+    "source-file": "Concrete file implementation: path, language, exports, imports, size, hash",
+    "external-dep": "External dependencies: npm packages, system libraries, language built-ins",
+    "api-surface": "Public API: exported symbols, signatures, contracts, stability level",
+    "import-statement": "Import/require relationships: type, source location, usage context",
+    "type-def": "Type definitions: interfaces, protocols, schemas, contracts",
+    "test-suite": "Test coverage: unit tests, integration tests, coverage percentage",
+    "code-metric": "Quality metrics: complexity, maintainability, duplication, debt",
+    "doc-comment": "Documentation: docstrings, comments, API docs, examples",
+    "build-artifact": "Build outputs: compiled files, bundles, source maps, assets",
+    "dependency-graph": "Computed graphs: call graphs, dependency trees, impact analysis",
+    "product-component": "Links code modules to product components they implement in spec-graph.json",
+    "execution-trace": "Step-by-step execution path through module functions with call details",
+    "call-graph": "Function call relationships showing what calls what during runtime",
+    "control-flow": "Conditional logic, branches, loops, and decision points in code",
+    "data-flow": "Data transformations and how data moves through the system",
+    "side-effect": "Observable effects beyond return values: file I/O, state changes, processes",
+    "error-path": "Exception handling, error propagation, and recovery strategies",
+    "graph-link": "[DEPRECATED: use code-link] Bidirectional links to spec-graph entities (features, components) for cross-graph traceability",
+    "product-component": "[DEPRECATED: use code-link] Links code modules to product components they implement in spec-graph.json",
+    "spec-link": "Alias for code-link in code-graph context. Cross-graph link from a code entity (module/class) to the spec entities it implements.",
+    "code-link": "Cross-graph link from a code entity (module/class) to the spec entities it implements. Shape: { feature: 'feature:x', component: 'component:y', status: 'planned|in-progress|complete' }"
+  },
+  "reference_note": {
+    "purpose": "References are terminal graph nodes containing concrete implementation details",
+    "schema": "Each reference type has flexible schema to match different languages and contexts",
+    "naming": "Reference keys typically match entity keys (module:auth → source-file:auth)",
+    "usage": "Entities define relationships between code concepts, references provide details",
+    "language_agnostic": "Schema works for any language: JS, Python, Go, Rust, Java, etc."
+  },
+  "entity_description": {
+    "module": "Set of all modules/files in the codebase (files that export reusable code)",
+    "package": "Set of all packages/directories/namespaces that organize related modules",
+    "layer": "Set of architectural layers defining separation of concerns and dependency flow",
+    "namespace": "Set of all namespaces/scopes that group related symbols",
+    "interface": "Set of all interfaces/protocols/traits defining contracts",
+    "class": "Set of all classes/structs/objects implementing behavior",
+    "function": "Set of all functions/methods/procedures that perform operations"
+  },
+  "entity_note": {
+    "schema": "Entities have name & description. Module/package entities may include path/package/layer for practical navigation.",
+    "instances": "module:auth, package:api, class:User are instances within entity sets",
+    "granularity": "Choose entity granularity based on what you want to track and validate",
+    "flexibility": "Not all entity types required - use what makes sense for your architecture",
+    "allowed_metadata": ["path", "package", "layer", "implementation_type", "implementation_status", "aspirational"],
+    "implementation_tracking": "Use implementation_type and implementation_status to track how code fulfills spec requirements",
+    "aspirational_entities": "Mark entities as aspirational:true to preserve them during code-graph regeneration from source"
+  },
+  "entity_schema": {
+    "module": {
+      "required": ["name", "description"],
+      "optional": ["path", "package", "layer", "file_path", "implementation_type", "implementation_status", "aspirational"],
+      "notes": "path/package/layer allow quick navigation. implementation_type tracks how module fulfills spec (full|partial|stub|aspirational). aspirational=true preserves entity during code-graph regeneration"
+    },
+    "package": {
+      "required": ["name", "description"],
+      "optional": ["layer", "implementation_type", "implementation_status", "aspirational"],
+      "notes": "layer indicates architectural positioning. implementation_type tracks fulfillment status"
+    },
+    "layer": {
+      "required": ["name", "description"],
+      "optional": []
+    },
+    "namespace": {
+      "required": ["name", "description"],
+      "optional": ["implementation_type", "implementation_status", "aspirational"]
+    },
+    "interface": {
+      "required": ["name", "description"],
+      "optional": ["implementation_type", "implementation_status", "aspirational"]
+    },
+    "class": {
+      "required": ["name", "description"],
+      "optional": ["implementation_type", "implementation_status", "aspirational"]
+    },
+    "function": {
+      "required": ["name", "description"],
+      "optional": ["implementation_type", "implementation_status", "aspirational"]
+    }
+  },
+  "implementation_metadata": {
+    "implementation_type": {
+      "description": "How the code entity fulfills its specification",
+      "values": {
+        "full": "Complete implementation of all functionality",
+        "partial": "Some functionality implemented, some pending",
+        "stub": "Interface defined, implementation is placeholder",
+        "aspirational": "Planned but not yet started"
+      }
+    },
+    "implementation_status": {
+      "description": "Current development status of the entity",
+      "values": {
+        "complete": "Fully implemented and tested",
+        "in-progress": "Currently being developed",
+        "planned": "Documented design, not yet started",
+        "deprecated": "Scheduled for removal"
+      }
+    },
+    "aspirational": {
+      "description": "Boolean flag - if true, preserve this entity during code-graph regeneration from source files",
+      "type": "boolean",
+      "usage": "Set to true for planned entities that don't exist in source yet. Code-graph generators should preserve these entities."
+    }
+  },
+  "source_file_schema": {
+    "description": "Implementation details for a source code file",
+    "fields": {
+      "file_path": "STRING - Relative path from project root",
+      "language": "STRING - Programming language (js|ts|py|go|rs|java|c|cpp|rb|php|etc)",
+      "exports": "ARRAY<STRING> - Public symbols exported by this file",
+      "imports_internal": "ARRAY<STRING> - Internal dependencies as entity paths",
+      "imports_external": "ARRAY<STRING> - External dependencies as reference paths",
+      "layer": "INTEGER|STRING - Architectural layer (numeric depth or named layer)",
+      "category": "STRING - Module category based on architecture",
+      "loc": "INTEGER - Lines of code (excluding comments and whitespace)",
+      "last_modified": "ISO8601_TIMESTAMP - Last modification time",
+      "hash": "STRING - Content hash for change detection"
+    }
+  },
+  "external_dep_schema": {
+    "description": "External dependency details (language-agnostic)",
+    "fields": {
+      "identifier": "STRING - Unique package identifier (npm:fs-extra, pypi:requests, crates:tokio)",
+      "version": "STRING - Version constraint or 'builtin' or 'stdlib'",
+      "type": "STRING - npm|pypi|cargo|gem|maven|nuget|builtin|stdlib|system",
+      "purpose": "STRING - Why this dependency is used",
+      "usage_count": "INTEGER - Number of modules that import this",
+      "license": "STRING - License identifier (MIT, Apache-2.0, etc)",
+      "security_issues": "INTEGER - Known CVEs or security advisories"
+    }
+  },
+  "api_surface_schema": {
+    "description": "Public API exported by a module (language-agnostic)",
+    "fields": {
+      "classes": "ARRAY<STRING> - Exported classes/structs/objects",
+      "functions": "ARRAY<STRING> - Exported functions/methods/procedures",
+      "constants": "ARRAY<STRING> - Exported constants/enums",
+      "types": "ARRAY<STRING> - Exported types/interfaces/protocols",
+      "macros": "ARRAY<STRING> - Exported macros (Rust, C, etc)",
+      "stability": "STRING - stable|unstable|experimental|deprecated",
+      "breaking_changes": "ARRAY<STRING> - Known breaking changes from previous versions",
+      "documentation_url": "STRING - Link to API documentation"
+    }
+  },
+  "import_statement_schema": {
+    "description": "Metadata about import/require/use statements",
+    "fields": {
+      "from": "STRING - Source module entity path",
+      "to": "STRING - Target module/dependency entity path",
+      "import_type": "STRING - require|import|use|include|from|etc (language-specific)",
+      "symbols": "ARRAY<STRING> - Specific symbols imported (empty = entire module)",
+      "alias": "STRING - Import alias if used",
+      "location": "STRING - File and line number where import occurs",
+      "usage_context": "STRING - How imported symbols are used",
+      "coupling_strength": "STRING - tight|medium|loose"
+    }
+  },
+  "type_def_schema": {
+    "description": "Type definitions, interfaces, protocols, schemas",
+    "fields": {
+      "name": "STRING - Type name",
+      "kind": "STRING - interface|class|struct|trait|protocol|schema|enum|union",
+      "fields": "ARRAY<OBJECT> - Field definitions with types",
+      "methods": "ARRAY<STRING> - Method signatures",
+      "implements": "ARRAY<STRING> - Interfaces/traits implemented",
+      "extends": "ARRAY<STRING> - Parent classes/types",
+      "generic_params": "ARRAY<STRING> - Generic/template parameters"
+    }
+  },
+  "test_suite_schema": {
+    "description": "Test coverage and test suite information",
+    "fields": {
+      "test_file": "STRING - Path to test file",
+      "target_module": "STRING - Module being tested",
+      "test_count": "INTEGER - Number of test cases",
+      "coverage_percent": "FLOAT - Code coverage percentage",
+      "test_type": "STRING - unit|integration|e2e|performance|security",
+      "framework": "STRING - Testing framework (jest|pytest|cargo-test|etc)"
+    }
+  },
+  "code_metric_schema": {
+    "description": "Code quality and complexity metrics",
+    "fields": {
+      "cyclomatic_complexity": "INTEGER - Complexity score",
+      "cognitive_complexity": "INTEGER - How difficult code is to understand",
+      "maintainability_index": "FLOAT - Maintainability score (0-100)",
+      "duplication_percent": "FLOAT - Code duplication percentage",
+      "technical_debt_minutes": "INTEGER - Estimated time to fix issues",
+      "coupling_score": "FLOAT - Module coupling metric",
+      "cohesion_score": "FLOAT - Module cohesion metric"
+    }
+  },
+  "layer_dependency_rules": {
+    "description": "Validation rules for architectural layers",
+    "rules": {
+      "no_upward_dependencies": "Layer N cannot depend on layer N+1 or higher",
+      "no_circular_dependencies": "No cycles allowed in module dependency graph",
+      "layer_coherence": "Modules in same package should be in same or adjacent layers",
+      "external_deps_allowed": "All layers can depend on external dependencies"
+    },
+    "common_architectures": {
+      "clean_architecture": {
+        "layers": ["entities", "use-cases", "interface-adapters", "frameworks"],
+        "rules": "Inner layers don't depend on outer layers"
+      },
+      "hexagonal": {
+        "layers": ["domain", "application", "infrastructure"],
+        "rules": "Domain has no external dependencies"
+      },
+      "three_tier": {
+        "layers": ["presentation", "business", "data"],
+        "rules": "Each layer only depends on layer below"
+      },
+      "microservices": {
+        "layers": ["gateway", "services", "shared"],
+        "rules": "Services don't depend on each other directly"
+      }
+    }
+  },
+  "language_specific_extensions": {
+    "javascript": {
+      "module_systems": ["commonjs", "esm", "amd", "umd"],
+      "file_extensions": [".js", ".mjs", ".cjs", ".jsx"],
+      "package_manager": "npm|yarn|pnpm"
+    },
+    "typescript": {
+      "module_systems": ["esm", "commonjs"],
+      "file_extensions": [".ts", ".tsx", ".d.ts"],
+      "type_checking": true
+    },
+    "python": {
+      "module_systems": ["standard"],
+      "file_extensions": [".py", ".pyi"],
+      "package_manager": "pip|poetry|conda"
+    },
+    "go": {
+      "module_systems": ["go_modules"],
+      "file_extensions": [".go"],
+      "package_manager": "go_modules"
+    },
+    "rust": {
+      "module_systems": ["cargo"],
+      "file_extensions": [".rs"],
+      "package_manager": "cargo"
+    },
+    "java": {
+      "module_systems": ["maven", "gradle"],
+      "file_extensions": [".java"],
+      "package_manager": "maven|gradle"
+    }
+  },
+  "meta_description": {
+    "project": "Top-level project information: name, language, architecture style",
+    "packages": "Directory organization and package structure",
+    "layers": "Architectural layer definitions and constraints",
+    "conventions": "Code conventions, naming patterns, style guides"
+  },
+  "execution_trace_schema": {
+    "description": "Step-by-step execution path through a module function",
+    "fields": {
+      "module": "STRING - Module entity path",
+      "function": "STRING - Function signature",
+      "steps": "ARRAY<STEP_OBJECT> - Ordered execution steps",
+      "returns": "STRING - Return value description",
+      "throws": "ARRAY<STRING> - Possible exception types"
+    },
+    "step_object": {
+      "order": "INTEGER - Step sequence number",
+      "description": "STRING - What this step does",
+      "calls": "STRING - Function/method called",
+      "module": "STRING - Module or external-dep providing the function",
+      "async": "BOOLEAN - Whether this is an async operation"
+    }
+  },
+  "call_graph_schema": {
+    "description": "Function call relationships within and across modules",
+    "fields": {
+      "module": "STRING - Module entity path",
+      "entry_point": "STRING - Function signature that starts the call chain",
+      "calls": "ARRAY<CALL_OBJECT> - Functions called from entry point",
+      "recursive": "BOOLEAN - Whether function calls itself",
+      "max_depth": "INTEGER - Maximum call stack depth"
+    },
+    "call_object": {
+      "function": "STRING - Function name",
+      "module": "STRING - Module entity path providing the function",
+      "call_type": "STRING - sync|async|callback",
+      "conditional": "BOOLEAN - Whether call is conditional"
+    }
+  },
+  "control_flow_schema": {
+    "description": "Conditional logic and branching in code",
+    "fields": {
+      "module": "STRING - Module entity path",
+      "location": "STRING - File path and line number",
+      "type": "STRING - if|switch|loop|try-catch",
+      "condition": "STRING - Condition expression or description",
+      "if_true": "OBJECT - Actions when condition is true",
+      "if_false": "OBJECT - Actions when condition is false",
+      "error_handler": "OBJECT - For try-catch blocks"
+    }
+  },
+  "data_flow_schema": {
+    "description": "Data transformations through the system",
+    "fields": {
+      "source": "STRING - Where data comes from",
+      "destination": "STRING - Where data goes to",
+      "transformation": "STRING - How data is transformed",
+      "modules": "ARRAY<STRING> - Modules involved in transformation",
+      "format_change": "STRING - Input format → Output format",
+      "example": "OBJECT - Example input/output pair"
+    }
+  },
+  "side_effect_schema": {
+    "description": "Observable effects beyond return values",
+    "fields": {
+      "module": "STRING - Module entity path",
+      "operation": "STRING - Operation entity path if applicable",
+      "type": "STRING - filesystem|network|process|state_mutation|event",
+      "description": "STRING - What effect occurs",
+      "paths_created": "ARRAY<STRING> - File/directory paths created",
+      "state_file": "STRING - State file modified",
+      "atomic": "BOOLEAN - Whether operation is atomic",
+      "reversible": "BOOLEAN - Whether effect can be undone",
+      "idempotent": "BOOLEAN - Whether repeating has same effect",
+      "cleanup": "STRING - How to reverse the effect"
+    }
+  },
+  "error_path_schema": {
+    "description": "Exception handling and error propagation",
+    "fields": {
+      "module": "STRING - Module entity path",
+      "trigger": "STRING - What causes the error",
+      "exception_type": "STRING - Error class or type",
+      "catch_location": "STRING - Where error is caught",
+      "recovery": "STRING - How error is handled",
+      "cleanup": "ARRAY<STRING> - Cleanup actions performed",
+      "propagates_to": "STRING - Where error propagates if not caught",
+      "user_visible": "BOOLEAN - Whether error is shown to user"
+    }
+  },
+  "product_component_schema": {
+    "description": "Link to product component that this code module implements",
+    "fields": {
+      "component": "STRING - Product component entity path (e.g., 'component:spawn-command')",
+      "graph_path": "STRING - Relative path to product graph file",
+      "feature": "STRING - Parent feature entity path (e.g., 'feature:mesh-lifecycle')",
+      "action": "STRING - Parent action entity path (e.g., 'action:spawn-mesh')",
+      "operations": "ARRAY<STRING> - Operation entity paths implemented by this module"
+    },
+    "examples": {
+      "spawn-command": {
+        "component": "component:spawn-command",
+        "graph_path": ".ai/know/spec-graph.json",
+        "feature": "feature:mesh-lifecycle",
+        "action": "action:spawn-mesh"
+      },
+      "logger": {
+        "component": "component:logger",
+        "graph_path": ".ai/know/spec-graph.json",
+        "operations": ["operation:write-jsonl-log"]
+      }
+    }
+  },
+  "usage_patterns": {
+    "monorepo": {
+      "description": "Multiple packages in single repo",
+      "entity_strategy": "Use package entities for each workspace, modules for files",
+      "validation": "Cross-package dependencies should be explicit"
+    },
+    "microservices": {
+      "description": "Multiple services, each its own codebase",
+      "entity_strategy": "Each service gets own graph, link via api-surface references",
+      "validation": "Services communicate via defined contracts only"
+    },
+    "library": {
+      "description": "Reusable library code",
+      "entity_strategy": "Focus on api-surface and external-dep tracking",
+      "validation": "Minimize external dependencies, maximize stability"
+    },
+    "application": {
+      "description": "End-user application",
+      "entity_strategy": "Track layers, enforce architectural boundaries",
+      "validation": "Business logic isolated from infrastructure"
+    }
+  },
+  "notes": {
+    "names": "Entity and reference keys use kebab-case with hyphens",
+    "schema": "Parent key is unique identifier, no separate id field",
+    "entity_types": "Use subset that matches your needs: module, package, layer, class, etc",
+    "purpose": "Universal code architecture graph for any language and architecture style",
+    "extensibility": "Add custom entity types and references for domain-specific needs"
+  }
+}

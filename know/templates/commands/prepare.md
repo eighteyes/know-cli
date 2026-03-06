@@ -64,14 +64,14 @@ The graph is the **SOURCE OF TRUTH** - build it first, then derive documentation
    **Agent 5 — Data Models** (→ `data-model:*` references)
    > "You are analyzing an existing codebase: '[exploration summary]'. Generate 5 questions whose answers will directly become `data-model` reference entries. Ask: what are the primary data entities visible in the code (name each and list their key fields), what are the relationships between those entities (foreign keys, embeds, joins), which entities are the most central to the system's domain, what is the lifecycle of the most important entity (created → updated → deleted/archived), and are there any data entities implied by the code that don't yet have clear schemas. Do NOT ask about scale, load, or performance."
 
-   **Agent 6 — Interfaces & API Contracts** (→ `interface:*`, `api_contract:*` references)
-   > "You are analyzing an existing codebase: '[exploration summary]'. Generate 5 questions whose answers will directly become `interface` and `api_contract` reference entries. Ask: what are the main screens or views in the UI code (name each), what API endpoints are defined (path, method, request/response shapes), what data does each screen display and where does it come from, what forms or input surfaces exist and what fields do they include, and are there any external API integrations where the contract is defined in the codebase. Do NOT ask about scale, load, or performance."
+   **Agent 6 — Interfaces & API Contracts** (→ `interface:*`, `api-contract:*` references)
+   > "You are analyzing an existing codebase: '[exploration summary]'. Generate 5 questions whose answers will directly become `interface` and `api-contract` reference entries. Ask: what are the main screens or views in the UI code (name each), what API endpoints are defined (path, method, request/response shapes), what data does each screen display and where does it come from, what forms or input surfaces exist and what fields do they include, and are there any external API integrations where the contract is defined in the codebase. Do NOT ask about scale, load, or performance."
 
-   **Agent 7 — Business Logic & Security** (→ `business_logic:*`, `security-spec:*` references)
-   > "You are analyzing an existing codebase: '[exploration summary]'. Generate 5 questions whose answers will directly become `business_logic` and `security-spec` reference entries. Ask: what non-obvious domain rules are encoded in the logic (validation, approval gates, state machine transitions), how does the code enforce access control (role checks, ownership checks, permission guards), what data is treated as sensitive in the code (encrypted, masked, excluded from logs), what audit or activity logging exists, and what are the most complex conditional branches in the core workflow code. Do NOT ask about scale, load, or performance."
+   **Agent 7 — Business Logic & Security** (→ `business-logic:*`, `security-spec:*` references)
+   > "You are analyzing an existing codebase: '[exploration summary]'. Generate 5 questions whose answers will directly become `business-logic` and `security-spec` reference entries. Ask: what non-obvious domain rules are encoded in the logic (validation, approval gates, state machine transitions), how does the code enforce access control (role checks, ownership checks, permission guards), what data is treated as sensitive in the code (encrypted, masked, excluded from logs), what audit or activity logging exists, and what are the most complex conditional branches in the core workflow code. Do NOT ask about scale, load, or performance."
 
-   **Agent 8 — Configuration & Constraints** (→ `configuration:*`, `constraint:*`, `acceptance_criterion:*` references)
-   > "You are analyzing an existing codebase: '[exploration summary]'. Generate 5 questions whose answers will directly become `configuration`, `constraint`, and `acceptance_criterion` reference entries. Ask: what environment variables or config files does the codebase reference, are there any hard-coded limits or invariants in the code that should be captured as constraints, what does the test suite assert as the system's required behavior (these become acceptance criteria), what are the deployment or environment assumptions baked into the code, and what configuration is currently missing that the system clearly needs. Do NOT ask about scale, load, or performance."
+   **Agent 8 — Configuration & Constraints** (→ `configuration:*`, `constraint:*`, `acceptance-criterion:*` references)
+   > "You are analyzing an existing codebase: '[exploration summary]'. Generate 5 questions whose answers will directly become `configuration`, `constraint`, and `acceptance-criterion` reference entries. Ask: what environment variables or config files does the codebase reference, are there any hard-coded limits or invariants in the code that should be captured as constraints, what does the test suite assert as the system's required behavior (these become acceptance criteria), what are the deployment or environment assumptions baked into the code, and what configuration is currently missing that the system clearly needs. Do NOT ask about scale, load, or performance."
 
    **Collect all results** into `.ai/know/qa/prepare-questions.md`:
    ```markdown
@@ -93,13 +93,13 @@ The graph is the **SOURCE OF TRUTH** - build it first, then derive documentation
    ## 5. Data Models  [→ data-model:*]
    21. ...
 
-   ## 6. Interfaces & API Contracts  [→ interface:*, api_contract:*]
+   ## 6. Interfaces & API Contracts  [→ interface:*, api-contract:*]
    26. ...
 
-   ## 7. Business Logic & Security  [→ business_logic:*, security-spec:*]
+   ## 7. Business Logic & Security  [→ business-logic:*, security-spec:*]
    31. ...
 
-   ## 8. Configuration & Constraints  [→ configuration:*, constraint:*, acceptance_criterion:*]
+   ## 8. Configuration & Constraints  [→ configuration:*, constraint:*, acceptance-criterion:*]
    36. ...
 
    ---
@@ -137,10 +137,10 @@ The graph is the **SOURCE OF TRUTH** - build it first, then derive documentation
    |---|---|
    | Config files, env vars, settings objects | `configuration` |
    | Data schemas, models, types | `data-model` |
-   | Workflow rules, validation logic | `business_logic` |
-   | README acceptance criteria, test assertions | `acceptance_criterion` |
+   | Workflow rules, validation logic | `business-logic` |
+   | README acceptance criteria, test assertions | `acceptance-criterion` |
    | UI screens, pages, views | `interface` |
-   | API routes, request/response types | `api_contract` |
+   | API routes, request/response types | `api-contract` |
    | Auth checks, permission guards | `security-spec` |
    | Hard limits, invariants in code | `constraint` |
 

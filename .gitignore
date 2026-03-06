@@ -109,3 +109,6 @@ know-cli
 .vscode/PythonImportHelper-v2-Completion.json
 
 .beads/
+
+# tx runtime state
+.ai/tx/data/

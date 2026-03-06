@@ -113,7 +113,7 @@ Check if specification references linked to this feature may be stale:
    ```bash
    know -g .ai/know/spec-graph.json graph uses feature:<feature-name>
    ```
-2. For each non-code-link reference (data-model, interface, business_logic):
+2. For each non-code-link reference (data-model, interface, business-logic):
    - Compare reference description against current code state
    - Flag references that may be invalidated by detected changes
    - Report as additional MEDIUM risk items if drift is suspected

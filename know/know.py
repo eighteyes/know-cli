@@ -24,7 +24,7 @@ from rich import print as rprint
 from src import (
     GraphManager, EntityManager, DependencyManager,
     GraphValidator, SpecGenerator, GraphDiff,
-    GraphConformanceChecker, RulesDiffAnalyzer, get_graph_stats
+    RulesDiffAnalyzer, get_graph_stats
 )
 from src.workflow import WorkflowManager
 
@@ -1932,79 +1932,6 @@ def graph_diff(ctx, graph1, graph2, base, verbose, format):
             Path(tmp_file).unlink(missing_ok=True)
 
 
-@graph.command(name='migrate')
-@click.option('--format', '-f', type=click.Choice(['terminal', 'json']), default='terminal',
-              help='Output format')
-@click.pass_context
-def graph_migrate(ctx, format):
-    """Check graph structure against current rules
-
-    Finds entity types not in rules, dependency paths not allowed,
-    and dangling references. Lighter than 'check validate'.
-
-    Examples:
-        know graph migrate
-        know graph migrate --format json
-        know -g .ai/know/code-graph.json graph migrate
-    """
-    try:
-        graph_data = ctx.obj['graph'].load()
-        rules_path = ctx.obj['rules_path']
-
-        checker = GraphConformanceChecker(rules_path, graph_data)
-        result = checker.check()
-
-        if format == 'json':
-            print(json.dumps(result, indent=2))
-            return
-
-        console.print(f"\n[bold cyan]Graph Conformance:[/bold cyan] rules={result['rules_path']}\n")
-
-        counts = result['counts']
-        if counts['total'] == 0:
-            console.print("[green]✓ Graph conforms to rules[/green]\n")
-            return
-
-        # Group issues by type
-        by_type = {}
-        for issue in result['issues']:
-            by_type.setdefault(issue['type'], []).append(issue)
-
-        type_labels = {
-            'unknown_entity_type': ('Unknown Entity Types', 'red'),
-            'invalid_dependency_path': ('Invalid Dependency Paths', 'yellow'),
-            'dangling_graph_ref': ('Dangling Graph References', 'magenta'),
-        }
-
-        for issue_type, (label, color) in type_labels.items():
-            items = by_type.get(issue_type, [])
-            if not items:
-                continue
-            console.print(f"[bold]{label}:[/bold] ({len(items)})")
-            for item in items:
-                if issue_type == 'unknown_entity_type':
-                    console.print(f"  [{color}]{item['entity_id']}[/{color}] — type '{item['entity_type']}' not in rules")
-                elif issue_type == 'invalid_dependency_path':
-                    console.print(f"  [{color}]{item['from']} → {item['to']}[/{color}] ({item['path']})")
-                elif issue_type == 'dangling_graph_ref':
-                    console.print(f"  [{color}]{item['from']} → {item['to']}[/{color}] (target missing)")
-            console.print()
-
-        console.print(f"[bold]Total issues:[/bold] {counts['total']}\n")
-
-    except FileNotFoundError as e:
-        console.print(f"[red]✗ File not found: {e}[/red]")
-        sys.exit(1)
-    except json.JSONDecodeError as e:
-        console.print(f"[red]✗ Invalid JSON: {e}[/red]")
-        sys.exit(1)
-    except Exception as e:
-        console.print(f"[red]✗ Error: {e}[/red]")
-        import traceback
-        console.print(f"[dim]{traceback.format_exc()}[/dim]")
-        sys.exit(1)
-
-
 @graph.command(name='migrate-rules')
 @click.argument('target_rules', type=click.Path(exists=True))
 @click.option('--format', '-f', type=click.Choice(['terminal', 'json']), default='terminal',
@@ -2121,6 +2048,114 @@ def graph_migrate_rules(ctx, target_rules, format, verbose):
                 console.print(f"       [dim]$ {step['command']}[/dim]")
 
         console.print()
+
+    except FileNotFoundError as e:
+        console.print(f"[red]✗ File not found: {e}[/red]")
+        sys.exit(1)
+    except json.JSONDecodeError as e:
+        console.print(f"[red]✗ Invalid JSON: {e}[/red]")
+        sys.exit(1)
+    except Exception as e:
+        console.print(f"[red]✗ Error: {e}[/red]")
+        import traceback
+        console.print(f"[dim]{traceback.format_exc()}[/dim]")
+        sys.exit(1)
+
+
+def _migrate_deprecated_names(graph_data, rules):
+    """Rename deprecated reference types in graph data.
+
+    Returns list of change descriptions (empty if nothing to do).
+    Mutates graph_data in place.
+    """
+    deprecated = rules.get('reference_note', {}).get('deprecated_names', {})
+    if not deprecated:
+        deprecated = rules.get('reference_dependency_rule', {}).get('deprecated_names', {})
+    if not deprecated:
+        return []
+
+    changes = []
+
+    # Rename reference type keys
+    refs = graph_data.get('references', {})
+    for old_type, new_type in deprecated.items():
+        if old_type in refs:
+            refs[new_type] = refs.pop(old_type)
+            changes.append(f"renamed reference type '{old_type}' → '{new_type}'")
+
+    # Rename graph dependency IDs
+    graph_section = graph_data.get('graph', {})
+    for entity_id, deps in list(graph_section.items()):
+        old_prefix = entity_id.split(':', 1)[0] if ':' in entity_id else None
+        if old_prefix and old_prefix in deprecated:
+            new_id = deprecated[old_prefix] + ':' + entity_id.split(':', 1)[1]
+            graph_section[new_id] = graph_section.pop(entity_id)
+            changes.append(f"renamed graph key '{entity_id}' → '{new_id}'")
+            deps = graph_section[new_id]
+
+        for dep_field in ['depends_on', 'depends_on_ordered']:
+            dep_list = deps.get(dep_field, [])
+            for i, dep_id in enumerate(dep_list):
+                dep_prefix = dep_id.split(':', 1)[0] if ':' in dep_id else None
+                if dep_prefix and dep_prefix in deprecated:
+                    new_dep = deprecated[dep_prefix] + ':' + dep_id.split(':', 1)[1]
+                    dep_list[i] = new_dep
+                    changes.append(f"renamed graph dep '{dep_id}' → '{new_dep}'")
+
+    return changes
+
+
+@graph.command(name='migrate')
+@click.option('--dry-run', is_flag=True, help='Show changes without saving')
+@click.pass_context
+def graph_migrate(ctx, dry_run):
+    """Apply all available migrations to the graph
+
+    Discovers and runs migration steps from the rules file.
+    Currently supported: deprecated_names (reference type renames).
+    Idempotent — safe to re-run.
+
+    Examples:
+        know graph migrate
+        know graph migrate --dry-run
+        know -g .ai/know/spec-graph.json graph migrate
+    """
+    try:
+        graph_manager = ctx.obj['graph']
+        graph_data = graph_manager.load()
+        rules_path = ctx.obj['rules_path']
+
+        with open(rules_path) as f:
+            rules = json.load(f)
+
+        all_changes = {}
+
+        # Migration 1: deprecated reference type names
+        naming_changes = _migrate_deprecated_names(graph_data, rules)
+        if naming_changes:
+            all_changes['Deprecated Names'] = naming_changes
+
+        # Future migrations go here as additional steps
+
+        if not all_changes:
+            console.print("[green]✓ Graph is up to date — no migrations needed[/green]")
+            return
+
+        total = sum(len(v) for v in all_changes.values())
+        console.print(f"\n[bold cyan]Graph Migration:[/bold cyan] {total} changes across {len(all_changes)} migration(s)\n")
+
+        for section, changes in all_changes.items():
+            console.print(f"[bold]{section}:[/bold] ({len(changes)})")
+            for change in changes:
+                console.print(f"  {change}")
+            console.print()
+
+        if dry_run:
+            console.print("[yellow]Dry run — no changes saved[/yellow]")
+            return
+
+        graph_manager.save_graph(graph_data)
+        console.print(f"[green]✓ Applied {total} migration changes[/green]")
 
     except FileNotFoundError as e:
         console.print(f"[red]✗ File not found: {e}[/red]")
@@ -2338,6 +2373,30 @@ def check_validate(ctx):
     # Redirect to full validation for backward compatibility
     is_valid, results = ctx.obj['validator'].validate_full(ctx.obj['deps'])
     _display_validation_results(results, is_valid)
+
+    # Check for deprecated reference type names
+    try:
+        rules_path = ctx.obj['rules_path']
+        with open(rules_path) as f:
+            rules = json.load(f)
+        deprecated = rules.get('reference_note', {}).get('deprecated_names', {})
+        if deprecated:
+            graph_data = ctx.obj['graph'].load()
+            refs = graph_data.get('references', {})
+            graph_section = graph_data.get('graph', {})
+            found_old = set()
+            for old_name in deprecated:
+                if old_name in refs:
+                    found_old.add(old_name)
+                for deps in graph_section.values():
+                    for dep_id in deps.get('depends_on', []) + deps.get('depends_on_ordered', []):
+                        if ':' in dep_id and dep_id.split(':', 1)[0] == old_name:
+                            found_old.add(old_name)
+            if found_old:
+                console.print(f"\n[yellow]⚠ Found {len(found_old)} deprecated reference type names: {', '.join(sorted(found_old))}[/yellow]")
+                console.print("[yellow]  Run 'know graph migrate' to update them[/yellow]")
+    except Exception:
+        pass  # Non-fatal — validation result is what matters
 
     if not is_valid:
         sys.exit(1)
@@ -3639,7 +3698,7 @@ def gen_sitemap(ctx, output):
 @click.option('--codemap', '-c', default='.ai/codemap.json', help='Input codemap.json path')
 @click.option('--existing', '-e', help='Existing code-graph.json to preserve references')
 @click.option('--output', '-o', default='.ai/know/code-graph.json', help='Output code-graph.json path')
-@click.option('--source-dir', '-s', default='src', help='Source directory for file paths')
+@click.option('--source-dir', '-s', default=None, help='Source directory for file paths (auto-reads from codemap.json if omitted)')
 def gen_code_graph(codemap, existing, output, source_dir):
     """Generate code-graph from codemap AST parsing.
 
@@ -5746,6 +5805,16 @@ def phases_add(ctx, phase_id, entity_id, status):
         console.print(f"[dim]  Valid: {', '.join(sorted(valid_statuses))}[/dim]")
         sys.exit(1)
 
+    # Validate entity type - only features allowed in phases
+    if ':' in entity_id:
+        entity_type = entity_id.split(':', 1)[0]
+        if entity_type != 'feature':
+            console.print(f"[red]✗ Only features can be added to phases, not '{entity_type}'[/red]")
+            sys.exit(1)
+    else:
+        console.print(f"[red]✗ Entity ID must include type prefix (e.g., feature:auth)[/red]")
+        sys.exit(1)
+
     graph_data = ctx.obj['graph'].load()
 
     # Initialize meta.phases if it doesn't exist
@@ -5798,6 +5867,16 @@ def phases_move(ctx, entity_id, phase_id, status):
     if phase_id not in valid_phases:
         console.print(f"[red]✗ Invalid phase: {phase_id}[/red]")
         console.print(f"[dim]  Valid phases: {', '.join(sorted(valid_phases))}[/dim]")
+        sys.exit(1)
+
+    # Validate entity type - only features allowed in phases
+    if ':' in entity_id:
+        entity_type = entity_id.split(':', 1)[0]
+        if entity_type != 'feature':
+            console.print(f"[red]✗ Only features can be moved between phases, not '{entity_type}'[/red]")
+            sys.exit(1)
+    else:
+        console.print(f"[red]✗ Entity ID must include type prefix (e.g., feature:auth)[/red]")
         sys.exit(1)
 
     # Validate status if provided - lifecycle states
@@ -5881,6 +5960,16 @@ def phases_status(ctx, entity_id, status_value):
         know phases status feature:auth in-progress
         know phases status feature:checkout complete
     """
+    # Validate entity type - only features allowed in phases
+    if ':' in entity_id:
+        entity_type = entity_id.split(':', 1)[0]
+        if entity_type != 'feature':
+            console.print(f"[red]✗ Only features can have phase status updates, not '{entity_type}'[/red]")
+            sys.exit(1)
+    else:
+        console.print(f"[red]✗ Entity ID must include type prefix (e.g., feature:auth)[/red]")
+        sys.exit(1)
+
     graph_data = ctx.obj['graph'].load()
 
     if 'meta' not in graph_data or 'phases' not in graph_data['meta']:
@@ -6363,11 +6452,8 @@ def init(project_dir):
         source = rules_source_dir / rules_file
         dest = config_dir / rules_file
         if source.exists():
-            if dest.exists():
-                console.print(f"[dim]  {rules_file} already exists locally[/dim]")
-            else:
-                shutil.copy2(source, dest)
-                rules_copied.append(rules_file)
+            shutil.copy2(source, dest)
+            rules_copied.append(rules_file)
     if rules_copied:
         console.print(f"[green]✓[/green] Copied rules: {', '.join(rules_copied)}")
 

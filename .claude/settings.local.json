@@ -68,7 +68,9 @@
       "WebFetch(domain:openai.com)",
       "WebFetch(domain:www.infoq.com)",
       "WebFetch(domain:tonylee.im)",
-      "WebFetch(domain:www.engineering.fyi)"
+      "WebFetch(domain:www.engineering.fyi)",
+      "Bash(cd know && venv/bin/python3 -c \"\nfrom src.graph import GraphManager\nfrom src.visualizers.base import BaseVisualizer\n\ngm = GraphManager\\('/tmp/know-test/spec-graph.json'\\)\nv = BaseVisualizer.__new__\\(BaseVisualizer\\)\nv.gm = gm\nv.entity_types = None\nv.entity_focus = None\nv.depth = None\nv.include_refs = True\n\ndata = v.extract\\(\\)\nref_nodes = {k: n for k, n in data.nodes.items\\(\\) if n.get\\('is_ref'\\)}\nby_type = {}\nfor k, n in ref_nodes.items\\(\\):\n    t = n['type']\n    by_type.setdefault\\(t, []\\).append\\(k\\)\nfor t, ids in sorted\\(by_type.items\\(\\)\\):\n    print\\(f'{t}: {len\\(ids\\)}'\\)\nprint\\(f'Total ref nodes: {len\\(ref_nodes\\)}'\\)\nprint\\(f'Total nodes: {len\\(data.nodes\\)}'\\)\nprint\\(f'Total edges: {len\\(data.edges\\)}'\\)\n\n# Check which refs have edges pointing to them\nref_ids = set\\(ref_nodes.keys\\(\\)\\)\nrefs_with_edges = set\\(\\)\nfor f, t in data.edges:\n    if t in ref_ids: refs_with_edges.add\\(t\\)\n    if f in ref_ids: refs_with_edges.add\\(f\\)\norphan_refs = ref_ids - refs_with_edges\nprint\\(f'Refs with edges: {len\\(refs_with_edges\\)}'\\)\nprint\\(f'Orphan refs \\(no edges\\): {len\\(orphan_refs\\)}'\\)\nif orphan_refs:\n    for o in sorted\\(list\\(orphan_refs\\)[:10]\\):\n        print\\(f'  {o}'\\)\n\" 2>&1)",
+      "Bash(git status:*)"
     ],
     "deny": [],
     "ask": []

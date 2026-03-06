@@ -9,7 +9,8 @@
         "feature:code-graph-scoring": {
           "status": "build-ready"
         }
-      }
+      },
+      "II": {}
     },
     "project": {
       "name": "My Project"
@@ -48,14 +49,14 @@
         "description": "Grade file is append-only, must survive graph rebuilds, must not be clobbered by code-graph regeneration. Same graph state must produce identical metrics."
       }
     },
-    "acceptance_criterion": {
-      "grade-determinism": {
-        "description": "Given identical code-graph state, grading produces identical snapshot. Grade file persists across graph rebuilds. Metrics improve when gaps are fixed."
-      }
-    },
     "metric": {
       "graph-health-dimensions": {
         "description": "Scoring dimensions captured per snapshot: entity coverage ratio, connectivity (orphan count/ratio), cross-link count (spec-to-code, code-to-spec), dependency edge count, entity counts by type"
+      }
+    },
+    "acceptance-criterion": {
+      "grade-determinism": {
+        "description": "Given identical code-graph state, grading produces identical snapshot. Grade file persists across graph rebuilds. Metrics improve when gaps are fixed."
       }
     }
   },
@@ -123,7 +124,7 @@
         "code-link:code-graph-scoring-code",
         "data-model:grade-snapshot",
         "constraint:grade-file-integrity",
-        "acceptance_criterion:grade-determinism",
+        "acceptance-criterion:grade-determinism",
         "metric:graph-health-dimensions",
         "configuration:grade-runtime-config"
       ]

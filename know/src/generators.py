@@ -441,10 +441,10 @@ class SpecGenerator:
                     lines.append("")
 
         # 7. Business Logic (existing, enhanced)
-        if 'business_logic' in dep_by_type:
+        if 'business-logic' in dep_by_type:
             lines.append("## Business Logic")
             lines.append("")
-            for ref_id in dep_by_type['business_logic']:
+            for ref_id in dep_by_type['business-logic']:
                 ref_data = self._get_reference_data(ref_id)
                 if ref_data is not None:
                     lines.append(f"### {ref_id}")
@@ -453,11 +453,11 @@ class SpecGenerator:
                     lines.append("```")
                     lines.append("")
 
-        # Other reference types (acceptance_criteria, api_contract, validation_rule)
-        ref_types = ['acceptance_criteria', 'api_contract', 'validation_rule']
+        # Other reference types (acceptance-criterion, api-contract, validation-rule)
+        ref_types = ['acceptance-criterion', 'api-contract', 'validation-rule']
         for ref_type in ref_types:
             if ref_type in dep_by_type:
-                lines.append(f"## {ref_type.replace('_', ' ').title()}")
+                lines.append(f"## {ref_type.replace('-', ' ').title()}")
                 lines.append("")
                 for ref_id in dep_by_type[ref_type]:
                     ref_data = self._get_reference_data(ref_id)
