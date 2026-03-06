@@ -5,6 +5,60 @@ All notable changes to the Know Tool will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-03-05
+
+### Added
+
+#### Workflow Entity
+- `know add workflow <key>` — ordered action sequences as first-class entities
+- `know link workflow:<key> action:<a> action:<b>` — ordered linking with `depends_on_ordered`
+- `--position` and `--after` flags for insertion control
+- `--auto-create` flag to create missing actions during linking
+- Mixed mode: workflows support both ordered (`depends_on_ordered`) and unordered (`depends_on`) dependencies
+
+#### Visualizers
+- `know viz tree` — ASCII tree rendering
+- `know viz mermaid` — Mermaid diagram output
+- `know viz dot` — Graphviz DOT format
+- `know viz html` — interactive HTML via pyvis
+- `know viz d3` — D3.js force-directed graph with zoom, search, and filtering
+- `know viz fzf` — fuzzy finder for graph exploration
+- BaseVisualizer with extract/filter/BFS focus, optional deps with graceful degradation
+
+#### Graph Protection
+- Pre-commit hook blocks direct mutation of `*-graph.json` files
+- Edit/Write tools, `jq`/`sed`/`awk`, and output redirection all blocked
+- Read-only operations (`cat`, `grep`, `head`, `tail`) still allowed
+- All graph modifications must go through `know` CLI
+
+#### Codemap Integration
+- `know gen codemap` generates code structure maps
+- `codemap_to_graph.py` converts codemap output into code-graph entities
+- Updated `scripts/codemap/codemap.sh` with improved parsing
+
+#### Slash Commands Overhaul
+- `/know:add` — expanded with full QA codification, open-question references, duplicate detection
+- `/know:build` — added Phase 5 experiments gate, contract.yaml tracking
+- `/know:plan` — streamlined discovery mode, graph operations section
+- `/know:prepare` — added `/know:connect` step for graph coverage
+- `/know:schema` — new command for custom graph schema design
+- `/know:fill-out` — new command for expanding graph to full coverage
+- `/know:connect` — new command for cross-linking sparse graphs
+
+#### Build Executor
+- Structured 7-phase build workflow: discovery, exploration, design, implementation, experiments, review, completion
+
+### Changed
+- Spec graph topology now includes workflow entity: `Feature -> Workflow -> Action`
+- Features can depend on workflows (complex) or actions directly (simple)
+- Dependency rules updated for workflow entity support
+- README rewritten for release — clean install, CLI reference, architecture overview
+
+### Removed
+- 11 internal development docs from root (analysis, review checklists, learning logs, old plans)
+
+---
+
 ## [0.1.2] - 2026-02-19
 
 ### Added
@@ -212,19 +266,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shell escaping issues in some cases
 - Limited caching capabilities
 
----
-
-## Migration Path
-
-### From Bash (0.0.0) to Python (0.0.1)
-
-1. **Install Python version**: `./install-local.sh`
-2. **Test compatibility**: Run both versions in parallel
-3. **Switch default**: Update symlinks to Python version
-4. **Remove bash version**: After confirming Python works
-
-## Future Releases
-
-- Full LLM HTTP integration (Anthropic, OpenAI)
-- Automated graph optimization
-- Natural language graph queries

@@ -1,6 +1,6 @@
 {
   "name": "know-cli",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Product knowledge graph CLI & skills for AI-driven software development — structured context that outperforms spec.md",
   "bin": {
     "know": "./bin/know.js"
