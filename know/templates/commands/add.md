@@ -6,15 +6,51 @@ tags: [know, feature, overview]
 ---
 Add a feature to spec-graph with guided 5-step clarification workflow.
 
+**Arguments**: `$ARGUMENTS` — feature name in kebab-case (e.g., `/know:add user-authentication`)
+
 **Prerequisites**
 - Activate the know-tool skill for graph operations
 
 **Workflow**
 
 ## 1. Identify
-- Extract feature name from conversation or prompt user if not provided
-- Verify uniqueness in `.ai/know/features/`
+- Extract feature name from `$ARGUMENTS` or prompt user if not provided
 - Use kebab-case for feature names
+- Check if feature already exists:
+  - `know get feature:<name>` — exists in graph?
+  - `ls .ai/know/features/<name>/` — active feature dir?
+  - `ls .ai/know/archive/<name>/` — archived?
+- **If feature exists → Append Mode** (see Step 1b)
+- **If new → continue to Step 2**
+
+## 1b. Append Mode (existing feature)
+
+When appending to an existing feature, the goal is to add new scope — actions, components, references — to a feature that already has graph presence.
+
+**Minimal scaffolding for archived features:**
+If the feature was archived, create only what's needed for the addition:
+```bash
+mkdir -p .ai/know/features/<name>/changes
+# Create a fresh todo.md for the new work only
+```
+Do NOT restore the full archive. The archive is history; the feature dir is active work.
+
+**If feature dir already exists** (not archived), use it as-is.
+
+**Set status to in-progress:**
+```bash
+know meta set phases.<phase>.feature:<name>.status in-progress
+```
+Phase stays where it is. Status reflects current reality.
+
+**Then continue to Step 2** with this context change: QA agents should ask "What are you adding to `<name>`?" not "What does `<name>` do?" Load existing graph context first:
+```bash
+know get feature:<name>
+know graph uses feature:<name>
+```
+Pass existing entities to QA agents so they don't re-ask what's already captured.
+
+**In Step 4 (Register):** skip 4a (feature entity already exists), skip 4e (cross-graph already set up). Only run 4b–4d to add new entities/references and link them to the existing feature.
 
 ## 2. QA Generation (Parallel Task Agents)
 
@@ -210,6 +246,7 @@ Assistant:
 - Use `/know:connect` to maintain graph coverage
 
 ---
+`r11` - Step 1b: append mode for existing features — detect existing/archived, minimal scaffold, scoped QA, skip redundant registration
 `r10` - Step 4: codify full QA answers into graph (4b entities, 4c open-questions, 4d enrichment, 4e cross-graph); added open-question reference type
 `r9` - Step 2: multichoice QA via AskUserQuestion; Step 4b: added prompt reference type
 `r8` - Step 4b: reference lookup now uses `know check ref-types` and `know gen rules describe`

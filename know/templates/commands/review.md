@@ -30,10 +30,12 @@ This is NOT just a code review. The assistant should:
 - `.ai/know/<feature>/QA_STEPS.md` must exist
 - **Application must be running and ready to test**
 
+**Arguments**: `$ARGUMENTS` — feature name (e.g., `/know:review user-authentication`)
+
 **Usage**
 
 ```
-/know:review <feature-name>
+/know:review $ARGUMENTS
 ```
 
 **Workflow**
@@ -41,7 +43,7 @@ This is NOT just a code review. The assistant should:
 ### 1. Extract Feature Name
 
 **Steps**:
-1. Extract feature name from conversation context or prompt user
+1. Extract feature name from `$ARGUMENTS` or prompt user if not provided
 2. Verify feature directory exists at `.ai/know/<feature>/`
 
 ### 2. Execute Review Command

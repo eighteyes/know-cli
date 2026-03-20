@@ -12,12 +12,14 @@ Check if codebase changes since feature creation warrant revisiting the plan.
 
 **Auto-creates**: `config.json` if missing (touch it = track it)
 
+**Arguments**: `$ARGUMENTS` — feature name (e.g., `/know:validate user-authentication`)
+
 **Workflow**
 
 ### 1. Identify Feature
 
 **Steps**:
-1. Extract feature name from command argument
+1. Extract feature name from `$ARGUMENTS` or prompt user if not provided
 2. Verify feature directory exists:
    ```bash
    ls -la .ai/know/features/<feature-name>/

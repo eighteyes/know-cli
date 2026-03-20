@@ -6,6 +6,8 @@ tags: [know, connect, coverage, cross-link]
 ---
 Connect disconnected entities and cross-link spec-graph with code-graph.
 
+**Arguments**: `$ARGUMENTS` — optional scope: `spec`, `cross`, or entity ID to start from (e.g., `/know:connect spec`, `/know:connect cross`, `/know:connect feature:auth`)
+
 # Graph Connection Workflow
 
 Your goal is to:

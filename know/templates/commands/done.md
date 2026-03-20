@@ -9,12 +9,14 @@ Archive a completed feature and update graph phase status.
 **Prerequisites**
 - Activate the know-tool skill for graph validation
 
+**Arguments**: `$ARGUMENTS` — feature name (e.g., `/know:done user-authentication`)
+
 **Workflow**
 
 ### 1. Extract Feature Name
 
 **Steps**:
-1. Extract feature name from conversation context or prompt user
+1. Extract feature name from `$ARGUMENTS` or prompt user if not provided
 2. Verify feature directory exists at `.ai/know/<feature-name>/`
 
 ### 2. Merge Feature to Main (if not already merged)

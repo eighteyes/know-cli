@@ -6,6 +6,8 @@ tags: [know, fill-out, expand, coverage]
 ---
 Expand and interconnect spec-graph and code-graph to achieve 100% coverage.
 
+**Arguments**: `$ARGUMENTS` — optional scope: `spec`, `code`, or `both` (e.g., `/know:fill-out spec` — defaults to `both`)
+
 **Main Objective**
 
 Take existing spec-graph.json and code-graph.json and expand them comprehensively with:

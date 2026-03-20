@@ -6,6 +6,8 @@ tags: [know, planning, qa, vision]
 ---
 Interactive QA-based planning to build product vision and populate spec-graph.
 
+**Arguments**: `$ARGUMENTS` — optional mode number or name to jump to (e.g., `/know:plan`, `/know:plan architect`, `/know:plan 3`)
+
 **Main Objective**
 
 Guide user through interactive QA sessions to build a complete product vision with technical decisions, generating both documentation artifacts and populating spec-graph.json.

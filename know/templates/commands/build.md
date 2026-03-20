@@ -20,6 +20,8 @@ Guide feature development through a structured 7-phase workflow adapted from Cla
 - **Launch in parallel**: Use SINGLE message with multiple Task tool calls to run agents concurrently
 - Phases 2, 4, and 6 explicitly require parallel agent launches
 
+**Arguments**: `$ARGUMENTS` — feature name or quoted description (e.g., `/know:build user-auth` or `/know:build "Add user authentication"`)
+
 **Entry Points**
 
 1. **Existing feature**: `/know:build existing-feature` (directory exists at `.ai/know/existing-feature/`)

@@ -6,6 +6,8 @@ tags: [know, prepare, analysis]
 ---
 Create graph files and populate project.md with codebase context.
 
+**Arguments**: `$ARGUMENTS` — optional source directory to scan (e.g., `/know:prepare src/` — defaults to project root)
+
 **Main Objective**
 
 Create both graph files (spec-graph.json and code-graph.json) and populate `.ai/know/project.md` with project intelligence.

@@ -6,6 +6,8 @@ tags: [know, list, status]
 ---
 Show all features grouped by phase with task completion counts.
 
+**Arguments**: `$ARGUMENTS` — optional phase filter (e.g., `/know:list done` or `/know:list in-progress`)
+
 **Objective**
 
 Display all features grouped by phase with task completion counts.
