@@ -74,7 +74,7 @@ class SectionedGroup(click.Group):
         self.section_commands = {
             'Initialization': ['init'],
             'Graph': ['add', 'get', 'list', 'search', 'find', 'related', 'link', 'unlink', 'graph', 'check', 'gen', 'nodes', 'viz'],
-            'Project': ['feature', 'phases', 'req', 'op', 'meta'],
+            'Project': ['feature', 'phases', 'req', 'op', 'meta', 'serve'],
         }
 
     def format_commands(self, ctx, formatter):
@@ -6837,6 +6837,26 @@ def viz_fzf(ctx, types, refs):
         ctx.invoke(get_item, path=selected)
     else:
         console.print("[dim]No selection made[/dim]")
+
+
+@cli.command(name='serve')
+@click.option('--port', '-p', default=5173, type=int, help='Port to listen on')
+@click.option('--no-open', is_flag=True, help='Do not open browser on start')
+@click.pass_context
+def serve_cmd(ctx, port, no_open):
+    """Start the spec-dashboard web server
+
+    Serves an interactive HTML dashboard for exploring and editing
+    the spec-graph. Kanban board with drillable feature cards.
+
+    Examples:
+        know serve
+        know serve --port 8080
+        know serve -g .ai/know/code-graph.json
+    """
+    from src.server import serve
+    graph_path = str(ctx.obj['graph'].cache.graph_path)
+    serve(graph_path, port=port, open_browser=not no_open, project_cwd=Path.cwd())
 
 
 if __name__ == '__main__':

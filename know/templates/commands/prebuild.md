@@ -156,7 +156,63 @@ know -g .ai/know/spec-graph.json nodes update operation:validate-credentials '{
    - Architecture decisions
    - Data models, business logic, sequences (from references)
 
-## Phase 6: Mark Ready for Build
+## Phase 6: Generate Implementation Plan
+
+**Synthesize a concrete, ordered implementation plan from the validated XML spec.**
+
+**Steps:**
+1. Read the generated XML spec:
+   ```bash
+   cat .ai/know/features/<name>/.prebuild/spec.xml
+   ```
+2. Traverse the dependency chain bottom-up: operations → components → feature wiring
+3. Cross-reference `code-link` ref to identify affected modules/files from code-graph
+4. Write the plan to `.ai/know/features/<name>/.prebuild/implementation-plan.md`
+
+**Plan format:**
+
+```markdown
+# Implementation Plan: <feature-name>
+
+## Overview
+<1–2 sentence summary of what is being built and why.>
+
+## Implementation Phases
+
+### Phase 1: Data Layer
+- [ ] <file or module to create/modify>
+- Operations: <operation keys>
+
+### Phase 2: Business Logic
+- [ ] <file or module>
+- Operations: <operation keys>
+
+### Phase 3: API / Interface Layer
+- [ ] <file or module>
+- Operations: <operation keys>
+
+### Phase 4: Integration & Testing
+- [ ] Wire components together
+- [ ] Tests: <acceptance criteria mapped to test cases>
+
+## Component Breakdown
+
+### component:<key>
+- **File(s):** <paths from code-link or inferred from code-graph>
+- **Operations:** <linked operation keys>
+- **Depends on:** <other component keys>
+
+## Risk Areas
+- <anything flagged in meta.architecture tradeoffs or missing code-links>
+```
+
+**Rules:**
+- Order phases bottom-up: foundation before wiring (data → logic → interface)
+- Each component section must list its operations and file targets
+- Risk areas must surface unresolved tradeoffs from `meta.architecture`
+- If `code-link` modules are empty (status: "planned"), flag each component as "file TBD — AI will resolve during build"
+
+## Phase 7: Mark Ready for Build
 
 **Steps:**
 1. Create prebuild completion marker:
@@ -173,6 +229,7 @@ know -g .ai/know/spec-graph.json nodes update operation:validate-credentials '{
    ✓ Prebuild validation complete
    ✓ Graph contains all HITL baseline content
    ✓ XML spec generated: .ai/know/features/<name>/.prebuild/spec.xml
+   ✓ Implementation plan: .ai/know/features/<name>/.prebuild/implementation-plan.md
    ✓ Ready for /know:build
    ```
 
@@ -227,8 +284,8 @@ Graph may be incomplete (just feature entity + phase)
 **After prebuild:**
 ```
 Graph enriched with all HITL content
-XML spec ready for build consumption
-/know:build reads ONLY spec.xml (clean context)
+XML spec + implementation plan ready for build consumption
+/know:build reads spec.xml + implementation-plan.md (clean context)
 ```
 
 **Build workflow:**
@@ -239,6 +296,7 @@ XML spec ready for build consumption
 # If validation passes, build
 /know:build <feature-name>
 # → Reads .ai/know/features/<name>/.prebuild/spec.xml
+# → Reads .ai/know/features/<name>/.prebuild/implementation-plan.md
 # → Clean context, deterministic input
 # → No .md parsing needed
 ```
@@ -285,11 +343,15 @@ Assistant: Regenerating
   ✓ spec.md: Identical  
   ✓ plan.md: Identical
   
-✓ Graph validation complete\!
+✓ Graph validation complete!
 
 Assistant: Generating XML spec
   know gen spec feature:authentication --format xml > .ai/know/features/authentication/.prebuild/spec.xml
-  
+
+Assistant: Generating implementation plan
+  Reads spec.xml, traverses dependency chain bottom-up
+  Writes .ai/know/features/authentication/.prebuild/implementation-plan.md
+
 ✓ Prebuild complete - ready for /know:build
 ```
 
@@ -300,7 +362,8 @@ Assistant: Generating XML spec
 - **Graph enrichment OK** - Generated files can have MORE content than baseline
 - **Iterative process** - May take 2-3 rounds to get graph complete
 - **XML is ephemeral** - Regenerated for each build, not checked into git
-- **Clean build context** - Build reads only XML, not .md files
+- **Implementation plan is the bridge** - Converts graph structure into actionable build tasks
+- **Clean build context** - Build reads spec.xml + implementation-plan.md, not .md files
 
 ---
-r1 - Initial version with round-trip validation workflow
+r2 - Add Phase 6: implementation plan generation from validated XML spec

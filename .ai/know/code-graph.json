@@ -178,6 +178,11 @@
         "feature": "feature:code-graph-scoring",
         "component": "",
         "status": "planned"
+      },
+      "spec-dashboard-spec": {
+        "feature": "feature:spec-dashboard",
+        "component": "",
+        "status": "planned"
       }
     }
   },

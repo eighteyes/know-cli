@@ -39,6 +39,9 @@ Guide feature development through a structured 7-phase workflow adapted from Cla
 2. Check if feature directory exists (.ai/know/<feature>/):
    IF directory exists:
      → Load context from overview.md, todo.md, plan.md
+     → IF .prebuild/implementation-plan.md exists:
+         → Load it — use as primary implementation guide for Phases 4 & 5
+         → Skip re-deriving implementation order; plan already done
    ELSE (graph exists, directory doesn't):
      → Create directory: .ai/know/<feature>/
      → Generate overview.md from spec-graph data:
@@ -65,17 +68,24 @@ Guide feature development through a structured 7-phase workflow adapted from Cla
 
 **Steps**:
 1. Read `.ai/know/<feature>/overview.md` if exists
-2. Ask clarifying questions:
+2. **Check for prebuild implementation plan**:
+   ```bash
+   cat .ai/know/features/<name>/.prebuild/implementation-plan.md  # if exists
+   ```
+   - If found: summarize the plan to the user ("Prebuild plan found — phases, components, and file targets already mapped")
+   - If found: use it as the implementation order baseline for Phases 4 & 5 (skip re-deriving)
+   - If not found: note "No prebuild plan — will derive implementation order during architecture design"
+3. Ask clarifying questions (surface any Risk Areas from prebuild plan if present):
    - What are the success criteria?
    - What constraints exist?
    - What is out of scope?
    - Who are the users of this feature?
    - What are the edge cases?
-3. Update `.ai/know/<feature>/qa/discovery.md` with Q&A
-4. Query spec-graph (using **haiku agents**):
+4. Update `.ai/know/<feature>/qa/discovery.md` with Q&A
+5. Query spec-graph (using **haiku agents**):
    - `know -g .ai/know/spec-graph.json graph uses feature:<name>` - What does this feature depend on?
    - `know -g .ai/know/spec-graph.json graph used-by feature:<name>` - What depends on this feature?
-5. Update `.ai/know/<feature>/overview.md` with refined requirements
+6. Update `.ai/know/<feature>/overview.md` with refined requirements
 
 **Outputs**:
 - `.ai/know/<feature>/qa/discovery.md` - Discovery Q&A session
@@ -666,6 +676,7 @@ know -g .ai/know/code-graph.json search "aspirational.*true" --field aspirationa
 ```
 
 ---
+`r6` - Phase 1 now checks for prebuild implementation plan; uses it as implementation baseline if present
 `r5` - Added AI prompt file discovery (Phase 2), prompt reference linking (Phase 5), prompt tracking note (Phase 7)
 `r4` - Made cross-graph linking mandatory in Phase 5; added cross-coverage gate to Phase 7; updated to code-link type
 `r3` - Graph-first initialization: can work from spec-graph without requiring /know:add first

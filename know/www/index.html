@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>spec-dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Text:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════
+   PHOSPHOR OBSERVATORY — spec-dashboard
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* Surface */
+  --void: #08090e;
+  --deep: #0e1018;
+  --surface: #141620;
+  --raised: #1a1d2a;
+  --ridge: #252838;
+  --edge: #2f3347;
+
+  /* Text */
+  --text: #d4d8e8;
+  --text-2: #8b90a8;
+  --text-3: #5a5f78;
+
+  /* Phosphor entity palette — luminous against dark */
+  --ph-project:   #5c9eff;
+  --ph-user:      #66e0a0;
+  --ph-objective: #ff8a50;
+  --ph-feature:   #40c8ff;
+  --ph-action:    #ffcc33;
+  --ph-component: #d580ff;
+  --ph-operation: #5af5a0;
+  --ph-reference: #7088a0;
+  --ph-workflow:  #ff80ab;
+
+  /* Phosphor fills (very low opacity tints) */
+  --phf-project:   #5c9eff12;
+  --phf-user:      #66e0a00f;
+  --phf-objective: #ff8a5010;
+  --phf-feature:   #40c8ff10;
+  --phf-action:    #ffcc3310;
+  --phf-component: #d580ff10;
+  --phf-operation: #5af5a00e;
+  --phf-reference: #7088a00c;
+
+  /* Accents */
+  --glow: #40c8ff;
+  --glow-dim: #40c8ff18;
+  --danger: #ff4060;
+  --danger-fill: #ff406015;
+  --success: #40ffa0;
+  --success-fill: #40ffa012;
+
+  /* Spacing */
+  --radius: 4px;
+  --radius-lg: 8px;
+  --gap: 14px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--void);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dot-grid texture overlay on body */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, #ffffff05 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Typography ── */
+.font-serif { font-family: 'DM Serif Text', serif; }
+.font-mono { font-family: 'IBM Plex Mono', monospace; }
+
+/* ── Base elements ── */
+button {
+  cursor: pointer;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--edge);
+  background: var(--raised);
+  color: var(--text-2);
+  padding: 5px 12px;
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
+}
+button:hover { background: var(--ridge); color: var(--text); border-color: var(--text-3); }
+
+input, select, textarea {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  background: var(--deep);
+  color: var(--text);
+  border: 1px solid var(--edge);
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  outline: none;
+  transition: border-color 0.2s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--glow); box-shadow: 0 0 0 2px var(--glow-dim); }
+textarea { resize: vertical; }
+::placeholder { color: var(--text-3); }
+
+/* ── Entity pill ── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ── Layout ── */
+#app { display: flex; flex-direction: column; height: 100vh; position: relative; z-index: 1; }
+
+/* ── Nav ── */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+  height: 52px;
+  background: var(--deep);
+  border-bottom: 1px solid var(--ridge);
+  flex-shrink: 0;
+}
+.nav-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.nav-brand h1 {
+  font-family: 'DM Serif Text', serif;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.nav-brand .tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  border: 1px solid var(--edge);
+  padding: 1px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.nav-sep {
+  width: 1px;
+  height: 24px;
+  background: var(--ridge);
+}
+.nav-filters {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.nav-chevron {
+  color: var(--text-3);
+  font-size: 11px;
+  user-select: none;
+}
+.nav-pill {
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  color: var(--text-2);
+  transition: all 0.2s ease;
+  position: relative;
+}
+.nav-pill::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 14px;
+  border-radius: 0 2px 2px 0;
+  transition: opacity 0.2s;
+}
+.nav-pill.user::before { background: var(--ph-user); }
+.nav-pill.objective::before { background: var(--ph-objective); }
+.nav-pill { padding-left: 14px; }
+.nav-pill:hover { background: var(--raised); color: var(--text); }
+.nav-pill.active {
+  background: var(--raised);
+  border-color: var(--edge);
+  color: var(--text);
+}
+.nav-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 15px;
+  border-radius: var(--radius);
+}
+.btn-add {
+  background: var(--glow-dim);
+  border-color: #40c8ff30;
+  color: var(--glow);
+}
+.btn-add:hover {
+  background: #40c8ff22;
+  border-color: var(--glow);
+  color: #fff;
+}
+
+/* ── Validation banner ── */
+.banner {
+  padding: 8px 20px;
+  background: var(--danger-fill);
+  border-bottom: 1px solid #ff406030;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: #ffa0b0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.banner-icon { font-size: 14px; opacity: 0.7; }
+.banner button {
+  background: transparent;
+  border: none;
+  color: #ffa0b0;
+  font-size: 15px;
+  padding: 0;
+  margin-left: auto;
+  opacity: 0.6;
+}
+.banner button:hover { opacity: 1; }
+
+/* ── Kanban ── */
+.kanban {
+  display: flex;
+  gap: var(--gap);
+  padding: 16px 20px;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.column {
+  flex: 1;
+  min-width: 260px;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--ridge);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  animation: colFadeIn 0.4s ease both;
+}
+.column:nth-child(1) { animation-delay: 0.05s; }
+.column:nth-child(2) { animation-delay: 0.1s; }
+.column:nth-child(3) { animation-delay: 0.15s; }
+.column:nth-child(4) { animation-delay: 0.2s; }
+.column:nth-child(5) { animation-delay: 0.25s; }
+.column:nth-child(6) { animation-delay: 0.3s; }
+@keyframes colFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.column-header {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--ridge);
+}
+.column-header .phase-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-2);
+}
+.column-header .count {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-3);
+  background: var(--raised);
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+.column-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.column-body::-webkit-scrollbar { width: 4px; }
+.column-body::-webkit-scrollbar-track { background: transparent; }
+.column-body::-webkit-scrollbar-thumb { background: var(--edge); border-radius: 4px; }
+.column.drag-over {
+  border-color: var(--glow);
+  box-shadow: inset 0 0 24px -8px var(--glow-dim);
+}
+
+/* ── Feature Card ── */
+.card {
+  background: var(--raised);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--ph-feature);
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+.card:hover {
+  border-color: var(--text-3);
+  background: #1e2136;
+}
+.card:hover::before { opacity: 1; }
+.card.selected {
+  border-color: var(--glow);
+  background: var(--glow-dim);
+  box-shadow: 0 0 20px -6px var(--glow-dim);
+}
+.card.selected::before { opacity: 1; background: var(--glow); }
+.card[draggable="true"]:active { opacity: 0.6; cursor: grabbing; }
+
+.card-name {
+  font-family: 'DM Serif Text', serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text);
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+.card-desc {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.card-pills {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* ── Sidecard ── */
+.sidecard-overlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 440px;
+  background: var(--deep);
+  border-left: 1px solid var(--ridge);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -12px 0 40px -10px #00000080;
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes slideIn {
+  from { transform: translateX(40px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.sidecard-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--ridge);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sidecard-header h2 {
+  font-family: 'DM Serif Text', serif;
+  font-size: 18px;
+  font-weight: 400;
+  flex: 1;
+  line-height: 1.3;
+}
+.sidecard-close {
+  background: none !important;
+  border: none !important;
+  color: var(--text-3);
+  font-size: 18px;
+  padding: 4px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+}
+.sidecard-close:hover { color: var(--text); background: var(--raised) !important; }
+.sidecard-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+.sidecard-body::-webkit-scrollbar { width: 4px; }
+.sidecard-body::-webkit-scrollbar-track { background: transparent; }
+.sidecard-body::-webkit-scrollbar-thumb { background: var(--edge); border-radius: 4px; }
+.sidecard-section { margin-bottom: 20px; }
+.sidecard-section h3 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--ridge);
+}
+.breadcrumb {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-2);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.breadcrumb .chevron { color: var(--text-3); font-size: 10px; margin: 0 2px; }
+.desc-text {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.65;
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+.desc-text:hover { border-color: var(--edge); }
+
+/* ── Accordion ── */
+.accordion-item {
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+  margin-bottom: 4px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.accordion-item:hover { border-color: var(--text-3); }
+.accordion-head {
+  padding: 8px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.15s;
+}
+.accordion-head:hover { background: var(--raised); }
+.accordion-arrow {
+  font-size: 8px;
+  color: var(--text-3);
+  transition: transform 0.2s ease;
+  width: 12px;
+  text-align: center;
+}
+.accordion-arrow.open { transform: rotate(90deg); }
+.accordion-head .entity-name {
+  flex: 1;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+}
+.accordion-detail {
+  padding: 10px 12px 10px 30px;
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.6;
+  border-top: 1px solid var(--edge);
+  background: var(--void);
+}
+.entity-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+}
+.entity-row .unlink-btn {
+  visibility: hidden;
+  color: var(--danger);
+  background: none;
+  border: none;
+  font-size: 13px;
+  padding: 0 4px;
+  cursor: pointer;
+  opacity: 0.6;
+}
+.entity-row .unlink-btn:hover { opacity: 1; }
+.entity-row:hover .unlink-btn { visibility: visible; }
+
+/* ── Sidecard action bar ── */
+.sidecard-actions {
+  display: flex;
+  gap: 6px;
+  padding-top: 8px;
+}
+.sidecard-actions button {
+  font-size: 11px;
+  padding: 5px 10px;
+}
+
+/* ── Modal ── */
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: #000000a0;
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: modalBgIn 0.2s ease;
+}
+@keyframes modalBgIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--ridge);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 420px;
+  max-width: 90vw;
+  box-shadow: 0 24px 60px -12px #000000a0;
+  animation: modalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal h3 {
+  font-family: 'DM Serif Text', serif;
+  font-size: 18px;
+  font-weight: 400;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+.modal label {
+  display: block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 5px;
+  margin-top: 14px;
+}
+.modal label:first-of-type { margin-top: 0; }
+.modal input, .modal select, .modal textarea { width: 100%; }
+.modal-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.modal-actions .primary {
+  background: var(--glow-dim);
+  border-color: #40c8ff30;
+  color: var(--glow);
+  font-weight: 600;
+}
+.modal-actions .primary:hover {
+  background: #40c8ff22;
+  border-color: var(--glow);
+  color: #fff;
+}
+.modal-actions .primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Link modal list */
+.link-list {
+  max-height: 260px;
+  overflow-y: auto;
+  margin-top: 10px;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+}
+.link-list::-webkit-scrollbar { width: 4px; }
+.link-list::-webkit-scrollbar-thumb { background: var(--edge); border-radius: 4px; }
+.link-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid var(--edge);
+}
+.link-item:last-child { border-bottom: none; }
+.link-item:hover { background: var(--raised); }
+.link-item .entity-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+}
+.link-empty {
+  color: var(--text-3);
+  font-size: 12px;
+  padding: 16px;
+  text-align: center;
+  font-style: italic;
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  z-index: 300;
+  animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 360px;
+  border: 1px solid;
+}
+.toast.error {
+  background: var(--danger-fill);
+  border-color: #ff406030;
+  color: #ffa0b0;
+}
+.toast.success {
+  background: var(--success-fill);
+  border-color: #40ffa020;
+  color: #80ffb8;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Inline edit ── */
+.inline-edit {
+  background: var(--deep);
+  border: 1px solid var(--glow);
+  border-radius: var(--radius);
+  padding: 4px 8px;
+  color: var(--text);
+  font: inherit;
+  width: 100%;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--glow-dim);
+}
+
+/* ── Loading ── */
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 16px;
+}
+.loading-screen h2 {
+  font-family: 'DM Serif Text', serif;
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--text);
+}
+.loading-dots {
+  display: flex;
+  gap: 6px;
+}
+.loading-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--glow);
+  animation: dotPulse 1.4s infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotPulse {
+  0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+/* ── Empty state ── */
+.empty-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--text-3);
+  font-size: 12px;
+  font-style: italic;
+  padding: 20px;
+}
+
+/* ── Undo button ── */
+.btn-undo {
+  background: #ffcc3312;
+  border-color: #ffcc3325;
+  color: var(--ph-action);
+  position: relative;
+}
+.btn-undo:hover { background: #ffcc3320; border-color: var(--ph-action); color: #fff; }
+.btn-undo:disabled { opacity: 0.3; cursor: not-allowed; }
+.btn-undo:disabled:hover { background: #ffcc3312; border-color: #ffcc3325; color: var(--ph-action); }
+.undo-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--ph-action);
+  color: var(--void);
+  font-size: 9px;
+  font-weight: 700;
+  min-width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}
+
+/* ── History panel ── */
+.history-panel {
+  position: fixed;
+  top: 52px;
+  right: 0;
+  bottom: 0;
+  width: 340px;
+  background: var(--deep);
+  border-left: 1px solid var(--ridge);
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 30px -10px #00000060;
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.history-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--ridge);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.history-header h3 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-2);
+}
+.history-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+.history-body::-webkit-scrollbar { width: 4px; }
+.history-body::-webkit-scrollbar-thumb { background: var(--edge); border-radius: 4px; }
+.history-entry {
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-2);
+  line-height: 1.5;
+  border-bottom: 1px solid var(--edge);
+}
+.history-entry:last-child { border-bottom: none; }
+.history-entry .ts {
+  font-size: 10px;
+  color: var(--text-3);
+  margin-bottom: 3px;
+}
+.history-entry .changes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 4px;
+}
+.history-entry .change-pill {
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--raised);
+  border: 1px solid var(--edge);
+}
+.change-pill.added { border-color: #40ffa020; color: var(--success); }
+.change-pill.removed { border-color: #ff406020; color: var(--danger); }
+.change-pill.modified { border-color: #40c8ff20; color: var(--glow); }
+.history-empty {
+  color: var(--text-3);
+  font-size: 12px;
+  text-align: center;
+  padding: 24px;
+  font-style: italic;
+}
+
+/* ── Chat panel ── */
+.chat-panel {
+  position: fixed;
+  bottom: 0;
+  right: 20px;
+  width: 380px;
+  height: 480px;
+  background: var(--deep);
+  border: 1px solid var(--ridge);
+  border-bottom: none;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -4px 30px -10px #00000060;
+  animation: chatSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes chatSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.chat-header {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--ridge);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.chat-header h3 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  flex: 1;
+}
+.chat-header .status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+}
+.chat-header .status-dot.offline { background: var(--text-3); }
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.chat-messages::-webkit-scrollbar { width: 4px; }
+.chat-messages::-webkit-scrollbar-thumb { background: var(--edge); border-radius: 4px; }
+.chat-msg {
+  font-size: 13px;
+  line-height: 1.55;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  max-width: 90%;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.chat-msg.user {
+  background: var(--glow-dim);
+  border: 1px solid #40c8ff20;
+  color: var(--text);
+  align-self: flex-end;
+}
+.chat-msg.assistant {
+  background: var(--raised);
+  border: 1px solid var(--edge);
+  color: var(--text-2);
+  align-self: flex-start;
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+.chat-msg.assistant.streaming { border-color: var(--glow); }
+.chat-msg.error {
+  background: var(--danger-fill);
+  border: 1px solid #ff406020;
+  color: #ffa0b0;
+  align-self: flex-start;
+  font-size: 12px;
+}
+.chat-input-area {
+  padding: 10px 12px;
+  border-top: 1px solid var(--ridge);
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.chat-input-area input {
+  flex: 1;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+}
+.chat-send {
+  background: var(--glow-dim) !important;
+  border-color: #40c8ff30 !important;
+  color: var(--glow) !important;
+  padding: 6px 12px;
+  font-weight: 600;
+}
+.chat-send:hover { background: #40c8ff22 !important; color: #fff !important; }
+.chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Chat toggle button */
+.chat-toggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  background: var(--glow-dim);
+  border: 1px solid #40c8ff30;
+  color: var(--glow);
+  font-size: 20px;
+  z-index: 140;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px -4px #00000040;
+  transition: all 0.2s;
+}
+.chat-toggle:hover { background: #40c8ff22; border-color: var(--glow); color: #fff; transform: scale(1.05); }
+
+/* Live indicator */
+.live-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  margin-right: 6px;
+  animation: livePulse 2s infinite;
+}
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script type="module">
+import { h, render } from 'https://esm.sh/preact@10.25.4';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'https://esm.sh/preact@10.25.4/hooks';
+import htm from 'https://esm.sh/htm@3.1.1';
+import * as api from './api.js';
+
+const html = htm.bind(h);
+
+// ═══════════════════════════════════════════════════════════
+// Helpers
+// ═══════════════════════════════════════════════════════════
+
+function entityType(id) { return id.split(':')[0]; }
+function entityKey(id) { return id.split(':').slice(1).join(':'); }
+
+const PHOSPHOR = {
+  project:   '#5c9eff', user:      '#66e0a0', objective: '#ff8a50',
+  feature:   '#40c8ff', action:    '#ffcc33', component: '#d580ff',
+  operation: '#5af5a0', workflow:  '#ff80ab',
+};
+const PHOSPHOR_FILL = {
+  project:   '#5c9eff14', user:      '#66e0a010', objective: '#ff8a5012',
+  feature:   '#40c8ff12', action:    '#ffcc3312', component: '#d580ff12',
+  operation: '#5af5a010', workflow:  '#ff80ab10',
+};
+
+function entityColor(type) { return PHOSPHOR[type] || '#7088a0'; }
+function entityFill(type) { return PHOSPHOR_FILL[type] || '#7088a00c'; }
+
+function getEntityData(graph, id) {
+  const [type, ...rest] = id.split(':');
+  const key = rest.join(':');
+  return graph.entities?.[type]?.[key] || graph.references?.[type]?.[key] || {};
+}
+
+function getDepsOf(graph, id) {
+  const entry = graph.graph?.[id];
+  if (!entry) return [];
+  return [...new Set([...(entry.depends_on_ordered || []), ...(entry.depends_on || [])])];
+}
+
+function getParentsOf(graph, id) {
+  const parents = [];
+  for (const [src, entry] of Object.entries(graph.graph || {})) {
+    const deps = [...(entry.depends_on || []), ...(entry.depends_on_ordered || [])];
+    if (deps.includes(id)) parents.push(src);
+  }
+  return parents;
+}
+
+function getPhaseInfo(graph) {
+  const phases = {};
+  const assignments = {};
+  for (const [phaseId, phaseEntities] of Object.entries(graph.meta?.phases || {})) {
+    phases[phaseId] = { id: phaseId, label: phaseId };
+    if (typeof phaseEntities === 'object') {
+      for (const [entityId, info] of Object.entries(phaseEntities)) {
+        if (entityId === '_meta') continue;
+        assignments[entityId] = { phase: phaseId, status: info?.status || phaseId };
+      }
+    }
+  }
+  return { phases, assignments };
+}
+
+function countDepsByType(graph, id) {
+  const deps = getDepsOf(graph, id);
+  const counts = {};
+  for (const d of deps) { const t = entityType(d); counts[t] = (counts[t] || 0) + 1; }
+  return counts;
+}
+
+function getAllFeatures(graph) {
+  return Object.entries(graph.entities?.feature || {}).map(([key, data]) => ({
+    id: `feature:${key}`, key, ...data
+  }));
+}
+
+function getAncestorChain(graph, featureId) {
+  const chain = [];
+  for (const p of getParentsOf(graph, featureId)) {
+    if (entityType(p) === 'objective') {
+      const objData = getEntityData(graph, p);
+      chain.push({ id: p, type: 'objective', name: objData.name || entityKey(p) });
+      for (const u of getParentsOf(graph, p)) {
+        if (entityType(u) === 'user') {
+          chain.unshift({ id: u, type: 'user', name: getEntityData(graph, u).name || entityKey(u) });
+        }
+      }
+    }
+  }
+  return chain;
+}
+
+// ═══════════════════════════════════════════════════════════
+// Components
+// ═══════════════════════════════════════════════════════════
+
+function Pill({ type, children }) {
+  return html`<span class="pill" style="background:${entityFill(type)};color:${entityColor(type)}">${children || type}</span>`;
+}
+
+function Toast({ toast, onDismiss }) {
+  useEffect(() => {
+    if (toast) { const t = setTimeout(onDismiss, 4000); return () => clearTimeout(t); }
+  }, [toast]);
+  if (!toast) return null;
+  return html`<div class="toast ${toast.type}" onClick=${onDismiss}>${toast.message}</div>`;
+}
+
+function ValidationBanner({ issues, onDismiss }) {
+  if (!issues?.length) return null;
+  return html`<div class="banner">
+    <span class="banner-icon">◆</span>
+    <span>${issues.length} issue${issues.length > 1 ? 's' : ''} — ${issues.slice(0, 2).join(' · ')}${issues.length > 2 ? ` · +${issues.length - 2} more` : ''}</span>
+    <button onClick=${onDismiss}>×</button>
+  </div>`;
+}
+
+function MasterNav({ graph, filterUser, filterObjective, onFilter, onAdd, onRefresh, undoCount, onUndo, onToggleHistory }) {
+  const users = Object.keys(graph.entities?.user || {});
+  const objectives = Object.keys(graph.entities?.objective || {});
+  const projectName = graph.meta?.project?.name || 'spec-dashboard';
+
+  return html`<div class="nav">
+    <div class="nav-brand">
+      <h1>${projectName}</h1>
+      <span class="tag">spec</span>
+    </div>
+    <div class="nav-sep"></div>
+    <div class="nav-filters">
+      ${users.map(u => html`
+        <button class="nav-pill user ${filterUser === u ? 'active' : ''}"
+          onClick=${() => onFilter('user', filterUser === u ? null : u)}>
+          ${graph.entities.user[u]?.name || u}
+        </button>
+      `)}
+      ${objectives.length > 0 ? html`<span class="nav-chevron">▸</span>` : null}
+      ${objectives.map(o => html`
+        <button class="nav-pill objective ${filterObjective === o ? 'active' : ''}"
+          onClick=${() => onFilter('objective', filterObjective === o ? null : o)}>
+          ${graph.entities.objective[o]?.name || o}
+        </button>
+      `)}
+    </div>
+    <div class="nav-actions">
+      <button class="btn-undo" onClick=${onUndo} disabled=${!undoCount} title="Undo last change">
+        ↩ Undo
+        ${undoCount > 0 ? html`<span class="undo-badge">${undoCount}</span>` : null}
+      </button>
+      <button class="btn-icon" onClick=${onToggleHistory} title="Change history">☰</button>
+      <button class="btn-icon" onClick=${onRefresh} title="Refresh">↻</button>
+      <button class="btn-add" onClick=${() => onAdd('feature')}>+ Feature</button>
+    </div>
+  </div>`;
+}
+
+function EntityPills({ counts }) {
+  const order = ['action', 'component', 'operation', 'workflow'];
+  const displayed = order.filter(t => counts[t]);
+  const refs = Object.entries(counts).filter(([t]) => !order.includes(t) && !['feature','objective','user','project'].includes(t));
+  const refTotal = refs.reduce((s, [, n]) => s + n, 0);
+
+  return html`<div class="card-pills">
+    ${displayed.map(t => html`<${Pill} type=${t}>${counts[t]}<//>`)}
+    ${refTotal > 0 ? html`<${Pill} type="reference">${refTotal} ref${refTotal > 1 ? 's' : ''}<//> ` : null}
+  </div>`;
+}
+
+function FeatureCard({ feature, graph, selected, onClick }) {
+  const counts = countDepsByType(graph, feature.id);
+  return html`<div class="card ${selected ? 'selected' : ''}"
+    draggable="true"
+    onDragStart=${(e) => e.dataTransfer.setData('text/plain', feature.id)}
+    onClick=${() => onClick(feature.id)}>
+    <div class="card-name">${feature.name || feature.key}</div>
+    ${feature.description ? html`<div class="card-desc">${feature.description}</div>` : null}
+    <${EntityPills} counts=${counts} />
+  </div>`;
+}
+
+function KanbanColumn({ phase, features, graph, selectedId, onSelect, onDrop }) {
+  const [dragOver, setDragOver] = useState(false);
+
+  return html`<div class="column ${dragOver ? 'drag-over' : ''}"
+    onDragOver=${(e) => { e.preventDefault(); setDragOver(true); }}
+    onDragLeave=${() => setDragOver(false)}
+    onDrop=${(e) => { e.preventDefault(); setDragOver(false); const id = e.dataTransfer.getData('text/plain'); if (id) onDrop(id, phase.id); }}>
+    <div class="column-header">
+      <span class="phase-name">${phase.label}</span>
+      <span class="count">${features.length}</span>
+    </div>
+    <div class="column-body">
+      ${features.length > 0
+        ? features.map(f => html`<${FeatureCard} feature=${f} graph=${graph}
+            selected=${f.id === selectedId} onClick=${onSelect} />`)
+        : html`<div class="empty-col">No features</div>`}
+    </div>
+  </div>`;
+}
+
+function AccordionItem({ id, graph, onUnlink, parentId }) {
+  const [open, setOpen] = useState(false);
+  const data = getEntityData(graph, id);
+  const type = entityType(id);
+  const key = entityKey(id);
+  const subDeps = getDepsOf(graph, id);
+
+  return html`<div class="accordion-item">
+    <div class="accordion-head" onClick=${() => setOpen(!open)}>
+      <span class="accordion-arrow ${open ? 'open' : ''}">▸</span>
+      <${Pill} type=${type} />
+      <span class="entity-name">${data.name || key}</span>
+      ${parentId ? html`<button class="unlink-btn" onClick=${(e) => { e.stopPropagation(); onUnlink(parentId, id); }} title="Unlink">×</button>` : null}
+    </div>
+    ${open ? html`<div class="accordion-detail">
+      ${data.description ? html`<div style="margin-bottom:8px">${data.description}</div>` : null}
+      ${subDeps.length > 0 ? subDeps.map(d => html`<${AccordionItem} id=${d} graph=${graph} onUnlink=${onUnlink} parentId=${id} />`) : null}
+    </div>` : null}
+  </div>`;
+}
+
+function Sidecard({ featureId, graph, onClose, onMutate, onShowModal }) {
+  const data = getEntityData(graph, featureId);
+  const key = entityKey(featureId);
+  const chain = getAncestorChain(graph, featureId);
+  const deps = getDepsOf(graph, featureId);
+  const [editing, setEditing] = useState(null);
+
+  const grouped = {};
+  for (const d of deps) { const t = entityType(d); (grouped[t] = grouped[t] || []).push(d); }
+  const entityTypes = ['action', 'workflow', 'component', 'operation'];
+  const refTypes = Object.keys(grouped).filter(t => !entityTypes.includes(t));
+
+  const handleUnlink = async (from, to) => {
+    try {
+      const result = await api.removeLink(from, to);
+      onMutate(result, `Unlinked ${entityKey(to)}`);
+    } catch (e) { onMutate(null, null, e.message); }
+  };
+
+  const handleEdit = async (field, value) => {
+    setEditing(null);
+    if (value === data[field]) return;
+    try {
+      const result = await api.updateEntity(featureId, { [field]: value });
+      onMutate(result, `Updated ${field}`);
+    } catch (e) { onMutate(null, null, e.message); }
+  };
+
+  return html`<div class="sidecard-overlay">
+    <div class="sidecard-header">
+      <${Pill} type="feature" />
+      <h2 onClick=${() => setEditing('name')} style="cursor:pointer">
+        ${editing === 'name'
+          ? html`<input class="inline-edit" style="font-family:'DM Serif Text',serif;font-size:18px"
+              value=${data.name || key} autoFocus
+              onBlur=${(e) => handleEdit('name', e.target.value)}
+              onKeyDown=${(e) => { if (e.key === 'Enter') handleEdit('name', e.target.value); if (e.key === 'Escape') setEditing(null); }} />`
+          : (data.name || key)}
+      </h2>
+      <button class="sidecard-close" onClick=${onClose}>×</button>
+    </div>
+    <div class="sidecard-body">
+      ${chain.length > 0 ? html`<div class="breadcrumb">
+        ${chain.map((c, i) => html`
+          <${Pill} type=${c.type}>${c.name}<//>
+          ${i < chain.length - 1 ? html`<span class="chevron">▸</span>` : null}
+        `)}
+        <span class="chevron">▸</span>
+        <${Pill} type="feature">${data.name || key}<//>
+      </div>` : null}
+
+      ${data.description ? html`<div class="sidecard-section">
+        <div class="desc-text" onClick=${() => setEditing('description')}>
+          ${editing === 'description'
+            ? html`<textarea class="inline-edit" rows="4" style="font-family:'IBM Plex Sans',sans-serif" autoFocus
+                onBlur=${(e) => handleEdit('description', e.target.value)}
+                onKeyDown=${(e) => { if (e.key === 'Escape') setEditing(null); }}>${data.description}</textarea>`
+            : data.description}
+        </div>
+      </div>` : null}
+
+      ${entityTypes.filter(t => grouped[t]).map(t => html`
+        <div class="sidecard-section">
+          <h3>${t}s · ${grouped[t].length}</h3>
+          ${grouped[t].map(d => html`<${AccordionItem} id=${d} graph=${graph} onUnlink=${handleUnlink} parentId=${featureId} />`)}
+        </div>
+      `)}
+
+      ${refTypes.length > 0 ? html`<div class="sidecard-section">
+        <h3>references</h3>
+        ${refTypes.map(t => grouped[t].map(d => html`
+          <div class="entity-row">
+            <${Pill} type="reference">${t}<//>
+            <span style="font-size:12px;color:var(--text-2);flex:1">${getEntityData(graph, d).description || entityKey(d)}</span>
+            <button class="unlink-btn" onClick=${() => handleUnlink(featureId, d)} title="Unlink">×</button>
+          </div>
+        `))}
+      </div>` : null}
+
+      <div class="sidecard-actions">
+        <button onClick=${() => onShowModal('add-child', featureId)}>+ Entity</button>
+        <button onClick=${() => onShowModal('link', featureId)}>+ Link</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function AddEntityModal({ graph, parentId, onClose, onMutate }) {
+  const [type, setType] = useState('action');
+  const [key, setKey] = useState('');
+  const [name, setName] = useState('');
+  const [desc, setDesc] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const types = ['action', 'component', 'operation', 'workflow',
+    'data-model', 'business-logic', 'interface', 'api-contract',
+    'acceptance-criterion', 'constraint', 'configuration', 'prompt'];
+
+  const handleSubmit = async () => {
+    if (!key || !type) return;
+    setLoading(true);
+    try {
+      let result = await api.addEntity(type, key, name || key, desc);
+      if (parentId) result = await api.addLink(parentId, `${type}:${key}`);
+      onMutate(result, `Added ${type}:${key}`);
+      onClose();
+    } catch (e) { onMutate(null, null, e.message); }
+    setLoading(false);
+  };
+
+  return html`<div class="modal-bg" onClick=${(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div class="modal">
+      <h3>New Entity${parentId ? html` → ${entityKey(parentId)}` : ''}</h3>
+      <label>Type</label>
+      <select value=${type} onChange=${(e) => setType(e.target.value)}>
+        ${types.map(t => html`<option value=${t}>${t}</option>`)}
+      </select>
+      <label>Key</label>
+      <input value=${key} onInput=${(e) => setKey(e.target.value)} placeholder="kebab-case-key" />
+      <label>Name</label>
+      <input value=${name} onInput=${(e) => setName(e.target.value)} placeholder="Human-readable name" />
+      <label>Description</label>
+      <textarea rows="3" value=${desc} onInput=${(e) => setDesc(e.target.value)} placeholder="What does this do?"></textarea>
+      <div class="modal-actions">
+        <button onClick=${onClose}>Cancel</button>
+        <button class="primary" onClick=${handleSubmit} disabled=${loading || !key}>${loading ? '···' : 'Create'}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function LinkModal({ graph, parentId, onClose, onMutate }) {
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const allEntities = useMemo(() => {
+    const result = [];
+    for (const [type, entities] of Object.entries(graph.entities || {}))
+      for (const key of Object.keys(entities)) result.push(`${type}:${key}`);
+    for (const [type, refs] of Object.entries(graph.references || {}))
+      for (const key of Object.keys(refs)) result.push(`${type}:${key}`);
+    return result;
+  }, [graph]);
+
+  const currentDeps = getDepsOf(graph, parentId);
+  const available = allEntities.filter(id => id !== parentId && !currentDeps.includes(id));
+  const filtered = search
+    ? available.filter(id => id.toLowerCase().includes(search.toLowerCase()))
+    : available.slice(0, 25);
+
+  const handleLink = async (targetId) => {
+    setLoading(true);
+    try {
+      const result = await api.addLink(parentId, targetId);
+      onMutate(result.graph, `Linked ${entityKey(targetId)}`);
+      onClose();
+    } catch (e) { onMutate(null, null, e.message); }
+    setLoading(false);
+  };
+
+  return html`<div class="modal-bg" onClick=${(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div class="modal">
+      <h3>Link to ${entityKey(parentId)}</h3>
+      <label>Search</label>
+      <input value=${search} onInput=${(e) => setSearch(e.target.value)} placeholder="Filter entities…" autoFocus />
+      <div class="link-list">
+        ${filtered.map(id => html`
+          <div class="link-item" onClick=${() => handleLink(id)}>
+            <${Pill} type=${entityType(id)} />
+            <span class="entity-label">${getEntityData(graph, id).name || entityKey(id)}</span>
+          </div>
+        `)}
+        ${filtered.length === 0 ? html`<div class="link-empty">No matches</div>` : null}
+      </div>
+      <div class="modal-actions">
+        <button onClick=${onClose}>Cancel</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function ChatPanel({ onClose }) {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [streaming, setStreaming] = useState(false);
+  const [available, setAvailable] = useState(null);
+  const messagesEnd = useRef(null);
+  const abortRef = useRef(null);
+
+  useEffect(() => {
+    api.chatStatus().then(d => setAvailable(d.available)).catch(() => setAvailable(false));
+  }, []);
+
+  useEffect(() => {
+    messagesEnd.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSend = () => {
+    if (!input.trim() || streaming) return;
+    const userMsg = input.trim();
+    setInput('');
+    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    setStreaming(true);
+
+    let assistantText = '';
+    setMessages(prev => [...prev, { role: 'assistant', text: '', streaming: true }]);
+
+    abortRef.current = api.sendChat(
+      userMsg,
+      (chunk) => {
+        assistantText += chunk;
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: 'assistant', text: assistantText, streaming: true };
+          return updated;
+        });
+      },
+      () => {
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: 'assistant', text: assistantText, streaming: false };
+          return updated;
+        });
+        setStreaming(false);
+      },
+      (err) => {
+        setMessages(prev => [...prev.slice(0, -1), { role: 'error', text: err }]);
+        setStreaming(false);
+      }
+    );
+  };
+
+  return html`<div class="chat-panel">
+    <div class="chat-header">
+      <span class="status-dot ${available ? '' : 'offline'}"></span>
+      <h3>AI Assistant</h3>
+      <button class="sidecard-close" onClick=${onClose}>×</button>
+    </div>
+    <div class="chat-messages">
+      ${messages.length === 0 ? html`
+        <div style="color:var(--text-3);font-size:12px;text-align:center;padding:24px;font-style:italic">
+          Ask about your spec-graph, entities, or architecture.
+        </div>
+      ` : null}
+      ${messages.map(m => html`
+        <div class="chat-msg ${m.role} ${m.streaming ? 'streaming' : ''}">${m.text || '…'}</div>
+      `)}
+      <div ref=${messagesEnd}></div>
+    </div>
+    <div class="chat-input-area">
+      <input value=${input}
+        onInput=${(e) => setInput(e.target.value)}
+        onKeyDown=${(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }}}
+        placeholder=${available ? "Ask about your spec-graph…" : "claude CLI not found"}
+        disabled=${!available || streaming} />
+      <button class="chat-send" onClick=${handleSend} disabled=${!available || streaming || !input.trim()}>
+        ${streaming ? '···' : '↑'}
+      </button>
+    </div>
+  </div>`;
+}
+
+function HistoryPanel({ onClose }) {
+  const [history, setHistory] = useState(null);
+
+  useEffect(() => {
+    api.fetchHistory().then(setHistory).catch(() => setHistory({ entries: [], undo_stack: [] }));
+  }, []);
+
+  const formatTs = (ts) => {
+    try {
+      const d = new Date(ts);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · ' +
+        d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    } catch { return ts; }
+  };
+
+  const summarizeEntry = (e) => {
+    const parts = [];
+    if (e.entities_added?.length) parts.push({ text: `+${e.entities_added.length} added`, cls: 'added' });
+    if (e.entities_removed?.length) parts.push({ text: `-${e.entities_removed.length} removed`, cls: 'removed' });
+    if (e.entities_modified?.length) parts.push({ text: `~${e.entities_modified.length} modified`, cls: 'modified' });
+    if (e.links_added?.length) parts.push({ text: `+${e.links_added.length} links`, cls: 'added' });
+    if (e.links_removed?.length) parts.push({ text: `-${e.links_removed.length} links`, cls: 'removed' });
+    if (e.refs_added?.length) parts.push({ text: `+${e.refs_added.length} refs`, cls: 'added' });
+    if (e.refs_removed?.length) parts.push({ text: `-${e.refs_removed.length} refs`, cls: 'removed' });
+    return parts;
+  };
+
+  const describeEntry = (e) => {
+    const items = [];
+    for (const id of (e.entities_added || [])) items.push(`+ ${id}`);
+    for (const id of (e.entities_removed || [])) items.push(`- ${id}`);
+    for (const l of (e.links_added || [])) items.push(`+ ${l.from} → ${l.to}`);
+    for (const l of (e.links_removed || [])) items.push(`- ${l.from} → ${l.to}`);
+    return items.slice(0, 3).join(', ') + (items.length > 3 ? ` +${items.length - 3} more` : '');
+  };
+
+  return html`<div class="history-panel">
+    <div class="history-header">
+      <h3>Change History</h3>
+      <button class="sidecard-close" onClick=${onClose}>×</button>
+    </div>
+    <div class="history-body">
+      ${!history ? html`<div class="history-empty">Loading…</div>` : null}
+      ${history?.entries?.length === 0 ? html`<div class="history-empty">No changes recorded</div>` : null}
+      ${history?.entries?.map(e => html`
+        <div class="history-entry">
+          <div class="ts">${formatTs(e.ts)}</div>
+          <div>${describeEntry(e)}</div>
+          <div class="changes">
+            ${summarizeEntry(e).map(p => html`<span class="change-pill ${p.cls}">${p.text}</span>`)}
+          </div>
+        </div>
+      `)}
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// App
+// ═══════════════════════════════════════════════════════════
+
+function App() {
+  const [graph, setGraph] = useState(null);
+  const [selectedId, setSelectedId] = useState(null);
+  const [filterUser, setFilterUser] = useState(null);
+  const [filterObjective, setFilterObjective] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [validationIssues, setValidationIssues] = useState([]);
+  const [showBanner, setShowBanner] = useState(true);
+  const [modal, setModal] = useState(null);
+  const [undoCount, setUndoCount] = useState(0);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+
+  // SSE connection for hot updates when graph changes externally
+  useEffect(() => {
+    const es = api.connectEvents(() => {
+      // Graph file changed externally — reload
+      loadGraph();
+    });
+    return () => es.close();
+  }, []);
+
+  const loadGraph = useCallback(async () => {
+    try {
+      const data = await api.fetchGraph();
+      setGraph(data);
+      validateGraph(data);
+    } catch (e) {
+      setToast({ type: 'error', message: `Failed to load: ${e.message}` });
+    }
+  }, []);
+
+  useEffect(() => { loadGraph(); }, [loadGraph]);
+
+  const validateGraph = (g) => {
+    const issues = [];
+    const allFeatures = Object.keys(g.entities?.feature || {}).map(k => `feature:${k}`);
+    for (const fid of allFeatures) {
+      if (getParentsOf(g, fid).length === 0) issues.push(`${fid} has no parent`);
+      if (getDepsOf(g, fid).length === 0) issues.push(`${fid} has no deps`);
+    }
+    for (const [src, entry] of Object.entries(g.graph || {})) {
+      for (const dep of [...(entry.depends_on || []), ...(entry.depends_on_ordered || [])]) {
+        const [t, ...r] = dep.split(':');
+        if (!g.entities?.[t]?.[r.join(':')] && !g.references?.[t]?.[r.join(':')]) {
+          issues.push(`${src} → ${dep} (missing)`);
+        }
+      }
+    }
+    setValidationIssues(issues);
+  };
+
+  const handleMutate = (result, successMsg, errorMsg) => {
+    if (errorMsg) { setToast({ type: 'error', message: errorMsg }); return; }
+    // result can be a graph object directly or a response with {graph, undo_available}
+    const newGraph = result?.graph || result;
+    if (newGraph?.entities) { setGraph(newGraph); validateGraph(newGraph); }
+    if (result?.undo_available !== undefined) setUndoCount(prev => prev + 1);
+    if (successMsg) setToast({ type: 'success', message: successMsg });
+  };
+
+  const handleFilter = (type, value) => {
+    if (type === 'user') setFilterUser(value);
+    if (type === 'objective') setFilterObjective(value);
+  };
+
+  const handleDrop = async (featureId, phaseId) => {
+    try {
+      const result = await api.changePhase(featureId, phaseId);
+      handleMutate(result, `Moved ${entityKey(featureId)} → ${phaseId}`);
+    } catch (e) { handleMutate(null, null, e.message); }
+  };
+
+  const handleUndo = async () => {
+    try {
+      const result = await api.undo();
+      setGraph(result.graph);
+      validateGraph(result.graph);
+      setUndoCount(prev => Math.max(0, prev - 1));
+      setToast({ type: 'success', message: `Undone: ${result.undone}` });
+    } catch (e) {
+      setToast({ type: 'error', message: e.message });
+    }
+  };
+
+  if (!graph) return html`<div class="loading-screen">
+    <h2>Loading graph</h2>
+    <div class="loading-dots"><span /><span /><span /></div>
+  </div>`;
+
+  const { phases, assignments } = getPhaseInfo(graph);
+  const features = getAllFeatures(graph);
+
+  let visibleFeatures = features;
+  if (filterObjective) {
+    const objDeps = getDepsOf(graph, `objective:${filterObjective}`);
+    visibleFeatures = visibleFeatures.filter(f => objDeps.includes(f.id));
+  }
+  if (filterUser) {
+    const userFeatures = new Set();
+    for (const obj of getDepsOf(graph, `user:${filterUser}`).filter(d => entityType(d) === 'objective'))
+      for (const d of getDepsOf(graph, obj)) if (entityType(d) === 'feature') userFeatures.add(d);
+    visibleFeatures = visibleFeatures.filter(f => userFeatures.has(f.id));
+  }
+
+  // Reverse phase order: highest roman numeral first, done/unphased at right
+  const phaseKeys = Object.keys(phases);
+  const sortedPhaseKeys = [...phaseKeys].sort((a, b) => {
+    // Roman numeral sort: V, IV, III, II, I (descending)
+    const romanVal = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7, VIII: 8, IX: 9, X: 10 };
+    const va = romanVal[a] || 0;
+    const vb = romanVal[b] || 0;
+    return vb - va; // descending
+  });
+  const columns = sortedPhaseKeys.map(pid => ({
+    phase: phases[pid],
+    features: visibleFeatures.filter(f => assignments[f.id]?.phase === pid)
+  }));
+  const unphased = visibleFeatures.filter(f => !assignments[f.id]);
+  if (unphased.length > 0) columns.push({ phase: { id: '_unphased', label: 'Unphased' }, features: unphased });
+
+  return html`
+    <${MasterNav} graph=${graph} filterUser=${filterUser} filterObjective=${filterObjective}
+      onFilter=${handleFilter} onRefresh=${loadGraph}
+      onAdd=${() => setModal({ type: 'add-child', parentId: null })}
+      undoCount=${undoCount} onUndo=${handleUndo}
+      onToggleHistory=${() => setShowHistory(!showHistory)} />
+    ${showBanner ? html`<${ValidationBanner} issues=${validationIssues} onDismiss=${() => setShowBanner(false)} />` : null}
+    <div class="kanban">
+      ${columns.map(col => html`
+        <${KanbanColumn} phase=${col.phase} features=${col.features} graph=${graph}
+          selectedId=${selectedId} onSelect=${setSelectedId} onDrop=${handleDrop} />
+      `)}
+    </div>
+    ${selectedId ? html`<${Sidecard} featureId=${selectedId} graph=${graph}
+      onClose=${() => setSelectedId(null)} onMutate=${handleMutate}
+      onShowModal=${(type, parentId) => setModal({ type, parentId })} />` : null}
+    ${modal?.type === 'add-child' ? html`<${AddEntityModal} graph=${graph} parentId=${modal.parentId}
+      onClose=${() => setModal(null)} onMutate=${handleMutate} />` : null}
+    ${modal?.type === 'link' ? html`<${LinkModal} graph=${graph} parentId=${modal.parentId}
+      onClose=${() => setModal(null)} onMutate=${handleMutate} />` : null}
+    ${showHistory ? html`<${HistoryPanel} onClose=${() => setShowHistory(false)} />` : null}
+    ${showChat
+      ? html`<${ChatPanel} onClose=${() => setShowChat(false)} />`
+      : html`<button class="chat-toggle" onClick=${() => setShowChat(true)} title="AI Chat">◈</button>`}
+    <${Toast} toast=${toast} onDismiss=${() => setToast(null)} />
+  `;
+}
+
+render(html`<${App} />`, document.getElementById('app'));
+</script>
+</body>
+</html>

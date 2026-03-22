@@ -8,12 +8,18 @@
         },
         "feature:code-graph-scoring": {
           "status": "build-ready"
+        },
+        "feature:spec-dashboard": {
+          "status": "review-ready"
         }
       },
       "II": {}
     },
     "project": {
       "name": "My Project"
+    },
+    "phases.pending.feature:spec-dashboard.status": {
+      "pending": {}
     }
   },
   "references": {
@@ -29,6 +35,12 @@
         "classes": [],
         "packages": [],
         "status": "planned"
+      },
+      "spec-dashboard-code": {
+        "modules": [],
+        "classes": [],
+        "packages": [],
+        "status": "planned"
       }
     },
     "configuration": {
@@ -37,16 +49,25 @@
       },
       "grade-runtime-config": {
         "description": "Grade file path (default: sibling to code-graph), agent capture triggers, enabled dimensions"
+      },
+      "serve-config": {
+        "description": "know serve command starts a local HTTP server. Serves static HTML/JS/CSS bundle at root. GET /api/graph returns spec-graph.json for initial load and refresh after mutations. POST endpoints proxy know CLI commands for CRUD operations (add, link, unlink, meta set, phases). Graph path default: .ai/know/spec-graph.json, overridable with -g flag. Opens browser on start."
       }
     },
     "data-model": {
       "grade-snapshot": {
         "description": "Fixed schema for a single code-graph health snapshot: timestamp, graph hash, dimension metrics (coverage, connectivity, cross-linking, orphan count, staleness, granularity), raw counts and ratios per dimension"
+      },
+      "parsed-graph": {
+        "description": "Typed entity map keyed by full ID (e.g. feature:foo). Forward dependency index (depends_on, depends_on_ordered). Reverse dependency index (used_by). Extracted meta.phases with feature-to-phase mapping. Issue list from validation. Source: spec-graph.json."
       }
     },
     "constraint": {
       "grade-file-integrity": {
         "description": "Grade file is append-only, must survive graph rebuilds, must not be clobbered by code-graph regeneration. Same graph state must produce identical metrics."
+      },
+      "local-only": {
+        "description": "Dashboard runs locally via know serve. No authentication, no multi-user support. Single-user assumed. No network calls beyond the local server serving the graph JSON."
       }
     },
     "metric": {
@@ -57,6 +78,45 @@
     "acceptance-criterion": {
       "grade-determinism": {
         "description": "Given identical code-graph state, grading produces identical snapshot. Grade file persists across graph rebuilds. Metrics improve when gaps are fixed."
+      },
+      "dashboard-drill-down": {
+        "description": "Click feature card -> sidecard shows correct parent objective/user + all linked actions/components/operations in accordion tree. Accordion expands/collapses correctly. Terminal nodes show as leaf detail."
+      },
+      "dashboard-kanban-phases": {
+        "description": "All features appear in correct phase column based on meta.phases. Empty phases render as empty columns. Features with no phase assignment appear in a fallback column or are flagged."
+      },
+      "dashboard-validation": {
+        "description": "Validation banner shows on load if graph has structural issues. Inline badges mark affected entities. Dismissing banner does not hide inline badges. Banner lists issue count and types."
+      }
+    },
+    "interface": {
+      "kanban-view": {
+        "description": "Full-width kanban board as main view. Columns derived from meta.phases. Feature cards with: name, description snippet, entity count pills. Click card to expand sidecard. Master nav bar at top with user > objective scope selectors. Dismissible validation banner below nav. Sidecard slides in from right on feature click."
+      },
+      "sidecard-panel": {
+        "description": "Right-side panel that opens on feature card click. Header: feature name + status. Parent section: linked user and objective with click-to-scope. Child tree: accordion of actions, components, operations grouped by type. Reference list: flat list of linked references with type badges. Close button returns to kanban-only view."
+      }
+    },
+    "business-logic": {
+      "hierarchy-boundary": {
+        "description": "Feature is the drill boundary. Above feature (project, user, objective) renders as master nav tree/selectors \u2014 scoping only, no dedicated view. Feature renders as kanban cards. Below feature (action, component, operation) renders as accordion tree within sidecard. Terminal nodes (operations, references) are leaf displays with no further drill."
+      },
+      "phase-columns": {
+        "description": "Kanban columns are derived from meta.phases in the spec-graph at runtime. Each phase key becomes a column. Features are slotted into columns based on their phase assignment status. Column order follows the order of phases in meta. Empty phases still render as columns."
+      }
+    },
+    "api-contract": {
+      "cli-proxy-api": {
+        "description": "REST API exposed by know serve for dashboard mutations. Endpoints: POST /api/add (create entity/ref), POST /api/link (add dependency), POST /api/unlink (remove dependency), POST /api/meta (update meta/phases), PUT /api/entity/:id (update entity fields). All endpoints accept JSON body with command args, return JSON with success/error status and updated entity data. GET /api/graph returns current spec-graph.json for client refresh after mutations."
+      },
+      "chat-api": {
+        "description": "POST /api/chat \u2014 accepts {message}. Spawns claude CLI with stream-json output. Returns SSE stream: data events with claude response chunks, final done event. GET /api/chat/status \u2014 returns {available: bool} indicating if claude CLI is found."
+      },
+      "events-api": {
+        "description": "GET /api/events \u2014 SSE endpoint for hot graph updates. Sends {type: connected} on connect, {type: graph-updated, ts} when spec-graph.json mtime changes. Heartbeat every 15s. Auto-reconnects on disconnect."
+      },
+      "undo-api": {
+        "description": "POST /api/undo \u2014 pops last graph snapshot from undo stack, writes it to spec-graph.json atomically. Returns {ok, graph, undone, undo_available}. GET /api/history \u2014 returns {entries, undo_available, undo_stack} with diff-graph.jsonl entries."
       }
     }
   },
@@ -93,10 +153,147 @@
       "code-graph-scoring": {
         "name": "Code Graph Scoring",
         "description": "Automatic structural health capture for code-graph, recorded by agents at runtime. Fixed schema, append-only history in sibling grade file."
+      },
+      "spec-dashboard": {
+        "name": "Spec Dashboard",
+        "description": "Interactive HTML dashboard served via know serve that visualizes spec-graph data. Kanban-first design with features as cards in phase-derived columns. Master nav bar scopes by user/objective. Clicking a feature card opens a sidecard showing parent context (user, objective) and child entities (actions, components, operations) as an accordion tree. Validation banner on load plus inline badges on affected entities. Built with lightweight framework (Preact/Alpine) + D3. Local-only, read-only, single-user."
       }
     },
     "workflow": {},
-    "action": {}
+    "action": {
+      "load-dashboard": {
+        "name": "Load Dashboard",
+        "description": "User navigates to the dashboard URL served by know serve. System reads spec-graph.json, parses it, runs validation, renders the kanban board with features in phase-derived columns. Validation banner appears if structural issues found. Master nav populates with users and objectives for scoping."
+      },
+      "select-scope": {
+        "name": "Select Scope",
+        "description": "User clicks a user or objective in the master nav bar to filter the kanban. System filters features to those reachable from the selected scope via the dependency graph. Kanban re-renders showing only scoped features. URL updates to reflect current scope selection."
+      },
+      "expand-feature": {
+        "name": "Expand Feature",
+        "description": "User clicks a feature card on the kanban. System resolves the feature parent chain (objective, user) and child dependencies (actions, components, operations, references). Sidecard panel slides in showing parent context section, child entity accordion tree, and linked references. URL updates to include selected feature key. Pills on the card update to highlight active state."
+      },
+      "drill-entity": {
+        "name": "Drill Entity",
+        "description": "User clicks an action, component, or operation within the sidecard accordion tree. System expands that entity inline showing its description, linked references, and sub-dependencies. Terminal nodes (operations, references) display as leaf detail with no further drill. Accordion keeps parent entities visible above."
+      },
+      "change-phase": {
+        "name": "Change Phase",
+        "description": "User drags a feature card between kanban columns or uses a dropdown to change its phase. System calls know phases/meta commands via the REST API proxy on know serve. Kanban re-renders with the card in its new column. URL state and pill badges update to reflect the change."
+      },
+      "add-entity": {
+        "name": "Add Entity",
+        "description": "User clicks an add button (on kanban, sidecard, or master nav) to create a new entity or reference. A modal or inline form collects type, key, name, and description. System calls know add via the REST API proxy. New entity appears in the appropriate view (kanban card, sidecard tree, or master nav)."
+      },
+      "edit-entity": {
+        "name": "Edit Entity",
+        "description": "User clicks an entity name or description to edit it inline. Editable fields: name, description. System calls know CLI to update the entity via the REST API proxy. Changes persist to spec-graph.json and the UI updates in place."
+      },
+      "manage-links": {
+        "name": "Manage Links",
+        "description": "User adds or removes dependencies between entities from the UI. Could be a link button in the sidecard, a drag-to-connect in the graph viz, or a dropdown selector. System calls know link or know unlink via the REST API proxy. Dependency tree and pills update to reflect changes."
+      },
+      "send-chat": {
+        "name": "Send Chat",
+        "description": "User types a message in the AI chat panel. System spawns claude CLI with stream-json output, passing current graph context as system prompt. Response streams back via SSE to the chat panel in real-time. Uses execPath auth passthrough \u2014 no API keys needed."
+      },
+      "view-history": {
+        "name": "View History",
+        "description": "User clicks the history icon in the nav bar. History panel slides in from right showing recent changes from diff-graph.jsonl. Each entry shows timestamp, entities added/removed/modified, and links changed. Entries are color-coded: green for added, red for removed, blue for modified."
+      },
+      "undo-change": {
+        "name": "Undo Change",
+        "description": "User clicks the Undo button in the nav bar. System pops the most recent graph snapshot from the undo stack and writes it back to spec-graph.json. Dashboard re-renders with the restored state. Badge on undo button shows count of available undos."
+      }
+    },
+    "operation": {
+      "parse-graph": {
+        "name": "Parse Graph",
+        "description": "Reads raw spec-graph.json and transforms it into a typed entity map keyed by entity ID, a dependency index (both forward depends_on and reverse used_by), and extracted phases from meta. Validates JSON structure before parsing. Produces error list for any structural issues found during parse."
+      },
+      "resolve-parents": {
+        "name": "Resolve Parents",
+        "description": "Given a feature key, walks the reverse dependency index to find the parent objective and user. Returns the full parent chain for display in the sidecard header. Handles cases where a feature links to multiple objectives."
+      },
+      "validate-graph": {
+        "name": "Validate Graph",
+        "description": "Runs structural validation on the parsed graph: checks for missing dependency targets, orphaned nodes with no parent in graph, entities with no references or dependents, invalid type relationships per dependency-rules.json, and dangling depends_on_ordered entries. Returns an issue list with severity and affected entity keys for banner and inline badge rendering."
+      },
+      "render-columns": {
+        "name": "Render Columns",
+        "description": "Reads meta.phases from the parsed graph and generates kanban column definitions at runtime. Each phase becomes a column. Features are slotted into columns based on their phase assignment. Handles missing or empty phases gracefully."
+      },
+      "proxy-command": {
+        "name": "Proxy Command",
+        "description": "Receives a structured command request (action: add|link|unlink|meta-set|phases, args: entity type/key/data), constructs the know CLI command string, executes it via child_process/subprocess, parses stdout/stderr, and returns a structured result with success/failure status and any validation errors."
+      },
+      "stream-chat": {
+        "name": "Stream Chat",
+        "description": "Spawns claude CLI as subprocess with -p --output-format stream-json --no-session-persistence --system-prompt <context>. Reads stdout line by line, parses JSON events, forwards as SSE data frames. Handles timeout (120s), broken pipes, and process cleanup."
+      },
+      "watch-file": {
+        "name": "Watch File",
+        "description": "Polls file stat mtime in a loop (500ms interval). Compares against last known mtime. On change, iterates connected SSE clients and writes graph-updated event. Removes dead clients on write failure."
+      },
+      "snapshot-restore": {
+        "name": "Snapshot Restore",
+        "description": "Pops graph snapshot from undo deque. Writes JSON atomically to spec-graph.json via tempfile + os.replace. Returns the restored graph and description of what was undone."
+      }
+    },
+    "component": {
+      "graph-parser": {
+        "name": "Graph Parser",
+        "description": "Receives raw JSON string from know serve endpoint. Parses into typed entity map (keyed by full ID like feature:foo), builds forward and reverse dependency indices, extracts meta.phases. Outputs structured graph object consumed by all other components. No side effects \u2014 pure transformation."
+      },
+      "kanban-renderer": {
+        "name": "Kanban Renderer",
+        "description": "Receives parsed graph object with phases and feature entities. Renders phase-derived columns with feature cards. Each card shows: feature name, description snippet, pills for linked entity counts (actions, components, references). Dashboard-specific component. Inputs: graph object. Output: DOM kanban layout."
+      },
+      "sidecard-renderer": {
+        "name": "Sidecard Renderer",
+        "description": "Receives a feature key and the parsed graph. Resolves parent chain (user, objective) via reverse dependency index. Builds child entity tree (actions, components, operations) via forward dependencies. Renders as a slide-in panel with parent header, accordion tree for children, and reference list. Dashboard-specific."
+      },
+      "master-nav": {
+        "name": "Master Nav",
+        "description": "Receives parsed graph user and objective entities. Renders a top bar with clickable user > objective hierarchy for scoping/filtering the kanban. Emits scope-change events that the kanban-renderer consumes to filter visible features. Dashboard-specific."
+      },
+      "validation-display": {
+        "name": "Validation Display",
+        "description": "Receives issue list from validate-graph operation. Renders a dismissible banner summarizing structural issues found on load. Also provides inline badge data for entity-level indicators (e.g. no actions linked, dangling ref). Reusable component \u2014 could be used in any graph visualization."
+      },
+      "url-state-manager": {
+        "name": "URL State Manager",
+        "description": "Manages browser URL hash/query to persist dashboard state: selected scope (user/objective), selected feature, expanded entities. On load, reads URL to restore state. On interaction, updates URL without page reload. Side effects: reads/writes URL hash, pushes browser history entries."
+      },
+      "entity-pills": {
+        "name": "Entity Pills",
+        "description": "Receives an entity key and the parsed graph. Counts linked dependencies by type (actions, components, references, etc.). Renders as small pill badges on feature cards and sidecard entries. Reusable across any entity card display."
+      },
+      "cli-proxy": {
+        "name": "CLI Proxy",
+        "description": "Server-side component in know serve that exposes REST endpoints proxying know CLI commands. Receives HTTP requests from the dashboard, shells out to know CLI (add, link, unlink, meta set, phases, nodes), captures output, and returns structured JSON responses. Handles errors from CLI (validation failures, missing entities) and returns appropriate HTTP status codes. Side effects: executes know CLI commands that write to spec-graph.json."
+      },
+      "mutation-handler": {
+        "name": "Mutation Handler",
+        "description": "Client-side component that handles all write operations from the UI. Collects form data from modals/inline editors, constructs REST API calls to the cli-proxy endpoints, handles optimistic updates (update UI immediately, roll back on error), and manages loading/error states. Emits events that trigger graph re-reads after successful mutations."
+      },
+      "chat-panel": {
+        "name": "Chat Panel",
+        "description": "Bottom-right floating panel with AI chat. Uses claude CLI via execPath auth passthrough. Spawns claude process with --output-format stream-json and --no-session-persistence. System prompt includes current graph context (features, actions, components, phases). Streams response chunks to the UI via SSE. Side effects: spawns subprocess, reads graph for context."
+      },
+      "file-watcher": {
+        "name": "File Watcher",
+        "description": "Background thread that polls spec-graph.json mtime every 500ms. When mtime changes (from CLI mutations or external edits), pushes graph-updated event to all connected SSE clients. Clients auto-refresh the graph. Runs as daemon thread, stopped on server shutdown."
+      },
+      "undo-stack": {
+        "name": "Undo Stack",
+        "description": "Thread-safe deque of graph snapshots (max 30). Before each mutation, the current graph state is pushed. POST /api/undo pops the last snapshot and writes it back to spec-graph.json atomically. Failed mutations auto-remove their snapshot. Badge count tracks available undos."
+      },
+      "history-panel": {
+        "name": "History Panel",
+        "description": "Slide-in panel showing change log from diff-graph.jsonl. Displays timestamped entries with color-coded change pills (added/removed/modified). Shows entity and link changes. Newest first, limited to 50 entries."
+      }
+    }
   },
   "graph": {
     "user:developer": {
@@ -110,7 +307,8 @@
         "feature:bulk-get-by-type",
         "feature:list-count",
         "feature:graph-filter-prefix",
-        "feature:code-graph-scoring"
+        "feature:code-graph-scoring",
+        "feature:spec-dashboard"
       ]
     },
     "feature:workflow-branch-entity": {
@@ -127,6 +325,178 @@
         "acceptance-criterion:grade-determinism",
         "metric:graph-health-dimensions",
         "configuration:grade-runtime-config"
+      ]
+    },
+    "feature:spec-dashboard": {
+      "depends_on": [
+        "action:load-dashboard",
+        "action:select-scope",
+        "action:expand-feature",
+        "action:drill-entity",
+        "operation:parse-graph",
+        "operation:resolve-parents",
+        "operation:validate-graph",
+        "operation:render-columns",
+        "component:graph-parser",
+        "component:kanban-renderer",
+        "component:sidecard-renderer",
+        "component:master-nav",
+        "component:validation-display",
+        "component:url-state-manager",
+        "component:entity-pills",
+        "data-model:parsed-graph",
+        "interface:kanban-view",
+        "interface:sidecard-panel",
+        "business-logic:hierarchy-boundary",
+        "business-logic:phase-columns",
+        "constraint:local-only",
+        "acceptance-criterion:dashboard-drill-down",
+        "acceptance-criterion:dashboard-kanban-phases",
+        "acceptance-criterion:dashboard-validation",
+        "code-link:spec-dashboard-code",
+        "action:change-phase",
+        "action:add-entity",
+        "action:edit-entity",
+        "action:manage-links",
+        "component:cli-proxy",
+        "component:mutation-handler",
+        "operation:proxy-command",
+        "api-contract:cli-proxy-api",
+        "configuration:serve-config",
+        "action:send-chat",
+        "action:view-history",
+        "action:undo-change",
+        "component:chat-panel",
+        "component:file-watcher",
+        "component:undo-stack",
+        "component:history-panel",
+        "operation:stream-chat",
+        "operation:watch-file",
+        "operation:snapshot-restore",
+        "api-contract:chat-api",
+        "api-contract:events-api",
+        "api-contract:undo-api"
+      ]
+    },
+    "component:graph-parser": {
+      "depends_on": [
+        "operation:parse-graph",
+        "data-model:parsed-graph"
+      ]
+    },
+    "component:sidecard-renderer": {
+      "depends_on": [
+        "operation:resolve-parents",
+        "interface:sidecard-panel"
+      ]
+    },
+    "component:validation-display": {
+      "depends_on": [
+        "operation:validate-graph"
+      ]
+    },
+    "component:kanban-renderer": {
+      "depends_on": [
+        "operation:render-columns",
+        "interface:kanban-view",
+        "business-logic:phase-columns"
+      ]
+    },
+    "action:load-dashboard": {
+      "depends_on": [
+        "component:graph-parser",
+        "component:kanban-renderer",
+        "component:master-nav",
+        "component:validation-display"
+      ]
+    },
+    "action:select-scope": {
+      "depends_on": [
+        "component:master-nav",
+        "component:kanban-renderer",
+        "component:url-state-manager"
+      ]
+    },
+    "action:expand-feature": {
+      "depends_on": [
+        "component:sidecard-renderer",
+        "component:entity-pills",
+        "component:url-state-manager",
+        "business-logic:hierarchy-boundary"
+      ]
+    },
+    "action:drill-entity": {
+      "depends_on": [
+        "component:sidecard-renderer",
+        "business-logic:hierarchy-boundary"
+      ]
+    },
+    "action:change-phase": {
+      "depends_on": [
+        "component:mutation-handler",
+        "component:kanban-renderer"
+      ]
+    },
+    "action:add-entity": {
+      "depends_on": [
+        "component:mutation-handler"
+      ]
+    },
+    "action:edit-entity": {
+      "depends_on": [
+        "component:mutation-handler",
+        "component:sidecard-renderer"
+      ]
+    },
+    "action:manage-links": {
+      "depends_on": [
+        "component:mutation-handler",
+        "component:sidecard-renderer"
+      ]
+    },
+    "component:mutation-handler": {
+      "depends_on": [
+        "component:cli-proxy"
+      ]
+    },
+    "component:cli-proxy": {
+      "depends_on": [
+        "operation:proxy-command",
+        "api-contract:cli-proxy-api"
+      ]
+    },
+    "action:send-chat": {
+      "depends_on": [
+        "component:chat-panel"
+      ]
+    },
+    "action:view-history": {
+      "depends_on": [
+        "component:history-panel"
+      ]
+    },
+    "action:undo-change": {
+      "depends_on": [
+        "component:undo-stack"
+      ]
+    },
+    "component:chat-panel": {
+      "depends_on": [
+        "operation:stream-chat",
+        "component:graph-parser",
+        "api-contract:chat-api"
+      ]
+    },
+    "component:file-watcher": {
+      "depends_on": [
+        "operation:watch-file",
+        "api-contract:events-api"
+      ]
+    },
+    "component:undo-stack": {
+      "depends_on": [
+        "operation:snapshot-restore",
+        "api-contract:undo-api"
       ]
     }
   }
