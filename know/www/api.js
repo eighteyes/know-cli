@@ -38,8 +38,8 @@ export async function addLink(from, to) {
 export async function removeLink(from, to) {
   return request('DELETE', '/api/link', { from, to });
 }
-export async function changePhase(entityId, phase, status) {
-  return request('POST', '/api/phase', { entity_id: entityId, phase, status });
+export async function changeHorizon(entityId, horizon, status) {
+  return request('POST', '/api/horizon', { entity_id: entityId, horizon, status });
 }
 
 /**
