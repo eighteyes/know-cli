@@ -130,9 +130,9 @@ Create a structured change request for a feature (enhancement, improvement, or m
 **If feature status is "done" or "review-ready"**:
 - Set status to `in-progress`. The graph reflects current state, not original scope:
   ```bash
-  know meta set phases.<phase>.feature:<name>.status in-progress
+  know meta set horizons.<horizon>.feature:<name>.status in-progress
   ```
-- Phase stays where it is. Only the status changes.
+- Horizon stays where it is. Only the status changes.
 - Validate: `know graph check validate`
 
 **If feature is archived** (`.ai/know/archive/<name>/` exists, `.ai/know/features/<name>/` does not):

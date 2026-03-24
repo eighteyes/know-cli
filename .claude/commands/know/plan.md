@@ -500,7 +500,7 @@ For each assumption: confidence ≥95% → state and proceed. <95% → ask user.
 
 **Questions to ask**:
 - What is the build order?
-- How should work be phased? (I, II, III)
+- How should work be organized by horizon? (I, II, III)
 - What are the acceptance criteria per feature?
 - What dependencies exist between features?
 
@@ -512,16 +512,16 @@ For each assumption: confidence ≥95% → state and proceed. <95% → ask user.
   - `.ai/know/file-index.md` - Proposed file structure
 
 - Spec-graph updates (WITH CONFIRMATION):
-  - Populate `meta.phases_metadata` with phase definitions:
+  - Populate `meta.horizons_metadata` with horizon definitions:
     ```json
-    "phases_metadata": {
+    "horizons_metadata": {
       "I": {"name": "Foundation", "description": "Core architecture"},
       "II": {"name": "Features", "description": "Main functionality"},
       "III": {"name": "Polish", "description": "Optimizations"}
     }
     ```
-  - Populate `meta.phases` with I, II, III phases
-  - Assign features to phases with status "incomplete"
+  - Populate `meta.horizons` with I, II, III horizons
+  - Assign features to horizons with status "incomplete"
   - Verify all features have dependencies
 
 ---

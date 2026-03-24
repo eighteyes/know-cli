@@ -39,9 +39,9 @@ Do NOT restore the full archive. The archive is history; the feature dir is acti
 
 **Set status to in-progress:**
 ```bash
-know meta set phases.<phase>.feature:<name>.status in-progress
+know meta set horizons.<horizon>.feature:<name>.status in-progress
 ```
-Phase stays where it is. Status reflects current reality.
+Horizon stays where it is. Status reflects current reality.
 
 **Then continue to Step 2** with this context change: QA agents should ask "What are you adding to `<name>`?" not "What does `<name>` do?" Load existing graph context first:
 ```bash
@@ -131,7 +131,7 @@ Add feature to spec-graph. **Use full QA answers as entity descriptions** — no
 ```bash
 know add feature <name> '{"name":"...","description":"<full description from QA, not a summary>"}'
 know graph link objective:<name> feature:<name>   # for each objective
-know phases add pending feature:<name>
+know horizons add pending feature:<name>
 ```
 
 ### 4b. Entities from QA Answers

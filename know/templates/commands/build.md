@@ -51,7 +51,7 @@ Guide feature development through a structured 7-phase workflow adapted from Cla
      → Create empty todo.md, plan.md
      → Create qa/, architecture/, bugs/, changes/ subdirectories
 
-3. Update meta.phases status to "in-progress"
+3. Update meta.horizons status to "in-progress"
 
 4. Proceed to Phase 1
 ```
@@ -253,7 +253,7 @@ Send SINGLE message with:
    - Mark task as in-progress: `executor.mark_task_in_progress(task_id)`
    - After user confirms completion, mark complete: `executor.mark_task_completed(task_id)`
 
-6. Update phase status in spec-graph: `"status": "in-progress"` (using **haiku agent**)
+6. Update horizon status in spec-graph: `"status": "in-progress"` (using **haiku agent**)
 
 7. **Cross-Graph Linking** - As code is written, establish bidirectional spec↔code connections:
 
@@ -323,7 +323,7 @@ Send SINGLE message with:
 - Updated `.ai/know/<feature>/implementation.md` with notes
 - `.ai/know/build-progress.json` - Task execution tracking
 - Updated code-graph with new modules
-- Phase status: "in-progress" in spec-graph
+- Horizon status: "in-progress" in spec-graph
 
 ---
 
@@ -410,10 +410,10 @@ Send SINGLE message with:
 
    **BLOCK RULE**: If `know graph cross coverage` shows 0% spec coverage for this feature → BLOCK phase completion. Run `know graph cross connect feature:<name>` to create links, then re-check.
 
-   c. **Update spec-graph phase status**:
+   c. **Update spec-graph horizon status**:
    ```bash
    # Mark as review-ready
-   know -g .ai/know/spec-graph.json phases status feature:<name> review-ready
+   know -g .ai/know/spec-graph.json horizons status feature:<name> review-ready
    ```
 
    d. **Validate both graphs**:
@@ -577,7 +577,7 @@ executor.mark_task_completed('task-1')
 User: /know:build user-authentication
 Assistant: Found feature at .ai/know/user-authentication/
           Loading context from overview.md...
-          Updating phase status to in-progress...
+          Updating horizon status to in-progress...
 
           === Phase 1: Discovery ===
           Let me clarify a few things about user authentication...
@@ -645,7 +645,7 @@ User: /know:build auth
 - **User approval required** at key decision points (architecture, implementation)
 - **Resumable** - Can pause and resume at any phase
 - **Documentation-driven** - All decisions captured in `.ai/know/<feature>/`
-- When complete, use `/know:done` to archive and mark in "done" phase
+- When complete, use `/know:done` to archive and mark in "done" horizon
 
 ## Code Graph Regeneration
 

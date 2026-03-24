@@ -149,7 +149,7 @@ know -g .ai/know/spec-graph.json nodes update operation:validate-credentials '{
    know gen spec feature:<name> --format xml > .ai/know/features/<name>/.prebuild/spec.xml
    ```
 2. Verify XML contains all necessary sections:
-   - Feature metadata (name, description, phase, status)
+   - Feature metadata (name, description, horizon, status)
    - User stories (auto-generated from graph)
    - Dependency chain (user → objective → feature → component → operation)
    - Requirements with status
@@ -207,7 +207,7 @@ know -g .ai/know/spec-graph.json nodes update operation:validate-credentials '{
 ```
 
 **Rules:**
-- Order phases bottom-up: foundation before wiring (data → logic → interface)
+- Order horizons bottom-up: foundation before wiring (data → logic → interface)
 - Each component section must list its operations and file targets
 - Risk areas must surface unresolved tradeoffs from `meta.architecture`
 - If `code-link` modules are empty (status: "planned"), flag each component as "file TBD — AI will resolve during build"
@@ -220,9 +220,9 @@ know -g .ai/know/spec-graph.json nodes update operation:validate-credentials '{
    echo "validated: $(date -Iseconds)" > .ai/know/features/<name>/.prebuild/validated
    echo "graph_hash: $(git hash-object .ai/know/spec-graph.json)" >> .ai/know/features/<name>/.prebuild/validated
    ```
-2. Update feature phase status:
+2. Update feature horizon status:
    ```bash
-   know -g .ai/know/spec-graph.json phases status feature:<name> review-ready
+   know -g .ai/know/spec-graph.json horizons status feature:<name> review-ready
    ```
 3. Report validation success:
    ```
@@ -278,7 +278,7 @@ know -g .ai/know/spec-graph.json nodes update operation:validate-credentials '{
 **Before prebuild:**
 ```
 /know:add → creates .md files + basic graph
-Graph may be incomplete (just feature entity + phase)
+Graph may be incomplete (just feature entity + horizon)
 ```
 
 **After prebuild:**
