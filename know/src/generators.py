@@ -172,14 +172,14 @@ class SpecGenerator:
         return "\n".join(str(line) if line is not None else '' for line in lines)
 
     def _get_entity_phase_status(self, entity_id: str) -> dict:
-        """Get phase and status for an entity from meta.phases."""
+        """Get horizon and status for an entity from meta.horizons."""
         data = self.graph.get_graph()
-        phases = data.get('meta', {}).get('phases', {})
+        horizons = data.get('meta', {}).get('horizons', {})
 
-        for phase_name, phase_entities in phases.items():
+        for horizon_name, phase_entities in horizons.items():
             if entity_id in phase_entities:
                 return {
-                    'phase': phase_name,
+                    'phase': horizon_name,
                     'status': phase_entities[entity_id].get('status', 'unknown')
                 }
         return {}

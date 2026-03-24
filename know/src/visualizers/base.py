@@ -51,13 +51,13 @@ class BaseVisualizer(ABC):
 
         graph_name = meta.get("project", {}).get("name", "") if isinstance(meta.get("project"), dict) else ""
 
-        # Build entity→phase lookup from meta.phases
+        # Build entity→horizon lookup from meta.horizons
         phase_lookup: Dict[str, Dict[str, str]] = {}
-        for phase_name, phase_entities in meta.get("phases", {}).items():
+        for horizon_name, phase_entities in meta.get("horizons", {}).items():
             if isinstance(phase_entities, dict):
                 for eid, pdata in phase_entities.items():
                     status = pdata.get("status", "") if isinstance(pdata, dict) else ""
-                    phase_lookup[eid] = {"phase": phase_name, "status": status}
+                    phase_lookup[eid] = {"phase": horizon_name, "status": status}
 
         nodes: Dict[str, Dict[str, Any]] = {}
         edges: List[Tuple[str, str]] = []

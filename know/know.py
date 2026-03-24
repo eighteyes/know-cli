@@ -5594,7 +5594,7 @@ def horizons_list(ctx):
         return
 
     horizons_data = graph_data['meta']['horizons']
-    phases_metadata = graph_data['meta'].get('phases_metadata', {})
+    horizons_metadata = graph_data['meta'].get('horizons_metadata', {})
 
     if not horizons_data:
         console.print("[yellow]No horizons defined[/yellow]")
@@ -5646,15 +5646,15 @@ def horizons_list(ctx):
 
     # Print each horizon
     for phase_key, phase_entities in horizons_data.items():
-        # Skip phases_metadata if it somehow ended up in horizons dict
-        if phase_key == 'phases_metadata':
+        # Skip horizons_metadata if it somehow ended up in horizons dict
+        if phase_key == 'horizons_metadata':
             continue
 
         if not phase_entities:
             continue
 
-        # Get phase metadata
-        phase_meta = phases_metadata.get(phase_key, {})
+        # Get horizon metadata
+        phase_meta = horizons_metadata.get(phase_key, {})
         phase_name = phase_meta.get('name', phase_key)
         phase_desc = phase_meta.get('description', '')
 

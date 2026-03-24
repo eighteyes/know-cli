@@ -252,25 +252,25 @@ class GraphValidator:
             meta = data['meta']
             if 'project' not in meta:
                 results['warnings'].append("Missing 'project' in meta")
-            if 'phases' not in meta:
-                results['warnings'].append("Missing 'phases' in meta")
+            if 'horizons' not in meta:
+                results['warnings'].append("Missing 'horizons' in meta")
 
-            # Validate phases structure
-            if 'phases' in meta:
-                phases = meta['phases']
-                if isinstance(phases, list):
+            # Validate horizons structure
+            if 'horizons' in meta:
+                horizons = meta['horizons']
+                if isinstance(horizons, list):
                     results['errors'].append(
-                        "meta.phases must be a dict, not a list. "
+                        "meta.horizons must be a dict, not a list. "
                         "Expected format: {\"pending\": {\"feature:x\": {\"status\": \"incomplete\"}}}"
                     )
-                elif not isinstance(phases, dict):
-                    results['errors'].append("meta.phases must be a dict")
+                elif not isinstance(horizons, dict):
+                    results['errors'].append("meta.horizons must be a dict")
 
-            # Validate phases_metadata structure if present
-            if 'phases_metadata' in meta:
-                phases_meta = meta['phases_metadata']
-                if not isinstance(phases_meta, dict):
-                    results['errors'].append("meta.phases_metadata must be a dict")
+            # Validate horizons_metadata structure if present
+            if 'horizons_metadata' in meta:
+                horizons_meta = meta['horizons_metadata']
+                if not isinstance(horizons_meta, dict):
+                    results['errors'].append("meta.horizons_metadata must be a dict")
 
         # Check entities structure
         if 'entities' in data:
@@ -331,7 +331,7 @@ class GraphValidator:
 
         # Operational keys always allowed (used by the system)
         operational_keys = {
-            'phases', 'phases_metadata', 'code_graph_path',
+            'horizons', 'horizons_metadata', 'code_graph_path',
             'spec_graph_path', 'dependency_rules', 'feature_specs'
         }
 
@@ -356,7 +356,7 @@ class GraphValidator:
                 "meta.project must be a dict"
             )
 
-        # meta.phases dict check already in _validate_structure, skip here
+        # meta.horizons dict check already in _validate_structure, skip here
 
         # Type checks — warnings for softer constraints
         if 'out_of_scope' in meta and not isinstance(meta['out_of_scope'], list):
