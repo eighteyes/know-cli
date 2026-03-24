@@ -74,7 +74,7 @@ class SectionedGroup(click.Group):
         self.section_commands = {
             'Initialization': ['init'],
             'Graph': ['add', 'get', 'list', 'search', 'find', 'related', 'link', 'unlink', 'graph', 'check', 'gen', 'nodes', 'viz'],
-            'Project': ['feature', 'phases', 'req', 'op', 'meta', 'serve'],
+            'Project': ['feature', 'horizons', 'req', 'op', 'meta', 'serve'],
         }
 
     def format_commands(self, ctx, formatter):
@@ -5552,23 +5552,23 @@ def feature_complete(ctx, feature_name, req_key, effort):
 
 
 # =============================================================================
-# PHASES group (kept as-is)
+# HORIZONS group
 # =============================================================================
 @cli.group(context_settings=CONTEXT_SETTINGS)
 @click.pass_context
-def phases(ctx):
-    """Manage project phases and entity assignments"""
+def horizons(ctx):
+    """Manage project horizons and entity assignments"""
     pass
 
 
-@phases.command(name='list')
+@horizons.command(name='list')
 @click.pass_context
-def phases_list(ctx):
-    """Show all phases with their entities grouped by phase
+def horizons_list(ctx):
+    """Show all horizons with their entities grouped by horizon
 
     Examples:
-        know phases
-        know phases list
+        know horizons
+        know horizons list
     """
     import re
     import subprocess
@@ -5590,14 +5590,14 @@ def phases_list(ctx):
     graph_data = ctx.obj['graph'].load()
 
     if 'meta' not in graph_data or 'phases' not in graph_data['meta']:
-        console.print("[yellow]No phases defined in meta.phases[/yellow]")
+        console.print("[yellow]No horizons defined in meta.phases[/yellow]")
         return
 
-    phases_data = graph_data['meta']['phases']
+    horizons_data = graph_data['meta']['phases']
     phases_metadata = graph_data['meta'].get('phases_metadata', {})
 
-    if not phases_data:
-        console.print("[yellow]No phases defined[/yellow]")
+    if not horizons_data:
+        console.print("[yellow]No horizons defined[/yellow]")
         return
 
     def count_todos(entity_id):
@@ -5644,9 +5644,9 @@ def phases_list(ctx):
     total_completed = 0
     total_tasks = 0
 
-    # Print each phase
-    for phase_key, phase_entities in phases_data.items():
-        # Skip phases_metadata if it somehow ended up in phases dict
+    # Print each horizon
+    for phase_key, phase_entities in horizons_data.items():
+        # Skip phases_metadata if it somehow ended up in horizons dict
         if phase_key == 'phases_metadata':
             continue
 
@@ -5770,23 +5770,23 @@ def phases_list(ctx):
     console.print(f"[dim]Legend: ✅ completed  🔄 in-progress  🔧 changes-planned  📋 planned  ⚪ no status[/dim]")
 
 
-@phases.command(name='add')
-@click.argument('phase_id')
+@horizons.command(name='add')
+@click.argument('horizon_id')
 @click.argument('entity_id')
 @click.option('--status', '-s', default='build-ready', help='Lifecycle status (build-ready, in-progress, etc.)')
 @click.pass_context
-def phases_add(ctx, phase_id, entity_id, status):
-    """Add an entity to a phase
+def horizons_add(ctx, horizon_id, entity_id, status):
+    """Add an entity to a horizon
 
     Examples:
-        know phases add I feature:auth
-        know phases add II feature:checkout --status in-progress
+        know horizons add I feature:auth
+        know horizons add II feature:checkout --status in-progress
     """
-    # Validate phase - Roman numerals only
+    # Validate horizon - Roman numerals only
     valid_phases = {'I', 'II', 'III', 'IV', 'V'}
-    if phase_id not in valid_phases:
-        console.print(f"[red]✗ Invalid phase: {phase_id}[/red]")
-        console.print(f"[dim]  Valid phases: {', '.join(sorted(valid_phases))}[/dim]")
+    if horizon_id not in valid_phases:
+        console.print(f"[red]✗ Invalid horizon: {horizon_id}[/red]")
+        console.print(f"[dim]  Valid horizons: {', '.join(sorted(valid_phases))}[/dim]")
         sys.exit(1)
 
     # Validate status - lifecycle states
@@ -5805,11 +5805,11 @@ def phases_add(ctx, phase_id, entity_id, status):
         console.print(f"[dim]  Valid: {', '.join(sorted(valid_statuses))}[/dim]")
         sys.exit(1)
 
-    # Validate entity type - only features allowed in phases
+    # Validate entity type - only features allowed in horizons
     if ':' in entity_id:
         entity_type = entity_id.split(':', 1)[0]
         if entity_type != 'feature':
-            console.print(f"[red]✗ Only features can be added to phases, not '{entity_type}'[/red]")
+            console.print(f"[red]✗ Only features can be added to horizons, not '{entity_type}'[/red]")
             sys.exit(1)
     else:
         console.print(f"[red]✗ Entity ID must include type prefix (e.g., feature:auth)[/red]")
@@ -5823,11 +5823,11 @@ def phases_add(ctx, phase_id, entity_id, status):
     if 'phases' not in graph_data['meta']:
         graph_data['meta']['phases'] = {}
 
-    # Initialize phase if it doesn't exist
-    if phase_id not in graph_data['meta']['phases']:
-        graph_data['meta']['phases'][phase_id] = {}
+    # Initialize horizon if it doesn't exist
+    if horizon_id not in graph_data['meta']['phases']:
+        graph_data['meta']['phases'][horizon_id] = {}
 
-    # Check if entity already exists in another phase
+    # Check if entity already exists in another horizon
     current_phase = None
     for pid, entities in graph_data['meta']['phases'].items():
         if entity_id in entities:
@@ -5835,45 +5835,45 @@ def phases_add(ctx, phase_id, entity_id, status):
             break
 
     if current_phase:
-        console.print(f"[yellow]⚠ Entity '{entity_id}' already in phase '{current_phase}'[/yellow]")
-        console.print(f"[yellow]  Use 'phases move' to move between phases[/yellow]")
+        console.print(f"[yellow]⚠ Entity '{entity_id}' already in horizon '{current_phase}'[/yellow]")
+        console.print(f"[yellow]  Use 'horizons move' to move between horizons[/yellow]")
         sys.exit(1)
 
-    # Add entity to phase
-    graph_data['meta']['phases'][phase_id][entity_id] = {'status': status}
+    # Add entity to horizon
+    graph_data['meta']['phases'][horizon_id][entity_id] = {'status': status}
 
     # Save graph
     if ctx.obj['graph'].save_graph(graph_data):
-        console.print(f"[green]✓ Added '{entity_id}' to phase '{phase_id}' with status '{status}'[/green]")
+        console.print(f"[green]✓ Added '{entity_id}' to horizon '{horizon_id}' with status '{status}'[/green]")
     else:
         console.print(f"[red]✗ Failed to save graph[/red]")
         sys.exit(1)
 
 
-@phases.command(name='move')
+@horizons.command(name='move')
 @click.argument('entity_id')
-@click.argument('phase_id')
+@click.argument('horizon_id')
 @click.option('--status', '-s', default=None, help='Update status (pending, in-progress, complete)')
 @click.pass_context
-def phases_move(ctx, entity_id, phase_id, status):
-    """Move an entity to a different phase
+def horizons_move(ctx, entity_id, horizon_id, status):
+    """Move an entity to a different horizon
 
     Examples:
-        know phases move feature:auth done
-        know phases move feature:checkout II --status in-progress
+        know horizons move feature:auth done
+        know horizons move feature:checkout II --status in-progress
     """
-    # Validate phase - Roman numerals only
+    # Validate horizon - Roman numerals only
     valid_phases = {'I', 'II', 'III', 'IV', 'V'}
-    if phase_id not in valid_phases:
-        console.print(f"[red]✗ Invalid phase: {phase_id}[/red]")
-        console.print(f"[dim]  Valid phases: {', '.join(sorted(valid_phases))}[/dim]")
+    if horizon_id not in valid_phases:
+        console.print(f"[red]✗ Invalid horizon: {horizon_id}[/red]")
+        console.print(f"[dim]  Valid horizons: {', '.join(sorted(valid_phases))}[/dim]")
         sys.exit(1)
 
-    # Validate entity type - only features allowed in phases
+    # Validate entity type - only features allowed in horizons
     if ':' in entity_id:
         entity_type = entity_id.split(':', 1)[0]
         if entity_type != 'feature':
-            console.print(f"[red]✗ Only features can be moved between phases, not '{entity_type}'[/red]")
+            console.print(f"[red]✗ Only features can be moved between horizons, not '{entity_type}'[/red]")
             sys.exit(1)
     else:
         console.print(f"[red]✗ Entity ID must include type prefix (e.g., feature:auth)[/red]")
@@ -5899,10 +5899,10 @@ def phases_move(ctx, entity_id, phase_id, status):
     graph_data = ctx.obj['graph'].load()
 
     if 'meta' not in graph_data or 'phases' not in graph_data['meta']:
-        console.print("[red]✗ No phases defined in graph[/red]")
+        console.print("[red]✗ No horizons defined in graph[/red]")
         sys.exit(1)
 
-    # Find current phase
+    # Find current horizon
     current_phase = None
     current_status = None
     for pid, entities in graph_data['meta']['phases'].items():
@@ -5913,24 +5913,24 @@ def phases_move(ctx, entity_id, phase_id, status):
             break
 
     if not current_phase:
-        console.print(f"[yellow]⚠ Entity '{entity_id}' not found in any phase[/yellow]")
-        console.print(f"[yellow]  Use 'phases add' to add it first[/yellow]")
+        console.print(f"[yellow]⚠ Entity '{entity_id}' not found in any horizon[/yellow]")
+        console.print(f"[yellow]  Use 'horizons add' to add it first[/yellow]")
         sys.exit(1)
 
-    # Remove from current phase
+    # Remove from current horizon
     del graph_data['meta']['phases'][current_phase][entity_id]
 
-    # Initialize target phase if it doesn't exist
-    if phase_id not in graph_data['meta']['phases']:
-        graph_data['meta']['phases'][phase_id] = {}
+    # Initialize target horizon if it doesn't exist
+    if horizon_id not in graph_data['meta']['phases']:
+        graph_data['meta']['phases'][horizon_id] = {}
 
-    # Add to new phase with updated or preserved status
+    # Add to new horizon with updated or preserved status
     new_status = status if status else current_status
-    graph_data['meta']['phases'][phase_id][entity_id] = {'status': new_status}
+    graph_data['meta']['phases'][horizon_id][entity_id] = {'status': new_status}
 
     # Save graph
     if ctx.obj['graph'].save_graph(graph_data):
-        console.print(f"[green]✓ Moved '{entity_id}' from '{current_phase}' to '{phase_id}'[/green]")
+        console.print(f"[green]✓ Moved '{entity_id}' from '{current_phase}' to '{horizon_id}'[/green]")
         if status:
             console.print(f"[green]  Status updated to '{new_status}'[/green]")
 
@@ -5949,22 +5949,22 @@ def phases_move(ctx, entity_id, phase_id, status):
         sys.exit(1)
 
 
-@phases.command(name='status')
+@horizons.command(name='status')
 @click.argument('entity_id')
 @click.argument('status_value')
 @click.pass_context
-def phases_status(ctx, entity_id, status_value):
-    """Update the status of an entity in its current phase
+def horizons_status(ctx, entity_id, status_value):
+    """Update the status of an entity in its current horizon
 
     Examples:
-        know phases status feature:auth in-progress
-        know phases status feature:checkout complete
+        know horizons status feature:auth in-progress
+        know horizons status feature:checkout complete
     """
-    # Validate entity type - only features allowed in phases
+    # Validate entity type - only features allowed in horizons
     if ':' in entity_id:
         entity_type = entity_id.split(':', 1)[0]
         if entity_type != 'feature':
-            console.print(f"[red]✗ Only features can have phase status updates, not '{entity_type}'[/red]")
+            console.print(f"[red]✗ Only features can have horizon status updates, not '{entity_type}'[/red]")
             sys.exit(1)
     else:
         console.print(f"[red]✗ Entity ID must include type prefix (e.g., feature:auth)[/red]")
@@ -5973,10 +5973,10 @@ def phases_status(ctx, entity_id, status_value):
     graph_data = ctx.obj['graph'].load()
 
     if 'meta' not in graph_data or 'phases' not in graph_data['meta']:
-        console.print("[red]✗ No phases defined in graph[/red]")
+        console.print("[red]✗ No horizons defined in graph[/red]")
         sys.exit(1)
 
-    # Find entity in phases
+    # Find entity in horizons
     found = False
     for phase_id, entities in graph_data['meta']['phases'].items():
         if entity_id in entities:
@@ -5984,31 +5984,31 @@ def phases_status(ctx, entity_id, status_value):
             found = True
 
             if ctx.obj['graph'].save_graph(graph_data):
-                console.print(f"[green]✓ Updated '{entity_id}' status to '{status_value}' in phase '{phase_id}'[/green]")
+                console.print(f"[green]✓ Updated '{entity_id}' status to '{status_value}' in horizon '{phase_id}'[/green]")
             else:
                 console.print(f"[red]✗ Failed to save graph[/red]")
                 sys.exit(1)
             break
 
     if not found:
-        console.print(f"[yellow]⚠ Entity '{entity_id}' not found in any phase[/yellow]")
-        console.print(f"[yellow]  Use 'phases add' to add it first[/yellow]")
+        console.print(f"[yellow]⚠ Entity '{entity_id}' not found in any horizon[/yellow]")
+        console.print(f"[yellow]  Use 'horizons add' to add it first[/yellow]")
         sys.exit(1)
 
 
-@phases.command(name='remove')
+@horizons.command(name='remove')
 @click.argument('entity_id')
 @click.pass_context
-def phases_remove(ctx, entity_id):
-    """Remove an entity from all phases
+def horizons_remove(ctx, entity_id):
+    """Remove an entity from all horizons
 
     Examples:
-        know phases remove feature:cancelled
+        know horizons remove feature:cancelled
     """
     graph_data = ctx.obj['graph'].load()
 
     if 'meta' not in graph_data or 'phases' not in graph_data['meta']:
-        console.print("[red]✗ No phases defined in graph[/red]")
+        console.print("[red]✗ No horizons defined in graph[/red]")
         sys.exit(1)
 
     # Find and remove entity
@@ -6023,12 +6023,12 @@ def phases_remove(ctx, entity_id):
 
     if removed:
         if ctx.obj['graph'].save_graph(graph_data):
-            console.print(f"[green]✓ Removed '{entity_id}' from phase '{removed_from}'[/green]")
+            console.print(f"[green]✓ Removed '{entity_id}' from horizon '{removed_from}'[/green]")
         else:
             console.print(f"[red]✗ Failed to save graph[/red]")
             sys.exit(1)
     else:
-        console.print(f"[yellow]⚠ Entity '{entity_id}' not found in any phase[/yellow]")
+        console.print(f"[yellow]⚠ Entity '{entity_id}' not found in any horizon[/yellow]")
         sys.exit(1)
 
 
