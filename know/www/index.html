@@ -307,7 +307,7 @@ textarea { resize: vertical; }
   justify-content: space-between;
   border-bottom: 1px solid var(--ridge);
 }
-.column-header .phase-name {
+.column-header .horizon-name {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;
   font-weight: 600;
@@ -1042,19 +1042,19 @@ function getParentsOf(graph, id) {
   return parents;
 }
 
-function getPhaseInfo(graph) {
-  const phases = {};
+function getHorizonInfo(graph) {
+  const horizons = {};
   const assignments = {};
-  for (const [phaseId, phaseEntities] of Object.entries(graph.meta?.phases || {})) {
-    phases[phaseId] = { id: phaseId, label: phaseId };
-    if (typeof phaseEntities === 'object') {
-      for (const [entityId, info] of Object.entries(phaseEntities)) {
+  for (const [horizonId, horizonEntities] of Object.entries(graph.meta?.horizons || {})) {
+    horizons[horizonId] = { id: horizonId, label: horizonId };
+    if (typeof horizonEntities === 'object') {
+      for (const [entityId, info] of Object.entries(horizonEntities)) {
         if (entityId === '_meta') continue;
-        assignments[entityId] = { phase: phaseId, status: info?.status || phaseId };
+        assignments[entityId] = { horizon: horizonId, status: info?.status || horizonId };
       }
     }
   }
-  return { phases, assignments };
+  return { horizons, assignments };
 }
 
 function countDepsByType(graph, id) {
@@ -1173,15 +1173,15 @@ function FeatureCard({ feature, graph, selected, onClick }) {
   </div>`;
 }
 
-function KanbanColumn({ phase, features, graph, selectedId, onSelect, onDrop }) {
+function KanbanColumn({ horizon, features, graph, selectedId, onSelect, onDrop }) {
   const [dragOver, setDragOver] = useState(false);
 
   return html`<div class="column ${dragOver ? 'drag-over' : ''}"
     onDragOver=${(e) => { e.preventDefault(); setDragOver(true); }}
     onDragLeave=${() => setDragOver(false)}
-    onDrop=${(e) => { e.preventDefault(); setDragOver(false); const id = e.dataTransfer.getData('text/plain'); if (id) onDrop(id, phase.id); }}>
+    onDrop=${(e) => { e.preventDefault(); setDragOver(false); const id = e.dataTransfer.getData('text/plain'); if (id) onDrop(id, horizon.id); }}>
     <div class="column-header">
-      <span class="phase-name">${phase.label}</span>
+      <span class="horizon-name">${horizon.label}</span>
       <span class="count">${features.length}</span>
     </div>
     <div class="column-body">
@@ -1603,10 +1603,10 @@ function App() {
     if (type === 'objective') setFilterObjective(value);
   };
 
-  const handleDrop = async (featureId, phaseId) => {
+  const handleDrop = async (featureId, horizonId) => {
     try {
-      const result = await api.changePhase(featureId, phaseId);
-      handleMutate(result, `Moved ${entityKey(featureId)} → ${phaseId}`);
+      const result = await api.changeHorizon(featureId, horizonId);
+      handleMutate(result, `Moved ${entityKey(featureId)} → ${horizonId}`);
     } catch (e) { handleMutate(null, null, e.message); }
   };
 
@@ -1627,7 +1627,7 @@ function App() {
     <div class="loading-dots"><span /><span /><span /></div>
   </div>`;
 
-  const { phases, assignments } = getPhaseInfo(graph);
+  const { horizons, assignments } = getHorizonInfo(graph);
   const features = getAllFeatures(graph);
 
   let visibleFeatures = features;
@@ -1642,21 +1642,21 @@ function App() {
     visibleFeatures = visibleFeatures.filter(f => userFeatures.has(f.id));
   }
 
-  // Reverse phase order: highest roman numeral first, done/unphased at right
-  const phaseKeys = Object.keys(phases);
-  const sortedPhaseKeys = [...phaseKeys].sort((a, b) => {
+  // Reverse horizon order: highest roman numeral first, done/unphased at right
+  const horizonKeys = Object.keys(horizons);
+  const sortedHorizonKeys = [...horizonKeys].sort((a, b) => {
     // Roman numeral sort: V, IV, III, II, I (descending)
     const romanVal = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7, VIII: 8, IX: 9, X: 10 };
     const va = romanVal[a] || 0;
     const vb = romanVal[b] || 0;
     return vb - va; // descending
   });
-  const columns = sortedPhaseKeys.map(pid => ({
-    phase: phases[pid],
-    features: visibleFeatures.filter(f => assignments[f.id]?.phase === pid)
+  const columns = sortedHorizonKeys.map(pid => ({
+    horizon: horizons[pid],
+    features: visibleFeatures.filter(f => assignments[f.id]?.horizon === pid)
   }));
   const unphased = visibleFeatures.filter(f => !assignments[f.id]);
-  if (unphased.length > 0) columns.push({ phase: { id: '_unphased', label: 'Unphased' }, features: unphased });
+  if (unphased.length > 0) columns.push({ horizon: { id: '_unphased', label: 'No Horizon' }, features: unphased });
 
   return html`
     <${MasterNav} graph=${graph} filterUser=${filterUser} filterObjective=${filterObjective}
@@ -1667,7 +1667,7 @@ function App() {
     ${showBanner ? html`<${ValidationBanner} issues=${validationIssues} onDismiss=${() => setShowBanner(false)} />` : null}
     <div class="kanban">
       ${columns.map(col => html`
-        <${KanbanColumn} phase=${col.phase} features=${col.features} graph=${graph}
+        <${KanbanColumn} horizon=${col.horizon} features=${col.features} graph=${graph}
           selectedId=${selectedId} onSelect=${setSelectedId} onDrop=${handleDrop} />
       `)}
     </div>
