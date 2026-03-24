@@ -231,7 +231,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         features = list(graph.get('entities', {}).get('feature', {}).keys())
         actions = list(graph.get('entities', {}).get('action', {}).keys())
         components = list(graph.get('entities', {}).get('component', {}).keys())
-        phases = list(graph.get('meta', {}).get('phases', {}).keys())
+        horizons = list(graph.get('meta', {}).get('horizons', {}).keys())
 
         return (
             f"You are a helpful assistant embedded in the spec-dashboard for a project "
@@ -239,7 +239,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             f"- Features: {', '.join(features[:15]) or 'none'}\n"
             f"- Actions: {', '.join(actions[:15]) or 'none'}\n"
             f"- Components: {', '.join(components[:15]) or 'none'}\n"
-            f"- Phases: {', '.join(phases) or 'none'}\n\n"
+            f"- Horizons: {', '.join(horizons) or 'none'}\n\n"
             f"The graph file is at: {self.graph_path}\n"
             f"Project root: {self.project_cwd}\n\n"
             f"You can help users understand the spec-graph, suggest new entities, "
@@ -446,20 +446,20 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._mutation_response(['link', frm] + to_list, f"Link {frm} → {', '.join(to_list)}")
             return
 
-        if path == '/api/phase':
+        if path == '/api/horizon':
             entity_id = body.get('entity_id', '')
-            phase = body.get('phase', '')
-            if not entity_id or not phase:
-                self._json_response({"ok": False, "error": "entity_id and phase are required"}, status=400)
+            horizon = body.get('horizon', '')
+            if not entity_id or not horizon:
+                self._json_response({"ok": False, "error": "entity_id and horizon are required"}, status=400)
                 return
             before = self._read_graph()
             if "error" not in before:
-                _undo_stack.push(before, f"Move {entity_id} → phase {phase}")
-            ok, stdout, stderr = self._run_know(['phases', 'move', entity_id, phase])
-            if not ok and 'not found in any phase' in stderr:
-                ok, stdout, stderr = self._run_know(['phases', 'add', phase, entity_id])
+                _undo_stack.push(before, f"Move {entity_id} → horizon {horizon}")
+            ok, stdout, stderr = self._run_know(['horizons', 'move', entity_id, horizon])
+            if not ok and 'not found in any horizon' in stderr:
+                ok, stdout, stderr = self._run_know(['horizons', 'add', horizon, entity_id])
             if ok and body.get('status'):
-                self._run_know(['phases', 'status', entity_id, body['status']])
+                self._run_know(['horizons', 'status', entity_id, body['status']])
             graph = self._read_graph()
             if ok:
                 self._json_response({"ok": True, "graph": graph, "undo_available": len(_undo_stack) > 0})
