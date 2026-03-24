@@ -24,9 +24,18 @@ class GraphManager:
         self._nx_graph: Optional[nx.DiGraph] = None
         self._counterpart_graph: Optional['GraphManager'] = None
 
+    @staticmethod
+    def _migrate_phases_to_horizons(data: Dict[str, Any]) -> Dict[str, Any]:
+        """One-time migration: rename meta.phases → meta.horizons in loaded graph data."""
+        meta = data.get('meta', {})
+        if 'phases' in meta and 'horizons' not in meta:
+            meta['horizons'] = meta.pop('phases')
+            data['meta'] = meta
+        return data
+
     def get_graph(self) -> Dict[str, Any]:
         """Get the complete graph"""
-        return self.cache.get()
+        return self._migrate_phases_to_horizons(self.cache.get())
 
     def load(self) -> Dict[str, Any]:
         """Alias for get_graph() for backward compatibility"""
