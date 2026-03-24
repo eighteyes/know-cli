@@ -5664,7 +5664,7 @@ def horizons_list(ctx):
 
         # Print phase header
         console.print(f"\n[bold cyan]{'━' * 80}[/bold cyan]")
-        header = f"Phase {phase_key}: {phase_name} ({feature_count} features)"
+        header = f"Horizon {phase_key}: {phase_name} ({feature_count} features)"
         if phase_desc:
             header += f" - {phase_desc}"
         console.print(f"[bold cyan]{header}[/bold cyan]")

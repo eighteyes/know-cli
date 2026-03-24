@@ -1,7 +1,10 @@
 {
   "meta": {
     "version": "1.0.0",
-    "phases": {
+    "project": {
+      "name": "My Project"
+    },
+    "horizons": {
       "I": {
         "feature:workflow-branch-entity": {
           "status": "review-ready"
@@ -10,16 +13,10 @@
           "status": "build-ready"
         },
         "feature:spec-dashboard": {
-          "status": "review-ready"
+          "status": "in-progress"
         }
       },
       "II": {}
-    },
-    "project": {
-      "name": "My Project"
-    },
-    "phases.pending.feature:spec-dashboard.status": {
-      "pending": {}
     }
   },
   "references": {
