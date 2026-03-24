@@ -2006,7 +2006,7 @@ def graph_migrate_rules(ctx, target_rules, format, verbose):
         console.print(f"  Affected entities:   {impact['counts']['entities']}")
         console.print(f"  Affected links:      {impact['counts']['links']}")
         console.print(f"  Affected references: {impact['counts']['references']}")
-        console.print(f"  Affected phases:     {impact['counts']['phases']}")
+        console.print(f"  Affected horizons:   {impact['counts']['horizons']}")
         console.print()
 
         if verbose:
@@ -2026,10 +2026,10 @@ def graph_migrate_rules(ctx, target_rules, format, verbose):
                     console.print(f"  [red]{link['from']} → {link['to']}[/red] ({link['path']})")
                 console.print()
 
-            if impact['phases']:
-                console.print("[bold]Affected Phases:[/bold]")
-                for p in impact['phases']:
-                    console.print(f"  [yellow]{p['phase']}[/yellow]: {p['entity_id']}")
+            if impact['horizons']:
+                console.print("[bold]Affected Horizons:[/bold]")
+                for p in impact['horizons']:
+                    console.print(f"  [yellow]{p['horizon']}[/yellow]: {p['entity_id']}")
                 console.print()
 
         # Migration Plan
@@ -3372,18 +3372,18 @@ def gen_docs(ctx, feature_id, compare):
 
     # Get meta data
     meta = graph_data.get('meta', {})
-    phases = meta.get('phases', {})
+    horizons = meta.get('horizons', {})
     requirements = meta.get('requirements', {})
     qa_sessions = meta.get('qa_sessions', {})
     architecture = meta.get('architecture', {})
 
-    # Find feature phase and status
-    feature_phase = None
+    # Find feature horizon and status
+    feature_horizon = None
     feature_status = None
-    for phase_name, phase_features in phases.items():
-        if feature_id in phase_features or feature_key in phase_features:
-            feature_phase = phase_name
-            phase_data = phase_features.get(feature_id) or phase_features.get(feature_key)
+    for horizon_name, horizon_features in horizons.items():
+        if feature_id in horizon_features or feature_key in horizon_features:
+            feature_horizon = horizon_name
+            phase_data = horizon_features.get(feature_id) or horizon_features.get(feature_key)
             if isinstance(phase_data, dict):
                 feature_status = phase_data.get('status', 'unknown')
             break
@@ -3460,12 +3460,12 @@ def gen_docs(ctx, feature_id, compare):
 
     # Add status
     overview_content += f"\n## Status\n\n"
-    if feature_phase:
-        overview_content += f"- **Phase**: {feature_phase}\n"
+    if feature_horizon:
+        overview_content += f"- **Horizon**: {feature_horizon}\n"
     if feature_status:
         overview_content += f"- **Status**: {feature_status}\n"
-    if not feature_phase and not feature_status:
-        overview_content += "- **Phase**: Not yet scheduled\n"
+    if not feature_horizon and not feature_status:
+        overview_content += "- **Horizon**: Not yet scheduled\n"
 
     # Write overview.md
     overview_path = output_dir / "overview.md"
@@ -4351,7 +4351,7 @@ def feature_status(ctx, feature_id, json_output):
     """Show feature lifecycle status (planned, implemented, reviewed)
 
     Virtual flags computed from graph state:
-    - planned: Feature exists in meta.phases
+    - planned: Feature exists in meta.horizons
     - implemented: Code-graph links exist for this feature
     - reviewed: Git commit with [feature:id] merged to main
 
@@ -4371,19 +4371,19 @@ def feature_status(ctx, feature_id, json_output):
     graph_data = graph.load()
 
     # === CHECK PLANNED ===
-    # Feature exists in meta.phases (any phase)
-    phases = graph_data.get('meta', {}).get('phases', {})
+    # Feature exists in meta.horizons (any horizon)
+    horizons = graph_data.get('meta', {}).get('horizons', {})
     planned = False
-    current_phase = None
-    phase_status = None
+    current_horizon = None
+    horizon_status = None
 
-    for phase_name, phase_features in phases.items():
-        if feature_id in phase_features:
+    for horizon_name, horizon_features in horizons.items():
+        if feature_id in horizon_features:
             planned = True
-            current_phase = phase_name
-            phase_data = phase_features[feature_id]
+            current_horizon = horizon_name
+            phase_data = horizon_features[feature_id]
             if isinstance(phase_data, dict):
-                phase_status = phase_data.get('status', 'unknown')
+                horizon_status = phase_data.get('status', 'unknown')
             break
 
     # === CHECK IMPLEMENTED ===
@@ -4454,8 +4454,8 @@ def feature_status(ctx, feature_id, json_output):
             'planned': planned,
             'implemented': implemented,
             'reviewed': reviewed,
-            'phase': current_phase,
-            'phase_status': phase_status,
+            'horizon': current_horizon,
+            'horizon_status': horizon_status,
             'code_modules': code_modules,
             'merge_commit': merge_commit,
             'merge_date': merge_date
@@ -4468,10 +4468,10 @@ def feature_status(ctx, feature_id, json_output):
         planned_icon = "✅" if planned else "⏳"
         planned_text = f"[green]Yes[/green]" if planned else "[dim]No[/dim]"
         console.print(f"{planned_icon} [bold]Planned:[/bold] {planned_text}")
-        if planned and current_phase:
-            console.print(f"   Phase: {current_phase}")
-            if phase_status:
-                console.print(f"   Status: {phase_status}")
+        if planned and current_horizon:
+            console.print(f"   Horizon: {current_horizon}")
+            if horizon_status:
+                console.print(f"   Status: {horizon_status}")
 
         # Implemented
         impl_icon = "✅" if implemented else "⏳"
@@ -5030,21 +5030,21 @@ def feature_review(ctx, feature_name, skip_validation, check_only):
         console.print()
 
     # 5. Meta Status
-    phases = graph_data.get('meta', {}).get('phases', {})
-    current_phase = None
+    horizons = graph_data.get('meta', {}).get('horizons', {})
+    current_horizon = None
     current_status = None
-    for phase_id, entities in phases.items():
+    for horizon_id, entities in horizons.items():
         if feature_id in entities:
-            current_phase = phase_id
+            current_horizon = horizon_id
             current_status = entities[feature_id].get('status', 'unknown')
             break
 
     console.print("[bold]Meta Status:[/bold]")
-    if current_phase:
-        console.print(f"  Phase: {current_phase}")
+    if current_horizon:
+        console.print(f"  Horizon: {current_horizon}")
         console.print(f"  Status: {current_status}")
     else:
-        console.print("  [dim]Not assigned to any phase[/dim]")
+        console.print("  [dim]Not assigned to any horizon[/dim]")
     console.print()
 
     # 6. Readiness Summary
@@ -5330,25 +5330,25 @@ def feature_done(ctx, feature_name, skip_todos, skip_archive, auto_tag):
     else:
         console.print("[dim]No commits to tag[/dim]")
 
-    # 4. Remove from phases (done = out of phases entirely)
+    # 4. Remove from horizons (done = out of horizons entirely)
     graph_data = ctx.obj['graph'].load()
     entity_id = f"feature:{feature_name}"
 
-    # Find and remove from current phase
-    current_phase = None
-    for phase_id, entities in graph_data.get('meta', {}).get('phases', {}).items():
+    # Find and remove from current horizon
+    current_horizon = None
+    for horizon_id, entities in graph_data.get('meta', {}).get('horizons', {}).items():
         if entity_id in entities:
-            current_phase = phase_id
-            del graph_data['meta']['phases'][phase_id][entity_id]
+            current_horizon = horizon_id
+            del graph_data['meta']['horizons'][horizon_id][entity_id]
             break
 
     if ctx.obj['graph'].save_graph(graph_data):
-        if current_phase:
-            console.print(f"[green]✓ Removed from phase '{current_phase}'[/green]")
+        if current_horizon:
+            console.print(f"[green]✓ Removed from horizon '{current_horizon}'[/green]")
         else:
-            console.print(f"[dim]Feature was not in any phase[/dim]")
+            console.print(f"[dim]Feature was not in any horizon[/dim]")
     else:
-        console.print(f"[red]✗ Failed to update phases[/red]")
+        console.print(f"[red]✗ Failed to update horizons[/red]")
 
     # 5. Archive feature directory
     if not skip_archive:
@@ -5589,11 +5589,11 @@ def horizons_list(ctx):
 
     graph_data = ctx.obj['graph'].load()
 
-    if 'meta' not in graph_data or 'phases' not in graph_data['meta']:
-        console.print("[yellow]No horizons defined in meta.phases[/yellow]")
+    if 'meta' not in graph_data or 'horizons' not in graph_data['meta']:
+        console.print("[yellow]No horizons defined in meta.horizons[/yellow]")
         return
 
-    horizons_data = graph_data['meta']['phases']
+    horizons_data = graph_data['meta']['horizons']
     phases_metadata = graph_data['meta'].get('phases_metadata', {})
 
     if not horizons_data:
@@ -5817,19 +5817,19 @@ def horizons_add(ctx, horizon_id, entity_id, status):
 
     graph_data = ctx.obj['graph'].load()
 
-    # Initialize meta.phases if it doesn't exist
+    # Initialize meta.horizons if it doesn't exist
     if 'meta' not in graph_data:
         graph_data['meta'] = {}
-    if 'phases' not in graph_data['meta']:
-        graph_data['meta']['phases'] = {}
+    if 'horizons' not in graph_data['meta']:
+        graph_data['meta']['horizons'] = {}
 
     # Initialize horizon if it doesn't exist
-    if horizon_id not in graph_data['meta']['phases']:
-        graph_data['meta']['phases'][horizon_id] = {}
+    if horizon_id not in graph_data['meta']['horizons']:
+        graph_data['meta']['horizons'][horizon_id] = {}
 
     # Check if entity already exists in another horizon
     current_phase = None
-    for pid, entities in graph_data['meta']['phases'].items():
+    for pid, entities in graph_data['meta']['horizons'].items():
         if entity_id in entities:
             current_phase = pid
             break
@@ -5840,7 +5840,7 @@ def horizons_add(ctx, horizon_id, entity_id, status):
         sys.exit(1)
 
     # Add entity to horizon
-    graph_data['meta']['phases'][horizon_id][entity_id] = {'status': status}
+    graph_data['meta']['horizons'][horizon_id][entity_id] = {'status': status}
 
     # Save graph
     if ctx.obj['graph'].save_graph(graph_data):
@@ -5898,14 +5898,14 @@ def horizons_move(ctx, entity_id, horizon_id, status):
 
     graph_data = ctx.obj['graph'].load()
 
-    if 'meta' not in graph_data or 'phases' not in graph_data['meta']:
+    if 'meta' not in graph_data or 'horizons' not in graph_data['meta']:
         console.print("[red]✗ No horizons defined in graph[/red]")
         sys.exit(1)
 
     # Find current horizon
     current_phase = None
     current_status = None
-    for pid, entities in graph_data['meta']['phases'].items():
+    for pid, entities in graph_data['meta']['horizons'].items():
         if entity_id in entities:
             current_phase = pid
             entity_meta = entities[entity_id]
@@ -5918,15 +5918,15 @@ def horizons_move(ctx, entity_id, horizon_id, status):
         sys.exit(1)
 
     # Remove from current horizon
-    del graph_data['meta']['phases'][current_phase][entity_id]
+    del graph_data['meta']['horizons'][current_phase][entity_id]
 
     # Initialize target horizon if it doesn't exist
-    if horizon_id not in graph_data['meta']['phases']:
-        graph_data['meta']['phases'][horizon_id] = {}
+    if horizon_id not in graph_data['meta']['horizons']:
+        graph_data['meta']['horizons'][horizon_id] = {}
 
     # Add to new horizon with updated or preserved status
     new_status = status if status else current_status
-    graph_data['meta']['phases'][horizon_id][entity_id] = {'status': new_status}
+    graph_data['meta']['horizons'][horizon_id][entity_id] = {'status': new_status}
 
     # Save graph
     if ctx.obj['graph'].save_graph(graph_data):
@@ -5972,15 +5972,15 @@ def horizons_status(ctx, entity_id, status_value):
 
     graph_data = ctx.obj['graph'].load()
 
-    if 'meta' not in graph_data or 'phases' not in graph_data['meta']:
+    if 'meta' not in graph_data or 'horizons' not in graph_data['meta']:
         console.print("[red]✗ No horizons defined in graph[/red]")
         sys.exit(1)
 
     # Find entity in horizons
     found = False
-    for phase_id, entities in graph_data['meta']['phases'].items():
+    for phase_id, entities in graph_data['meta']['horizons'].items():
         if entity_id in entities:
-            graph_data['meta']['phases'][phase_id][entity_id] = {'status': status_value}
+            graph_data['meta']['horizons'][phase_id][entity_id] = {'status': status_value}
             found = True
 
             if ctx.obj['graph'].save_graph(graph_data):
@@ -6007,16 +6007,16 @@ def horizons_remove(ctx, entity_id):
     """
     graph_data = ctx.obj['graph'].load()
 
-    if 'meta' not in graph_data or 'phases' not in graph_data['meta']:
+    if 'meta' not in graph_data or 'horizons' not in graph_data['meta']:
         console.print("[red]✗ No horizons defined in graph[/red]")
         sys.exit(1)
 
     # Find and remove entity
     removed = False
     removed_from = None
-    for phase_id, entities in graph_data['meta']['phases'].items():
+    for phase_id, entities in graph_data['meta']['horizons'].items():
         if entity_id in entities:
-            del graph_data['meta']['phases'][phase_id][entity_id]
+            del graph_data['meta']['horizons'][phase_id][entity_id]
             removed = True
             removed_from = phase_id
             break

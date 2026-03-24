@@ -191,17 +191,17 @@ class RulesDiffAnalyzer:
     def analyze_impact(self, diff: Dict[str, Any]) -> Dict[str, Any]:
         """Scan graph for nodes affected by the rules diff.
 
-        Returns counts and lists of affected entities, links, references, and phases.
+        Returns counts and lists of affected entities, links, references, and horizons.
         """
         entities = self.graph_data.get('entities', {})
         graph = self.graph_data.get('graph', {})
         references = self.graph_data.get('references', {})
-        phases = self.graph_data.get('meta', {}).get('phases', {})
+        horizons = self.graph_data.get('meta', {}).get('horizons', {})
 
         affected_entities = []
         affected_links = []
         affected_references = []
-        affected_phases = []
+        affected_horizons = []
 
         removed_entity_types = set(diff['entity_types']['removed'])
         removed_paths = set(tuple(p) for p in diff['dependency_paths']['removed'])
@@ -253,14 +253,14 @@ class RulesDiffAnalyzer:
                         'key': key,
                     })
 
-        # Scan phases for affected entity IDs
+        # Scan horizons for affected entity IDs
         affected_entity_ids = {e['id'] for e in affected_entities}
-        for phase_name, phase_entries in phases.items():
-            if isinstance(phase_entries, dict):
-                for entity_id in phase_entries:
+        for horizon_name, horizon_entries in horizons.items():
+            if isinstance(horizon_entries, dict):
+                for entity_id in horizon_entries:
                     if entity_id in affected_entity_ids:
-                        affected_phases.append({
-                            'phase': phase_name,
+                        affected_horizons.append({
+                            'horizon': horizon_name,
                             'entity_id': entity_id,
                         })
 
@@ -268,12 +268,12 @@ class RulesDiffAnalyzer:
             'entities': affected_entities,
             'links': affected_links,
             'references': affected_references,
-            'phases': affected_phases,
+            'horizons': affected_horizons,
             'counts': {
                 'entities': len(affected_entities),
                 'links': len(affected_links),
                 'references': len(affected_references),
-                'phases': len(affected_phases),
+                'horizons': len(affected_horizons),
             },
         }
 
@@ -349,12 +349,12 @@ class RulesDiffAnalyzer:
                     'entity_id': entity['id'],
                 })
 
-        # Phase 4: Update phases metadata
-        for phase_entry in impact['phases']:
+        # Phase 4: Update horizons metadata
+        for horizon_entry in impact['horizons']:
             steps.append({
                 'phase': 'update-phases',
-                'description': f"Remove {phase_entry['entity_id']} from phase '{phase_entry['phase']}'",
-                'command': f"know meta phases remove {phase_entry['phase']} {phase_entry['entity_id']}",
+                'description': f"Remove {horizon_entry['entity_id']} from horizon '{horizon_entry['horizon']}'",
+                'command': f"know horizons remove {horizon_entry['horizon']} {horizon_entry['entity_id']}",
                 'type': 'phase-update',
             })
 
@@ -395,7 +395,7 @@ class RulesDiffAnalyzer:
                 'affected_entities': impact['counts']['entities'],
                 'affected_links': impact['counts']['links'],
                 'affected_references': impact['counts']['references'],
-                'affected_phases': impact['counts']['phases'],
+                'affected_horizons': impact['counts']['horizons'],
                 'total_steps': len(plan['steps']),
             },
             'diff': diff,
