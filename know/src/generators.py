@@ -58,7 +58,7 @@ class SpecGenerator:
         # Phase and Status from meta
         phase_info = self._get_entity_phase_status(entity_id)
         if phase_info:
-            lines.append(f"**Phase:** {phase_info.get('phase', 'N/A')}")
+            lines.append(f"**Horizon:** {phase_info.get('horizon', 'N/A')}")
             lines.append(f"**Status:** {phase_info.get('status', 'N/A')}")
             lines.append("")
 
@@ -176,11 +176,11 @@ class SpecGenerator:
         data = self.graph.get_graph()
         horizons = data.get('meta', {}).get('horizons', {})
 
-        for horizon_name, phase_entities in horizons.items():
-            if entity_id in phase_entities:
+        for horizon_name, horizon_entries in horizons.items():
+            if entity_id in horizon_entries:
                 return {
-                    'phase': horizon_name,
-                    'status': phase_entities[entity_id].get('status', 'unknown')
+                    'horizon': horizon_name,
+                    'status': horizon_entries[entity_id].get('status', 'unknown')
                 }
         return {}
 
@@ -606,7 +606,7 @@ class SpecGenerator:
         # Get phase and status
         phase_info = self._get_entity_phase_status(feature_id)
         if phase_info:
-            ET.SubElement(meta_el, 'phase').text = phase_info.get('phase', 'pending')
+            ET.SubElement(meta_el, 'horizon').text = phase_info.get('horizon', 'pending')
             ET.SubElement(meta_el, 'status').text = phase_info.get('status', 'incomplete')
 
         # CONTEXT section - full graph context to minimize agent guessing
