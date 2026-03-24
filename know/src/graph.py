@@ -355,7 +355,7 @@ class GraphManager:
             return None
 
         # Resolve relative path from current graph's directory
-        current_graph_path = Path(self.cache.path)
+        current_graph_path = Path(self.cache.graph_path)
         if not Path(counterpart_path).is_absolute():
             counterpart_path = (current_graph_path.parent / counterpart_path).resolve()
 
@@ -391,7 +391,7 @@ class GraphManager:
         # Try to find the first valid entity reference
         counterpart_entities = counterpart.get_entities()
 
-        for key, value in link_data.items():
+        for value in link_data.values():
             if isinstance(value, str) and value in counterpart_entities:
                 return (value, counterpart_entities[value])
 
