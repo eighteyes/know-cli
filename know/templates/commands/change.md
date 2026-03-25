@@ -75,6 +75,11 @@ Create a structured change request for a feature (enhancement, improvement, or m
    - Question: "How will we know the change is complete? (List criteria)"
    - Collect as free text input
 
+8. **Alternatives considered** *(optional — skip if none)*:
+   - Question: "Were other approaches considered? If so, what were they and why was this chosen over them?"
+   - Collect as free text input, or skip if user says "no" / leaves blank
+   - This feeds the decisions log — only ask if the change involves a meaningful choice between options
+
 ### 3. Create Change File
 
 **Steps**:
@@ -113,6 +118,26 @@ Create a structured change request for a feature (enhancement, improvement, or m
 **Completed:** [Date]
 **Notes:** [Implementation details]
 ```
+
+### 3.5 Log Decision (if alternatives were provided)
+
+**Only run this step if the user answered the "alternatives considered" question.**
+
+Append to `.ai/know/decisions.md` (create the file if it doesn't exist):
+
+```markdown
+## YYYY-MM-DD — [Change title] ([feature])
+
+**Decision:** [one-sentence summary of what was chosen]
+
+**Rationale:** [why this change is needed — from step 2.4]
+
+**Alternatives considered:** [what else was on the table and why it was not chosen]
+
+**Change:** [feature] #NNN → `.ai/know/features/<feature>/changes/NNN-slug.md`
+```
+
+Do not log decisions without alternatives — if no alternatives were considered, the change file itself is sufficient record.
 
 ### 4. Create Change Requirement
 
@@ -169,6 +194,7 @@ Next steps:
 - New requirement in spec-graph: `requirement:<feature>-change-NNN`
 - Updated spec-graph status (set to in-progress if was done/review-ready)
 - Minimal feature directory (if feature was archived)
+- `.ai/know/decisions.md` entry appended (only when alternatives were considered)
 
 ---
 
@@ -213,5 +239,6 @@ Assistant: Found feature at .ai/know/features/user-authentication/
 - **Related to /know:review**: Changes can be created during review or independently
 
 ---
+`r3` - Added alternatives-considered question (step 2.8) and conditional decisions.md append (step 3.5); decisions only logged when tradeoffs exist
 `r2` - Replaced "changes-planned" with "in-progress"; added archived feature handling; graph is current state not original scope
 `r1`
