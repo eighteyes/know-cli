@@ -126,73 +126,88 @@ Also read `.ai/know/input.md` and any existing README/docs.
 
 **Step 2 — Launch 8 Task agents in a SINGLE message** (parallel):
 
+**Question format rule (for all agents):** Every question must be one of two formats:
+
+*Decision questions* (where options exist) — use MCQ format:
+```
+Q: [question]
+A) [option] — [tradeoff in ≤8 words]
+B) [option] — [tradeoff in ≤8 words]
+C) [option] — [tradeoff in ≤8 words]
+Rec: [letter] — [why in ≤10 words]
+```
+
+*Factual questions* (who/what/name) — use example-hint format:
+```
+Q: [question]
+e.g. [2-3 concrete examples relevant to this project type]
+Rec: [most likely answer based on project context]
+```
+
+The user will answer with a letter (A/B/C), "rec" to accept recommendation, or free text to override.
+
 **Agent 1 — Users & Objectives** (→ `user:*`, `objective:*` entities)
-> "You are helping build a spec-graph for a project described as: '[project description]'. Generate 5 questions whose answers will directly become `user` and `objective` graph entities. A `user` entity is a distinct persona with a name like `user:developer`, `user:admin`, `user:end-user`. An `objective` is what that user wants to accomplish, named like `objective:manage-data`, `objective:monitor-status`. Ask about: who are the distinct types of people using this system, what does each user type want to accomplish (their top 1-2 objectives), how do their goals or access levels differ, what does success look like for each user type, and are there secondary or system-level actors (e.g. cron jobs, webhooks) that need modeling. Format as a numbered list. Do NOT ask about scale, load, or performance."
+> "You are helping build a spec-graph for a project described as: '[project description]'. Generate 5 questions that will produce `user` and `objective` graph entities. Use MCQ format for decision questions, example-hint format for factual questions (see format rule). Cover: who are the distinct user personas, what does each persona want to accomplish (top objective), how do their access levels differ, are there non-human actors (cron jobs, webhooks), and what does success look like per persona. Do NOT ask about scale or performance. Include a Rec for every question."
 
 **Agent 2 — Features** (→ `feature:*` entities)
-> "You are helping build a spec-graph for a project described as: '[project description]'. Generate 5 questions whose answers will directly become `feature` entities. A `feature` is a named system capability that serves user objectives, like `feature:user-auth`, `feature:data-import`, `feature:report-generation`. Ask about: what are the top-level capabilities this system must provide, which capabilities are distinct enough to be separate named features, which features are essential vs optional for v1, which objectives does each feature serve, and are any features prerequisites for others. Format as a numbered list. Do NOT ask about scale, load, or performance."
+> "You are helping build a spec-graph for a project described as: '[project description]'. Generate 5 questions that will produce `feature` entities. Use MCQ format for decision questions, example-hint format for factual questions. Cover: top-level capabilities the system must provide, which are v1-essential vs later, which objectives each feature serves, whether any features are prerequisites, and how features should be scoped (broad vs narrow). Do NOT ask about scale or performance. Include a Rec for every question."
 
 **Agent 3 — Actions** (→ `action:*` entities)
-> "You are helping build a spec-graph for a project described as: '[project description]'. Generate 5 questions whose answers will directly become `action` entities. An `action` is a discrete, named thing a user does within a feature, like `action:login`, `action:upload-file`, `action:approve-request`, `action:export-report`. Ask about: for each major feature, what specific things does a user do step by step, what triggers each action (button click, form submit, schedule), what is the primary action of each feature, what are the supporting or secondary actions, and are any actions shared across multiple features. Format as a numbered list. Do NOT ask about scale, load, or performance."
+> "You are helping build a spec-graph for a project described as: '[project description]'. Generate 5 questions that will produce `action` entities. Use MCQ format for decision questions, example-hint format for factual questions. Cover: what discrete things users do within each feature, what triggers each action, what the primary action per feature is, whether any actions are shared across features, and what the happy-path sequence is. Do NOT ask about scale or performance. Include a Rec for every question."
 
 **Agent 4 — Components** (→ `component:*` entities)
-> "You are helping build a spec-graph for a project described as: '[project description]'. Generate 5 questions whose answers will directly become `component` entities. A `component` is a distinct implementation responsibility, like `component:auth-handler`, `component:file-processor`, `component:report-builder`, `component:notification-sender`. Ask about: what are the distinct implementation responsibilities this system needs, which responsibilities are isolated enough to be named components, what does each component receive as input and produce as output, which components are shared infrastructure vs feature-specific, and which components have side effects (external calls, writes, notifications). Format as a numbered list. Do NOT ask about scale, load, or performance."
+> "You are helping build a spec-graph for a project described as: '[project description]'. Generate 5 questions that will produce `component` entities. Use MCQ format for decision questions (e.g. monolith vs services, sync vs async), example-hint for factual. Cover: distinct implementation responsibilities, which are shared infrastructure vs feature-specific, what each component receives and produces, which have external side-effects, and how components should be layered. Include a Rec for every question."
 
 **Agent 5 — Data Models** (→ `data-model:*` references)
-> "You are helping build a spec-graph for a project described as: '[project description]'. Generate 5 questions whose answers will directly become `data-model` reference entries. Ask about: what are the primary data entities (name each and list 3-5 key fields), what are the relationships between those entities (one-to-one, one-to-many, many-to-many), what data must be persisted vs can be computed on the fly, which data entity is the most central and what is its lifecycle (created → updated → deleted/archived), and what data is owned by one feature vs shared across features. Format as a numbered list. Do NOT ask about scale, load, or performance."
+> "You are helping build a spec-graph for a project described as: '[project description]'. Generate 5 questions that will produce `data-model` references. Use MCQ for storage/schema decisions (e.g. relational vs document, normalized vs denormalized), example-hint for entity naming. Cover: primary data entities, relationships between them, what must be persisted vs computed, the most central entity's lifecycle, and data ownership per feature. Include a Rec for every question."
 
 **Agent 6 — Interfaces & API Contracts** (→ `interface:*`, `api-contract:*` references)
-> "You are helping build a spec-graph for a project described as: '[project description]'. Generate 5 questions whose answers will directly become `interface` and `api-contract` reference entries. Ask about: what are the main screens or views (name each and describe its primary content and user goal), what are the main API endpoints (path, method, key request/response fields), what data does each screen display and where does it come from, what forms exist and what fields do they contain, and how does the system expose or consume any external APIs. Format as a numbered list. Do NOT ask about scale, load, or performance."
+> "You are helping build a spec-graph for a project described as: '[project description]'. Generate 5 questions that will produce `interface` and `api-contract` references. Use MCQ for design decisions (REST vs GraphQL, SPA vs SSR, auth scheme), example-hint for screen/endpoint naming. Cover: main screens or views, primary API style, auth/session approach, key request/response shapes, and external API consumption or exposure. Include a Rec for every question."
 
 **Agent 7 — Business Logic & Security** (→ `business-logic:*`, `security-spec:*` references)
-> "You are helping build a spec-graph for a project described as: '[project description]'. Generate 5 questions whose answers will directly become `business-logic` and `security-spec` reference entries. Ask about: what are the non-obvious domain rules that govern system behavior (validation rules, approval gates, state machine transitions), who can access each feature and under what conditions (role-based, ownership-based), what data is sensitive and how must it be handled or protected, what audit trail or activity log is required, and what are the edge cases in the most complex user workflow. Format as a numbered list. Do NOT ask about scale, load, or performance."
+> "You are helping build a spec-graph for a project described as: '[project description]'. Generate 5 questions that will produce `business-logic` and `security-spec` references. Use MCQ for policy decisions (RBAC vs ABAC, audit level), example-hint for rule/domain naming. Cover: non-obvious domain rules (validation, approval gates, state transitions), access control model, sensitive data handling approach, audit trail requirements, and the hardest edge case. Include a Rec for every question."
 
 **Agent 8 — Configuration & Constraints** (→ `configuration:*`, `constraint:*`, `acceptance-criterion:*` references)
-> "You are helping build a spec-graph for a project described as: '[project description]'. Generate 5 questions whose answers will directly become `configuration`, `constraint`, and `acceptance-criterion` reference entries. Ask about: what runtime settings or environment variables does the system need, what feature flags or toggles are anticipated, what are the hard invariants that must never be violated (data integrity rules, required fields, state preconditions), what does a working v1 look like from each user's perspective (acceptance criteria), and what are the deployment or environment assumptions. Format as a numbered list. Do NOT ask about scale, load, or performance."
+> "You are helping build a spec-graph for a project described as: '[project description]'. Generate 5 questions that will produce `configuration`, `constraint`, and `acceptance-criterion` references. Use MCQ for deployment/config decisions (env-based vs file-based config, feature flags approach), example-hint for specific values. Cover: runtime environment variables, feature flag strategy, hard invariants, v1 acceptance criteria per user type, and deployment assumptions. Include a Rec for every question."
 
 **Step 3 — Collect and write to `.ai/know/qa/plan-questions.md`:**
 
 ```markdown
 # Plan QA: [project name]
-_Each answer maps to a graph entity or reference. See type hints per section._
+_Answer with a letter (A/B/C), "rec" to accept recommendation, or free text to override._
+_Skip any question with "skip" — it will be inferred from context._
 
 ## 1. Users & Objectives  [→ user:*, objective:*]
-1. ...
+
+1. Q: [question]
+   A) [option] — [tradeoff]
+   B) [option] — [tradeoff]
+   Rec: A — [reason]
+   → _your answer:_
+
+...
 
 ## 2. Features  [→ feature:*]
-6. ...
 
-## 3. Actions  [→ action:*]
-11. ...
+6. Q: [question]
+   ...
 
-## 4. Components  [→ component:*]
-16. ...
-
-## 5. Data Models  [→ data-model:*]
-21. ...
-
-## 6. Interfaces & API Contracts  [→ interface:*, api-contract:*]
-26. ...
-
-## 7. Business Logic & Security  [→ business-logic:*, security-spec:*]
-31. ...
-
-## 8. Configuration & Constraints  [→ configuration:*, constraint:*, acceptance-criterion:*]
-36. ...
+[repeat for all 8 sections]
 
 ---
-_Answers:_
+_After answering, reply in chat or save the file and say "done"._
 ```
 
 **Step 4 — Present to user:**
-> "I've generated [N] questions about your project across 8 domains. Please answer as many as you can — paste answers after each question in the file, or answer in chat. The more you answer, the less I'll need to guess later."
 
-Show the full file contents in chat.
+Show the full file contents in chat, then say:
+> "Answer with A/B/C, 'rec' to accept the recommendation, or your own text. 'skip' defers to context. Answer in chat or edit the file and say done."
 
 **Step 5 — Iterate:**
 - After user responds: read answers, update qa.md with inline responses
-- If significant gaps remain in any domain: generate 3-5 follow-up questions for that domain only
-- Once answers are sufficient, proceed to Planning Modes (modes use answers; they do NOT re-ask covered questions)
+- Tally answered vs skipped — if ≥70% answered, proceed to modes
+- For critical gaps (users, features, core data model): generate 2-3 targeted follow-ups in the same MCQ format
+- Once sufficient, proceed to Planning Modes (modes consume answers; do NOT re-ask covered questions)
 
 ---
 
@@ -597,5 +612,6 @@ Assistant: Assessing project maturity...
 - Can skip modes based on maturity assessment
 
 ---
+`r3` - MCQ format for all questions: decision questions get A/B/C options with tradeoffs + Rec, factual questions get example-hints + Rec; user answers with letter or "rec"; 70% threshold to proceed; follow-ups targeted MCQ only
 `r2` - QA Batch Generation phase: 8 parallel Task agents → 35+ questions → plan-questions.md → iterate; modes now consume answers instead of re-asking; Workflow Execution updated
 `r1` - Added explicit Graph Operations section with know CLI commands; added "Graph Commands to Execute" examples to Modes 2-5; updated Workflow Execution to specify /know:add for features vs know CLI for other entities
