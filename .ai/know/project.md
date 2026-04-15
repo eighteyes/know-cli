@@ -135,7 +135,7 @@ Maps actual codebase structure:
 ### Git Workflow
 - **Branch Naming**: `feature/feature-name`, `fix/bug-description`
 - **Commit Style**: Conventional commits (feat, fix, docs, test, chore)
-- **Phase Management**: Features tracked in `meta.phases` (pending, I, II, III, in-progress, review-ready, done)
+- **Horizon Management**: Features tracked in `meta.horizons` (pending, I, II, III, in-progress, review-ready, done)
 - Main branch for stable releases
 - Feature branches for development
 

@@ -61,9 +61,9 @@ For projects with no existing code or specification:
 ├─────────────────────────────────────────────────────────────────┤
 │ /know:plan [Quality]     → Testing strategy                     │
 │         ↓                                                       │
-│ /know:plan [PM]          → Build order, phases, acceptance      │
+│ /know:plan [PM]          → Build order, horizons, acceptance      │
 │         ↓                                                       │
-│ Creates: todo.md, plan tasks, phases in spec-graph              │
+│ Creates: todo.md, plan tasks, horizons in spec-graph              │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -215,11 +215,11 @@ For projects with existing code but no spec-graph:
 
 ```bash
 know coverage                    # % entities connected to root users
-know phases list                 # List all phases
-know phases add <phase> <entity> # Add entity to phase
-know phases move <entity> <phase># Move entity
-know phases status <entity> <st> # Change status
-know phases remove <entity>      # Remove from phases
+know horizons list                 # List all horizons
+know horizons add <horizon> <entity> # Add entity to horizon
+know horizons move <entity> <horizon># Move entity
+know horizons status <entity> <st>   # Change status
+know horizons remove <entity>        # Remove from horizons
 know trace-matrix                # Requirement traceability (NEW)
 ```
 
@@ -328,9 +328,9 @@ user:developer → objective:efficiency → feature:auto-complete → component:
 
 1. **Stage `/know:fill-out`** - `git add .claude/commands/know/fill-out.md`
 2. **Delete backup skill** - `rm -rf .claude/skills/know-tool-backup/`
-3. **Update know-tool skill** - add phases, coverage; remove LLM commands
-4. **Document phase vs status** - phase=plan (I,II,III), status=territory (in-progress,complete)
-5. **Remove phase:done** - redundant with status:complete
+3. **Update know-tool skill** - add horizons, coverage; remove LLM commands
+4. **Document horizon vs status** - horizon=plan (I,II,III), status=territory (in-progress,complete)
+5. **Remove horizon:done** - redundant with status:complete
 
 ### 5.2 Workflow Improvements (Priority 2)
 

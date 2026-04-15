@@ -62,12 +62,12 @@ Structured workflow: Discovery → Exploration → Design → Implementation →
 ---
 
 ### `/know:done <feature>`
-**Complete feature and update phase**
+**Complete feature and update horizon**
 
-Marks feature complete, updates spec-graph phase, archives artifacts.
+Marks feature complete, updates spec-graph horizon, archives artifacts.
 
 **Updates:**
-- `meta.phases` in spec-graph → "done"
+- `meta.horizons` in spec-graph → "done"
 - Feature directory status
 - Git notes (if feature tracking enabled)
 
@@ -317,8 +317,8 @@ All slash commands interact with:
 - **code-graph.json** - Codebase structure
 - **project.md** - Project context
 
-### Phase Tracking
-Features move through phases in `meta.phases`:
+### Horizon Tracking
+Features move through horizons in `meta.horizons`:
 - `pending` → `/know:add`
 - `in-progress` → `/know:build`
 - `review-ready` → `/know:review`

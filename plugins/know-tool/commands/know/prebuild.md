@@ -162,9 +162,9 @@ know -g .ai/know/spec-graph.json nodes update operation:validate-credentials '{
    echo "validated: $(date -Iseconds)" > .ai/know/features/<name>/.prebuild/validated
    echo "graph_hash: $(git hash-object .ai/know/spec-graph.json)" >> .ai/know/features/<name>/.prebuild/validated
    ```
-2. Update feature phase status:
+2. Update feature horizon status:
    ```bash
-   know -g .ai/know/spec-graph.json phases status feature:<name> review-ready
+   know -g .ai/know/spec-graph.json horizons status feature:<name> review-ready
    ```
 3. Report validation success:
    ```

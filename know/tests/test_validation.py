@@ -16,7 +16,7 @@ def valid_graph():
     return {
         "meta": {
             "project": {"name": "Test Project"},
-            "phases": []
+            "horizons": []
         },
         "entities": {
             "users": {

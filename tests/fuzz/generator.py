@@ -110,7 +110,7 @@ class SpecGraphFuzzer:
             graph[f"users:{entity_id}"] = {"depends_on": []}
 
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {"users": entities},
             "references": {},
             "graph": graph
@@ -161,7 +161,7 @@ class SpecGraphFuzzer:
     def generate_invalid_dependency_direction(self) -> Dict[str, Any]:
         """Generate invalid dependency: component→user instead of user→objective."""
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {"owner": {"name": "Owner", "description": "System owner"}},
                 "components": {"auth": {"name": "Auth", "description": "Authentication"}}
@@ -176,7 +176,7 @@ class SpecGraphFuzzer:
     def generate_circular_dependencies(self) -> Dict[str, Any]:
         """Generate graph with circular dependencies."""
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "features": {
                     "feature_a": {"name": "Feature A", "description": "Test"},
@@ -195,7 +195,7 @@ class SpecGraphFuzzer:
     def generate_self_referencing(self) -> Dict[str, Any]:
         """Generate entity that depends on itself."""
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "features": {
                     "recursive": {"name": "Recursive", "description": "Self-referencing"}
@@ -210,7 +210,7 @@ class SpecGraphFuzzer:
     def generate_orphaned_entities(self) -> Dict[str, Any]:
         """Generate entities with no graph entries."""
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {
                     "owner": {"name": "Owner", "description": "In graph"},
@@ -227,7 +227,7 @@ class SpecGraphFuzzer:
     def generate_reference_to_nonexistent_entity(self) -> Dict[str, Any]:
         """Generate dependency pointing to non-existent entity."""
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {"owner": {"name": "Owner", "description": "Test"}}
             },
@@ -240,7 +240,7 @@ class SpecGraphFuzzer:
     def generate_wrong_entity_types_in_chain(self) -> Dict[str, Any]:
         """Generate invalid dependency chain like component→action→feature."""
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "components": {"auth": {"name": "Auth", "description": "Test"}},
                 "actions": {"login": {"name": "Login", "description": "Test"}},
@@ -258,7 +258,7 @@ class SpecGraphFuzzer:
     def generate_empty_depends_on_array(self) -> Dict[str, Any]:
         """Generate explicit empty depends_on arrays."""
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {"owner": {"name": "Owner", "description": "Test"}},
                 "objectives": {"goal": {"name": "Goal", "description": "Test"}}
@@ -273,7 +273,7 @@ class SpecGraphFuzzer:
     def generate_null_depends_on(self) -> Dict[str, Any]:
         """Generate null depends_on value."""
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {"owner": {"name": "Owner", "description": "Test"}}
             },
@@ -286,7 +286,7 @@ class SpecGraphFuzzer:
     def generate_missing_depends_on(self) -> Dict[str, Any]:
         """Generate graph nodes without depends_on field."""
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {"owner": {"name": "Owner", "description": "Test"}}
             },
@@ -300,7 +300,7 @@ class SpecGraphFuzzer:
         """Generate entity with 10k+ character description."""
         long_desc = "x" * 10000
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {
                     "owner": {"name": "Owner", "description": long_desc}
@@ -315,7 +315,7 @@ class SpecGraphFuzzer:
     def generate_duplicate_entity_keys(self) -> Dict[str, Any]:
         """Note: JSON doesn't support duplicate keys, but test malformed structure."""
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {
                     "owner": {"name": "Owner", "description": "First"},
@@ -329,7 +329,7 @@ class SpecGraphFuzzer:
     def generate_missing_entity_name(self) -> Dict[str, Any]:
         """Generate entity missing 'name' field."""
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {
                     "owner": {"description": "Missing name"}  # No 'name'
@@ -344,7 +344,7 @@ class SpecGraphFuzzer:
     def generate_missing_entity_description(self) -> Dict[str, Any]:
         """Generate entity missing 'description' field."""
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {
                     "owner": {"name": "Owner"}  # No 'description'
@@ -359,7 +359,7 @@ class SpecGraphFuzzer:
     def generate_null_values_in_entity(self) -> Dict[str, Any]:
         """Generate entity with null values."""
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {
                     "owner": {"name": None, "description": None}
@@ -374,7 +374,7 @@ class SpecGraphFuzzer:
     def generate_invalid_graph_node_id_format(self) -> Dict[str, Any]:
         """Generate graph node IDs without proper type:name format."""
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {"owner": {"name": "Owner", "description": "Test"}}
             },
@@ -391,7 +391,7 @@ class SpecGraphFuzzer:
     def generate_valid_spec_incomplete_chain(self) -> Dict[str, Any]:
         """Generate spec-graph with chain that doesn't reach component."""
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {"owner": {"name": "Owner", "description": "Test"}},
                 "objectives": {"goal": {"name": "Goal", "description": "Test"}},
@@ -407,7 +407,7 @@ class SpecGraphFuzzer:
     def generate_missing_component_in_spec(self) -> Dict[str, Any]:
         """Generate spec-graph where user→objective chain has no component."""
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {"owner": {"name": "Owner", "description": "Test"}},
                 "objectives": {"goal": {"name": "Goal", "description": "Test"}},
@@ -435,7 +435,7 @@ class SpecGraphFuzzer:
     def generate_malformed_project_in_meta(self) -> Dict[str, Any]:
         """Generate meta.project that's not a dict."""
         return {
-            "meta": {"project": "should be dict", "phases": []},
+            "meta": {"project": "should be dict", "horizons": []},
             "entities": {"users": {"owner": {"name": "Owner", "description": "Test"}}},
             "references": {},
             "graph": {"users:owner": {"depends_on": []}}
@@ -446,7 +446,7 @@ class SpecGraphFuzzer:
     def generate_underscores_in_names(self) -> Dict[str, Any]:
         """Generate entity names using underscores instead of hyphens."""
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {
                     "test_owner": {"name": "Test Owner", "description": "Uses underscore"},  # Should be test-owner
@@ -463,7 +463,7 @@ class SpecGraphFuzzer:
     def generate_camelcase_names(self) -> Dict[str, Any]:
         """Generate entity names using camelCase instead of kebab-case."""
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {
                     "testOwner": {"name": "Test Owner", "description": "Uses camelCase"},
@@ -480,7 +480,7 @@ class SpecGraphFuzzer:
     def generate_uppercase_names(self) -> Dict[str, Any]:
         """Generate entity names with UPPERCASE."""
         return {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {
                     "OWNER": {"name": "Owner", "description": "All uppercase"},
@@ -686,7 +686,7 @@ class CrossGraphFuzzer:
     def generate_spec_without_code(self) -> tuple:
         """Generate valid spec-graph with no corresponding code-graph."""
         spec = {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {"owner": {"name": "Owner", "description": "Test"}},
                 "objectives": {"goal": {"name": "Goal", "description": "Test"}},
@@ -726,7 +726,7 @@ class CrossGraphFuzzer:
     def generate_broken_golden_thread(self) -> tuple:
         """Generate spec with component but no code-graph connection."""
         spec = {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {"owner": {"name": "Owner", "description": "Test"}},
                 "objectives": {"goal": {"name": "Goal", "description": "Test"}},
@@ -765,7 +765,7 @@ class CrossGraphFuzzer:
     def generate_missing_product_component_mapping(self) -> tuple:
         """Generate code module implementing spec component but no product-component ref."""
         spec = {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {"owner": {"name": "Owner", "description": "Test"}},
                 "objectives": {"goal": {"name": "Goal", "description": "Test"}},
@@ -797,7 +797,7 @@ class CrossGraphFuzzer:
     def generate_orphaned_code_module(self) -> tuple:
         """Generate code module with no connection to spec-graph."""
         spec = {
-            "meta": {"project": {"name": "Test"}, "phases": []},
+            "meta": {"project": {"name": "Test"}, "horizons": []},
             "entities": {
                 "users": {"owner": {"name": "Owner", "description": "Test"}},
                 "objectives": {"goal": {"name": "Goal", "description": "Test"}},

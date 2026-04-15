@@ -1,0 +1,9 @@
+version: 1
+id: 40e48c37-3a48-4c40-a1ed-30167153a523
+project: know-cli
+cwd: /Users/god/projects/know-cli
+status: active
+started_at: 2026-04-09T05:17:10Z
+last_activity: "2026-04-09T08:36:13Z"
+turn_count: 11
+label: '(Those Pyright diagnostics are pre-existing venv resolution '

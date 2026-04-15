@@ -125,7 +125,7 @@ Create a structured bug report for a feature, automatically numbering it, adding
 **If feature status is "done" or "review-ready"**:
 - Ask user: "This feature is marked as done/review-ready. Change status to 'in-progress'? [Yes/No]"
 - If Yes (using **haiku agent**):
-  - Update `meta.phases` to move feature back to "in-progress" phase
+  - Update `meta.horizons` to move feature back to "in-progress"
   - Update `meta.feature_specs.<feature>.status` to "in-progress"
   - Validate: `know graph check validate`
 

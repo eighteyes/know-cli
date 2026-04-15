@@ -152,17 +152,17 @@
 **Modules**:
 - `/Users/god/projects/know-cli/know/src/op_manager.py` - OpManager (operation state tracking)
 
-### Phase Commands (`know phases`)
-**CLI Group**: `@cli.group()` named `phases`
+### Horizon Commands (`know horizons`)
+**CLI Group**: `@cli.group()` named `horizons`
 **Commands** (5 total):
-- `list` - List all phases
-- `add` - Add entity to phase
-- `move` - Move entity to different phase
-- `status` - Set phase status
-- `remove` - Remove entity from phase
+- `list` - List all horizons
+- `add` - Add entity to horizon
+- `move` - Move entity to different horizon
+- `status` - Set horizon status
+- `remove` - Remove entity from horizon
 
 **Modules**:
-- `/Users/god/projects/know-cli/know/know.py` - Direct meta manipulation (phases stored in meta.phases)
+- `/Users/god/projects/know-cli/know/know.py` - Direct meta manipulation (horizons stored in meta.horizons)
 
 ### Requirement Commands (`know req`)
 **CLI Group**: `@cli.group()` named `req`

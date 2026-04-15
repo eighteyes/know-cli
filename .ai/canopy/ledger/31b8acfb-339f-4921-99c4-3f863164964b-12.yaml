@@ -1,0 +1,22 @@
+version: 1
+session_id: 31b8acfb-339f-4921-99c4-3f863164964b
+turn: 12
+turn_id: 31b8acfb-339f-4921-99c4-3f863164964b-12
+timestamp: 2026-04-15T02:25:38Z
+cwd: /Users/god/projects/know-cli
+project: know-cli
+
+# mechanical facts
+working_turn: true
+files_changed: 65
+diff_lines_added: 0
+diff_lines_removed: 0
+git_commit: "74efe866ef335636f37d1092bb98f220fb990379"
+
+# rearmatter
+rearmatter_present: false
+review_doc: ""
+
+# whiskey refinement fields (written by warm distillation — do not touch)
+refined: false
+provenance: null

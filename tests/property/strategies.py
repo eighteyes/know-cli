@@ -217,7 +217,7 @@ def minimal_spec_graph(draw: Any) -> Dict[str, Any]:
             "generated_at": timestamp,
             "project": {
                 "name": "Test Project",
-                "phases": []
+                "horizons": []
             }
         },
         "entities": entities,

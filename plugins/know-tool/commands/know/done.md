@@ -42,7 +42,7 @@ Archive a completed feature and update graph phase status.
    - Validate completion (implementation linkage, requirements)
    - Check for review-results.md
    - Tag related commits with git notes
-   - Mark as done in spec-graph (removes from phases)
+   - Mark as done in spec-graph (removes from horizons)
    - Archive to .ai/know/archive/
 
 ### 4. Verify Status
@@ -57,7 +57,7 @@ Archive a completed feature and update graph phase status.
    - ✅ Implemented: Yes
    - ✅ Reviewed: Yes (detects `[feature:auth]` in main branch)
 2. Verify feature has been archived to `.ai/know/archive/<feature-name>/`
-3. Verify feature removed from phases
+3. Verify feature removed from horizons
 
 **Example Usage**
 ```
@@ -82,7 +82,7 @@ Assistant:
 
 **Notes**
 - **Feature Status Tracking**: Uses virtual flags computed from graph state
-  - `planned`: Feature exists in meta.phases (any phase)
+  - `planned`: Feature exists in meta.horizons (any horizon)
   - `implemented`: Code-graph links exist (auto-detected via graph traversal)
   - `reviewed`: Git commit with `[feature:name]` merged to main (auto-detected)
 - **Commit Message Pattern**: **MUST** include `[feature:name]` for status tracking

@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--
+  know-cli landing page
+  Product landing and agent integration guide for know-cli
+  - Hero with animated graph constellation
+  - Problem/solution framing
+  - Agent integration reference
+  - Quick start
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>know — AI-driven software product development</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;0,9..144,900;1,9..144,400&family=Outfit:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════
+   KNOW-CLI — Landing Page
+   Phosphor Observatory lineage, cartographic register
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  --void: #06070b;
+  --deep: #0b0d14;
+  --surface: #10121c;
+  --raised: #171a28;
+  --ridge: #222640;
+  --edge: #2c3150;
+
+  --text: #cdd2e6;
+  --text-2: #7c82a0;
+  --text-3: #4e5370;
+
+  --ph-project:   #5c9eff;
+  --ph-user:      #66e0a0;
+  --ph-objective: #ff8a50;
+  --ph-feature:   #40c8ff;
+  --ph-action:    #ffcc33;
+  --ph-component: #d580ff;
+  --ph-operation: #5af5a0;
+  --ph-workflow:  #ff80ab;
+
+  --glow: #40c8ff;
+  --glow-soft: #40c8ff20;
+  --glow-med: #40c8ff40;
+  --amber: #ffcc33;
+  --amber-soft: #ffcc3318;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--void);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+code, pre, .mono {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* ── Typography ── */
+
+h1, h2, .display {
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  font-size: clamp(3.2rem, 8vw, 7rem);
+  font-weight: 900;
+  line-height: 0.95;
+  font-optical-sizing: auto;
+}
+
+h2 {
+  font-size: clamp(1.6rem, 3.5vw, 2.6rem);
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.lead {
+  font-size: clamp(1.05rem, 2vw, 1.25rem);
+  color: var(--text-2);
+  line-height: 1.7;
+  max-width: 38em;
+}
+
+.tag {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.3em 0.8em;
+  border-radius: 3px;
+  border: 1px solid var(--ridge);
+  color: var(--text-2);
+  background: var(--raised);
+}
+
+/* ── Layout ── */
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+section {
+  padding: 6rem 0;
+  position: relative;
+}
+
+section + section {
+  border-top: 1px solid var(--ridge);
+}
+
+/* ── Nav ── */
+
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  background: #06070bcc;
+  border-bottom: 1px solid #222640;
+}
+
+nav .logo {
+  font-family: 'Fraunces', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--glow);
+}
+
+nav .logo span {
+  color: var(--text-3);
+  font-weight: 300;
+}
+
+nav .links {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+}
+
+nav .links a {
+  color: var(--text-2);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition: color 0.2s;
+}
+
+nav .links a:hover { color: var(--text); }
+
+/* ── Hero ── */
+
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding-top: 5rem;
+  overflow: hidden;
+}
+
+.hero canvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+}
+
+.hero h1 {
+  background: linear-gradient(135deg, var(--glow), #80d8ff, var(--ph-component));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 1.2rem;
+}
+
+.hero .subtitle {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(1.1rem, 2.5vw, 1.6rem);
+  font-weight: 300;
+  font-style: italic;
+  color: var(--text-2);
+  margin-bottom: 2rem;
+}
+
+.hero .lead {
+  margin-bottom: 2.5rem;
+}
+
+.install-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--ridge);
+  border-radius: 6px;
+  padding: 0.8rem 1.4rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.95rem;
+  color: var(--glow);
+  cursor: pointer;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.install-block:hover {
+  border-color: var(--glow);
+  box-shadow: 0 0 20px #40c8ff10;
+}
+
+.install-block .prompt { color: var(--text-3); user-select: none; }
+.install-block .copy-hint {
+  font-size: 0.7rem;
+  color: var(--text-3);
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.install-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-top: 1.2rem;
+  margin-bottom: 0.4rem;
+}
+
+
+/* ── Problem Section ── */
+
+.problem-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  margin-top: 2.5rem;
+}
+
+@media (max-width: 700px) {
+  .problem-grid { grid-template-columns: 1fr; }
+}
+
+.problem-card {
+  padding: 2rem;
+  border-radius: 8px;
+  border: 1px solid var(--ridge);
+  background: var(--deep);
+  position: relative;
+  overflow: hidden;
+}
+
+.problem-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+
+.problem-card.bad::before { background: linear-gradient(90deg, #ff4060, #ff406000); }
+.problem-card.good::before { background: linear-gradient(90deg, var(--glow), #40c8ff00); }
+
+.problem-card .card-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.problem-card.bad .card-label { color: #ff4060; }
+.problem-card.good .card-label { color: var(--glow); }
+
+.problem-card h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 1.3rem;
+  font-weight: 500;
+  margin-bottom: 0.8rem;
+  color: var(--text);
+}
+
+.problem-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.problem-card ul li {
+  padding: 0.4rem 0;
+  padding-left: 1.4em;
+  position: relative;
+  color: var(--text-2);
+  font-size: 0.92rem;
+}
+
+.problem-card.bad ul li::before {
+  content: '×';
+  position: absolute;
+  left: 0;
+  color: #ff4060;
+  font-weight: 600;
+}
+
+.problem-card.good ul li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--glow);
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* ── Graph Model ── */
+
+.graph-side-by-side {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .graph-side-by-side { grid-template-columns: 1fr; }
+}
+
+.graph-model {
+  padding: 1.5rem 0;
+  overflow-x: auto;
+}
+
+.graph-model .mermaid {
+  text-align: center;
+}
+
+.graph-model .mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ── Heat Section ── */
+
+.heat-vis {
+  margin-top: 2.5rem;
+}
+
+.heat-bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 120px;
+  padding: 1.5rem 2rem 1rem;
+  background: var(--deep);
+  border: 1px solid var(--ridge);
+  border-radius: 8px 8px 0 0;
+  border-bottom: none;
+}
+
+.heat-bar {
+  flex: 1;
+  min-width: 0;
+  border-radius: 2px 2px 0 0;
+  position: relative;
+  transition: height 0.8s ease, opacity 0.6s ease;
+  cursor: default;
+}
+
+.heat-bar[data-label="hot"] { background: linear-gradient(to top, #ff4060, #ff6a50); }
+.heat-bar[data-label="warm"] { background: linear-gradient(to top, #ffcc33, #ffdd66); }
+.heat-bar[data-label="cool"] { background: linear-gradient(to top, #40c8ff30, #40c8ff60); }
+
+.heat-bar::after {
+  content: attr(data-file);
+  position: absolute;
+  bottom: -2.2rem;
+  left: 50%;
+  transform: translateX(-50%) rotate(-45deg);
+  transform-origin: top left;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--text-3);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.heat-bar-chart:hover .heat-bar::after { opacity: 1; }
+
+.heat-legend-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0.6rem 2rem;
+  background: var(--deep);
+  border: 1px solid var(--ridge);
+  border-radius: 0 0 8px 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--text-3);
+}
+
+.heat-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-right: 1.5rem;
+}
+
+.heat-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.heat-legend-dot.hot  { background: #ff4060; }
+.heat-legend-dot.warm { background: #ffcc33; }
+.heat-legend-dot.cool { background: #40c8ff50; }
+
+.signal-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+@media (max-width: 700px) {
+  .signal-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.signal-card {
+  padding: 1.2rem;
+  background: var(--deep);
+  border: 1px solid var(--ridge);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.signal-weight {
+  font-family: 'Fraunces', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 0.3rem;
+}
+
+.signal-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--text-2);
+  margin-bottom: 0.3rem;
+}
+
+.signal-desc {
+  font-size: 0.75rem;
+  color: var(--text-3);
+  line-height: 1.4;
+}
+
+.heat-bridge {
+  margin-top: 2.5rem;
+  padding: 2rem;
+  background: var(--deep);
+  border: 1px solid var(--ridge);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.heat-bridge::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #ff4060, #ffcc33, #40c8ff60);
+}
+
+.heat-bridge-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.82rem;
+}
+
+.heat-bridge-node {
+  padding: 0.5em 1em;
+  border-radius: 4px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.heat-bridge-arrow {
+  color: var(--text-3);
+  font-size: 1rem;
+}
+
+/* ── Agent Section ── */
+
+.agent-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+}
+
+.agent-card {
+  padding: 1.8rem;
+  background: var(--deep);
+  border: 1px solid var(--ridge);
+  border-radius: 8px;
+  transition: border-color 0.3s, transform 0.2s;
+}
+
+.agent-card:hover {
+  border-color: var(--edge);
+  transform: translateY(-2px);
+}
+
+.agent-card .card-icon {
+  font-size: 1.6rem;
+  margin-bottom: 0.8rem;
+  display: block;
+  width: 2.4rem;
+  height: 2.4rem;
+  line-height: 2.4rem;
+  text-align: center;
+  border-radius: 6px;
+}
+
+.agent-card h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 1.15rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.agent-card p {
+  color: var(--text-2);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+
+/* ── Commands Table ── */
+
+.cmd-table {
+  width: 100%;
+  margin-top: 2rem;
+  border-collapse: collapse;
+}
+
+.cmd-table th {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  text-align: left;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--ridge);
+}
+
+.cmd-table td {
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid #1a1d2a;
+  font-size: 0.88rem;
+  vertical-align: top;
+}
+
+.cmd-table tr:last-child td { border-bottom: none; }
+
+.cmd-table .cmd {
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--glow);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.cmd-table .desc {
+  color: var(--text-2);
+}
+
+.cmd-table .phase {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+}
+
+/* ── Code Block ── */
+
+.code-block {
+  background: var(--deep);
+  border: 1px solid var(--ridge);
+  border-radius: 8px;
+  padding: 1.5rem 1.8rem;
+  overflow-x: auto;
+  margin-top: 1.5rem;
+  position: relative;
+}
+
+.code-block code {
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.code-block .comment { color: var(--text-3); }
+.code-block .cmd-text { color: var(--glow); }
+.code-block .flag { color: var(--ph-component); }
+.code-block .string { color: var(--ph-user); }
+
+.code-block-label {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.8rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* ── Graph JSON Preview ── */
+
+.json-preview {
+  background: var(--deep);
+  border: 1px solid var(--ridge);
+  border-radius: 8px;
+  padding: 1.5rem 1.8rem;
+  margin-top: 1.5rem;
+  overflow-x: auto;
+}
+
+.json-preview code {
+  font-size: 0.8rem;
+  line-height: 1.7;
+}
+
+.json-key { color: var(--ph-feature); }
+.json-str { color: var(--ph-user); }
+.json-bracket { color: var(--text-3); }
+.json-punct { color: var(--text-3); }
+
+/* ── CTA ── */
+
+.cta {
+  text-align: center;
+  padding: 5rem 0 6rem;
+}
+
+.cta h2 { margin-bottom: 0.8rem; }
+.cta .lead {
+  margin: 0 auto 2.5rem;
+  text-align: center;
+}
+
+.cta-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.6rem;
+  border-radius: 6px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.btn-primary {
+  background: var(--glow);
+  color: var(--void);
+  border-color: var(--glow);
+}
+
+.btn-primary:hover {
+  background: #60d4ff;
+  box-shadow: 0 0 24px #40c8ff30;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--ridge);
+}
+
+.btn-secondary:hover {
+  border-color: var(--text-2);
+  background: var(--raised);
+}
+
+/* ── Pricing ── */
+
+.pricing-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+  max-width: 900px;
+}
+
+@media (max-width: 700px) {
+  .pricing-cards { grid-template-columns: 1fr; }
+}
+
+.pricing-card {
+  padding: 2.2rem 1.8rem;
+  background: var(--deep);
+  border: 1px solid var(--ridge);
+  border-radius: 8px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s, transform 0.2s;
+}
+
+.pricing-card:hover {
+  transform: translateY(-2px);
+}
+
+.pricing-card.featured {
+  border-color: var(--glow);
+  box-shadow: 0 0 30px #40c8ff08;
+}
+
+.pricing-card.featured::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--glow), var(--ph-component));
+}
+
+.pricing-tier {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 1rem;
+}
+
+.pricing-card.featured .pricing-tier { color: var(--glow); }
+
+.pricing-amount {
+  font-family: 'Fraunces', serif;
+  font-size: 3.2rem;
+  font-weight: 900;
+  line-height: 1;
+  margin-bottom: 0.3rem;
+  color: var(--text);
+}
+
+.pricing-card.featured .pricing-amount {
+  background: linear-gradient(135deg, var(--glow), var(--ph-component));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.pricing-period {
+  font-size: 0.8rem;
+  color: var(--text-3);
+  margin-bottom: 1.5rem;
+}
+
+.pricing-features {
+  list-style: none;
+  padding: 0;
+  text-align: left;
+  margin-bottom: 1.5rem;
+}
+
+.pricing-features li {
+  padding: 0.4rem 0;
+  padding-left: 1.4em;
+  position: relative;
+  color: var(--text-2);
+  font-size: 0.85rem;
+}
+
+.pricing-features li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--ph-user);
+  font-size: 0.8rem;
+}
+
+.pricing-card .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.pricing-card.muted .pricing-amount,
+.pricing-card.muted .pricing-features li {
+  color: var(--text-3);
+}
+
+.pricing-card.muted .pricing-features li::before {
+  color: var(--text-3);
+}
+
+.pricing-card .interest-form {
+  text-align: left;
+  margin-top: 1rem;
+}
+
+.pricing-card .interest-form p {
+  font-size: 0.82rem;
+  color: var(--text-2);
+  line-height: 1.5;
+  margin-bottom: 0.8rem;
+}
+
+.pricing-card .interest-form .email-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pricing-card .interest-form input[type="email"] {
+  flex: 1;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  padding: 0.55rem 0.8rem;
+  background: var(--surface);
+  border: 1px solid var(--ridge);
+  border-radius: 4px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.pricing-card .interest-form input[type="email"]::placeholder {
+  color: var(--text-3);
+}
+
+.pricing-card .interest-form input[type="email"]:focus {
+  border-color: var(--amber);
+}
+
+.pricing-card .interest-form button {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.55rem 1rem;
+  background: var(--raised);
+  border: 1px solid var(--ridge);
+  border-radius: 4px;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+
+.pricing-card .interest-form button:hover {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+/* ── Testimonials ── */
+
+.testimonials {
+  padding: 6rem 0;
+}
+
+.testimonial-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  margin-top: 2.5rem;
+  max-width: 720px;
+}
+
+.testimonial {
+  padding: 2rem 2.2rem;
+  background: var(--deep);
+  border: 1px solid var(--ridge);
+  border-radius: 8px;
+  border-left: 2px solid var(--glow);
+  position: relative;
+}
+
+.testimonial blockquote {
+  font-family: 'Fraunces', serif;
+  font-size: 1.1rem;
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.65;
+  color: var(--text);
+  margin: 0;
+}
+
+.testimonial .attribution {
+  margin-top: 1rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-3);
+  letter-spacing: 0.02em;
+}
+
+.testimonial .attribution span {
+  color: var(--text-2);
+}
+
+.testimonial.accent-amber  { border-left-color: var(--amber); }
+.testimonial.accent-green  { border-left-color: var(--ph-user); }
+.testimonial.accent-purple { border-left-color: var(--ph-component); }
+
+/* ── Footer ── */
+
+footer {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 0.78rem;
+  border-top: 1px solid var(--ridge);
+}
+
+footer a {
+  color: var(--text-2);
+  text-decoration: none;
+}
+
+footer a:hover { color: var(--text); }
+
+/* ── Grain overlay ── */
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Intersection observer fade-in ── */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 600px) {
+  nav { padding: 0.8rem 1rem; }
+  nav .links { gap: 1rem; }
+  .container { padding: 0 1.2rem; }
+  section { padding: 4rem 0; }
+  .cmd-table td, .cmd-table th { padding: 0.5rem 0.6rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ Nav ═══ -->
+<nav>
+  <div class="logo">know<span>-cli</span></div>
+  <ul class="links">
+    <li><a href="#why">Why</a></li>
+    <li><a href="#model">Model</a></li>
+    <li><a href="#heat">Heat</a></li>
+    <li><a href="#agents">Agents</a></li>
+    <li><a href="#commands">Commands</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="https://github.com/eighteyes/know-cli">GitHub</a></li>
+  </ul>
+</nav>
+
+<!-- ═══ Hero ═══ -->
+<section class="hero">
+  <canvas id="graph-canvas"></canvas>
+  <div class="container hero-content">
+    <div class="tag">v0.2.0 &middot; MIT</div>
+    <h1>know</h1>
+    <p class="subtitle">software product development knowledge graph</p>
+    <p class="lead">
+      Structured context for AI-driven software product development.
+      Know turns product decisions into dependency graphs that LLMs can
+      traverse &mdash; linking <em>what</em> you&rsquo;re building
+      and <em>why</em> to <em>how</em> it gets implemented.
+    </p>
+    <div class="install-label">install</div>
+    <div class="install-block" onclick="copyInstall(this)" title="Click to copy">
+      <span class="prompt">$</span>
+      <span>npm install -g know-cli</span>
+      <span class="copy-hint">copy</span>
+    </div>
+    <div class="install-label">agent instructions</div>
+    <div class="install-block" onclick="copyAgent(this)" title="Click to copy">
+      <span class="prompt">&gt;</span>
+      <span>evaluate if know is useful for my work <a href="https://github.com/eighteyes/know-cli/blob/main/AGENTS.md" style="color: var(--glow); text-decoration: none;" onclick="event.stopPropagation()">AGENTS.md</a></span>
+      <span class="copy-hint">copy</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Why ═══ -->
+<section id="why">
+  <div class="container">
+    <h2 class="reveal">Why graphs over spec files?</h2>
+    <p class="lead reveal">
+      Spec files are fine for humans. For AI agents, they&rsquo;re token overhead &mdash;
+      brittle snapshots that bloat, duplicate, and rot.
+    </p>
+    <div class="problem-grid">
+      <div class="problem-card bad reveal">
+        <div class="card-label">Spec files</div>
+        <h3>Static, fragile, expensive</h3>
+        <ul>
+          <li>Information scattered across files</li>
+          <li>Relationships implicit in prose</li>
+          <li>Duplicated context burns tokens</li>
+          <li>Drift from reality over time</li>
+          <li>No queryable structure for agents</li>
+        </ul>
+      </div>
+      <div class="problem-card good reveal">
+        <div class="card-label">Spec graphs</div>
+        <h3>Queryable, connected, current</h3>
+        <ul>
+          <li>Single source of truth per node</li>
+          <li>Relationships are first-class edges</li>
+          <li>Generate specs on demand from graph</li>
+          <li>Traverse from intent to implementation</li>
+          <li>Deterministic feature completion state</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Graph Model ═══ -->
+<section id="model">
+  <div class="container">
+    <h2 class="reveal">Dual graph system</h2>
+    <p class="lead reveal">
+      Two graphs, one truth. The spec graph maps what users need.
+      The code graph maps what exists. Cross-links connect intent to implementation.
+    </p>
+    <div class="graph-side-by-side reveal">
+    <div class="graph-model">
+      <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#171a28', 'primaryTextColor': '#cdd2e6', 'primaryBorderColor': '#2c3150', 'lineColor': '#4e5370', 'secondaryColor': '#0b0d14', 'tertiaryColor': '#10121c', 'edgeLabelBackground': '#10121c', 'clusterBkg': '#0b0d14', 'clusterBorder': '#222640', 'fontFamily': 'IBM Plex Mono, monospace', 'fontSize': '13px'}}}%%
+flowchart TD
+    subgraph spec ["spec-graph.json — product intent"]
+        direction TD
+        P["project"]:::project --> U["user"]:::user
+        U --> O["objective"]:::objective
+        O --> F["feature"]:::feature
+    end
+
+    subgraph code ["code-graph.json — codebase"]
+        direction TD
+        M["module"]:::cmod --> Pk["package"]:::cpkg
+        M --> Cl["class"]:::ccls
+        Cl --> Fn["function"]:::cfn
+    end
+
+    classDef project fill:#5c9eff18,stroke:#5c9eff60,color:#5c9eff
+    classDef user fill:#66e0a018,stroke:#66e0a060,color:#66e0a0
+    classDef objective fill:#ff8a5018,stroke:#ff8a5060,color:#ff8a50
+    classDef feature fill:#40c8ff18,stroke:#40c8ff60,color:#40c8ff
+    classDef cmod fill:#5c9eff18,stroke:#5c9eff60,color:#5c9eff
+    classDef cpkg fill:#d580ff18,stroke:#d580ff60,color:#d580ff
+    classDef ccls fill:#ffcc3318,stroke:#ffcc3360,color:#ffcc33
+    classDef cfn fill:#5af5a018,stroke:#5af5a060,color:#5af5a0
+      </pre>
+    </div>
+
+    <div class="json-preview">
+      <code><pre><span class="comment">// spec-graph.json</span>
+<span class="json-bracket">{</span>
+  <span class="json-key">"entities"</span><span class="json-punct">:</span> <span class="json-bracket">{</span>
+    <span class="json-key">"feature"</span><span class="json-punct">:</span> <span class="json-bracket">{</span>
+      <span class="json-key">"auth"</span><span class="json-punct">:</span> <span class="json-bracket">{</span>
+        <span class="json-key">"name"</span><span class="json-punct">:</span> <span class="json-str">"Authentication"</span><span class="json-punct">,</span>
+        <span class="json-key">"description"</span><span class="json-punct">:</span> <span class="json-str">"User login system"</span>
+      <span class="json-bracket">}</span>
+    <span class="json-bracket">}</span>
+  <span class="json-bracket">}</span><span class="json-punct">,</span>
+  <span class="json-key">"graph"</span><span class="json-punct">:</span> <span class="json-bracket">{</span>
+    <span class="json-key">"feature:auth"</span><span class="json-punct">:</span> <span class="json-bracket">{</span>
+      <span class="json-key">"depends_on"</span><span class="json-punct">:</span> <span class="json-bracket">[</span>
+        <span class="json-str">"action:login"</span><span class="json-punct">,</span>
+        <span class="json-str">"action:logout"</span><span class="json-punct">,</span>
+        <span class="json-str">"component:session"</span>
+      <span class="json-bracket">]</span>
+    <span class="json-bracket">}</span>
+  <span class="json-bracket">}</span><span class="json-punct">,</span>
+  <span class="json-key">"references"</span><span class="json-punct">:</span> <span class="json-bracket">{</span>
+    <span class="json-key">"implementation"</span><span class="json-punct">:</span> <span class="json-bracket">{</span>
+      <span class="json-key">"auth"</span><span class="json-punct">:</span> <span class="json-bracket">{</span>
+        <span class="json-key">"module"</span><span class="json-punct">:</span> <span class="json-str">"module:auth"</span><span class="json-punct">,</span>
+        <span class="json-key">"graph"</span><span class="json-punct">:</span> <span class="json-str">"code-graph.json"</span>
+      <span class="json-bracket">}</span>
+    <span class="json-bracket">}</span>
+  <span class="json-bracket">}</span>
+<span class="json-bracket">}</span></pre></code>
+    </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Heat Memory ═══ -->
+<section id="heat">
+  <div class="container">
+    <h2 class="reveal">Heat memory</h2>
+    <p class="lead reveal">
+      The spec graph knows <em>what</em> to build. The code graph knows <em>what exists</em>.
+      Heat scores tell you <em>what&rsquo;s actually moving</em> &mdash; five git-derived signals
+      fused into a single composite score per file and method.
+    </p>
+
+    <div class="signal-grid reveal">
+      <div class="signal-card">
+        <div class="signal-weight" style="color: #ff6a50;">30</div>
+        <div class="signal-name">churn</div>
+        <div class="signal-desc">Commits in last 90 days</div>
+      </div>
+      <div class="signal-card">
+        <div class="signal-weight" style="color: #ffcc33;">25</div>
+        <div class="signal-name">recency</div>
+        <div class="signal-desc">14-day half-life decay</div>
+      </div>
+      <div class="signal-card">
+        <div class="signal-weight" style="color: var(--ph-component);">15</div>
+        <div class="signal-name">complexity</div>
+        <div class="signal-desc">Lines of code / span</div>
+      </div>
+      <div class="signal-card">
+        <div class="signal-weight" style="color: var(--ph-feature);">15</div>
+        <div class="signal-name">centrality</div>
+        <div class="signal-desc">Import fan-in + fan-out</div>
+      </div>
+      <div class="signal-card">
+        <div class="signal-weight" style="color: var(--ph-user);">15</div>
+        <div class="signal-name">ripple</div>
+        <div class="signal-desc">Neighbor recency propagation</div>
+      </div>
+    </div>
+
+    <div class="heat-vis reveal">
+      <div class="heat-bar-chart" id="heat-bars">
+        <!-- populated by JS -->
+      </div>
+      <div class="heat-legend-bar">
+        <span class="heat-legend-item"><span class="heat-legend-dot hot"></span> hot &gt; 0.66</span>
+        <span class="heat-legend-item"><span class="heat-legend-dot warm"></span> warm 0.33 &ndash; 0.66</span>
+        <span class="heat-legend-item"><span class="heat-legend-dot cool"></span> cool &lt; 0.33</span>
+        <span style="margin-left: auto; color: var(--text-3);">know gen codemap src --heat</span>
+      </div>
+    </div>
+
+    <div class="heat-bridge reveal">
+      <div class="heat-bridge-flow">
+        <span class="heat-bridge-node" style="color: var(--ph-feature); border-color: #40c8ff40; background: #40c8ff08;">
+          feature:auth
+        </span>
+        <span class="heat-bridge-arrow">&xrarr;</span>
+        <span class="heat-bridge-node" style="color: var(--ph-component); border-color: #d580ff40; background: #d580ff08;">
+          component:session
+        </span>
+        <span class="heat-bridge-arrow">&xrarr;</span>
+        <span class="heat-bridge-node" style="color: var(--ph-project); border-color: #5c9eff40; background: #5c9eff08;">
+          module:auth
+        </span>
+        <span class="heat-bridge-arrow">&xrarr;</span>
+        <span class="heat-bridge-node" style="color: #ff4060; border-color: #ff406040; background: #ff406010;">
+          &#9632; 0.82 hot
+        </span>
+      </div>
+      <p style="text-align: center; margin-top: 1rem; font-size: 0.82rem; color: var(--text-3);">
+        One traversal links intent to code with relevance.
+      </p>
+    </div>
+
+    <div class="code-block reveal" style="margin-top: 2rem;">
+      <div class="code-block-label">heat output</div>
+      <code><pre><span class="json-bracket">{</span>
+  <span class="json-key">"path"</span><span class="json-punct">:</span> <span class="json-str">"src/graph.py"</span><span class="json-punct">,</span>
+  <span class="json-key">"heat"</span><span class="json-punct">:</span> <span class="json-bracket">{</span>
+    <span class="json-key">"score"</span><span class="json-punct">:</span> <span class="json-str">0.659</span><span class="json-punct">,</span>
+    <span class="json-key">"label"</span><span class="json-punct">:</span> <span class="json-str">"warm"</span><span class="json-punct">,</span>
+    <span class="json-key">"signals"</span><span class="json-punct">:</span> <span class="json-bracket">{</span>
+      <span class="json-key">"churn"</span><span class="json-punct">:</span> <span class="json-str">0.520</span><span class="json-punct">,</span>  <span class="comment">// 17 commits in 90d window</span>
+      <span class="json-key">"recency"</span><span class="json-punct">:</span> <span class="json-str">0.890</span><span class="json-punct">,</span>  <span class="comment">// touched 2 days ago, 14d half-life</span>
+      <span class="json-key">"complexity"</span><span class="json-punct">:</span> <span class="json-str">0.740</span><span class="json-punct">,</span>  <span class="comment">// 890 lines</span>
+      <span class="json-key">"centrality"</span><span class="json-punct">:</span> <span class="json-str">0.610</span><span class="json-punct">,</span>  <span class="comment">// high fan-in from 8 importers</span>
+      <span class="json-key">"ripple"</span><span class="json-punct">:</span> <span class="json-str">0.380</span>  <span class="comment">// neighbors moderately active</span>
+    <span class="json-bracket">}</span>
+  <span class="json-bracket">}</span><span class="json-punct">,</span>
+  <span class="json-key">"functions"</span><span class="json-punct">:</span> <span class="json-bracket">[</span>
+    <span class="json-bracket">{</span> <span class="json-key">"name"</span><span class="json-punct">:</span> <span class="json-str">"update_entity"</span><span class="json-punct">,</span> <span class="json-key">"heat"</span><span class="json-punct">:</span> <span class="json-bracket">{</span> <span class="json-key">"score"</span><span class="json-punct">:</span> <span class="json-str">0.810</span><span class="json-punct">,</span> <span class="json-key">"label"</span><span class="json-punct">:</span> <span class="json-str">"hot"</span> <span class="json-bracket">}</span> <span class="json-bracket">}</span><span class="json-punct">,</span>
+    <span class="json-bracket">{</span> <span class="json-key">"name"</span><span class="json-punct">:</span> <span class="json-str">"load_graph"</span><span class="json-punct">,</span>    <span class="json-key">"heat"</span><span class="json-punct">:</span> <span class="json-bracket">{</span> <span class="json-key">"score"</span><span class="json-punct">:</span> <span class="json-str">0.210</span><span class="json-punct">,</span> <span class="json-key">"label"</span><span class="json-punct">:</span> <span class="json-str">"cool"</span> <span class="json-bracket">}</span> <span class="json-bracket">}</span>
+  <span class="json-bracket">]</span>
+<span class="json-bracket">}</span></pre></code>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ For Agents ═══ -->
+<section id="agents">
+  <div class="container">
+    <h2 class="reveal">Built for AI agents</h2>
+    <p class="lead reveal">
+      Know gives agents structured project context without token-wasting
+      repeated analysis. Query the graph, traverse dependencies, generate
+      specs on demand.
+    </p>
+
+    <div class="agent-cards">
+      <div class="agent-card reveal">
+        <div class="card-icon" style="background: #40c8ff10; color: var(--ph-feature);">&#9670;</div>
+        <h3>Query, don&rsquo;t parse</h3>
+        <p>
+          Traverse from user intent to implementation in a single CLI call.
+          <code>know graph uses feature:auth</code> returns the full dependency
+          tree &mdash; no file scanning required.
+        </p>
+      </div>
+      <div class="agent-card reveal">
+        <div class="card-icon" style="background: #66e0a010; color: var(--ph-user);">&#9674;</div>
+        <h3>Generate, don&rsquo;t store</h3>
+        <p>
+          Specs are produced from the graph when needed, always current.
+          <code>know gen feature-spec auth</code> outputs a complete spec
+          document from live graph state.
+        </p>
+      </div>
+      <div class="agent-card reveal">
+        <div class="card-icon" style="background: #ffcc3310; color: var(--ph-action);">&#9633;</div>
+        <h3>Structured build workflow</h3>
+        <p>
+          The <code>/know:build</code> slash command drives 7-phase feature
+          development with XML task specs, checkpoints, and
+          progress tracking.
+        </p>
+      </div>
+      <div class="agent-card reveal">
+        <div class="card-icon" style="background: #d580ff10; color: var(--ph-component);">&#8862;</div>
+        <h3>Cross-boundary tracing</h3>
+        <p>
+          <code>know gen trace feature:auth</code> follows links across
+          spec and code graphs. See which modules implement which features
+          without manual mapping.
+        </p>
+      </div>
+      <div class="agent-card reveal">
+        <div class="card-icon" style="background: #ff8a5010; color: var(--ph-objective);">&#9651;</div>
+        <h3>Validation as guardrails</h3>
+        <p>
+          <code>know check validate</code> enforces DAG structure, dependency
+          rules, and completeness. Agents get immediate feedback when graph
+          modifications break constraints.
+        </p>
+      </div>
+      <div class="agent-card reveal">
+        <div class="card-icon" style="background: #5af5a010; color: var(--ph-operation);">&#9678;</div>
+        <h3>Gap detection</h3>
+        <p>
+          <code>know check gap-summary</code> identifies missing implementations,
+          orphaned references, and incomplete dependency chains. Agents know
+          exactly what&rsquo;s left to build.
+        </p>
+      </div>
+    </div>
+
+    <div class="code-block reveal">
+      <div class="code-block-label">agent integration</div>
+      <code><pre><span class="comment"># Initialize — sets up your project in one command:</span>
+<span class="comment">#   slash commands  → .claude/commands/know/</span>
+<span class="comment">#   know-tool skill → .claude/skills/know-tool/</span>
+<span class="comment">#   graph config    → .ai/know/config/</span>
+<span class="comment">#   initial graphs  → .ai/know/{spec,code}-graph.json</span>
+<span class="comment">#   project context → .ai/know/project.md</span>
+<span class="comment">#   protection hook → prevents direct graph file edits</span>
+<span class="comment">#   CLAUDE.md       → injects &lt;know-instructions&gt; block</span>
+<span class="cmd-text">know init .</span>
+
+<span class="comment"># Agent reads project context</span>
+<span class="cmd-text">know</span> <span class="flag">-g</span> .ai/know/spec-graph.json <span class="cmd-text">list</span> <span class="flag">--type</span> feature
+<span class="cmd-text">know</span> graph uses feature:auth
+<span class="cmd-text">know</span> gen feature-spec auth <span class="flag">--format</span> xml
+
+<span class="comment"># Agent modifies the graph</span>
+<span class="cmd-text">know</span> add feature payment <span class="string">'{"name":"Payments","description":"..."}'</span>
+<span class="cmd-text">know</span> link feature:payment action:checkout component:stripe
+<span class="cmd-text">know</span> check validate
+
+<span class="comment"># Agent generates specs from graph state</span>
+<span class="cmd-text">know</span> gen spec feature:payment <span class="flag">--format</span> xml
+<span class="cmd-text">know</span> gen trace feature:payment</pre></code>
+    </div>
+
+
+
+  </div>
+</section>
+
+<!-- ═══ Commands ═══ -->
+<section id="commands">
+  <div class="container">
+    <h2 class="reveal">Slash commands</h2>
+    <p class="lead reveal">
+      Claude Code slash commands wrap the CLI with guided, multi-phase workflows.
+      Agents get interactive discovery, planning, building, and review.
+    </p>
+    <table class="cmd-table reveal">
+      <thead>
+        <tr>
+          <th>Command</th>
+          <th>What it does</th>
+          <th>Phase</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="cmd">/know:plan</td>
+          <td class="desc">QA-driven product discovery &mdash; builds spec-graph from conversation</td>
+          <td class="phase">Discovery</td>
+        </tr>
+        <tr>
+          <td class="cmd">/know:add</td>
+          <td class="desc">Add features with 5-step interactive workflow + graph linking</td>
+          <td class="phase">Discovery</td>
+        </tr>
+        <tr>
+          <td class="cmd">/know:prepare</td>
+          <td class="desc">Bootstrap existing codebase into both graphs with parallel agents</td>
+          <td class="phase">Setup</td>
+        </tr>
+        <tr>
+          <td class="cmd">/know:prebuild</td>
+          <td class="desc">Validate specs align with graph before building</td>
+          <td class="phase">Validation</td>
+        </tr>
+        <tr>
+          <td class="cmd">/know:build</td>
+          <td class="desc">7-phase structured development: discover &rarr; explore &rarr; design &rarr; implement &rarr; integrate &rarr; test &rarr; review</td>
+          <td class="phase">Execution</td>
+        </tr>
+        <tr>
+          <td class="cmd">/know:change</td>
+          <td class="desc">Structured change requests with requirement tracking</td>
+          <td class="phase">Execution</td>
+        </tr>
+        <tr>
+          <td class="cmd">/know:review</td>
+          <td class="desc">Interactive QA walkthrough for end-user acceptance testing</td>
+          <td class="phase">Review</td>
+        </tr>
+        <tr>
+          <td class="cmd">/know:done</td>
+          <td class="desc">Archive completed feature, update horizon, clean up artifacts</td>
+          <td class="phase">Completion</td>
+        </tr>
+        <tr>
+          <td class="cmd">/know:bug</td>
+          <td class="desc">Track issues against features with automatic todo tracking</td>
+          <td class="phase">Maintenance</td>
+        </tr>
+        <tr>
+          <td class="cmd">/know:list</td>
+          <td class="desc">Show features grouped by horizon with task progress</td>
+          <td class="phase">Query</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="code-block reveal" style="margin-top: 2.5rem;">
+      <div class="code-block-label">CLI essentials</div>
+      <code><pre><span class="comment"># Query</span>
+<span class="cmd-text">know</span> list <span class="flag">--type</span> feature        <span class="comment"># list entities by type</span>
+<span class="cmd-text">know</span> graph uses feature:auth     <span class="comment"># dependency tree (down)</span>
+<span class="cmd-text">know</span> graph used-by component:x   <span class="comment"># reverse dependency (up)</span>
+<span class="cmd-text">know</span> search <span class="string">"auth"</span>               <span class="comment"># fuzzy search</span>
+
+<span class="comment"># Modify</span>
+<span class="cmd-text">know</span> add feature auth <span class="string">'{"name":"Auth"}'</span>
+<span class="cmd-text">know</span> link feature:auth action:login action:logout
+<span class="cmd-text">know</span> unlink feature:auth action:old
+
+<span class="comment"># Validate</span>
+<span class="cmd-text">know</span> check validate              <span class="comment"># full graph validation</span>
+<span class="cmd-text">know</span> check health                <span class="comment"># comprehensive report</span>
+<span class="cmd-text">know</span> check gap-summary           <span class="comment"># what's missing</span>
+
+<span class="comment"># Generate</span>
+<span class="cmd-text">know</span> gen feature-spec auth       <span class="comment"># markdown spec from graph</span>
+<span class="cmd-text">know</span> gen spec auth <span class="flag">--format</span> xml  <span class="comment"># XML task spec</span>
+<span class="cmd-text">know</span> gen trace feature:auth      <span class="comment"># cross spec↔code boundary</span>
+<span class="cmd-text">know</span> gen trace-matrix            <span class="comment"># full traceability matrix</span>
+
+<span class="comment"># Visualize</span>
+<span class="cmd-text">know</span> viz tree                    <span class="comment"># ASCII tree</span>
+<span class="cmd-text">know</span> viz mermaid                 <span class="comment"># diagram export</span>
+<span class="cmd-text">know</span> viz d3                      <span class="comment"># interactive D3 viz</span></pre></code>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Testimonials ═══ -->
+<section class="testimonials">
+  <div class="container">
+    <h2 class="reveal">People shipping with know</h2>
+
+    <div class="testimonial-grid">
+      <div class="testimonial reveal">
+        <blockquote>
+          &ldquo;I had to generate user flows for my product manager. I didn&rsquo;t want
+          to sit there with Playwright and personas. Know read my code, asked a few
+          questions, and made great step-by-steps for each requirement.&rdquo;
+        </blockquote>
+        <div class="attribution">
+          <span>&mdash;</span> AI Architect @ Startup
+        </div>
+      </div>
+
+      <div class="testimonial accent-amber reveal">
+        <blockquote>
+          &ldquo;Now Know is the backstop for Playwright.&rdquo;
+        </blockquote>
+        <div class="attribution">
+          <span>&mdash;</span> AI Architect @ Startup
+        </div>
+      </div>
+
+      <div class="testimonial accent-green reveal">
+        <blockquote>
+          &ldquo;My agents stop guessing during implementation. They Know.&rdquo;
+        </blockquote>
+        <div class="attribution">
+          <span>&mdash;</span> AI Engineer @ Big Company
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Pricing ═══ -->
+<section id="pricing">
+  <div class="container">
+    <h2 class="reveal">Pricing</h2>
+    <p class="lead reveal">
+      Know is open source. MIT licensed. No tricks.
+    </p>
+
+    <div class="pricing-cards">
+      <div class="pricing-card muted reveal">
+        <div class="pricing-tier">Personal</div>
+        <div class="pricing-amount">Free</div>
+        <div class="pricing-period">forever</div>
+        <ul class="pricing-features">
+          <li>Full CLI</li>
+          <li>Both graphs</li>
+          <li>All slash commands</li>
+          <li>Heat scoring</li>
+          <li>Validation &amp; generation</li>
+        </ul>
+        <a href="https://github.com/eighteyes/know-cli" class="btn btn-secondary">Install</a>
+      </div>
+
+      <div class="pricing-card featured reveal">
+        <div class="pricing-tier">Team</div>
+        <div class="pricing-amount">Free</div>
+        <div class="pricing-period">forever</div>
+        <ul class="pricing-features">
+          <li>Everything in Personal</li>
+          <li>Shared spec graphs</li>
+          <li>Multi-agent workflows</li>
+          <li>Custom schemas</li>
+          <li>Code graph generation</li>
+        </ul>
+        <a href="https://github.com/eighteyes/know-cli" class="btn btn-primary">Install</a>
+      </div>
+
+      <div class="pricing-card muted reveal">
+        <div class="pricing-tier">Enterprise</div>
+        <div class="pricing-amount">Free</div>
+        <div class="pricing-period">forever</div>
+        <ul class="pricing-features">
+          <li>Everything in Team</li>
+          <li>It&rsquo;s MIT licensed</li>
+          <li>Read the source</li>
+          <li>Seriously, it&rsquo;s free</li>
+        </ul>
+        <div class="interest-form">
+          <p>Want commercial support?</p>
+          <div class="email-row">
+            <input type="email" id="interest-email" placeholder="you@company.com">
+            <button onclick="submitInterest(this)">let me know</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CTA ═══ -->
+<section class="cta">
+  <div class="container">
+    <h2 class="reveal">Start building with context</h2>
+    <p class="lead reveal">
+      Install know-cli, run <code>know init .</code> in your project,
+      and give your agents structured context that actually works.
+    </p>
+    <div class="cta-buttons reveal">
+      <a href="https://github.com/eighteyes/know-cli" class="btn btn-primary">
+        View on GitHub
+      </a>
+      <a href="https://www.npmjs.com/package/know-cli" class="btn btn-secondary">
+        npm package
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    know-cli &middot; MIT &middot; by <a href="https://github.com/eighteyes">Sean Canton</a>
+  </div>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   Animated graph constellation — hero background
+   ═══════════════════════════════════════════════════════════ */
+(function () {
+  const canvas = document.getElementById('graph-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, nodes = [], edges = [], raf;
+
+  const COLORS = [
+    '#5c9eff', '#66e0a0', '#ff8a50', '#40c8ff',
+    '#ffcc33', '#d580ff', '#5af5a0', '#ff80ab'
+  ];
+
+  const NODE_COUNT = 48;
+  const EDGE_DIST = 180;
+  const NODE_SPEED = 0.15;
+
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    W = canvas.offsetWidth;
+    H = canvas.offsetHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function init() {
+    resize();
+    nodes = [];
+    for (let i = 0; i < NODE_COUNT; i++) {
+      nodes.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        vx: (Math.random() - 0.5) * NODE_SPEED,
+        vy: (Math.random() - 0.5) * NODE_SPEED,
+        r: 1.5 + Math.random() * 2,
+        color: COLORS[i % COLORS.length],
+        alpha: 0.25 + Math.random() * 0.4
+      });
+    }
+  }
+
+  function tick() {
+    ctx.clearRect(0, 0, W, H);
+
+    // update positions
+    for (const n of nodes) {
+      n.x += n.vx;
+      n.y += n.vy;
+      if (n.x < 0 || n.x > W) n.vx *= -1;
+      if (n.y < 0 || n.y > H) n.vy *= -1;
+    }
+
+    // draw edges
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dx = nodes[i].x - nodes[j].x;
+        const dy = nodes[i].y - nodes[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < EDGE_DIST) {
+          const a = (1 - dist / EDGE_DIST) * 0.12;
+          ctx.strokeStyle = nodes[i].color;
+          ctx.globalAlpha = a;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // draw nodes
+    for (const n of nodes) {
+      ctx.globalAlpha = n.alpha;
+      ctx.fillStyle = n.color;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fill();
+
+      // soft glow
+      ctx.globalAlpha = n.alpha * 0.15;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r * 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.globalAlpha = 1;
+    raf = requestAnimationFrame(tick);
+  }
+
+  window.addEventListener('resize', () => { resize(); });
+  init();
+  tick();
+})();
+
+/* ═══ Heat bar chart ═══ */
+(function () {
+  const files = [
+    { file: 'graph.py',        score: 0.82, label: 'hot'  },
+    { file: 'entities.py',     score: 0.71, label: 'hot'  },
+    { file: 'validation.py',   score: 0.68, label: 'hot'  },
+    { file: 'know.py',         score: 0.65, label: 'warm' },
+    { file: 'dependencies.py', score: 0.58, label: 'warm' },
+    { file: 'generators.py',   score: 0.52, label: 'warm' },
+    { file: 'llm.py',          score: 0.49, label: 'warm' },
+    { file: 'cache.py',        score: 0.44, label: 'warm' },
+    { file: 'diff.py',         score: 0.38, label: 'warm' },
+    { file: 'gap_analysis.py', score: 0.33, label: 'warm' },
+    { file: 'utils.py',        score: 0.28, label: 'cool' },
+    { file: 'async_graph.py',  score: 0.22, label: 'cool' },
+    { file: 'reference.py',    score: 0.18, label: 'cool' },
+    { file: 'task_mgr.py',     score: 0.14, label: 'cool' },
+    { file: 'task_sync.py',    score: 0.10, label: 'cool' },
+    { file: 'beads.py',        score: 0.06, label: 'cool' },
+  ];
+
+  const container = document.getElementById('heat-bars');
+  if (!container) return;
+
+  files.forEach((f, i) => {
+    const bar = document.createElement('div');
+    bar.className = 'heat-bar';
+    bar.setAttribute('data-label', f.label);
+    bar.setAttribute('data-file', f.file);
+    bar.style.height = '0%';
+    bar.title = f.file + ' — ' + f.score.toFixed(2) + ' (' + f.label + ')';
+    container.appendChild(bar);
+
+    // staggered height animation on reveal
+    setTimeout(() => {
+      bar.style.height = (f.score * 100) + '%';
+    }, 100 + i * 40);
+  });
+})();
+
+/* ═══ Intersection observer ═══ */
+const observer = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((e) => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  },
+  { threshold: 0.15 }
+);
+
+document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+
+/* ═══ Copy install ═══ */
+function copyInstall(el) {
+  navigator.clipboard.writeText('npm install -g know-cli').then(() => {
+    const hint = el.querySelector('.copy-hint');
+    hint.textContent = 'copied';
+    setTimeout(() => { hint.textContent = 'copy'; }, 1500);
+  });
+}
+
+/* ═══ Copy agent instructions ═══ */
+function copyAgent(el) {
+  navigator.clipboard.writeText('evaluate if know is useful for my work https://raw.githubusercontent.com/eighteyes/know-cli/main/AGENTS.md').then(function () {
+    var hint = el.querySelector('.copy-hint');
+    hint.textContent = 'copied';
+    setTimeout(function () { hint.textContent = 'copy'; }, 1500);
+  });
+}
+
+/* ═══ Enterprise interest ═══ */
+function submitInterest(btn) {
+  var input = document.getElementById('interest-email');
+  var email = input.value.trim();
+  if (!email || !email.includes('@')) {
+    input.style.borderColor = '#ff6a50';
+    setTimeout(function () { input.style.borderColor = ''; }, 1500);
+    return;
+  }
+  // TODO: wire to actual endpoint
+  btn.textContent = 'noted';
+  btn.style.color = 'var(--ph-user)';
+  btn.style.borderColor = 'var(--ph-user)';
+  input.disabled = true;
+  btn.disabled = true;
+}
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({ startOnLoad: true, securityLevel: 'loose' });
+</script>
+</body>
+</html>

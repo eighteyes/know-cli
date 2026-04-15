@@ -316,17 +316,17 @@ know req update auth auth-login --status in-progress
 
 ---
 
-### 📅 Phases (`know phases`)
+### 📅 Horizons (`know horizons`)
 
 ```bash
-# Show all phase assignments
-know phases
+# Show all horizon assignments
+know horizons
 
 # Show assignments for a feature
-know phases feature:auth
+know horizons feature:auth
 
-# Move feature to phase
-know phases assign feature:auth II
+# Move feature to horizon
+know horizons assign feature:auth II
 ```
 
 ---

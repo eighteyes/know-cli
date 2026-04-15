@@ -82,7 +82,7 @@ _Answers:_
 Add feature to spec-graph using answers from step 2:
 - `know -g .ai/know/spec-graph.json add feature <name> '{"name":"...","description":"..."}'`
 - `know -g .ai/know/spec-graph.json graph link objective:<name> feature:<name>` for each objective
-- `know -g .ai/know/spec-graph.json phases add pending feature:<name>`
+- `know -g .ai/know/spec-graph.json horizons add pending feature:<name>`
 
 **Cross-Graph Setup** (prepare for implementation tracking):
 ```bash

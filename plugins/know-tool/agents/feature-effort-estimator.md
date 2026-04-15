@@ -55,13 +55,13 @@ You are an elite software project estimator specializing in dependency-graph-dri
    - Use `know graph check stats` to understand overall graph health
    - If feature has no dependencies, flag as potentially incomplete spec
    - If feature has circular dependencies, identify them immediately
-   - Cross-reference with phases in `meta.phases` to understand project timeline context
+   - Cross-reference with horizons in `meta.horizons` to understand project timeline context
 
 5. **Quality Checks**:
    - Verify feature exists: `know -g .ai/know/spec-graph.json validate`
    - Check for orphaned dependencies (entities that depend on nothing and nothing depends on)
    - Identify missing product-component mappings in code-graph.json
-   - Flag if feature appears in `meta.phases` but has no tasks in `.ai/know/<feature>/todo.md`
+   - Flag if feature appears in `meta.horizons` but has no tasks in `.ai/know/<feature>/todo.md`
 
 6. **Context Awareness**:
    - Consider the dual-graph system: spec-graph.json defines WHAT, code-graph.json defines HOW

@@ -1,0 +1,315 @@
+{
+  "allowed_dependencies": {
+    "project": ["user"],
+    "user": ["objective"],
+    "objective": ["feature"],
+    "feature": ["action", "workflow"],
+    "action": ["component"],
+    "component": ["operation"],
+    "workflow": ["action"]
+  },
+  "reference_dependency_rule": {
+    "description": "References (terminal nodes) can be dependencies of ANY entity type",
+    "applies_to": "all_entities",
+    "reference_types": [
+      "technical-architecture", "endpoint", "library", "protocol", "data-model",
+      "platform", "business-logic", "acceptance-criterion", "state-mutation",
+      "event", "content", "label", "design-style", "design-color", "design-layout", "design-pattern",
+      "design-spacing", "design-typography", "design-breakpoint", "design-z-index", "design-transition", "design-asset",
+      "api-contract", "api-schema", "validation-rule", "error-state", "performance-spec",
+      "notification", "configuration", "metric", "example", "constraint",
+      "terminology", "sequence", "mapping", "default", "security-spec",
+      "source-file", "external-dep", "api-surface", "product-component", "signature",
+      "execution-trace", "call-graph", "control-flow", "data-flow",
+      "side-effect", "error-path", "code-module", "test-spec",
+      "requirement", "interface", "permission",
+      "code-link", "open-question"
+    ],
+    "validation": "References are always valid dependencies and bypass entity-to-entity dependency rules",
+    "examples": [
+      "feature:analytics can depend on data-model:analytics-model",
+      "component:auth-form can depend on business-logic:login-workflow",
+      "action:export can depend on api-contract:export-endpoint",
+      "user:admin can depend on permission:admin-full-access (grants access to features)"
+    ]
+  },
+  "reference_description": {
+    "technical-architecture": "Infrastructure components and system architecture elements",
+    "endpoint": "API endpoint definitions",
+    "library": "Code libraries",
+    "protocol": "Communication protocols",
+    "data-model": "Detailed model schemas",
+    "platform": "Platform specifications for cloud infrastructure, mobile, and web platforms",
+    "business-logic": "Detailed workflows and rules for system operations and processes",
+    "acceptance-criterion": "Success criteria for features with functional, performance, and integration requirements",
+    "state-mutation": "State change specifications for critical operations",
+    "event": "Event definitions for system actions and user interactions",
+    "content": "Complete sentences for communicating with users. Branding and taglines.",
+    "label": "Specific text labels for buttons, fields, and UI elements",
+    "design-style": "Specific CSS styles for UI elements and components",
+    "design-color": "Color values with semantic names for theming",
+    "design-layout": "Specific layout styles and grid configurations",
+    "design-pattern": "Specific UI patterns and interaction behaviors",
+    "design-spacing": "Spacing arrays for micro, component, and layout spacing",
+    "design-typography": "Font stacks, size arrays, and weight arrays",
+    "design-breakpoint": "Responsive design breakpoints for different screen sizes",
+    "design-z-index": "Z-index layers for consistent stacking of UI elements",
+    "design-transition": "Animation timings and transition durations",
+    "design-asset": "Visual assets including images, icons, and media files for UI components and content",
+    "api-contract": "Detailed request/response schemas, error codes, rate limits for all API endpoints",
+    "api-schema": "TypeScript interface definitions for public APIs including request/response types",
+    "validation-rule": "Field-level and cross-field validation specifications for data integrity",
+    "error-state": "Error messages, recovery actions, and fallback behaviors for user-facing errors",
+    "performance-spec": "Response time SLAs, data limits, concurrency requirements, and load specifications",
+    "notification": "Alert rules, message templates, delivery channels, and notification triggers",
+    "configuration": "Feature toggles, environment configs, deployment settings, and runtime parameters",
+    "metric": "Analytics events, KPIs, success metrics, and tracking requirements for product insights",
+    "example": "Sample inputs/outputs, edge cases, test scenarios, and happy path demonstrations",
+    "constraint": "Business rules, system-wide invariants, and resource limits that must always hold",
+    "terminology": "Domain-specific terms, abbreviations, and naming conventions",
+    "sequence": "Orders of operations, initialization sequences, shutdown procedures, and event cascades",
+    "mapping": "Transformations between representations, status codes to messages, and field mappings",
+    "default": "System-wide default values, fallback behaviors, and initial states for entities",
+    "security-spec": "Reusable security requirement that may apply to multiple components",
+    "source-file": "Source code file implementations with file path and module details",
+    "external-dep": "External package dependencies from npm, pip, or other package managers",
+    "api-surface": "Public API definitions including exported functions, classes, and modules",
+    "product-component": "Cross-reference to product-level components in spec-graph.json",
+    "signature": "Function or method signature with name, parameters, and return type",
+    "execution-trace": "Step-by-step execution path through module functions with call details",
+    "call-graph": "Function call relationships showing what calls what with call types",
+    "control-flow": "Conditional logic, branches, loops, and decision points in code",
+    "data-flow": "Data transformations and how data moves through the system",
+    "side-effect": "Observable effects beyond return values: file I/O, state changes, process spawning",
+    "error-path": "Exception handling, error propagation, and recovery strategies",
+    "code-module": "[DEPRECATED: use code-link] Cross-reference to code-level modules in code-graph.json",
+    "code-link": "Cross-graph link from a spec entity (feature/component) to implementing code entities. Shape: { modules: [...], classes: [...], packages: [...], status: 'planned|in-progress|complete' }",
+    "test-spec": "Reusable test specification that may apply to multiple components",
+    "requirement": "Functional or non-functional specification that the system must satisfy",
+    "interface": "User interface screen or page in the application",
+    "permission": "Access control mapping from user roles to features. Value is '*' for all features, array of feature IDs, or negated IDs with '!feature:x' for exclusion",
+    "open-question": "Unresolved design or product question that must be answered before implementation. Linked to the entity it blocks."
+  },
+  "reference_note": {
+    "purpose": "References are terminal graph nodes used for template generation and detailed specifications",
+    "schema": "Each reference category uses a flat, but flexible schema tailored to its specific needs",
+    "naming": "Reference keys use plaintext naming (not key_object_notation) for final nodes",
+    "usage": "Entities in the graph can reference these nodes for implementation details and specifications",
+    "dependency_rule": "References can be dependencies of ANY entity type (see reference_dependency_rule)",
+    "permissions_example": {
+      "references": {
+        "permission": {
+          "admin-full-access": "*",
+          "editor": ["feature:user-management", "feature:content-editor"],
+          "viewer": ["feature:dashboard", "feature:reports"],
+          "trusted-user": ["*", "!feature:admin-panel", "!feature:billing"]
+        }
+      },
+      "graph": {
+        "user:admin": {"depends_on": ["permission:admin-full-access"]},
+        "user:editor": {"depends_on": ["permission:editor"]},
+        "user:viewer": {"depends_on": ["permission:viewer"]},
+        "user:trusted": {"depends_on": ["permission:trusted-user"]}
+      },
+      "note": "Permissions link users to features. Use '*' for all, array of IDs, or '!feature:x' for exclusion (e.g., ['*', '!feature:admin'] = all except admin)"
+    },
+    "design_keys": [
+      "colors-css",
+      "typography-css",
+      "spacing-css",
+      "styles-css",
+      "layouts-css",
+      "patterns-css",
+      "breakpoints-css",
+      "z-index-css",
+      "transitions-css"
+    ],
+    "deprecated_names": {
+      "technical_architecture": "technical-architecture",
+      "business_logic": "business-logic",
+      "acceptance_criterion": "acceptance-criterion",
+      "state_mutation": "state-mutation",
+      "api_contract": "api-contract",
+      "validation_rule": "validation-rule",
+      "error_state": "error-state",
+      "performance_spec": "performance-spec",
+      "style": "design-style",
+      "color": "design-color",
+      "layout": "design-layout",
+      "pattern": "design-pattern",
+      "spacing": "design-spacing",
+      "typography": "design-typography",
+      "breakpoint": "design-breakpoint",
+      "z-index": "design-z-index",
+      "transition": "design-transition",
+      "asset": "design-asset"
+    }
+  },
+  "meta_description": {
+    "workflow": "Collections of operations that form complete processes",
+    "assumption": "Explicit lists of technical and business assumptions underlying the design",
+    "phase": "Project implementation phases with dependencies and parallelization information",
+    "out_of_scope": "Features and capabilities explicitly excluded from the project",
+    "deployment": "Current deployment status and rollout information for different features",
+    "project": "High-level project information including name, tagline, and brand promise",
+    "decision": "Architecture and design decisions with rationale, alternatives considered, and trade-offs",
+    "qa_session": "Ordered lists of questions to refine the project"
+  },
+  "meta_schema": {
+    "top_level": {
+      "version": "STRING - Semantic version of graph format",
+      "format": "STRING - Format identifier (e.g., 'json-graph')",
+      "description": "STRING - Human-readable description of this knowledge graph",
+      "generated_at": "ISO8601_TIMESTAMP - When this graph was generated or last updated",
+      "project_root": "PATH_STRING - Absolute path to project root directory",
+      "source": "PATH_STRING - Relative path to source requirements document"
+    },
+    "project": {
+      "name": "STRING - Full project name",
+      "abbreviation": "STRING - Short abbreviation or acronym",
+      "tagline": "STRING - Marketing tagline or brief pitch",
+      "brand_promise": "STRING - Core value proposition or brand commitment",
+      "deployment": "OBJECT<STRING:STRING|NUMBER> - Feature names mapped to deployment status or counts",
+      "out_of_scope": "ARRAY<STRING> - Explicitly excluded features or capabilities",
+      "phases": "ARRAY<PHASE_OBJECT> - See phases schema below"
+    },
+    "phase": {
+      "schema": "ARRAY<PHASE_OBJECT>",
+      "phase_object": {
+        "id": "STRING - Unique phase identifier (e.g., '1_foundation')",
+        "name": "STRING - Human-readable phase name",
+        "description": "STRING - What this phase accomplishes",
+        "parallelizable": "BOOLEAN - Whether tasks in this phase can run in parallel",
+        "requirements": "ARRAY<STRING> - Entity paths that must be completed (e.g., 'requirement:system-reliability')"
+      }
+    },
+    "qa_session": {
+      "schema": "ARRAY<QA_SESSION_OBJECT>",
+      "qa_session_object": {
+        "round": "INTEGER - Sequential round number",
+        "timestamp": "ISO8601_TIMESTAMP - When this Q&A session occurred",
+        "questions": "ARRAY<STRING> - Questions asked to refine understanding",
+        "answers": "ARRAY<STRING> - Responses provided",
+        "entities_added": "ARRAY<STRING> - Entity paths added as result of this session",
+        "notes": "STRING - Optional notes or insights from session"
+      },
+      "note": "Often starts as empty array and grows during iterative refinement"
+    },
+    "assumption": {
+      "schema": "ARRAY<STRING>",
+      "examples": [
+        "Users have basic technical knowledge",
+        "Internet connectivity is reliable",
+        "Mobile devices support WebRTC"
+      ]
+    },
+    "decision": {
+      "schema": "ARRAY<DECISION_OBJECT>",
+      "decision_object": {
+        "id": "STRING - Unique decision identifier",
+        "title": "STRING - Decision title",
+        "context": "STRING - Why this decision was needed",
+        "decision": "STRING - What was decided",
+        "rationale": "STRING - Why this choice was made",
+        "alternatives": "ARRAY<STRING> - Other options considered",
+        "tradeoffs": "STRING - Pros and cons of the decision",
+        "date": "ISO8601_DATE - When decision was made"
+      }
+    },
+    "workflow": {
+      "schema": "ARRAY<WORKFLOW_OBJECT>",
+      "workflow_object": {
+        "id": "STRING - Unique workflow identifier",
+        "name": "STRING - Workflow name",
+        "description": "STRING - What this workflow accomplishes",
+        "operations": "ARRAY<STRING> - Operation entity paths in execution order",
+        "triggers": "ARRAY<STRING> - What initiates this workflow"
+      }
+    },
+    "deployment": {
+      "schema": "OBJECT<STRING:STRING|NUMBER|OBJECT>",
+      "note": "Flexible structure mapping feature/component names to deployment status",
+      "examples": {
+        "feature_name": "active|in_development|planned|deprecated",
+        "robot_count": 1000,
+        "release_info": {
+          "version": "1.2.0",
+          "date": "2025-01-15"
+        }
+      }
+    },
+    "out_of_scope": {
+      "schema": "ARRAY<STRING>",
+      "note": "Clear list of what is NOT included in project scope",
+      "examples": [
+        "mobile_app_development",
+        "hardware_manufacturing",
+        "third_party_integrations"
+      ]
+    },
+    "deprecated": {
+      "schema": "OBJECT<ENTITY_ID:DEPRECATION_INFO>",
+      "note": "Soft-deprecated entities still exist but warn on use",
+      "deprecation_info": {
+        "reason": "STRING - Why the entity is deprecated",
+        "deprecated_date": "ISO8601_DATE - When entity was deprecated",
+        "removal_target": "ISO8601_DATE - When entity will be removed (optional)",
+        "replacement": "STRING - Entity ID of replacement (optional)"
+      },
+      "examples": {
+        "component:old-auth": {
+          "reason": "Replaced by component:new-auth",
+          "deprecated_date": "2026-01-20",
+          "removal_target": "2026-03-01",
+          "replacement": "component:new-auth"
+        }
+      }
+    },
+    "requirements": {
+      "schema": "OBJECT<REQUIREMENT_KEY:REQUIREMENT_STATUS>",
+      "note": "Status tracking for requirement entities",
+      "requirement_status": {
+        "status": "STRING - pending|in-progress|blocked|complete|verified",
+        "started_date": "ISO8601_DATE - When work began (optional)",
+        "completed_date": "ISO8601_DATE - When work finished (optional)",
+        "verified_date": "ISO8601_DATE - When requirement was verified (optional)",
+        "blocked_by": "STRING - Entity ID or external reason (optional)",
+        "effort_hours": "NUMBER - Estimated/actual effort (optional)",
+        "notes": "STRING - Additional context (optional)"
+      },
+      "examples": {
+        "auth-login-validation": {
+          "status": "complete",
+          "started_date": "2026-01-15",
+          "completed_date": "2026-01-20",
+          "effort_hours": 8
+        },
+        "auth-session-persistence": {
+          "status": "blocked",
+          "started_date": "2026-01-21",
+          "blocked_by": "component:session-store not implemented"
+        }
+      }
+    }
+  },
+  "entity_description": {
+    "project": "Top-level container representing the entire software project or system",
+    "user": "Actor or role that interacts with the system",
+    "objective": "High-level goal or outcome that users want to achieve",
+    "feature": "Distinct functionality or capability provided to users",
+    "action": "Specific user action connected to an objective",
+    "component": "Reusable building block of the system architecture",
+    "operation": "Logic and state management for component interactions",
+    "workflow": "Ordered sequence of actions forming a complete process"
+  },
+  "entity_note": {
+    "purpose": "provide containers for references and relationship structure",
+    "schema": "Entities only have name & description keys.",
+    "allowed_metadata": ["id", "type", "path", "status", "tags", "metadata", "notes", "execution_order"]
+  },
+  "notes":{
+    "names": "reference and entity keys use snake case, use - for keys, not _",
+    "schema": "Do not use id, the parent key is the unique identifier",
+    "chain": ["project","user","objective","feature","action","component","operation"]
+  }
+}

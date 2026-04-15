@@ -273,7 +273,7 @@ def add_item(ctx, type_name, keys, json_file, skip_validation):
 @cli.group(context_settings=CONTEXT_SETTINGS)
 @click.pass_context
 def meta(ctx):
-    """Get, set, and delete meta sections (project, phases, decisions, etc.)"""
+    """Get, set, and delete meta sections (project, horizons, decisions, etc.)"""
     pass
 
 
@@ -287,9 +287,20 @@ def meta_get(ctx, section, key):
     Examples:
         know meta get project              # Show all project meta
         know meta get project name         # Show specific key
-        know meta get phases               # Show all phases
+        know meta get horizons             # Show all horizons
         know meta get decisions            # Show all decisions
     """
+    # Steer agents away from deprecated meta paths
+    deprecated_sections = {
+        'phases': ('horizons', 'Use `know horizons` commands instead of meta.phases'),
+        'requirements': (None, 'Use `know req` commands instead of meta.requirements'),
+    }
+    if section in deprecated_sections:
+        _, hint = deprecated_sections[section]
+        console.print(f"[red]✗ meta.{section} is deprecated.[/red]")
+        console.print(f"[yellow]  {hint}[/yellow]")
+        sys.exit(1)
+
     graph_data = ctx.obj['graph'].load()
 
     if 'meta' not in graph_data:
@@ -328,6 +339,17 @@ def meta_set(ctx, section, key, data, json_file):
         know meta set assumptions user-volume '{"description":"<1000 concurrent users"}'
         know meta set -f decision.json decisions caching
     """
+    # Steer agents away from deprecated meta paths
+    deprecated_sections = {
+        'phases': ('horizons', 'Use `know horizons` commands instead of meta.phases'),
+        'requirements': (None, 'Use `know req` commands instead of meta.requirements'),
+    }
+    if section in deprecated_sections:
+        _, hint = deprecated_sections[section]
+        console.print(f"[red]✗ meta.{section} is deprecated.[/red]")
+        console.print(f"[yellow]  {hint}[/yellow]")
+        sys.exit(1)
+
     # Parse data
     if json_file:
         with open(json_file, 'r') as f:
@@ -366,19 +388,28 @@ def meta_set(ctx, section, key, data, json_file):
 @meta.command(name='delete')
 @click.argument('section')
 @click.argument('key')
-@click.option('--yes', '-y', is_flag=True, help='Skip confirmation')
+@click.option('--yes', '-y', is_flag=True, hidden=True, help='Deprecated: no-op, kept for backwards compat')
 @click.pass_context
 def meta_delete(ctx, section, key, yes):
     """Delete a key from a meta section
 
     Examples:
-        know meta delete phases I                    # Delete phase I
-        know meta delete requirements auth-login     # Delete requirement
+        know meta delete horizons I                  # Delete horizon I
         know meta delete deprecated component:old    # Undeprecate entity
         know meta delete decisions caching-approach  # Delete decision
-        know meta delete phases II -y                # Skip confirmation
     """
     graph_data = ctx.obj['graph'].load()
+
+    # Steer agents away from deprecated meta paths
+    deprecated_sections = {
+        'phases': ('horizons', 'Use `know horizons` commands instead of meta.phases'),
+        'requirements': (None, 'Use `know req` commands instead of meta.requirements'),
+    }
+    if section in deprecated_sections:
+        _, hint = deprecated_sections[section]
+        console.print(f"[red]✗ meta.{section} is deprecated.[/red]")
+        console.print(f"[yellow]  {hint}[/yellow]")
+        sys.exit(1)
 
     # Check if section exists
     if 'meta' not in graph_data:
@@ -399,27 +430,15 @@ def meta_delete(ctx, section, key, yes):
     rprint(graph_data['meta'][section][key])
     console.print()
 
-    # Confirm deletion
-    if not yes:
-        if not click.confirm(f"Delete meta.{section}.{key}?"):
-            console.print("[dim]Cancelled[/dim]")
-            return
-
     # Delete the key
     del graph_data['meta'][section][key]
 
-    # If section is now empty, optionally remove it
+    # Auto-remove empty sections
     if not graph_data['meta'][section]:
-        console.print(f"[dim]Section '{section}' is now empty[/dim]")
-        if yes or click.confirm(f"Remove empty section meta.{section}?"):
-            del graph_data['meta'][section]
-            console.print(f"[green]✓ Deleted meta.{section}.{key} and removed empty section[/green]")
-        else:
-            # Save with empty section
-            ctx.obj['graph'].save_graph(graph_data)
-            console.print(f"[green]✓ Deleted meta.{section}.{key} (kept empty section)[/green]")
+        del graph_data['meta'][section]
+        ctx.obj['graph'].save_graph(graph_data)
+        console.print(f"[green]✓ Deleted meta.{section}.{key} and removed empty section[/green]")
     else:
-        # Save graph
         ctx.obj['graph'].save_graph(graph_data)
         console.print(f"[green]✓ Deleted meta.{section}.{key}[/green]")
 
@@ -993,7 +1012,7 @@ def nodes_deprecated(ctx, overdue):
 @click.argument('from_entity')
 @click.argument('into_entity')
 @click.option('--keep', is_flag=True, help='Keep the source entity after merge')
-@click.option('--yes', '-y', is_flag=True, help='Skip confirmation prompt')
+@click.option('--yes', '-y', is_flag=True, hidden=True, help='Deprecated: no-op, kept for backwards compat')
 @click.pass_context
 def nodes_merge(ctx, from_entity, into_entity, keep, yes):
     """Merge one entity into another, transferring all dependencies.
@@ -1005,7 +1024,7 @@ def nodes_merge(ctx, from_entity, into_entity, keep, yes):
     Examples:
         know nodes merge component:old-auth component:new-auth
         know nodes merge feature:duplicate feature:original --keep
-        know nodes merge action:old action:new -y
+        know nodes merge action:old action:new
     """
     graph_data = ctx.obj['graph'].load()
 
@@ -1026,25 +1045,7 @@ def nodes_merge(ctx, from_entity, into_entity, keep, yes):
         suggest_did_you_mean(graph_data, into_entity)
         sys.exit(1)
 
-    # Preview changes before merge
     graph_section = graph_data.get('graph', {})
-
-    if not yes:
-        from src.utils import get_all_deps
-        outgoing_count = len(get_all_deps(graph_section.get(from_entity, {})))
-        incoming_count = sum(1 for deps in graph_section.values()
-                           if from_entity in get_all_deps(deps))
-
-        console.print(f"[yellow]Will merge '{from_entity}' into '{into_entity}':[/yellow]")
-        console.print(f"  Outgoing dependencies to transfer: {outgoing_count}")
-        console.print(f"  Incoming dependencies to redirect: {incoming_count}")
-        if not keep:
-            console.print(f"  Will delete '{from_entity}' after merge")
-
-        if not click.confirm("\nProceed?"):
-            console.print("[dim]Cancelled[/dim]")
-            return
-
     changes = {'incoming': 0, 'outgoing': 0}
 
     # Transfer outgoing dependencies (what FROM depends on)
@@ -1093,7 +1094,7 @@ def nodes_merge(ctx, from_entity, into_entity, keep, yes):
 @nodes.command(name='rename')
 @click.argument('entity_id')
 @click.argument('new_key')
-@click.option('--yes', '-y', is_flag=True, help='Skip confirmation prompt')
+@click.option('--yes', '-y', is_flag=True, hidden=True, help='Deprecated: no-op, kept for backwards compat')
 @click.pass_context
 def nodes_rename(ctx, entity_id, new_key, yes):
     """Rename an entity's key, updating all graph references.
@@ -1104,7 +1105,7 @@ def nodes_rename(ctx, entity_id, new_key, yes):
         know nodes rename objective:foo bar
         know nodes rename objective:foo objective:bar
         know nodes rename feature:auth authentication
-        know nodes rename action:setup action:initialize -y
+        know nodes rename action:setup action:initialize
     """
     graph_data = ctx.obj['graph'].load()
 
@@ -1133,20 +1134,6 @@ def nodes_rename(ctx, entity_id, new_key, yes):
     if new_key in graph_data[section].get(entity_type, {}):
         console.print(f"[red]✗ Node already exists: {new_entity_id}[/red]")
         sys.exit(1)
-
-    # Preview changes before rename
-    if not yes:
-        from src.utils import get_all_deps
-        graph_section = graph_data.get('graph', {})
-        ref_count = sum(1 for deps in graph_section.values()
-                       if entity_id in get_all_deps(deps))
-
-        console.print(f"[yellow]Will rename '{entity_id}' to '{new_entity_id}':[/yellow]")
-        console.print(f"  References to update: {ref_count}")
-
-        if not click.confirm("\nProceed?"):
-            console.print("[dim]Cancelled[/dim]")
-            return
 
     # Rename in entities or references section
     if entity_type in graph_data.get('entities', {}) and \
@@ -1181,7 +1168,7 @@ def nodes_rename(ctx, entity_id, new_key, yes):
 
 @nodes.command(name='delete')
 @click.argument('entity_ids', nargs=-1, required=True)
-@click.option('--yes', '-y', is_flag=True, help='Skip confirmation prompt')
+@click.option('--yes', '-y', is_flag=True, hidden=True, help='Deprecated: no-op, kept for backwards compat')
 @click.pass_context
 def nodes_delete(ctx, entity_ids, yes):
     """Remove one or more entities or references and clean up their dependencies.
@@ -1192,8 +1179,8 @@ def nodes_delete(ctx, entity_ids, yes):
 
     Examples:
         know nodes delete component:obsolete
-        know nodes delete feature:cancelled -y
-        know nodes delete feature:a feature:b feature:c -y
+        know nodes delete feature:cancelled
+        know nodes delete feature:a feature:b feature:c
     """
     graph_data = ctx.obj['graph'].load()
     graph_section = graph_data.get('graph', {})
@@ -1226,17 +1213,6 @@ def nodes_delete(ctx, entity_ids, yes):
             'incoming': incoming,
         })
 
-    if not yes:
-        console.print(f"[yellow]Will delete {len(nodes_info)} node(s):[/yellow]")
-        for n in nodes_info:
-            category = "entity" if n['is_entity'] else "reference"
-            total_links = len(n['outgoing']) + len(n['incoming'])
-            console.print(f"  • {n['id']} ({category}, {total_links} links affected)")
-
-        if not click.confirm("\nProceed?"):
-            console.print("[dim]Cancelled[/dim]")
-            return
-
     # Delete all nodes
     for n in nodes_info:
         if n['is_entity']:
@@ -1262,7 +1238,7 @@ def nodes_delete(ctx, entity_ids, yes):
 
 @nodes.command(name='cut')
 @click.argument('entity_id')
-@click.option('--yes', '-y', is_flag=True, help='Skip confirmation prompt')
+@click.option('--yes', '-y', is_flag=True, hidden=True, help='Deprecated: no-op, kept for backwards compat')
 @click.pass_context
 def nodes_cut(ctx, entity_id, yes):
     """Remove an entity or reference only, leaving dependencies orphaned.
@@ -1273,7 +1249,7 @@ def nodes_cut(ctx, entity_id, yes):
 
     Examples:
         know nodes cut component:to-replace
-        know nodes cut feature:swap-out -y
+        know nodes cut feature:swap-out
         know nodes cut data-model:old-schema
     """
     graph_data = ctx.obj['graph'].load()
@@ -1304,23 +1280,6 @@ def nodes_cut(ctx, entity_id, yes):
     outgoing_deps = get_all_deps(graph_section.get(entity_id, {}))
     incoming_deps = [eid for eid, deps in graph_section.items()
                      if entity_id in get_all_deps(deps)]
-
-    if not yes and (outgoing_deps or incoming_deps):
-        console.print(f"[yellow]Will cut {node_category} '{entity_id}' leaving orphaned dependencies:[/yellow]")
-
-        if outgoing_deps:
-            console.print(f"\n[dim]Orphaned outgoing ({len(outgoing_deps)}):[/dim]")
-            for dep in outgoing_deps:
-                console.print(f"  • {entity_id} → {dep}")
-
-        if incoming_deps:
-            console.print(f"\n[dim]Dangling incoming refs ({len(incoming_deps)}):[/dim]")
-            for dep in incoming_deps:
-                console.print(f"  • {dep} → {entity_id}")
-
-        if not click.confirm("\nProceed?"):
-            console.print("[dim]Cancelled[/dim]")
-            return
 
     # Remove from entities or references only
     if is_entity:
@@ -1530,22 +1489,16 @@ def link(ctx, from_entity, to_entities, position, after, auto_create):
 @cli.command(name='unlink')
 @click.argument('from_entity')
 @click.argument('to_entities', nargs=-1, required=True)
-@click.option('--yes', '-y', is_flag=True, help='Skip confirmation prompt')
+@click.option('--yes', '-y', is_flag=True, hidden=True, help='Deprecated: no-op, kept for backwards compat')
 @click.pass_context
 def unlink(ctx, from_entity, to_entities, yes):
     """Remove one or more dependencies from an entity
 
     Examples:
         know unlink feature:auth action:login
-        know unlink feature:auth action:login action:logout -y
-        know unlink workflow:onboarding action:signup -y
+        know unlink feature:auth action:login action:logout
+        know unlink workflow:onboarding action:signup
     """
-    if not yes:
-        targets = ', '.join(to_entities)
-        if not click.confirm(f"Remove {len(to_entities)} link(s) from {from_entity} -> {targets}?"):
-            console.print("[dim]Cancelled[/dim]")
-            return
-
     # Check if this is a workflow (ordered dependencies)
     if from_entity.startswith('workflow:'):
         # Use WorkflowManager for ordered unlinking
@@ -4057,7 +4010,7 @@ def rules_describe(ctx, type_name):
         know -g .ai/know/spec-graph.json gen rules describe feature
         know -g .ai/know/code-graph.json gen rules describe module
         know gen rules describe business_logic
-        know gen rules describe phases
+        know gen rules describe horizons
         know gen rules describe entities       # List all entity types
         know gen rules describe references     # List all reference types
         know gen rules describe meta           # List all meta sections
@@ -4164,7 +4117,7 @@ def rules_describe(ctx, type_name):
     console.print(f"[red]✗ Type '{type_name}' not found[/red]")
     console.print("\n[dim]Try: entity types (feature, component, etc.), "
                  "reference types (business_logic, data-models, etc.), "
-                 "or meta sections (project, phases, etc.)[/dim]")
+                 "or meta sections (project, horizons, etc.)[/dim]")
 
 
 @rules.command(name='before')
@@ -5710,7 +5663,7 @@ def horizons_list(ctx):
             # Check virtual status flags (planned, implemented, reviewed)
             virtual_status = []
 
-            # Planned: always true if in phases
+            # Planned: always true if in horizons
             virtual_status.append("📋")
 
             # Implemented: check for code-graph links
@@ -5783,10 +5736,10 @@ def horizons_add(ctx, horizon_id, entity_id, status):
         know horizons add II feature:checkout --status in-progress
     """
     # Validate horizon - Roman numerals only
-    valid_phases = {'I', 'II', 'III', 'IV', 'V'}
-    if horizon_id not in valid_phases:
+    valid_horizons = {'I', 'II', 'III', 'IV', 'V'}
+    if horizon_id not in valid_horizons:
         console.print(f"[red]✗ Invalid horizon: {horizon_id}[/red]")
-        console.print(f"[dim]  Valid horizons: {', '.join(sorted(valid_phases))}[/dim]")
+        console.print(f"[dim]  Valid horizons: {', '.join(sorted(valid_horizons))}[/dim]")
         sys.exit(1)
 
     # Validate status - lifecycle states
@@ -5863,10 +5816,10 @@ def horizons_move(ctx, entity_id, horizon_id, status):
         know horizons move feature:checkout II --status in-progress
     """
     # Validate horizon - Roman numerals only
-    valid_phases = {'I', 'II', 'III', 'IV', 'V'}
-    if horizon_id not in valid_phases:
+    valid_horizons = {'I', 'II', 'III', 'IV', 'V'}
+    if horizon_id not in valid_horizons:
         console.print(f"[red]✗ Invalid horizon: {horizon_id}[/red]")
-        console.print(f"[dim]  Valid horizons: {', '.join(sorted(valid_phases))}[/dim]")
+        console.print(f"[dim]  Valid horizons: {', '.join(sorted(valid_horizons))}[/dim]")
         sys.exit(1)
 
     # Validate entity type - only features allowed in horizons
@@ -6362,12 +6315,11 @@ def init(project_dir):
     This command:
     1. Copies slash commands to .claude/commands/know/
     2. Copies know-tool skill to .claude/skills/know-tool/
-    3. Copies agents to .claude/agents/
-    4. Creates .ai/know/ directory structure
-    5. Initializes project.md with template
-    6. Creates initial graphs if they don't exist
-    7. Installs graph protection hook (prevents direct file edits)
-    8. Injects <know-instructions> into CLAUDE.md
+    3. Creates .ai/know/ directory structure
+    4. Initializes project.md with template
+    5. Creates initial graphs if they don't exist
+    6. Installs graph protection hook (prevents direct file edits)
+    7. Injects <know-instructions> into CLAUDE.md
 
     Examples:
         know init .
@@ -6412,29 +6364,6 @@ def init(project_dir):
         console.print(f"[green]✓[/green] Installed know-tool skill (replaced)")
     else:
         console.print(f"[yellow]⚠[/yellow] know-tool skill not found at {skill_source}")
-
-    # 2a. Copy agents
-    agents_templates_dir = Path(__file__).parent / "templates" / "agents"
-    agents_dest_dir = project_path / ".claude" / "agents"
-
-    if agents_templates_dir.exists():
-        if agents_dest_dir.exists() and not agents_dest_dir.is_dir():
-            console.print(f"[yellow]⚠[/yellow] {agents_dest_dir} exists as a file, skipping agents installation")
-        else:
-            agents_dest_dir.mkdir(parents=True, exist_ok=True)
-            copied_agents = []
-            for agent_file in agents_templates_dir.glob("*.md"):
-                dest_file = agents_dest_dir / agent_file.name
-                if dest_file.exists():
-                    console.print(f"[yellow]⚠[/yellow] Agent {agent_file.stem} already exists")
-                else:
-                    shutil.copy2(agent_file, dest_file)
-                    copied_agents.append(agent_file.stem)
-
-            if copied_agents:
-                console.print(f"[green]✓[/green] Installed agents: {', '.join(copied_agents)}")
-    else:
-        console.print(f"[dim]  No agents to install[/dim]")
 
     # 3. Create .ai/know/ directory structure
     know_dir = project_path / ".ai" / "know"

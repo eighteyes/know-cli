@@ -5,6 +5,12 @@ description: Master the know CLI tool for managing specification graphs. Use whe
 
 # Know Tool - Specification Graph Mastery
 
+## Installation
+
+If `know` is not available, ask the user to install it:
+
+> The `know` CLI is required but not found. Install with `npm install -g know-cli` or see https://github.com/eighteyes/know-cli
+
 ## What is the Specification Graph?
 
 The specification graph (`.ai/know/spec-graph.json`) is a directed acyclic graph (DAG) representing software systems as interconnected nodes with explicit dependencies. Everything is a node, relationships are explicit, nothing is implied.
@@ -13,30 +19,30 @@ The specification graph (`.ai/know/spec-graph.json`) is a directed acyclic graph
 
 1. **Entities** - Structural nodes that participate in dependencies (user, feature, component, etc.)
 2. **References** - Terminal nodes with implementation details (business_logic, data-models, etc.)
-3. **Meta** - Project metadata (phases, assumptions, decisions, qa_sessions)
+3. **Meta** - Project metadata (horizons, assumptions, decisions, qa_sessions)
 
 **Key principle:** The graph IS the source of truth. All relationships are explicit.
 
-## Phases in meta.phases
+## Horizons in meta.horizons
 
-The `meta.phases` section tracks feature lifecycle and scheduling:
+The `meta.horizons` section tracks feature lifecycle and scheduling:
 
-**Phase Types:**
-- `I, II, III` - Scheduling phases (immediate, next, future)
+**Horizon Types:**
+- `I, II, III` - Scheduling horizons (immediate, next, future)
 - `pending` - Not yet scheduled
 - `done` - Completed and archived
 
-**Phase Status:**
+**Horizon Status:**
 - `incomplete` - Feature added but not started
 - `in-progress` - Active development
 - `review-ready` - Implementation complete, awaiting review
-- `complete` - Finished (in done phase)
+- `complete` - Finished (in done horizon)
 
-**Phase Lifecycle:**
+**Horizon Lifecycle:**
 ```
-/know:add    → pending phase, status: incomplete
+/know:add    → pending horizon, status: incomplete
 /know:build  → status: in-progress → review-ready
-/know:done   → done phase, status: complete
+/know:done   → done horizon, status: complete
 ```
 
 ## Core Mental Model
@@ -69,7 +75,7 @@ Know CLI uses a flat structure with auto-detection:
 | `know link <from> <to> [to2 ...]` | Add one or more dependencies |
 | `know unlink <from> <to> [to2 ...]` | Remove one or more dependencies |
 | `know nodes` | Node operations: deprecate, merge, rename, delete, cut, clone, update |
-| `know meta` | Get, set, and delete meta sections (project, phases, decisions) |
+| `know meta` | Get, set, and delete meta sections (project, horizons, decisions) |
 | `know graph` | Traverse, uses, used-by, connect, clean, suggest, diff, migrate, coverage, cross connect, cross coverage |
 | `know graph coverage` | Show % of spec entities reachable from root users |
 | `know graph cross connect [feature]` | Auto-connect spec features/components to code via token matching |
@@ -79,7 +85,7 @@ Know CLI uses a flat structure with auto-detection:
 | `know feature` | Lifecycle: status, connect, review, done, impact, validate, contracts, coverage |
 | `know req` | Requirements: add, list, status, block, complete |
 | `know op` | Op-level progress: start, done, next, reset, status |
-| `know phases` | Phase management: list, add, move, status, remove |
+| `know horizons` | Horizon management: list, add, move, status, remove |
 | `know init` | Initialize know workflow (installs graph protection hooks) |
 
 ## Using know gen rules Commands
@@ -90,7 +96,7 @@ These commands expose the dependency structure for LLMs:
 # Understand any type
 know gen rules describe feature
 know gen rules describe business_logic
-know gen rules describe phases
+know gen rules describe horizons
 
 # See dependency rules
 know gen rules before component    # What can depend on component?
@@ -142,8 +148,8 @@ know add feature feat-a feat-b feat-c -f data.json                      # Add mu
 know add documentation new-doc '{"title":"...", "url":"..."}'            # Add reference (auto-detects)
 know meta set project key '{"value":"..."}'                              # Set meta value
 know meta get project                                                    # Get meta section
-know meta delete phases I                                                # Delete meta key (prompts)
-know meta delete requirements auth-login -y                              # Delete meta key (skip prompt)
+know meta delete horizons I                                              # Delete meta key (prompts)
+know meta delete horizons I -y                                           # Delete meta key (skip prompt)
 know link feature:auth action:login                                      # Add single dependency
 know link feature:auth action:login action:logout component:session      # Add multiple at once
 know unlink feature:auth action:login action:logout                      # Remove multiple at once
@@ -355,38 +361,38 @@ know graph check validate
 know graph uses feature:new-feature --recursive
 ```
 
-## Phase Management
+## Horizon Management
 
-**Phase** = Roman numerals (I, II, III) - WHEN to do this feature (planning waves)
+**Horizon** = Roman numerals (I, II, III) - WHEN to do this feature (planning waves)
 **Status** = in-progress, complete, planned - current state of the work
 
-Phase is the plan, status is the territory. A feature can be `phase: III` (planned for wave 3) but `status: in-progress` (started early).
+Horizon is the plan, status is the territory. A feature can be `horizon: III` (planned for wave 3) but `status: in-progress` (started early).
 
 ```bash
-know phases                          # Alias for phases list
-know phases list                     # Show all features organized by phase
-know phases add <phase> <entity>     # Add feature to phase (e.g., know phases add I feature:auth)
-know phases move <entity> <phase>    # Move feature to different phase
-know phases status <entity> <status> # Update status (planned, in-progress, complete)
-know phases remove <entity>          # Remove entity from all phases
+know horizons                          # Alias for horizons list
+know horizons list                     # Show all features organized by horizon
+know horizons add <horizon> <entity>   # Add feature to horizon (e.g., know horizons add I feature:auth)
+know horizons move <entity> <horizon>  # Move feature to different horizon
+know horizons status <entity> <status> # Update status (planned, in-progress, complete)
+know horizons remove <entity>          # Remove entity from all horizons
 ```
 
 **Output includes:**
-- Phase metadata (shortname, name, description) from `meta.phases_metadata`
-- Features within each phase
-- Requirement completion counts (from `meta.requirements`)
+- Horizon metadata (shortname, name, description) from `meta.horizons_metadata`
+- Features within each horizon
+- Requirement completion counts
 - Status icons (✅ complete, 🔄 in-progress, 📋 planned)
 - Summary totals
 
 **Example output:**
 ```
-Phase I (Foundation)
+Horizon I (Foundation)
   🔄 feature:auth (3/5) - Authentication system
 
-Phase II (Features)
+Horizon II (Features)
   📋 feature:api-gateway (0/4) - API routing
 
-Phase III (Polish)
+Horizon III (Polish)
   📋 feature:dark-mode (--) - No requirements yet
 ```
 
@@ -398,14 +404,14 @@ Phase III (Polish)
 
 ```bash
 know feature status feature:auth        # Show all three status flags
-know phases list                        # Shows status icons inline
+know horizons list                      # Shows status icons inline
 ```
 
 ### Status Flags
 
-1. **📋 Planned** - Feature exists in `meta.phases` (any phase)
-   - Set by: `/know:add` or `/know:plan` adding to phases
-   - Computed: Check if feature_id in any phase
+1. **📋 Planned** - Feature exists in `meta.horizons` (any horizon)
+   - Set by: `/know:add` or `/know:plan` adding to horizons
+   - Computed: Check if feature_id in any horizon
 
 2. **✅ Implemented** - Code-graph links exist for this feature
    - Set by: `/know:build` creating bidirectional spec↔code links
@@ -421,10 +427,10 @@ know phases list                        # Shows status icons inline
 ### Workflow Integration
 
 ```bash
-/know:add     → meta.phases[pending][feature:x]   → 📋 planned
-/know:build   → creates code-links                → ✅ implemented
-git merge     → [feature:x] in commit msg         → ✅ reviewed
-/know:done    → removes from phases, archives     → done
+/know:add     → meta.horizons[pending][feature:x]  → 📋 planned
+/know:build   → creates code-links                 → ✅ implemented
+git merge     → [feature:x] in commit msg          → ✅ reviewed
+/know:done    → removes from horizons, archives    → done
 ```
 
 ### Example Output
@@ -453,10 +459,9 @@ Feature Status: feature:auth
 ## Requirements vs Todo.md
 
 **Requirements replace todo.md** for progress tracking:
-- Requirements are stored in `meta.requirements`
+- Requirements are managed via `know req` commands (add, list, status, block, complete)
 - Each feature links to requirement entities via depends_on
-- Manage with `know req` commands (add, list, status, block, complete)
-- Query all: `know req list feature:x` or `know meta get requirements`
+- Query all: `know req list feature:x`
 
 ## Implementation Patterns
 

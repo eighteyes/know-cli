@@ -167,7 +167,7 @@ Meta contains project-level information.
 know gen rules describe meta
 
 # Get structure for specific section
-know gen rules describe phases
+know gen rules describe horizons
 know gen rules describe project
 know gen rules describe decisions
 ```
@@ -197,7 +197,7 @@ Meta sections are stored in `.ai/know/spec-graph.json` under `meta`:
       "tagline": "Does cool things",
       "brand_promise": "Reliable and fast"
     },
-    "phases": {
+    "horizons": {
       "I": {"feature:auth": {"status": "in-progress"}}
     }
   }

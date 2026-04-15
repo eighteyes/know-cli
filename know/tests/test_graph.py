@@ -14,7 +14,7 @@ def temp_graph_file():
     """Create a temporary graph file for testing"""
     with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
         test_graph = {
-            "meta": {"version": "1.0.0", "phases": {}},
+            "meta": {"version": "1.0.0", "horizons": {}},
             "references": {
                 "ref1": {"value": "test"}
             },

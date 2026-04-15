@@ -149,13 +149,13 @@ The graph is the **SOURCE OF TRUTH** - build it first, then derive documentation
 
    A feature with zero reference dependencies is under-specified.
 
-   - **Assign features to phases in `meta.phases`**:
+   - **Assign features to horizons in `meta.horizons`**:
      - Analyze feature maturity: Is it implemented? Partially done? Planned?
      - Use `pending` for unimplemented/planned features
-     - Use `I`, `II`, `III` for prioritized implementation phases
+     - Use `I`, `II`, `III` for prioritized implementation horizons
      - Use `done` for fully implemented features
      - Set appropriate status: `incomplete`, `in-progress`, `review-ready`, `complete`
-     - Example: `"meta.phases.done.feature:auth": {"status": "complete"}`
+     - Example: `"meta.horizons.done.feature:auth": {"status": "complete"}`
 
 4. **STEP 2: Populate code-graph.json SECOND**:
    - **CRITICAL**: Use `-g .ai/know/code-graph.json` flag (auto-detects code rules)

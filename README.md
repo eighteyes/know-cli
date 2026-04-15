@@ -156,7 +156,7 @@ know feature coverage <name>         # Test coverage
 
 know meta get <section>              # Read meta sections
 know meta set <section> <key> <val>  # Write meta sections
-know phases list                     # Show project phases
+know horizons list                   # Show project horizons
 know op status <feature>             # Operation-level progress
 know req list <feature>              # Feature requirements
 ```

@@ -1,7 +1,7 @@
 {
   "meta": {
     "project": "should be dict",
-    "phases": []
+    "horizons": []
   },
   "entities": {
     "users": {

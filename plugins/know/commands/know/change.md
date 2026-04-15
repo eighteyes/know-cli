@@ -127,7 +127,7 @@ Create a structured change request for a feature (enhancement, improvement, or m
 **If feature status is "done" or "review-ready"**:
 - Ask user: "This feature is marked as done/review-ready. Change status to 'changes-planned'? [Yes/No]"
 - If Yes (using **haiku agent**):
-  - Update `meta.phases` status to "changes-planned"
+  - Update `meta.horizons` status to "changes-planned"
   - Validate: `know graph check validate`
 
 ### 6. Confirmation
