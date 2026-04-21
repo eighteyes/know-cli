@@ -265,6 +265,17 @@ class GraphValidator:
                     )
                 elif not isinstance(horizons, dict):
                     results['errors'].append("meta.horizons must be a dict")
+                else:
+                    for phase_id, entries in horizons.items():
+                        if not isinstance(entries, dict):
+                            continue
+                        for entity_id, entry in entries.items():
+                            if not isinstance(entry, dict):
+                                continue
+                            if entry.get('status') == 'complete' and not entry.get('version'):
+                                results['warnings'].append(
+                                    f"{entity_id} is complete in horizon '{phase_id}' but has no version set"
+                                )
 
             # Validate horizons_metadata structure if present
             if 'horizons_metadata' in meta:

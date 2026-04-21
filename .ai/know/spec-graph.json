@@ -16,19 +16,24 @@
           "status": "in-progress"
         },
         "feature:horizons-migration": {
-          "status": "complete"
+          "status": "complete",
+          "version": "0.2.1"
         },
         "feature:decisions-logging": {
-          "status": "complete"
+          "status": "complete",
+          "version": "0.2.1"
         },
         "feature:mcq-planning": {
-          "status": "complete"
-        },
-        "feature:args-injection": {
-          "status": "complete"
+          "status": "complete",
+          "version": "0.2.1"
         },
         "feature:confirmation-removal": {
-          "status": "complete"
+          "status": "complete",
+          "version": "0.2.1"
+        },
+        "feature:args-injection": {
+          "status": "complete",
+          "version": "0.2.1"
         }
       },
       "II": {}

@@ -11,6 +11,7 @@ Responsibilities:
 
 import sys
 import json
+import re
 import click
 import shutil
 import subprocess
@@ -5504,6 +5505,153 @@ def feature_complete(ctx, feature_name, req_key, effort):
         sys.exit(1)
 
 
+@feature.command(name='version')
+@click.argument('entity_id')
+@click.argument('version_value')
+@click.pass_context
+def feature_version(ctx, entity_id, version_value):
+    """Set or clear the target version for a feature in its current horizon
+
+    Examples:
+        know feature version feature:auth 0.3.0
+        know feature version feature:auth clear
+    """
+    if not (':' in entity_id and entity_id.startswith('feature:')):
+        console.print(f"[red]✗ Entity must be a feature (e.g. feature:auth)[/red]")
+        sys.exit(1)
+
+    clearing = version_value.lower() == 'clear'
+    if not clearing and not _validate_version(version_value):
+        console.print(f"[red]✗ Invalid version: {version_value}[/red]")
+        console.print(f"[dim]  Expected semver (e.g. 0.3.0) or 'clear' to remove[/dim]")
+        sys.exit(1)
+
+    graph_data = ctx.obj['graph'].load()
+    if 'meta' not in graph_data or 'horizons' not in graph_data['meta']:
+        console.print("[red]✗ No horizons defined in graph[/red]")
+        sys.exit(1)
+
+    for phase_id, entities in graph_data['meta']['horizons'].items():
+        if entity_id in entities:
+            existing = entities[entity_id]
+            entry = dict(existing) if isinstance(existing, dict) else {}
+            if clearing:
+                entry.pop('version', None)
+            else:
+                entry['version'] = version_value
+            graph_data['meta']['horizons'][phase_id][entity_id] = entry
+
+            if ctx.obj['graph'].save_graph(graph_data):
+                if clearing:
+                    console.print(f"[green]✓ Cleared version on '{entity_id}' (horizon {phase_id})[/green]")
+                else:
+                    console.print(f"[green]✓ Set '{entity_id}' version to {version_value} (horizon {phase_id})[/green]")
+                return
+            console.print(f"[red]✗ Failed to save graph[/red]")
+            sys.exit(1)
+
+    console.print(f"[yellow]⚠ Entity '{entity_id}' not found in any horizon[/yellow]")
+    console.print(f"[yellow]  Use 'horizons add' to add it first[/yellow]")
+    sys.exit(1)
+
+
+@feature.command(name='log')
+@click.argument('version_value')
+@click.option('--json', 'json_output', is_flag=True, help='Emit JSON instead of markdown')
+@click.pass_context
+def feature_log(ctx, version_value, json_output):
+    """Generate a featurelog for a version
+
+    Emits a markdown changelog of features whose horizon entry matches the
+    given version, grouped by objective.
+
+    Examples:
+        know feature log 0.2.1
+        know feature log 0.3.0 --json
+    """
+    if not _validate_version(version_value):
+        console.print(f"[red]✗ Invalid version: {version_value}[/red]")
+        sys.exit(1)
+
+    graph_data = ctx.obj['graph'].load()
+    horizons_meta = graph_data.get('meta', {}).get('horizons', {})
+    features = graph_data.get('entities', {}).get('feature', {})
+    objectives = graph_data.get('entities', {}).get('objective', {})
+    graph = graph_data.get('graph', {})
+
+    matched = []
+    for phase_id, entities in horizons_meta.items():
+        for entity_id, meta in entities.items():
+            if not isinstance(meta, dict):
+                continue
+            if meta.get('version') != version_value:
+                continue
+            if not entity_id.startswith('feature:'):
+                continue
+            matched.append((entity_id, phase_id, meta))
+
+    if not matched:
+        console.print(f"[yellow]⚠ No features found with version {version_value}[/yellow]")
+        sys.exit(0)
+
+    by_objective = {}
+    for entity_id, phase_id, meta in matched:
+        parent_obj = None
+        for obj_id in objectives:
+            full = f"objective:{obj_id}"
+            deps = graph.get(full, {}).get('depends_on', [])
+            if entity_id in deps:
+                parent_obj = full
+                break
+        by_objective.setdefault(parent_obj, []).append((entity_id, phase_id, meta))
+
+    if json_output:
+        out = {
+            'version': version_value,
+            'groups': [
+                {
+                    'objective': obj_id,
+                    'features': [
+                        {
+                            'id': fid,
+                            'horizon': phase_id,
+                            'status': m.get('status'),
+                            'name': features.get(fid.split(':', 1)[1], {}).get('name'),
+                            'description': features.get(fid.split(':', 1)[1], {}).get('description'),
+                        }
+                        for fid, phase_id, m in feats
+                    ],
+                }
+                for obj_id, feats in by_objective.items()
+            ],
+        }
+        click.echo(json.dumps(out, indent=2))
+        return
+
+    lines = [f"# Featurelog v{version_value}", ""]
+    for obj_id, feats in by_objective.items():
+        if obj_id:
+            obj_key = obj_id.split(':', 1)[1]
+            obj_name = objectives.get(obj_key, {}).get('name', obj_key)
+            lines.append(f"## {obj_name}")
+        else:
+            lines.append(f"## (no objective)")
+        lines.append("")
+        for fid, phase_id, meta in feats:
+            fkey = fid.split(':', 1)[1]
+            fdata = features.get(fkey, {})
+            name = fdata.get('name', fkey)
+            desc = fdata.get('description', '')
+            status = meta.get('status', '')
+            lines.append(f"### {name}")
+            lines.append(f"_{fid} · horizon {phase_id} · {status}_")
+            lines.append("")
+            if desc:
+                lines.append(desc)
+                lines.append("")
+    click.echo("\n".join(lines))
+
+
 # =============================================================================
 # HORIZONS group
 # =============================================================================
@@ -5723,17 +5871,26 @@ def horizons_list(ctx):
     console.print(f"[dim]Legend: ✅ completed  🔄 in-progress  🔧 changes-planned  📋 planned  ⚪ no status[/dim]")
 
 
+SEMVER_RE = re.compile(r'^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$')
+
+
+def _validate_version(version: str) -> bool:
+    return bool(SEMVER_RE.match(version))
+
+
 @horizons.command(name='add')
 @click.argument('horizon_id')
 @click.argument('entity_id')
 @click.option('--status', '-s', default='build-ready', help='Lifecycle status (build-ready, in-progress, etc.)')
+@click.option('--version', '-v', default=None, help='Target version (semver, e.g. 0.3.0)')
 @click.pass_context
-def horizons_add(ctx, horizon_id, entity_id, status):
+def horizons_add(ctx, horizon_id, entity_id, status, version):
     """Add an entity to a horizon
 
     Examples:
         know horizons add I feature:auth
         know horizons add II feature:checkout --status in-progress
+        know horizons add I feature:auth --version 0.3.0
     """
     # Validate horizon - Roman numerals only
     valid_horizons = {'I', 'II', 'III', 'IV', 'V'}
@@ -5792,12 +5949,22 @@ def horizons_add(ctx, horizon_id, entity_id, status):
         console.print(f"[yellow]  Use 'horizons move' to move between horizons[/yellow]")
         sys.exit(1)
 
+    # Validate version format if provided
+    if version and not _validate_version(version):
+        console.print(f"[red]✗ Invalid version: {version}[/red]")
+        console.print(f"[dim]  Expected semver format (e.g. 0.3.0 or 1.0.0-rc1)[/dim]")
+        sys.exit(1)
+
     # Add entity to horizon
-    graph_data['meta']['horizons'][horizon_id][entity_id] = {'status': status}
+    entry = {'status': status}
+    if version:
+        entry['version'] = version
+    graph_data['meta']['horizons'][horizon_id][entity_id] = entry
 
     # Save graph
     if ctx.obj['graph'].save_graph(graph_data):
-        console.print(f"[green]✓ Added '{entity_id}' to horizon '{horizon_id}' with status '{status}'[/green]")
+        suffix = f" (v{version})" if version else ""
+        console.print(f"[green]✓ Added '{entity_id}' to horizon '{horizon_id}' with status '{status}'{suffix}[/green]")
     else:
         console.print(f"[red]✗ Failed to save graph[/red]")
         sys.exit(1)
@@ -5870,6 +6037,10 @@ def horizons_move(ctx, entity_id, horizon_id, status):
         console.print(f"[yellow]  Use 'horizons add' to add it first[/yellow]")
         sys.exit(1)
 
+    # Capture existing entry to preserve fields like version
+    existing_entry = graph_data['meta']['horizons'][current_phase][entity_id]
+    preserved = dict(existing_entry) if isinstance(existing_entry, dict) else {}
+
     # Remove from current horizon
     del graph_data['meta']['horizons'][current_phase][entity_id]
 
@@ -5877,9 +6048,10 @@ def horizons_move(ctx, entity_id, horizon_id, status):
     if horizon_id not in graph_data['meta']['horizons']:
         graph_data['meta']['horizons'][horizon_id] = {}
 
-    # Add to new horizon with updated or preserved status
+    # Add to new horizon with updated or preserved status; keep other fields
     new_status = status if status else current_status
-    graph_data['meta']['horizons'][horizon_id][entity_id] = {'status': new_status}
+    preserved['status'] = new_status
+    graph_data['meta']['horizons'][horizon_id][entity_id] = preserved
 
     # Save graph
     if ctx.obj['graph'].save_graph(graph_data):
@@ -5933,7 +6105,10 @@ def horizons_status(ctx, entity_id, status_value):
     found = False
     for phase_id, entities in graph_data['meta']['horizons'].items():
         if entity_id in entities:
-            graph_data['meta']['horizons'][phase_id][entity_id] = {'status': status_value}
+            existing = entities[entity_id]
+            entry = dict(existing) if isinstance(existing, dict) else {}
+            entry['status'] = status_value
+            graph_data['meta']['horizons'][phase_id][entity_id] = entry
             found = True
 
             if ctx.obj['graph'].save_graph(graph_data):
