@@ -6,7 +6,7 @@
       "language": "python",
       "architecture": "cli-tool"
     },
-    "phases": {}
+    "horizons": {}
   },
   "references": {
     "external-dep": {
@@ -170,19 +170,46 @@
         "type": "pypi",
         "purpose": "TODO: Document purpose",
         "detected": true
+      },
+      "http": {
+        "identifier": "pypi:http",
+        "version": "auto-detected",
+        "type": "pypi",
+        "purpose": "TODO: Document purpose",
+        "detected": true
       }
     },
     "product-component": {},
     "code-link": {
-      "code-graph-scoring-spec": {
-        "feature": "feature:code-graph-scoring",
+      "know-horizons-spec": {
+        "feature": "feature:horizons-migration",
         "component": "",
-        "status": "planned"
+        "status": "complete"
       },
-      "spec-dashboard-spec": {
-        "feature": "feature:spec-dashboard",
+      "server-horizons-spec": {
+        "feature": "feature:horizons-migration",
         "component": "",
-        "status": "planned"
+        "status": "complete"
+      },
+      "generators-horizons-spec": {
+        "feature": "feature:horizons-migration",
+        "component": "",
+        "status": "complete"
+      },
+      "migration-horizons-spec": {
+        "feature": "feature:horizons-migration",
+        "component": "",
+        "status": "complete"
+      },
+      "validation-horizons-spec": {
+        "feature": "feature:horizons-migration",
+        "component": "",
+        "status": "complete"
+      },
+      "know-confirmation-spec": {
+        "feature": "feature:confirmation-removal",
+        "component": "",
+        "status": "complete"
       }
     }
   },
@@ -190,480 +217,629 @@
     "module": {
       "benchmark": {
         "name": "Benchmark",
-        "description": "Module at know/src/benchmark.py"
+        "description": "Module at know/benchmark.py",
+        "file_path": "know/benchmark.py"
       },
       "know": {
         "name": "Know",
-        "description": "Module at know/src/know.py"
+        "description": "Module at know/know.py",
+        "file_path": "know/know.py"
       },
       "src.__init__": {
         "name": "Src Init",
-        "description": "Module at know/src/src/__init__.py"
+        "description": "Module at know/src/__init__.py",
+        "file_path": "know/src/__init__.py"
       },
       "src.async_graph": {
         "name": "Src Async Graph",
-        "description": "Module at know/src/src/async_graph.py"
+        "description": "Module at know/src/async_graph.py",
+        "file_path": "know/src/async_graph.py"
       },
       "src.build_executor": {
         "name": "Src Build Executor",
-        "description": "Module at know/src/src/build_executor.py"
+        "description": "Module at know/src/build_executor.py",
+        "file_path": "know/src/build_executor.py"
       },
       "src.cache": {
         "name": "Src Cache",
-        "description": "Module at know/src/src/cache.py"
+        "description": "Module at know/src/cache.py",
+        "file_path": "know/src/cache.py"
       },
       "src.codemap_to_graph": {
         "name": "Src Codemap To Graph",
-        "description": "Module at know/src/src/codemap_to_graph.py"
+        "description": "Module at know/src/codemap_to_graph.py",
+        "file_path": "know/src/codemap_to_graph.py"
       },
       "src.contract_manager": {
         "name": "Src Contract Manager",
-        "description": "Module at know/src/src/contract_manager.py"
+        "description": "Module at know/src/contract_manager.py",
+        "file_path": "know/src/contract_manager.py"
       },
       "src.coverage": {
         "name": "Src Coverage",
-        "description": "Module at know/src/src/coverage.py"
+        "description": "Module at know/src/coverage.py",
+        "file_path": "know/src/coverage.py"
       },
       "src.dependencies": {
         "name": "Src Dependencies",
-        "description": "Module at know/src/src/dependencies.py"
+        "description": "Module at know/src/dependencies.py",
+        "file_path": "know/src/dependencies.py"
       },
       "src.deprecation": {
         "name": "Src Deprecation",
-        "description": "Module at know/src/src/deprecation.py"
+        "description": "Module at know/src/deprecation.py",
+        "file_path": "know/src/deprecation.py"
       },
       "src.diff": {
         "name": "Src Diff",
-        "description": "Module at know/src/src/diff.py"
+        "description": "Module at know/src/diff.py",
+        "file_path": "know/src/diff.py"
       },
       "src.entities": {
         "name": "Src Entities",
-        "description": "Module at know/src/src/entities.py"
+        "description": "Module at know/src/entities.py",
+        "file_path": "know/src/entities.py"
       },
       "src.feature_tracker": {
         "name": "Src Feature Tracker",
-        "description": "Module at know/src/src/feature_tracker.py"
+        "description": "Module at know/src/feature_tracker.py",
+        "file_path": "know/src/feature_tracker.py"
       },
       "src.gap_analysis": {
         "name": "Src Gap Analysis",
-        "description": "Module at know/src/src/gap_analysis.py"
+        "description": "Module at know/src/gap_analysis.py",
+        "file_path": "know/src/gap_analysis.py"
       },
       "src.generators": {
         "name": "Src Generators",
-        "description": "Module at know/src/src/generators.py"
+        "description": "Module at know/src/generators.py",
+        "file_path": "know/src/generators.py"
       },
       "src.graph": {
         "name": "Src Graph",
-        "description": "Module at know/src/src/graph.py"
+        "description": "Module at know/src/graph.py",
+        "file_path": "know/src/graph.py"
       },
       "src.impact_analyzer": {
         "name": "Src Impact Analyzer",
-        "description": "Module at know/src/src/impact_analyzer.py"
+        "description": "Module at know/src/impact_analyzer.py",
+        "file_path": "know/src/impact_analyzer.py"
       },
       "src.llm": {
         "name": "Src Llm",
-        "description": "Module at know/src/src/llm.py"
+        "description": "Module at know/src/llm.py",
+        "file_path": "know/src/llm.py"
       },
       "src.migration": {
         "name": "Src Migration",
-        "description": "Module at know/src/src/migration.py"
+        "description": "Module at know/src/migration.py",
+        "file_path": "know/src/migration.py"
       },
       "src.op_manager": {
         "name": "Src Op Manager",
-        "description": "Module at know/src/src/op_manager.py"
+        "description": "Module at know/src/op_manager.py",
+        "file_path": "know/src/op_manager.py"
       },
       "src.reference_tools": {
         "name": "Src Reference Tools",
-        "description": "Module at know/src/src/reference_tools.py"
+        "description": "Module at know/src/reference_tools.py",
+        "file_path": "know/src/reference_tools.py"
       },
       "src.requirements": {
         "name": "Src Requirements",
-        "description": "Module at know/src/src/requirements.py"
+        "description": "Module at know/src/requirements.py",
+        "file_path": "know/src/requirements.py"
       },
       "src.semantic_search": {
         "name": "Src Semantic Search",
-        "description": "Module at know/src/src/semantic_search.py"
+        "description": "Module at know/src/semantic_search.py",
+        "file_path": "know/src/semantic_search.py"
+      },
+      "src.server": {
+        "name": "Src Server",
+        "description": "Module at know/src/server.py",
+        "file_path": "know/src/server.py"
       },
       "src.utils": {
         "name": "Src Utils",
-        "description": "Module at know/src/src/utils.py"
+        "description": "Module at know/src/utils.py",
+        "file_path": "know/src/utils.py"
       },
       "src.validation": {
         "name": "Src Validation",
-        "description": "Module at know/src/src/validation.py"
+        "description": "Module at know/src/validation.py",
+        "file_path": "know/src/validation.py"
       },
       "src.visualizers.__init__": {
         "name": "Src Visualizers Init",
-        "description": "Module at know/src/src/visualizers/__init__.py"
+        "description": "Module at know/src/visualizers/__init__.py",
+        "file_path": "know/src/visualizers/__init__.py"
       },
       "src.visualizers.base": {
         "name": "Src Visualizers Base",
-        "description": "Module at know/src/src/visualizers/base.py"
+        "description": "Module at know/src/visualizers/base.py",
+        "file_path": "know/src/visualizers/base.py"
+      },
+      "src.visualizers.d3": {
+        "name": "Src Visualizers D3",
+        "description": "Module at know/src/visualizers/d3.py",
+        "file_path": "know/src/visualizers/d3.py"
+      },
+      "src.visualizers.d3_tree": {
+        "name": "Src Visualizers D3 Tree",
+        "description": "Module at know/src/visualizers/d3_tree.py",
+        "file_path": "know/src/visualizers/d3_tree.py"
       },
       "src.visualizers.dot": {
         "name": "Src Visualizers Dot",
-        "description": "Module at know/src/src/visualizers/dot.py"
+        "description": "Module at know/src/visualizers/dot.py",
+        "file_path": "know/src/visualizers/dot.py"
       },
       "src.visualizers.fzf": {
         "name": "Src Visualizers Fzf",
-        "description": "Module at know/src/src/visualizers/fzf.py"
+        "description": "Module at know/src/visualizers/fzf.py",
+        "file_path": "know/src/visualizers/fzf.py"
       },
       "src.visualizers.html": {
         "name": "Src Visualizers Html",
-        "description": "Module at know/src/src/visualizers/html.py"
+        "description": "Module at know/src/visualizers/html.py",
+        "file_path": "know/src/visualizers/html.py"
       },
       "src.visualizers.mermaid": {
         "name": "Src Visualizers Mermaid",
-        "description": "Module at know/src/src/visualizers/mermaid.py"
+        "description": "Module at know/src/visualizers/mermaid.py",
+        "file_path": "know/src/visualizers/mermaid.py"
       },
       "src.visualizers.theme": {
         "name": "Src Visualizers Theme",
-        "description": "Module at know/src/src/visualizers/theme.py"
+        "description": "Module at know/src/visualizers/theme.py",
+        "file_path": "know/src/visualizers/theme.py"
       },
       "src.visualizers.tree": {
         "name": "Src Visualizers Tree",
-        "description": "Module at know/src/src/visualizers/tree.py"
+        "description": "Module at know/src/visualizers/tree.py",
+        "file_path": "know/src/visualizers/tree.py"
       },
       "src.workflow": {
         "name": "Src Workflow",
-        "description": "Module at know/src/src/workflow.py"
+        "description": "Module at know/src/workflow.py",
+        "file_path": "know/src/workflow.py"
       },
       "tests.run_bug_fix_tests": {
         "name": "Tests Run Bug Fix Tests",
-        "description": "Module at know/src/tests/run_bug_fix_tests.py"
+        "description": "Module at know/tests/run_bug_fix_tests.py",
+        "file_path": "know/tests/run_bug_fix_tests.py"
       },
       "tests.test_bug_fixes": {
         "name": "Tests Test Bug Fixes",
-        "description": "Module at know/src/tests/test_bug_fixes.py"
+        "description": "Module at know/tests/test_bug_fixes.py",
+        "file_path": "know/tests/test_bug_fixes.py"
       },
       "tests.test_commands": {
         "name": "Tests Test Commands",
-        "description": "Module at know/src/tests/test_commands.py"
+        "description": "Module at know/tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py"
       },
       "tests.test_dependencies": {
         "name": "Tests Test Dependencies",
-        "description": "Module at know/src/tests/test_dependencies.py"
+        "description": "Module at know/tests/test_dependencies.py",
+        "file_path": "know/tests/test_dependencies.py"
       },
       "tests.test_entities": {
         "name": "Tests Test Entities",
-        "description": "Module at know/src/tests/test_entities.py"
+        "description": "Module at know/tests/test_entities.py",
+        "file_path": "know/tests/test_entities.py"
       },
       "tests.test_graph": {
         "name": "Tests Test Graph",
-        "description": "Module at know/src/tests/test_graph.py"
+        "description": "Module at know/tests/test_graph.py",
+        "file_path": "know/tests/test_graph.py"
       },
       "tests.test_llm": {
         "name": "Tests Test Llm",
-        "description": "Module at know/src/tests/test_llm.py"
+        "description": "Module at know/tests/test_llm.py",
+        "file_path": "know/tests/test_llm.py"
       },
       "tests.test_utils": {
         "name": "Tests Test Utils",
-        "description": "Module at know/src/tests/test_utils.py"
+        "description": "Module at know/tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py"
       },
       "tests.test_validation": {
         "name": "Tests Test Validation",
-        "description": "Module at know/src/tests/test_validation.py"
+        "description": "Module at know/tests/test_validation.py",
+        "file_path": "know/tests/test_validation.py"
       }
     },
     "class": {
       "know.SectionedGroup": {
         "name": "SectionedGroup",
         "description": "Class in know.py",
-        "line": 37
+        "file_path": "know/know.py",
+        "line": 68
       },
       "src.async_graph.AsyncGraphManager": {
         "name": "AsyncGraphManager",
         "description": "Class in src/async_graph.py",
+        "file_path": "know/src/async_graph.py",
         "line": 42
       },
       "src.async_graph.AsyncGraphPool": {
         "name": "AsyncGraphPool",
         "description": "Class in src/async_graph.py",
+        "file_path": "know/src/async_graph.py",
         "line": 322
       },
       "src.build_executor.BuildExecutor": {
         "name": "BuildExecutor",
         "description": "Class in src/build_executor.py",
+        "file_path": "know/src/build_executor.py",
         "line": 13
       },
       "src.cache.GraphCache": {
         "name": "GraphCache",
         "description": "Class in src/cache.py",
+        "file_path": "know/src/cache.py",
         "line": 12
       },
       "src.codemap_to_graph.CodeGraphGenerator": {
         "name": "CodeGraphGenerator",
         "description": "Class in src/codemap_to_graph.py",
+        "file_path": "know/src/codemap_to_graph.py",
         "line": 12
       },
       "src.contract_manager.ContractManager": {
         "name": "ContractManager",
         "description": "Class in src/contract_manager.py",
+        "file_path": "know/src/contract_manager.py",
         "line": 22
       },
       "src.coverage.CoverageAnalyzer": {
         "name": "CoverageAnalyzer",
         "description": "Class in src/coverage.py",
+        "file_path": "know/src/coverage.py",
         "line": 10
       },
       "src.dependencies.DependencyManager": {
         "name": "DependencyManager",
         "description": "Class in src/dependencies.py",
+        "file_path": "know/src/dependencies.py",
         "line": 11
       },
       "src.deprecation.DeprecationManager": {
         "name": "DeprecationManager",
         "description": "Class in src/deprecation.py",
+        "file_path": "know/src/deprecation.py",
         "line": 9
       },
       "src.diff.GraphDiff": {
         "name": "GraphDiff",
         "description": "Class in src/diff.py",
+        "file_path": "know/src/diff.py",
         "line": 7
       },
       "src.entities.EntityManager": {
         "name": "EntityManager",
         "description": "Class in src/entities.py",
+        "file_path": "know/src/entities.py",
         "line": 10
       },
       "src.feature_tracker.FeatureTracker": {
         "name": "FeatureTracker",
         "description": "Class in src/feature_tracker.py",
+        "file_path": "know/src/feature_tracker.py",
         "line": 19
       },
       "src.gap_analysis.ChainStatus": {
         "name": "ChainStatus",
         "description": "Class in src/gap_analysis.py",
+        "file_path": "know/src/gap_analysis.py",
         "line": 9
       },
       "src.gap_analysis.GapAnalyzer": {
         "name": "GapAnalyzer",
         "description": "Class in src/gap_analysis.py",
+        "file_path": "know/src/gap_analysis.py",
         "line": 19
       },
       "src.generators.SpecGenerator": {
         "name": "SpecGenerator",
         "description": "Class in src/generators.py",
+        "file_path": "know/src/generators.py",
         "line": 9
       },
       "src.graph.GraphManager": {
         "name": "GraphManager",
         "description": "Class in src/graph.py",
+        "file_path": "know/src/graph.py",
         "line": 18
       },
       "src.impact_analyzer.ImpactAnalyzer": {
         "name": "ImpactAnalyzer",
         "description": "Class in src/impact_analyzer.py",
+        "file_path": "know/src/impact_analyzer.py",
         "line": 15
       },
       "src.llm.LLMProvider": {
         "name": "LLMProvider",
         "description": "Class in src/llm.py",
+        "file_path": "know/src/llm.py",
         "line": 20
       },
       "src.llm.MockProvider": {
         "name": "MockProvider",
         "description": "Class in src/llm.py",
+        "file_path": "know/src/llm.py",
         "line": 151
       },
       "src.llm.LLMManager": {
         "name": "LLMManager",
         "description": "Class in src/llm.py",
+        "file_path": "know/src/llm.py",
         "line": 187
       },
       "src.migration.GraphConformanceChecker": {
         "name": "GraphConformanceChecker",
         "description": "Class in src/migration.py",
+        "file_path": "know/src/migration.py",
         "line": 13
       },
       "src.migration.RulesDiffAnalyzer": {
         "name": "RulesDiffAnalyzer",
         "description": "Class in src/migration.py",
+        "file_path": "know/src/migration.py",
         "line": 127
       },
       "src.op_manager.OpManager": {
         "name": "OpManager",
         "description": "Class in src/op_manager.py",
+        "file_path": "know/src/op_manager.py",
         "line": 14
       },
       "src.reference_tools.ReferenceManager": {
         "name": "ReferenceManager",
         "description": "Class in src/reference_tools.py",
+        "file_path": "know/src/reference_tools.py",
         "line": 9
       },
       "src.requirements.RequirementManager": {
         "name": "RequirementManager",
         "description": "Class in src/requirements.py",
+        "file_path": "know/src/requirements.py",
         "line": 9
       },
       "src.semantic_search.SearchIndex": {
         "name": "SearchIndex",
         "description": "Class in src/semantic_search.py",
+        "file_path": "know/src/semantic_search.py",
         "line": 19
       },
       "src.semantic_search.SemanticSearcher": {
         "name": "SemanticSearcher",
         "description": "Class in src/semantic_search.py",
+        "file_path": "know/src/semantic_search.py",
         "line": 243
+      },
+      "src.server.UndoStack": {
+        "name": "UndoStack",
+        "description": "Class in src/server.py",
+        "file_path": "know/src/server.py",
+        "line": 44
+      },
+      "src.server.FileWatcher": {
+        "name": "FileWatcher",
+        "description": "Class in src/server.py",
+        "file_path": "know/src/server.py",
+        "line": 72
+      },
+      "src.server.DashboardHandler": {
+        "name": "DashboardHandler",
+        "description": "Class in src/server.py",
+        "file_path": "know/src/server.py",
+        "line": 133
       },
       "src.validation.GraphValidator": {
         "name": "GraphValidator",
         "description": "Class in src/validation.py",
+        "file_path": "know/src/validation.py",
         "line": 11
       },
       "src.validation.ContractValidator": {
         "name": "ContractValidator",
         "description": "Class in src/validation.py",
-        "line": 741
+        "file_path": "know/src/validation.py",
+        "line": 744
       },
       "src.visualizers.base.VisualizationData": {
         "name": "VisualizationData",
         "description": "Class in src/visualizers/base.py",
+        "file_path": "know/src/visualizers/base.py",
         "line": 9
       },
       "src.visualizers.base.BaseVisualizer": {
         "name": "BaseVisualizer",
         "description": "Class in src/visualizers/base.py",
+        "file_path": "know/src/visualizers/base.py",
         "line": 20
+      },
+      "src.visualizers.d3.D3Visualizer": {
+        "name": "D3Visualizer",
+        "description": "Class in src/visualizers/d3.py",
+        "file_path": "know/src/visualizers/d3.py",
+        "line": 9
+      },
+      "src.visualizers.d3_tree.D3TreeVisualizer": {
+        "name": "D3TreeVisualizer",
+        "description": "Class in src/visualizers/d3_tree.py",
+        "file_path": "know/src/visualizers/d3_tree.py",
+        "line": 9
       },
       "src.visualizers.dot.DotVisualizer": {
         "name": "DotVisualizer",
         "description": "Class in src/visualizers/dot.py",
+        "file_path": "know/src/visualizers/dot.py",
         "line": 16
       },
       "src.visualizers.fzf.FzfPicker": {
         "name": "FzfPicker",
         "description": "Class in src/visualizers/fzf.py",
+        "file_path": "know/src/visualizers/fzf.py",
         "line": 12
       },
       "src.visualizers.html.HtmlVisualizer": {
         "name": "HtmlVisualizer",
         "description": "Class in src/visualizers/html.py",
+        "file_path": "know/src/visualizers/html.py",
         "line": 12
       },
       "src.visualizers.mermaid.MermaidVisualizer": {
         "name": "MermaidVisualizer",
         "description": "Class in src/visualizers/mermaid.py",
+        "file_path": "know/src/visualizers/mermaid.py",
         "line": 19
       },
       "src.visualizers.tree.RichTreeVisualizer": {
         "name": "RichTreeVisualizer",
         "description": "Class in src/visualizers/tree.py",
+        "file_path": "know/src/visualizers/tree.py",
         "line": 8
       },
       "src.workflow.WorkflowManager": {
         "name": "WorkflowManager",
         "description": "Class in src/workflow.py",
+        "file_path": "know/src/workflow.py",
         "line": 15
       },
       "tests.test_bug_fixes.TestEntityTypeLoading": {
         "name": "TestEntityTypeLoading",
         "description": "Class in tests/test_bug_fixes.py",
+        "file_path": "know/tests/test_bug_fixes.py",
         "line": 18
       },
       "tests.test_bug_fixes.TestTopologicalSort": {
         "name": "TestTopologicalSort",
         "description": "Class in tests/test_bug_fixes.py",
+        "file_path": "know/tests/test_bug_fixes.py",
         "line": 93
       },
       "tests.test_bug_fixes.TestMetadataValidation": {
         "name": "TestMetadataValidation",
         "description": "Class in tests/test_bug_fixes.py",
+        "file_path": "know/tests/test_bug_fixes.py",
         "line": 216
       },
       "tests.test_bug_fixes.TestDisconnectedSubgraphs": {
         "name": "TestDisconnectedSubgraphs",
         "description": "Class in tests/test_bug_fixes.py",
+        "file_path": "know/tests/test_bug_fixes.py",
         "line": 315
       },
       "tests.test_commands.TestListCommand": {
         "name": "TestListCommand",
         "description": "Class in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 81
       },
       "tests.test_commands.TestListTypeCommand": {
         "name": "TestListTypeCommand",
         "description": "Class in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 101
       },
       "tests.test_commands.TestGetCommand": {
         "name": "TestGetCommand",
         "description": "Class in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 116
       },
       "tests.test_commands.TestStatsCommand": {
         "name": "TestStatsCommand",
         "description": "Class in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 132
       },
       "tests.test_commands.TestDepsCommand": {
         "name": "TestDepsCommand",
         "description": "Class in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 151
       },
       "tests.test_commands.TestDependentsCommand": {
         "name": "TestDependentsCommand",
         "description": "Class in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 167
       },
       "tests.test_commands.TestCyclesCommand": {
         "name": "TestCyclesCommand",
         "description": "Class in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 183
       },
       "tests.test_commands.TestBuildOrderCommand": {
         "name": "TestBuildOrderCommand",
         "description": "Class in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 214
       },
       "tests.test_commands.TestValidateCommand": {
         "name": "TestValidateCommand",
         "description": "Class in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 225
       },
       "tests.test_commands.TestHealthCommand": {
         "name": "TestHealthCommand",
         "description": "Class in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 264
       },
       "tests.test_commands.TestCompletenessCommand": {
         "name": "TestCompletenessCommand",
         "description": "Class in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 274
       },
       "tests.test_commands.TestSuggestCommand": {
         "name": "TestSuggestCommand",
         "description": "Class in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 289
       },
       "tests.test_commands.TestSpecCommand": {
         "name": "TestSpecCommand",
         "description": "Class in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 299
       },
       "tests.test_commands.TestFeatureSpecCommand": {
         "name": "TestFeatureSpecCommand",
         "description": "Class in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 309
       },
       "tests.test_commands.TestSitemapCommand": {
         "name": "TestSitemapCommand",
         "description": "Class in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 319
       },
       "tests.test_commands.TestAddCommand": {
         "name": "TestAddCommand",
         "description": "Class in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 329
       },
       "tests.test_commands.TestLinkCommand": {
         "name": "TestLinkCommand",
         "description": "Class in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 344
       },
       "tests.test_commands.TestUnlinkCommand": {
         "name": "TestUnlinkCommand",
         "description": "Class in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 356
       }
     },
@@ -671,1131 +847,1393 @@
       "benchmark.benchmark_operation": {
         "name": "benchmark_operation",
         "description": "Function in benchmark.py",
+        "file_path": "know/benchmark.py",
         "line": 20
       },
       "benchmark.create_test_graph": {
         "name": "create_test_graph",
         "description": "Function in benchmark.py",
+        "file_path": "know/benchmark.py",
         "line": 79
       },
       "benchmark.run_benchmarks": {
         "name": "run_benchmarks",
         "description": "Function in benchmark.py",
+        "file_path": "know/benchmark.py",
         "line": 131
       },
       "benchmark.main": {
         "name": "main",
         "description": "Function in benchmark.py",
+        "file_path": "know/benchmark.py",
         "line": 307
+      },
+      "know.suggest_did_you_mean": {
+        "name": "suggest_did_you_mean",
+        "description": "Function in know.py",
+        "file_path": "know/know.py",
+        "line": 34
       },
       "know.cli": {
         "name": "cli",
         "description": "Function in know.py",
-        "line": 118
+        "file_path": "know/know.py",
+        "line": 149
       },
       "know.add_item": {
         "name": "add_item",
         "description": "Function in know.py",
-        "line": 162
+        "file_path": "know/know.py",
+        "line": 193
       },
       "know.meta": {
         "name": "meta",
         "description": "Function in know.py",
-        "line": 243
+        "file_path": "know/know.py",
+        "line": 274
       },
       "know.meta_get": {
         "name": "meta_get",
         "description": "Function in know.py",
-        "line": 252
+        "file_path": "know/know.py",
+        "line": 283
       },
       "know.meta_set": {
         "name": "meta_set",
         "description": "Function in know.py",
-        "line": 290
+        "file_path": "know/know.py",
+        "line": 332
       },
       "know.meta_delete": {
         "name": "meta_delete",
         "description": "Function in know.py",
-        "line": 336
+        "file_path": "know/know.py",
+        "line": 392
       },
       "know.get_item": {
         "name": "get_item",
         "description": "Function in know.py",
-        "line": 398
+        "file_path": "know/know.py",
+        "line": 451
       },
       "know.list_items": {
         "name": "list_items",
         "description": "Function in know.py",
-        "line": 448
+        "file_path": "know/know.py",
+        "line": 503
       },
       "know.search": {
         "name": "search",
         "description": "Function in know.py",
-        "line": 557
+        "file_path": "know/know.py",
+        "line": 612
       },
       "know.search_dict": {
         "name": "search_dict",
         "description": "Function in know.py",
-        "line": 591
+        "file_path": "know/know.py",
+        "line": 646
       },
       "know.find": {
         "name": "find",
         "description": "Function in know.py",
-        "line": 772
+        "file_path": "know/know.py",
+        "line": 827
       },
       "know.related": {
         "name": "related",
         "description": "Function in know.py",
-        "line": 814
+        "file_path": "know/know.py",
+        "line": 869
       },
       "know.nodes": {
         "name": "nodes",
         "description": "Function in know.py",
-        "line": 856
+        "file_path": "know/know.py",
+        "line": 911
       },
       "know.nodes_deprecate": {
         "name": "nodes_deprecate",
         "description": "Function in know.py",
-        "line": 867
+        "file_path": "know/know.py",
+        "line": 922
       },
       "know.nodes_undeprecate": {
         "name": "nodes_undeprecate",
         "description": "Function in know.py",
-        "line": 897
+        "file_path": "know/know.py",
+        "line": 953
       },
       "know.nodes_deprecated": {
         "name": "nodes_deprecated",
         "description": "Function in know.py",
-        "line": 916
+        "file_path": "know/know.py",
+        "line": 972
       },
       "know.nodes_merge": {
         "name": "nodes_merge",
         "description": "Function in know.py",
-        "line": 960
+        "file_path": "know/know.py",
+        "line": 1016
       },
       "know.nodes_rename": {
         "name": "nodes_rename",
         "description": "Function in know.py",
-        "line": 1054
+        "file_path": "know/know.py",
+        "line": 1098
       },
       "know.nodes_delete": {
         "name": "nodes_delete",
         "description": "Function in know.py",
-        "line": 1128
+        "file_path": "know/know.py",
+        "line": 1172
       },
       "know.nodes_cut": {
         "name": "nodes_cut",
         "description": "Function in know.py",
-        "line": 1204
+        "file_path": "know/know.py",
+        "line": 1242
       },
       "know.nodes_update": {
         "name": "nodes_update",
         "description": "Function in know.py",
-        "line": 1280
+        "file_path": "know/know.py",
+        "line": 1302
       },
       "know.nodes_clone": {
         "name": "nodes_clone",
         "description": "Function in know.py",
-        "line": 1324
+        "file_path": "know/know.py",
+        "line": 1357
       },
       "know.graph": {
         "name": "graph",
         "description": "Function in know.py",
-        "line": 1389
+        "file_path": "know/know.py",
+        "line": 1429
       },
       "know.link": {
         "name": "link",
         "description": "Function in know.py",
-        "line": 1401
+        "file_path": "know/know.py",
+        "line": 1441
       },
       "know.unlink": {
         "name": "unlink",
         "description": "Function in know.py",
-        "line": 1453
+        "file_path": "know/know.py",
+        "line": 1493
       },
       "know.graph_uses": {
         "name": "graph_uses",
         "description": "Function in know.py",
-        "line": 1503
+        "file_path": "know/know.py",
+        "line": 1537
       },
       "know.graph_up": {
         "name": "graph_up",
         "description": "Function in know.py",
-        "line": 1531
+        "file_path": "know/know.py",
+        "line": 1565
       },
       "know.graph_used_by": {
         "name": "graph_used_by",
         "description": "Function in know.py",
-        "line": 1541
+        "file_path": "know/know.py",
+        "line": 1575
       },
       "know.graph_down": {
         "name": "graph_down",
         "description": "Function in know.py",
-        "line": 1569
+        "file_path": "know/know.py",
+        "line": 1603
       },
       "know.graph_connect": {
         "name": "graph_connect",
         "description": "Function in know.py",
-        "line": 1578
+        "file_path": "know/know.py",
+        "line": 1612
       },
       "know.graph_build_order": {
         "name": "graph_build_order",
         "description": "Function in know.py",
-        "line": 1603
+        "file_path": "know/know.py",
+        "line": 1637
       },
       "know.graph_diff": {
         "name": "graph_diff",
         "description": "Function in know.py",
-        "line": 1631
-      },
-      "know.graph_migrate": {
-        "name": "graph_migrate",
-        "description": "Function in know.py",
-        "line": 1857
+        "file_path": "know/know.py",
+        "line": 1665
       },
       "know.graph_migrate_rules": {
         "name": "graph_migrate_rules",
         "description": "Function in know.py",
-        "line": 1932
+        "file_path": "know/know.py",
+        "line": 1893
+      },
+      "know.graph_migrate": {
+        "name": "graph_migrate",
+        "description": "Function in know.py",
+        "file_path": "know/know.py",
+        "line": 2063
       },
       "know.graph_traverse": {
         "name": "graph_traverse",
         "description": "Function in know.py",
-        "line": 2061
+        "file_path": "know/know.py",
+        "line": 2130
       },
       "know.check": {
         "name": "check",
         "description": "Function in know.py",
-        "line": 2154
+        "file_path": "know/know.py",
+        "line": 2223
       },
       "know.check_syntax": {
         "name": "check_syntax",
         "description": "Function in know.py",
-        "line": 2185
+        "file_path": "know/know.py",
+        "line": 2254
       },
       "know.check_structure": {
         "name": "check_structure",
         "description": "Function in know.py",
-        "line": 2201
+        "file_path": "know/know.py",
+        "line": 2270
       },
       "know.check_semantics": {
         "name": "check_semantics",
         "description": "Function in know.py",
-        "line": 2217
+        "file_path": "know/know.py",
+        "line": 2286
       },
       "know.check_full": {
         "name": "check_full",
         "description": "Function in know.py",
-        "line": 2233
+        "file_path": "know/know.py",
+        "line": 2302
       },
       "know.check_validate": {
         "name": "check_validate",
         "description": "Function in know.py",
-        "line": 2249
+        "file_path": "know/know.py",
+        "line": 2318
       },
       "know.check_health": {
         "name": "check_health",
         "description": "Function in know.py",
-        "line": 2266
+        "file_path": "know/know.py",
+        "line": 2359
       },
       "know.check_stats": {
         "name": "check_stats",
         "description": "Function in know.py",
-        "line": 2310
+        "file_path": "know/know.py",
+        "line": 2403
       },
       "know.check_completeness": {
         "name": "check_completeness",
         "description": "Function in know.py",
-        "line": 2342
+        "file_path": "know/know.py",
+        "line": 2440
       },
       "know.check_cycles": {
         "name": "check_cycles",
         "description": "Function in know.py",
-        "line": 2366
+        "file_path": "know/know.py",
+        "line": 2465
       },
       "know.check_orphans": {
         "name": "check_orphans",
         "description": "Function in know.py",
-        "line": 2388
+        "file_path": "know/know.py",
+        "line": 2487
       },
       "know.check_link_usage": {
         "name": "check_link_usage",
         "description": "Function in know.py",
-        "line": 2418
+        "file_path": "know/know.py",
+        "line": 2517
       },
       "know.graph_clean": {
         "name": "graph_clean",
         "description": "Function in know.py",
-        "line": 2446
+        "file_path": "know/know.py",
+        "line": 2545
       },
       "know.graph_coverage": {
         "name": "graph_coverage",
         "description": "Function in know.py",
-        "line": 2477
+        "file_path": "know/know.py",
+        "line": 2577
       },
       "know.graph_suggest": {
         "name": "graph_suggest",
         "description": "Function in know.py",
-        "line": 2546
+        "file_path": "know/know.py",
+        "line": 2666
       },
       "know.check_link_gap_analysis": {
         "name": "check_link_gap_analysis",
         "description": "Function in know.py",
-        "line": 2572
+        "file_path": "know/know.py",
+        "line": 2692
       },
       "know.check_link_gap_missing": {
         "name": "check_link_gap_missing",
         "description": "Function in know.py",
-        "line": 2626
+        "file_path": "know/know.py",
+        "line": 2746
       },
       "know.check_link_gap_summary": {
         "name": "check_link_gap_summary",
         "description": "Function in know.py",
-        "line": 2650
+        "file_path": "know/know.py",
+        "line": 2770
       },
       "know.check_ref_types": {
         "name": "check_ref_types",
         "description": "Function in know.py",
-        "line": 2679
+        "file_path": "know/know.py",
+        "line": 2799
       },
       "know.graph_cross": {
         "name": "graph_cross",
         "description": "Function in know.py",
-        "line": 2741
+        "file_path": "know/know.py",
+        "line": 2861
       },
       "know.graph_cross_connect": {
         "name": "graph_cross_connect",
         "description": "Function in know.py",
-        "line": 2754
+        "file_path": "know/know.py",
+        "line": 2874
       },
       "know.tokenize": {
         "name": "tokenize",
         "description": "Function in know.py",
-        "line": 2791
+        "file_path": "know/know.py",
+        "line": 2911
       },
       "know.has_code_link": {
         "name": "has_code_link",
         "description": "Function in know.py",
-        "line": 2933
+        "file_path": "know/know.py",
+        "line": 3053
       },
       "know.graph_cross_coverage": {
         "name": "graph_cross_coverage",
         "description": "Function in know.py",
-        "line": 2910
+        "file_path": "know/know.py",
+        "line": 3030
       },
       "know.load_graph": {
         "name": "load_graph",
         "description": "Function in know.py",
-        "line": 2927
+        "file_path": "know/know.py",
+        "line": 3047
       },
       "know.coverage_for": {
         "name": "coverage_for",
         "description": "Function in know.py",
-        "line": 2937
+        "file_path": "know/know.py",
+        "line": 3057
       },
       "know.print_section": {
         "name": "print_section",
         "description": "Function in know.py",
-        "line": 2979
+        "file_path": "know/know.py",
+        "line": 3099
       },
       "know.print_missing": {
         "name": "print_missing",
         "description": "Function in know.py",
-        "line": 2989
+        "file_path": "know/know.py",
+        "line": 3109
       },
       "know.gen": {
         "name": "gen",
         "description": "Function in know.py",
-        "line": 3016
+        "file_path": "know/know.py",
+        "line": 3136
       },
       "know.gen_spec": {
         "name": "gen_spec",
         "description": "Function in know.py",
-        "line": 3026
+        "file_path": "know/know.py",
+        "line": 3146
       },
       "know.gen_feature_spec": {
         "name": "gen_feature_spec",
         "description": "Function in know.py",
-        "line": 3118
+        "file_path": "know/know.py",
+        "line": 3239
       },
       "know.gen_docs": {
         "name": "gen_docs",
         "description": "Function in know.py",
-        "line": 3144
+        "file_path": "know/know.py",
+        "line": 3265
       },
       "know.gen_sitemap": {
         "name": "gen_sitemap",
         "description": "Function in know.py",
-        "line": 3512
+        "file_path": "know/know.py",
+        "line": 3633
       },
       "know.gen_code_graph": {
         "name": "gen_code_graph",
         "description": "Function in know.py",
-        "line": 3533
+        "file_path": "know/know.py",
+        "line": 3654
       },
       "know.gen_codemap": {
         "name": "gen_codemap",
         "description": "Function in know.py",
-        "line": 3596
+        "file_path": "know/know.py",
+        "line": 3718
       },
       "know.gen_trace": {
         "name": "gen_trace",
         "description": "Function in know.py",
-        "line": 3628
+        "file_path": "know/know.py",
+        "line": 3750
       },
       "know.gen_trace_matrix": {
         "name": "gen_trace_matrix",
         "description": "Function in know.py",
-        "line": 3736
+        "file_path": "know/know.py",
+        "line": 3858
       },
       "know.rules": {
         "name": "rules",
         "description": "Function in know.py",
-        "line": 3864
+        "file_path": "know/know.py",
+        "line": 3986
       },
       "know.rules_describe": {
         "name": "rules_describe",
         "description": "Function in know.py",
-        "line": 3883
+        "file_path": "know/know.py",
+        "line": 4005
       },
       "know.rules_before": {
         "name": "rules_before",
         "description": "Function in know.py",
-        "line": 4003
+        "file_path": "know/know.py",
+        "line": 4125
       },
       "know.rules_after": {
         "name": "rules_after",
         "description": "Function in know.py",
-        "line": 4032
+        "file_path": "know/know.py",
+        "line": 4154
       },
       "know.rules_graph": {
         "name": "rules_graph",
         "description": "Function in know.py",
-        "line": 4059
+        "file_path": "know/know.py",
+        "line": 4181
       },
       "know.feature": {
         "name": "feature",
         "description": "Function in know.py",
-        "line": 4171
+        "file_path": "know/know.py",
+        "line": 4293
       },
       "know.feature_status": {
         "name": "feature_status",
         "description": "Function in know.py",
-        "line": 4180
+        "file_path": "know/know.py",
+        "line": 4302
       },
       "know.feature_contract": {
         "name": "feature_contract",
         "description": "Function in know.py",
-        "line": 4344
+        "file_path": "know/know.py",
+        "line": 4466
       },
       "know.feature_validate_contracts": {
         "name": "feature_validate_contracts",
         "description": "Function in know.py",
-        "line": 4425
+        "file_path": "know/know.py",
+        "line": 4547
       },
       "know.feature_validate": {
         "name": "feature_validate",
         "description": "Function in know.py",
-        "line": 4509
+        "file_path": "know/know.py",
+        "line": 4631
       },
       "know.feature_tag": {
         "name": "feature_tag",
         "description": "Function in know.py",
-        "line": 4594
+        "file_path": "know/know.py",
+        "line": 4716
       },
       "know.feature_review": {
         "name": "feature_review",
         "description": "Function in know.py",
-        "line": 4772
+        "file_path": "know/know.py",
+        "line": 4894
       },
       "know.feature_connect": {
         "name": "feature_connect",
         "description": "Function in know.py",
-        "line": 4914
+        "file_path": "know/know.py",
+        "line": 5036
       },
       "know.feature_done": {
         "name": "feature_done",
         "description": "Function in know.py",
-        "line": 5056
+        "file_path": "know/know.py",
+        "line": 5179
       },
       "know.feature_impact": {
         "name": "feature_impact",
         "description": "Function in know.py",
-        "line": 5204
+        "file_path": "know/know.py",
+        "line": 5327
       },
       "know.feature_coverage": {
         "name": "feature_coverage",
         "description": "Function in know.py",
-        "line": 5265
+        "file_path": "know/know.py",
+        "line": 5388
       },
       "know.feature_block": {
         "name": "feature_block",
         "description": "Function in know.py",
-        "line": 5331
+        "file_path": "know/know.py",
+        "line": 5454
       },
       "know.feature_complete": {
         "name": "feature_complete",
         "description": "Function in know.py",
-        "line": 5358
+        "file_path": "know/know.py",
+        "line": 5481
       },
-      "know.phases": {
-        "name": "phases",
+      "know.horizons": {
+        "name": "horizons",
         "description": "Function in know.py",
-        "line": 5388
+        "file_path": "know/know.py",
+        "line": 5511
       },
-      "know.phases_list": {
-        "name": "phases_list",
+      "know.horizons_list": {
+        "name": "horizons_list",
         "description": "Function in know.py",
-        "line": 5395
+        "file_path": "know/know.py",
+        "line": 5518
       },
       "know.count_todos": {
         "name": "count_todos",
         "description": "Function in know.py",
-        "line": 5432
+        "file_path": "know/know.py",
+        "line": 5555
       },
       "know.get_status_icon": {
         "name": "get_status_icon",
         "description": "Function in know.py",
-        "line": 5457
+        "file_path": "know/know.py",
+        "line": 5580
       },
-      "know.phases_add": {
-        "name": "phases_add",
+      "know.horizons_add": {
+        "name": "horizons_add",
         "description": "Function in know.py",
-        "line": 5607
+        "file_path": "know/know.py",
+        "line": 5730
       },
-      "know.phases_move": {
-        "name": "phases_move",
+      "know.horizons_move": {
+        "name": "horizons_move",
         "description": "Function in know.py",
-        "line": 5677
+        "file_path": "know/know.py",
+        "line": 5810
       },
-      "know.phases_status": {
-        "name": "phases_status",
+      "know.horizons_status": {
+        "name": "horizons_status",
         "description": "Function in know.py",
-        "line": 5765
+        "file_path": "know/know.py",
+        "line": 5908
       },
-      "know.phases_remove": {
-        "name": "phases_remove",
+      "know.horizons_remove": {
+        "name": "horizons_remove",
         "description": "Function in know.py",
-        "line": 5801
+        "file_path": "know/know.py",
+        "line": 5954
       },
       "know.req": {
         "name": "req",
         "description": "Function in know.py",
-        "line": 5839
+        "file_path": "know/know.py",
+        "line": 5992
       },
       "know.req_add": {
         "name": "req_add",
         "description": "Function in know.py",
-        "line": 5850
+        "file_path": "know/know.py",
+        "line": 6003
       },
       "know.req_status": {
         "name": "req_status",
         "description": "Function in know.py",
-        "line": 5878
+        "file_path": "know/know.py",
+        "line": 6031
       },
       "know.req_list": {
         "name": "req_list",
         "description": "Function in know.py",
-        "line": 5913
+        "file_path": "know/know.py",
+        "line": 6066
       },
       "know.req_complete": {
         "name": "req_complete",
         "description": "Function in know.py",
-        "line": 5959
+        "file_path": "know/know.py",
+        "line": 6112
       },
       "know.req_block": {
         "name": "req_block",
         "description": "Function in know.py",
-        "line": 5985
+        "file_path": "know/know.py",
+        "line": 6138
       },
       "know.op": {
         "name": "op",
         "description": "Function in know.py",
-        "line": 6009
+        "file_path": "know/know.py",
+        "line": 6162
       },
       "know.op_start": {
         "name": "op_start",
         "description": "Function in know.py",
-        "line": 6018
+        "file_path": "know/know.py",
+        "line": 6171
       },
       "know.op_done": {
         "name": "op_done",
         "description": "Function in know.py",
-        "line": 6040
+        "file_path": "know/know.py",
+        "line": 6193
       },
       "know.op_status": {
         "name": "op_status",
         "description": "Function in know.py",
-        "line": 6065
+        "file_path": "know/know.py",
+        "line": 6218
       },
       "know.op_next": {
         "name": "op_next",
         "description": "Function in know.py",
-        "line": 6115
+        "file_path": "know/know.py",
+        "line": 6268
       },
       "know.op_reset": {
         "name": "op_reset",
         "description": "Function in know.py",
-        "line": 6132
+        "file_path": "know/know.py",
+        "line": 6285
       },
       "know.init": {
         "name": "init",
         "description": "Function in know.py",
-        "line": 6158
+        "file_path": "know/know.py",
+        "line": 6311
       },
       "know.viz": {
         "name": "viz",
         "description": "Function in know.py",
-        "line": 6360
+        "file_path": "know/know.py",
+        "line": 6517
       },
       "know.viz_tree": {
         "name": "viz_tree",
         "description": "Function in know.py",
-        "line": 6372
+        "file_path": "know/know.py",
+        "line": 6529
       },
       "know.viz_mermaid": {
         "name": "viz_mermaid",
         "description": "Function in know.py",
-        "line": 6402
+        "file_path": "know/know.py",
+        "line": 6559
       },
       "know.viz_dot": {
         "name": "viz_dot",
         "description": "Function in know.py",
-        "line": 6438
+        "file_path": "know/know.py",
+        "line": 6595
       },
       "know.viz_html": {
         "name": "viz_html",
         "description": "Function in know.py",
-        "line": 6474
+        "file_path": "know/know.py",
+        "line": 6631
+      },
+      "know.viz_d3": {
+        "name": "viz_d3",
+        "description": "Function in know.py",
+        "file_path": "know/know.py",
+        "line": 6671
+      },
+      "know.viz_d3_tree": {
+        "name": "viz_d3_tree",
+        "description": "Function in know.py",
+        "file_path": "know/know.py",
+        "line": 6708
       },
       "know.viz_fzf": {
         "name": "viz_fzf",
         "description": "Function in know.py",
-        "line": 6510
+        "file_path": "know/know.py",
+        "line": 6740
+      },
+      "know.serve_cmd": {
+        "name": "serve_cmd",
+        "description": "Function in know.py",
+        "file_path": "know/know.py",
+        "line": 6774
       },
       "src.async_graph.async_cached": {
         "name": "async_cached",
         "description": "Function in src/async_graph.py",
+        "file_path": "know/src/async_graph.py",
         "line": 19
       },
       "src.async_graph.wrapper": {
         "name": "wrapper",
         "description": "Function in src/async_graph.py",
+        "file_path": "know/src/async_graph.py",
         "line": 22
       },
       "src.async_graph.get_graph": {
         "name": "get_graph",
         "description": "Function in src/async_graph.py",
+        "file_path": "know/src/async_graph.py",
         "line": 363
       },
       "src.codemap_to_graph.load_codemap": {
         "name": "load_codemap",
         "description": "Function in src/codemap_to_graph.py",
-        "line": 275
+        "file_path": "know/src/codemap_to_graph.py",
+        "line": 298
       },
       "src.codemap_to_graph.load_code_graph": {
         "name": "load_code_graph",
         "description": "Function in src/codemap_to_graph.py",
-        "line": 281
+        "file_path": "know/src/codemap_to_graph.py",
+        "line": 304
       },
       "src.feature_tracker.create_feature_config": {
         "name": "create_feature_config",
         "description": "Function in src/feature_tracker.py",
+        "file_path": "know/src/feature_tracker.py",
         "line": 552
+      },
+      "src.server.serve": {
+        "name": "serve",
+        "description": "Function in src/server.py",
+        "file_path": "know/src/server.py",
+        "line": 512
       },
       "src.utils.parse_entity_id": {
         "name": "parse_entity_id",
         "description": "Function in src/utils.py",
+        "file_path": "know/src/utils.py",
         "line": 10
       },
       "src.utils.format_entity_id": {
         "name": "format_entity_id",
         "description": "Function in src/utils.py",
+        "file_path": "know/src/utils.py",
         "line": 30
       },
       "src.utils.normalize_entity_type": {
         "name": "normalize_entity_type",
         "description": "Function in src/utils.py",
+        "file_path": "know/src/utils.py",
         "line": 44
       },
       "src.utils.snake_to_kebab": {
         "name": "snake_to_kebab",
         "description": "Function in src/utils.py",
+        "file_path": "know/src/utils.py",
         "line": 60
       },
       "src.utils.kebab_to_snake": {
         "name": "kebab_to_snake",
         "description": "Function in src/utils.py",
+        "file_path": "know/src/utils.py",
         "line": 73
       },
       "src.utils.validate_name_format": {
         "name": "validate_name_format",
         "description": "Function in src/utils.py",
+        "file_path": "know/src/utils.py",
         "line": 86
       },
       "src.utils.truncate_text": {
         "name": "truncate_text",
         "description": "Function in src/utils.py",
+        "file_path": "know/src/utils.py",
         "line": 127
       },
       "src.utils.format_list": {
         "name": "format_list",
         "description": "Function in src/utils.py",
+        "file_path": "know/src/utils.py",
         "line": 145
       },
       "src.utils.get_entity_display_name": {
         "name": "get_entity_display_name",
         "description": "Function in src/utils.py",
+        "file_path": "know/src/utils.py",
         "line": 172
       },
       "src.utils.find_fuzzy_match": {
         "name": "find_fuzzy_match",
         "description": "Function in src/utils.py",
+        "file_path": "know/src/utils.py",
         "line": 186
       },
       "src.utils.safe_filename": {
         "name": "safe_filename",
         "description": "Function in src/utils.py",
+        "file_path": "know/src/utils.py",
         "line": 253
       },
       "src.utils.group_by": {
         "name": "group_by",
         "description": "Function in src/utils.py",
+        "file_path": "know/src/utils.py",
         "line": 270
       },
       "src.utils.flatten_dict": {
         "name": "flatten_dict",
         "description": "Function in src/utils.py",
+        "file_path": "know/src/utils.py",
         "line": 291
       },
       "src.utils.resolve_graph_path": {
         "name": "resolve_graph_path",
         "description": "Function in src/utils.py",
+        "file_path": "know/src/utils.py",
         "line": 313
       },
       "src.utils.count_entity_types": {
         "name": "count_entity_types",
         "description": "Function in src/utils.py",
+        "file_path": "know/src/utils.py",
         "line": 339
+      },
+      "src.utils.get_all_deps": {
+        "name": "get_all_deps",
+        "description": "Function in src/utils.py",
+        "file_path": "know/src/utils.py",
+        "line": 359
       },
       "src.utils.get_graph_stats": {
         "name": "get_graph_stats",
         "description": "Function in src/utils.py",
-        "line": 359
+        "file_path": "know/src/utils.py",
+        "line": 366
       },
       "src.visualizers.theme.get_color": {
         "name": "get_color",
         "description": "Function in src/visualizers/theme.py",
+        "file_path": "know/src/visualizers/theme.py",
         "line": 36
       },
       "src.visualizers.theme.get_node_shape_dot": {
         "name": "get_node_shape_dot",
         "description": "Function in src/visualizers/theme.py",
+        "file_path": "know/src/visualizers/theme.py",
         "line": 41
       },
       "tests.run_bug_fix_tests.run_test": {
         "name": "run_test",
         "description": "Function in tests/run_bug_fix_tests.py",
+        "file_path": "know/tests/run_bug_fix_tests.py",
         "line": 16
       },
       "tests.run_bug_fix_tests.test_operation_recognized": {
         "name": "test_operation_recognized",
         "description": "Function in tests/run_bug_fix_tests.py",
+        "file_path": "know/tests/run_bug_fix_tests.py",
         "line": 32
       },
       "tests.run_bug_fix_tests.test_all_types_from_rules": {
         "name": "test_all_types_from_rules",
         "description": "Function in tests/run_bug_fix_tests.py",
+        "file_path": "know/tests/run_bug_fix_tests.py",
         "line": 51
       },
       "tests.run_bug_fix_tests.test_build_order_no_cycles": {
         "name": "test_build_order_no_cycles",
         "description": "Function in tests/run_bug_fix_tests.py",
+        "file_path": "know/tests/run_bug_fix_tests.py",
         "line": 78
       },
       "tests.run_bug_fix_tests.test_build_order_with_cycles": {
         "name": "test_build_order_with_cycles",
         "description": "Function in tests/run_bug_fix_tests.py",
+        "file_path": "know/tests/run_bug_fix_tests.py",
         "line": 109
       },
       "tests.run_bug_fix_tests.test_metadata_loaded_from_rules": {
         "name": "test_metadata_loaded_from_rules",
         "description": "Function in tests/run_bug_fix_tests.py",
+        "file_path": "know/tests/run_bug_fix_tests.py",
         "line": 140
       },
       "tests.run_bug_fix_tests.test_path_metadata_no_warning": {
         "name": "test_path_metadata_no_warning",
         "description": "Function in tests/run_bug_fix_tests.py",
+        "file_path": "know/tests/run_bug_fix_tests.py",
         "line": 163
       },
       "tests.run_bug_fix_tests.test_disconnected_subgraphs": {
         "name": "test_disconnected_subgraphs",
         "description": "Function in tests/run_bug_fix_tests.py",
+        "file_path": "know/tests/run_bug_fix_tests.py",
         "line": 197
       },
       "tests.run_bug_fix_tests.main": {
         "name": "main",
         "description": "Function in tests/run_bug_fix_tests.py",
+        "file_path": "know/tests/run_bug_fix_tests.py",
         "line": 234
       },
       "tests.test_commands.test_graph_path": {
         "name": "test_graph_path",
         "description": "Function in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 13
       },
       "tests.test_commands.runner": {
         "name": "runner",
         "description": "Function in tests/test_commands.py",
+        "file_path": "know/tests/test_commands.py",
         "line": 76
       },
       "tests.test_dependencies.sample_graph": {
         "name": "sample_graph",
         "description": "Function in tests/test_dependencies.py",
+        "file_path": "know/tests/test_dependencies.py",
         "line": 13
       },
       "tests.test_dependencies.temp_graph_file": {
         "name": "temp_graph_file",
         "description": "Function in tests/test_dependencies.py",
+        "file_path": "know/tests/test_dependencies.py",
         "line": 56
       },
       "tests.test_dependencies.test_get_dependencies": {
         "name": "test_get_dependencies",
         "description": "Function in tests/test_dependencies.py",
+        "file_path": "know/tests/test_dependencies.py",
         "line": 68
       },
       "tests.test_dependencies.test_get_dependents": {
         "name": "test_get_dependents",
         "description": "Function in tests/test_dependencies.py",
+        "file_path": "know/tests/test_dependencies.py",
         "line": 80
       },
       "tests.test_dependencies.test_dependency_validation": {
         "name": "test_dependency_validation",
         "description": "Function in tests/test_dependencies.py",
+        "file_path": "know/tests/test_dependencies.py",
         "line": 90
       },
       "tests.test_dependencies.test_cycle_detection": {
         "name": "test_cycle_detection",
         "description": "Function in tests/test_dependencies.py",
+        "file_path": "know/tests/test_dependencies.py",
         "line": 104
       },
       "tests.test_dependencies.test_topological_sort": {
         "name": "test_topological_sort",
         "description": "Function in tests/test_dependencies.py",
+        "file_path": "know/tests/test_dependencies.py",
         "line": 123
       },
       "tests.test_dependencies.test_add_dependency": {
         "name": "test_add_dependency",
         "description": "Function in tests/test_dependencies.py",
+        "file_path": "know/tests/test_dependencies.py",
         "line": 140
       },
       "tests.test_dependencies.test_remove_dependency": {
         "name": "test_remove_dependency",
         "description": "Function in tests/test_dependencies.py",
+        "file_path": "know/tests/test_dependencies.py",
         "line": 164
       },
       "tests.test_dependencies.test_suggest_connections": {
         "name": "test_suggest_connections",
         "description": "Function in tests/test_dependencies.py",
+        "file_path": "know/tests/test_dependencies.py",
         "line": 181
       },
       "tests.test_dependencies.test_allowed_targets": {
         "name": "test_allowed_targets",
         "description": "Function in tests/test_dependencies.py",
+        "file_path": "know/tests/test_dependencies.py",
         "line": 195
       },
       "tests.test_entities.temp_graph_setup": {
         "name": "temp_graph_setup",
         "description": "Function in tests/test_entities.py",
+        "file_path": "know/tests/test_entities.py",
         "line": 12
       },
       "tests.test_entities.test_list_entities": {
         "name": "test_list_entities",
         "description": "Function in tests/test_entities.py",
+        "file_path": "know/tests/test_entities.py",
         "line": 39
       },
       "tests.test_entities.test_list_entities_by_type": {
         "name": "test_list_entities_by_type",
         "description": "Function in tests/test_entities.py",
+        "file_path": "know/tests/test_entities.py",
         "line": 50
       },
       "tests.test_entities.test_get_entity": {
         "name": "test_get_entity",
         "description": "Function in tests/test_entities.py",
+        "file_path": "know/tests/test_entities.py",
         "line": 64
       },
       "tests.test_entities.test_add_entity": {
         "name": "test_add_entity",
         "description": "Function in tests/test_entities.py",
+        "file_path": "know/tests/test_entities.py",
         "line": 78
       },
       "tests.test_entities.test_update_entity": {
         "name": "test_update_entity",
         "description": "Function in tests/test_entities.py",
+        "file_path": "know/tests/test_entities.py",
         "line": 97
       },
       "tests.test_entities.test_delete_entity": {
         "name": "test_delete_entity",
         "description": "Function in tests/test_entities.py",
+        "file_path": "know/tests/test_entities.py",
         "line": 116
       },
       "tests.test_entities.test_add_dependency": {
         "name": "test_add_dependency",
         "description": "Function in tests/test_entities.py",
+        "file_path": "know/tests/test_entities.py",
         "line": 137
       },
       "tests.test_entities.test_remove_dependency": {
         "name": "test_remove_dependency",
         "description": "Function in tests/test_entities.py",
+        "file_path": "know/tests/test_entities.py",
         "line": 154
       },
       "tests.test_entities.test_entity_stats": {
         "name": "test_entity_stats",
         "description": "Function in tests/test_entities.py",
+        "file_path": "know/tests/test_entities.py",
         "line": 171
       },
       "tests.test_graph.temp_graph_file": {
         "name": "temp_graph_file",
         "description": "Function in tests/test_graph.py",
+        "file_path": "know/tests/test_graph.py",
         "line": 12
       },
       "tests.test_graph.test_load_graph": {
         "name": "test_load_graph",
         "description": "Function in tests/test_graph.py",
+        "file_path": "know/tests/test_graph.py",
         "line": 39
       },
       "tests.test_graph.test_get_entities": {
         "name": "test_get_entities",
         "description": "Function in tests/test_graph.py",
+        "file_path": "know/tests/test_graph.py",
         "line": 50
       },
       "tests.test_graph.test_find_dependencies": {
         "name": "test_find_dependencies",
         "description": "Function in tests/test_graph.py",
+        "file_path": "know/tests/test_graph.py",
         "line": 61
       },
       "tests.test_graph.test_find_dependents": {
         "name": "test_find_dependents",
         "description": "Function in tests/test_graph.py",
+        "file_path": "know/tests/test_graph.py",
         "line": 74
       },
       "tests.test_graph.test_validate_dependencies": {
         "name": "test_validate_dependencies",
         "description": "Function in tests/test_graph.py",
+        "file_path": "know/tests/test_graph.py",
         "line": 87
       },
       "tests.test_graph.test_topological_sort": {
         "name": "test_topological_sort",
         "description": "Function in tests/test_graph.py",
+        "file_path": "know/tests/test_graph.py",
         "line": 96
       },
       "tests.test_graph.test_detect_cycles": {
         "name": "test_detect_cycles",
         "description": "Function in tests/test_graph.py",
+        "file_path": "know/tests/test_graph.py",
         "line": 107
       },
       "tests.test_graph.test_save_graph": {
         "name": "test_save_graph",
         "description": "Function in tests/test_graph.py",
+        "file_path": "know/tests/test_graph.py",
         "line": 138
       },
       "tests.test_llm.test_llm_manager_initialization": {
         "name": "test_llm_manager_initialization",
         "description": "Function in tests/test_llm.py",
+        "file_path": "know/tests/test_llm.py",
         "line": 11
       },
       "tests.test_llm.test_list_providers": {
         "name": "test_list_providers",
         "description": "Function in tests/test_llm.py",
+        "file_path": "know/tests/test_llm.py",
         "line": 20
       },
       "tests.test_llm.test_list_workflows": {
         "name": "test_list_workflows",
         "description": "Function in tests/test_llm.py",
+        "file_path": "know/tests/test_llm.py",
         "line": 29
       },
       "tests.test_llm.test_get_mock_provider": {
         "name": "test_get_mock_provider",
         "description": "Function in tests/test_llm.py",
+        "file_path": "know/tests/test_llm.py",
         "line": 38
       },
       "tests.test_llm.test_mock_provider_call": {
         "name": "test_mock_provider_call",
         "description": "Function in tests/test_llm.py",
+        "file_path": "know/tests/test_llm.py",
         "line": 47
       },
       "tests.test_llm.test_execute_workflow": {
         "name": "test_execute_workflow",
         "description": "Function in tests/test_llm.py",
+        "file_path": "know/tests/test_llm.py",
         "line": 59
       },
       "tests.test_llm.test_validate_workflow_inputs_valid": {
         "name": "test_validate_workflow_inputs_valid",
         "description": "Function in tests/test_llm.py",
+        "file_path": "know/tests/test_llm.py",
         "line": 76
       },
       "tests.test_llm.test_validate_workflow_inputs_invalid": {
         "name": "test_validate_workflow_inputs_invalid",
         "description": "Function in tests/test_llm.py",
+        "file_path": "know/tests/test_llm.py",
         "line": 92
       },
       "tests.test_llm.test_get_workflow_chain": {
         "name": "test_get_workflow_chain",
         "description": "Function in tests/test_llm.py",
+        "file_path": "know/tests/test_llm.py",
         "line": 108
       },
       "tests.test_llm.test_execute_chain": {
         "name": "test_execute_chain",
         "description": "Function in tests/test_llm.py",
+        "file_path": "know/tests/test_llm.py",
         "line": 118
       },
       "tests.test_llm.test_build_prompt": {
         "name": "test_build_prompt",
         "description": "Function in tests/test_llm.py",
+        "file_path": "know/tests/test_llm.py",
         "line": 136
       },
       "tests.test_llm.test_parse_response_json": {
         "name": "test_parse_response_json",
         "description": "Function in tests/test_llm.py",
+        "file_path": "know/tests/test_llm.py",
         "line": 152
       },
       "tests.test_llm.test_parse_response_non_json": {
         "name": "test_parse_response_non_json",
         "description": "Function in tests/test_llm.py",
+        "file_path": "know/tests/test_llm.py",
         "line": 165
       },
       "tests.test_utils.test_parse_entity_id_valid": {
         "name": "test_parse_entity_id_valid",
         "description": "Function in tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py",
         "line": 18
       },
       "tests.test_utils.test_parse_entity_id_invalid": {
         "name": "test_parse_entity_id_invalid",
         "description": "Function in tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py",
         "line": 26
       },
       "tests.test_utils.test_format_entity_id": {
         "name": "test_format_entity_id",
         "description": "Function in tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py",
         "line": 34
       },
       "tests.test_utils.test_normalize_entity_type": {
         "name": "test_normalize_entity_type",
         "description": "Function in tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py",
         "line": 41
       },
       "tests.test_utils.test_validate_name_format_valid": {
         "name": "test_validate_name_format_valid",
         "description": "Function in tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py",
         "line": 48
       },
       "tests.test_utils.test_validate_name_format_invalid_spaces": {
         "name": "test_validate_name_format_invalid_spaces",
         "description": "Function in tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py",
         "line": 58
       },
       "tests.test_utils.test_validate_name_format_invalid_uppercase": {
         "name": "test_validate_name_format_invalid_uppercase",
         "description": "Function in tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py",
         "line": 65
       },
       "tests.test_utils.test_validate_name_format_invalid_underscore": {
         "name": "test_validate_name_format_invalid_underscore",
         "description": "Function in tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py",
         "line": 72
       },
       "tests.test_utils.test_truncate_text": {
         "name": "test_truncate_text",
         "description": "Function in tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py",
         "line": 79
       },
       "tests.test_utils.test_truncate_text_no_truncation": {
         "name": "test_truncate_text_no_truncation",
         "description": "Function in tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py",
         "line": 89
       },
       "tests.test_utils.test_format_list_single": {
         "name": "test_format_list_single",
         "description": "Function in tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py",
         "line": 98
       },
       "tests.test_utils.test_format_list_two": {
         "name": "test_format_list_two",
         "description": "Function in tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py",
         "line": 104
       },
       "tests.test_utils.test_format_list_multiple": {
         "name": "test_format_list_multiple",
         "description": "Function in tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py",
         "line": 110
       },
       "tests.test_utils.test_format_list_no_oxford": {
         "name": "test_format_list_no_oxford",
         "description": "Function in tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py",
         "line": 116
       },
       "tests.test_utils.test_find_fuzzy_match_exact": {
         "name": "test_find_fuzzy_match_exact",
         "description": "Function in tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py",
         "line": 122
       },
       "tests.test_utils.test_find_fuzzy_match_substring": {
         "name": "test_find_fuzzy_match_substring",
         "description": "Function in tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py",
         "line": 131
       },
       "tests.test_utils.test_find_fuzzy_match_no_match": {
         "name": "test_find_fuzzy_match_no_match",
         "description": "Function in tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py",
         "line": 140
       },
       "tests.test_utils.test_snake_to_kebab": {
         "name": "test_snake_to_kebab",
         "description": "Function in tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py",
         "line": 149
       },
       "tests.test_utils.test_kebab_to_snake": {
         "name": "test_kebab_to_snake",
         "description": "Function in tests/test_utils.py",
+        "file_path": "know/tests/test_utils.py",
         "line": 155
       },
       "tests.test_validation.valid_graph": {
         "name": "valid_graph",
         "description": "Function in tests/test_validation.py",
+        "file_path": "know/tests/test_validation.py",
         "line": 13
       },
       "tests.test_validation.invalid_graph": {
         "name": "invalid_graph",
         "description": "Function in tests/test_validation.py",
+        "file_path": "know/tests/test_validation.py",
         "line": 49
       },
       "tests.test_validation.test_valid_graph_validation": {
         "name": "test_valid_graph_validation",
         "description": "Function in tests/test_validation.py",
+        "file_path": "know/tests/test_validation.py",
         "line": 69
       },
       "tests.test_validation.test_invalid_graph_validation": {
         "name": "test_invalid_graph_validation",
         "description": "Function in tests/test_validation.py",
+        "file_path": "know/tests/test_validation.py",
         "line": 88
       },
       "tests.test_validation.test_missing_descriptions": {
         "name": "test_missing_descriptions",
         "description": "Function in tests/test_validation.py",
+        "file_path": "know/tests/test_validation.py",
         "line": 107
       },
       "tests.test_validation.test_naming_conventions": {
         "name": "test_naming_conventions",
         "description": "Function in tests/test_validation.py",
+        "file_path": "know/tests/test_validation.py",
         "line": 128
       },
       "tests.test_validation.test_completeness_score": {
         "name": "test_completeness_score",
         "description": "Function in tests/test_validation.py",
+        "file_path": "know/tests/test_validation.py",
         "line": 147
       },
       "tests.test_validation.test_orphaned_nodes": {
         "name": "test_orphaned_nodes",
         "description": "Function in tests/test_validation.py",
+        "file_path": "know/tests/test_validation.py",
         "line": 168
       }
     }
@@ -1822,6 +2260,11 @@
       ]
     },
     "class:know.SectionedGroup": {
+      "depends_on": [
+        "module:know"
+      ]
+    },
+    "function:know.suggest_did_you_mean": {
       "depends_on": [
         "module:know"
       ]
@@ -1986,12 +2429,12 @@
         "module:know"
       ]
     },
-    "function:know.graph_migrate": {
+    "function:know.graph_migrate_rules": {
       "depends_on": [
         "module:know"
       ]
     },
-    "function:know.graph_migrate_rules": {
+    "function:know.graph_migrate": {
       "depends_on": [
         "module:know"
       ]
@@ -2277,12 +2720,12 @@
         "module:know"
       ]
     },
-    "function:know.phases": {
+    "function:know.horizons": {
       "depends_on": [
         "module:know"
       ]
     },
-    "function:know.phases_list": {
+    "function:know.horizons_list": {
       "depends_on": [
         "module:know"
       ]
@@ -2297,22 +2740,22 @@
         "module:know"
       ]
     },
-    "function:know.phases_add": {
+    "function:know.horizons_add": {
       "depends_on": [
         "module:know"
       ]
     },
-    "function:know.phases_move": {
+    "function:know.horizons_move": {
       "depends_on": [
         "module:know"
       ]
     },
-    "function:know.phases_status": {
+    "function:know.horizons_status": {
       "depends_on": [
         "module:know"
       ]
     },
-    "function:know.phases_remove": {
+    "function:know.horizons_remove": {
       "depends_on": [
         "module:know"
       ]
@@ -2407,7 +2850,22 @@
         "module:know"
       ]
     },
+    "function:know.viz_d3": {
+      "depends_on": [
+        "module:know"
+      ]
+    },
+    "function:know.viz_d3_tree": {
+      "depends_on": [
+        "module:know"
+      ]
+    },
     "function:know.viz_fzf": {
+      "depends_on": [
+        "module:know"
+      ]
+    },
+    "function:know.serve_cmd": {
       "depends_on": [
         "module:know"
       ]
@@ -2577,6 +3035,26 @@
         "module:src.semantic_search"
       ]
     },
+    "class:src.server.UndoStack": {
+      "depends_on": [
+        "module:src.server"
+      ]
+    },
+    "class:src.server.FileWatcher": {
+      "depends_on": [
+        "module:src.server"
+      ]
+    },
+    "class:src.server.DashboardHandler": {
+      "depends_on": [
+        "module:src.server"
+      ]
+    },
+    "function:src.server.serve": {
+      "depends_on": [
+        "module:src.server"
+      ]
+    },
     "function:src.utils.parse_entity_id": {
       "depends_on": [
         "module:src.utils"
@@ -2652,6 +3130,11 @@
         "module:src.utils"
       ]
     },
+    "function:src.utils.get_all_deps": {
+      "depends_on": [
+        "module:src.utils"
+      ]
+    },
     "function:src.utils.get_graph_stats": {
       "depends_on": [
         "module:src.utils"
@@ -2675,6 +3158,16 @@
     "class:src.visualizers.base.BaseVisualizer": {
       "depends_on": [
         "module:src.visualizers.base"
+      ]
+    },
+    "class:src.visualizers.d3.D3Visualizer": {
+      "depends_on": [
+        "module:src.visualizers.d3"
+      ]
+    },
+    "class:src.visualizers.d3_tree.D3TreeVisualizer": {
+      "depends_on": [
+        "module:src.visualizers.d3_tree"
       ]
     },
     "class:src.visualizers.dot.DotVisualizer": {
@@ -3242,6 +3735,8 @@
     },
     "module:know": {
       "depends_on": [
+        "external-dep:rich",
+        "external-dep:src",
         "external-dep:click",
         "external-dep:shutil",
         "external-dep:subprocess",
@@ -3251,8 +3746,8 @@
         "external-dep:traceback",
         "external-dep:yaml",
         "external-dep:webbrowser",
-        "external-dep:rich",
-        "external-dep:src"
+        "code-link:know-horizons-spec",
+        "code-link:know-confirmation-spec"
       ]
     },
     "module:src.__init__": {
@@ -3310,10 +3805,10 @@
     },
     "module:src.contract_manager": {
       "depends_on": [
-        "external-dep:datetime",
-        "external-dep:fnmatch",
         "external-dep:subprocess",
-        "external-dep:yaml"
+        "external-dep:yaml",
+        "external-dep:datetime",
+        "external-dep:fnmatch"
       ]
     },
     "module:src.coverage": {
@@ -3339,9 +3834,9 @@
     },
     "module:src.feature_tracker": {
       "depends_on": [
+        "external-dep:subprocess",
         "external-dep:datetime",
-        "external-dep:fnmatch",
-        "external-dep:subprocess"
+        "external-dep:fnmatch"
       ]
     },
     "module:src.gap_analysis": {
@@ -3351,7 +3846,8 @@
     },
     "module:src.generators": {
       "depends_on": [
-        "external-dep:xml"
+        "external-dep:xml",
+        "code-link:generators-horizons-spec"
       ]
     },
     "module:src.graph": {
@@ -3369,15 +3865,16 @@
     },
     "module:src.llm": {
       "depends_on": [
+        "external-dep:string",
         "external-dep:time",
         "external-dep:re",
-        "external-dep:urllib",
-        "external-dep:string"
+        "external-dep:urllib"
       ]
     },
     "module:src.migration": {
       "depends_on": [
-        "module:utils"
+        "module:utils",
+        "code-link:migration-horizons-spec"
       ]
     },
     "module:src.op_manager": {
@@ -3386,7 +3883,9 @@
       ]
     },
     "module:src.reference_tools": {
-      "depends_on": []
+      "depends_on": [
+        "module:utils"
+      ]
     },
     "module:src.requirements": {
       "depends_on": [
@@ -3401,6 +3900,21 @@
         "external-dep:collections"
       ]
     },
+    "module:src.server": {
+      "depends_on": [
+        "external-dep:re",
+        "external-dep:shutil",
+        "external-dep:subprocess",
+        "external-dep:tempfile",
+        "external-dep:threading",
+        "external-dep:time",
+        "external-dep:webbrowser",
+        "external-dep:collections",
+        "external-dep:http",
+        "external-dep:urllib",
+        "code-link:server-horizons-spec"
+      ]
+    },
     "module:src.utils": {
       "depends_on": [
         "external-dep:re"
@@ -3409,8 +3923,10 @@
     "module:src.validation": {
       "depends_on": [
         "external-dep:collections",
+        "module:utils",
         "module:contract_manager",
-        "external-dep:fnmatch"
+        "external-dep:fnmatch",
+        "code-link:validation-horizons-spec"
       ]
     },
     "module:src.visualizers.__init__": {
@@ -3418,7 +3934,9 @@
         "module:theme",
         "module:base",
         "module:tree",
-        "module:mermaid"
+        "module:mermaid",
+        "module:d3",
+        "module:d3_tree"
       ]
     },
     "module:src.visualizers.base": {
@@ -3428,11 +3946,23 @@
         "external-dep:dataclasses"
       ]
     },
-    "module:src.visualizers.dot": {
+    "module:src.visualizers.d3": {
       "depends_on": [
-        "external-dep:graphviz",
         "module:base",
         "module:theme"
+      ]
+    },
+    "module:src.visualizers.d3_tree": {
+      "depends_on": [
+        "module:base",
+        "module:theme"
+      ]
+    },
+    "module:src.visualizers.dot": {
+      "depends_on": [
+        "module:base",
+        "module:theme",
+        "external-dep:graphviz"
       ]
     },
     "module:src.visualizers.fzf": {
@@ -3470,15 +4000,15 @@
     },
     "module:tests.run_bug_fix_tests": {
       "depends_on": [
-        "external-dep:tempfile",
-        "external-dep:src"
+        "external-dep:src",
+        "external-dep:tempfile"
       ]
     },
     "module:tests.test_bug_fixes": {
       "depends_on": [
-        "external-dep:src",
         "external-dep:pytest",
-        "external-dep:tempfile"
+        "external-dep:tempfile",
+        "external-dep:src"
       ]
     },
     "module:tests.test_commands": {
@@ -3491,35 +4021,35 @@
     },
     "module:tests.test_dependencies": {
       "depends_on": [
+        "external-dep:src",
         "external-dep:pytest",
-        "external-dep:tempfile",
-        "external-dep:src"
+        "external-dep:tempfile"
       ]
     },
     "module:tests.test_entities": {
       "depends_on": [
-        "external-dep:src",
         "external-dep:tempfile",
-        "external-dep:pytest"
+        "external-dep:pytest",
+        "external-dep:src"
       ]
     },
     "module:tests.test_graph": {
       "depends_on": [
-        "external-dep:src",
         "external-dep:tempfile",
-        "external-dep:pytest"
+        "external-dep:pytest",
+        "external-dep:src"
       ]
     },
     "module:tests.test_llm": {
       "depends_on": [
-        "external-dep:pytest",
-        "external-dep:src"
+        "external-dep:src",
+        "external-dep:pytest"
       ]
     },
     "module:tests.test_utils": {
       "depends_on": [
-        "external-dep:pytest",
-        "external-dep:src"
+        "external-dep:src",
+        "external-dep:pytest"
       ]
     },
     "module:tests.test_validation": {

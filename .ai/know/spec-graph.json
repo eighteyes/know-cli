@@ -14,6 +14,21 @@
         },
         "feature:spec-dashboard": {
           "status": "in-progress"
+        },
+        "feature:horizons-migration": {
+          "status": "complete"
+        },
+        "feature:decisions-logging": {
+          "status": "complete"
+        },
+        "feature:mcq-planning": {
+          "status": "complete"
+        },
+        "feature:args-injection": {
+          "status": "complete"
+        },
+        "feature:confirmation-removal": {
+          "status": "complete"
         }
       },
       "II": {}
@@ -38,6 +53,26 @@
         "classes": [],
         "packages": [],
         "status": "planned"
+      },
+      "horizons-migration-code": {
+        "modules": [
+          "module:know",
+          "module:src.server",
+          "module:src.generators",
+          "module:src.migration",
+          "module:src.validation"
+        ],
+        "classes": [],
+        "packages": [],
+        "status": "complete"
+      },
+      "confirmation-removal-code": {
+        "modules": [
+          "module:know"
+        ],
+        "classes": [],
+        "packages": [],
+        "status": "complete"
       }
     },
     "configuration": {
@@ -48,7 +83,7 @@
         "description": "Grade file path (default: sibling to code-graph), agent capture triggers, enabled dimensions"
       },
       "serve-config": {
-        "description": "know serve command starts a local HTTP server. Serves static HTML/JS/CSS bundle at root. GET /api/graph returns spec-graph.json for initial load and refresh after mutations. POST endpoints proxy know CLI commands for CRUD operations (add, link, unlink, meta set, phases). Graph path default: .ai/know/spec-graph.json, overridable with -g flag. Opens browser on start."
+        "description": "know serve command starts a local HTTP server. Serves static HTML/JS/CSS bundle at root. GET /api/graph returns spec-graph.json for initial load and refresh after mutations. POST endpoints proxy know CLI commands for CRUD operations (add, link, unlink, meta set, horizons). Graph path default: .ai/know/spec-graph.json, overridable with -g flag. Opens browser on start."
       }
     },
     "data-model": {
@@ -56,7 +91,7 @@
         "description": "Fixed schema for a single code-graph health snapshot: timestamp, graph hash, dimension metrics (coverage, connectivity, cross-linking, orphan count, staleness, granularity), raw counts and ratios per dimension"
       },
       "parsed-graph": {
-        "description": "Typed entity map keyed by full ID (e.g. feature:foo). Forward dependency index (depends_on, depends_on_ordered). Reverse dependency index (used_by). Extracted meta.phases with feature-to-phase mapping. Issue list from validation. Source: spec-graph.json."
+        "description": "Typed entity map keyed by full ID (e.g. feature:foo). Forward dependency index (depends_on, depends_on_ordered). Reverse dependency index (used_by). Extracted meta.horizons with feature-to-horizon mapping. Issue list from validation. Source: spec-graph.json."
       }
     },
     "constraint": {
@@ -79,16 +114,16 @@
       "dashboard-drill-down": {
         "description": "Click feature card -> sidecard shows correct parent objective/user + all linked actions/components/operations in accordion tree. Accordion expands/collapses correctly. Terminal nodes show as leaf detail."
       },
-      "dashboard-kanban-phases": {
-        "description": "All features appear in correct phase column based on meta.phases. Empty phases render as empty columns. Features with no phase assignment appear in a fallback column or are flagged."
-      },
       "dashboard-validation": {
         "description": "Validation banner shows on load if graph has structural issues. Inline badges mark affected entities. Dismissing banner does not hide inline badges. Banner lists issue count and types."
+      },
+      "dashboard-kanban-horizons": {
+        "description": "All features appear in correct horizon column based on meta.horizons. Empty horizons render as empty columns. Features with no horizon assignment appear in a fallback column or are flagged."
       }
     },
     "interface": {
       "kanban-view": {
-        "description": "Full-width kanban board as main view. Columns derived from meta.phases. Feature cards with: name, description snippet, entity count pills. Click card to expand sidecard. Master nav bar at top with user > objective scope selectors. Dismissible validation banner below nav. Sidecard slides in from right on feature click."
+        "description": "Full-width kanban board as main view. Columns derived from meta.horizons. Feature cards with: name, description snippet, entity count pills. Click card to expand sidecard. Master nav bar at top with user > objective scope selectors. Dismissible validation banner below nav. Sidecard slides in from right on feature click."
       },
       "sidecard-panel": {
         "description": "Right-side panel that opens on feature card click. Header: feature name + status. Parent section: linked user and objective with click-to-scope. Child tree: accordion of actions, components, operations grouped by type. Reference list: flat list of linked references with type badges. Close button returns to kanban-only view."
@@ -98,13 +133,13 @@
       "hierarchy-boundary": {
         "description": "Feature is the drill boundary. Above feature (project, user, objective) renders as master nav tree/selectors \u2014 scoping only, no dedicated view. Feature renders as kanban cards. Below feature (action, component, operation) renders as accordion tree within sidecard. Terminal nodes (operations, references) are leaf displays with no further drill."
       },
-      "phase-columns": {
-        "description": "Kanban columns are derived from meta.phases in the spec-graph at runtime. Each phase key becomes a column. Features are slotted into columns based on their phase assignment status. Column order follows the order of phases in meta. Empty phases still render as columns."
+      "horizon-columns": {
+        "description": "Kanban columns are derived from meta.horizons in the spec-graph at runtime. Each horizon key becomes a column. Features are slotted into columns based on their horizon assignment status. Column order follows the order of horizons in meta. Empty horizons still render as columns."
       }
     },
     "api-contract": {
       "cli-proxy-api": {
-        "description": "REST API exposed by know serve for dashboard mutations. Endpoints: POST /api/add (create entity/ref), POST /api/link (add dependency), POST /api/unlink (remove dependency), POST /api/meta (update meta/phases), PUT /api/entity/:id (update entity fields). All endpoints accept JSON body with command args, return JSON with success/error status and updated entity data. GET /api/graph returns current spec-graph.json for client refresh after mutations."
+        "description": "REST API exposed by know serve for dashboard mutations. Endpoints: POST /api/add (create entity/ref), POST /api/link (add dependency), POST /api/unlink (remove dependency), POST /api/meta (update meta/horizons), PUT /api/entity/:id (update entity fields). All endpoints accept JSON body with command args, return JSON with success/error status and updated entity data. GET /api/graph returns current spec-graph.json for client refresh after mutations."
       },
       "chat-api": {
         "description": "POST /api/chat \u2014 accepts {message}. Spawns claude CLI with stream-json output. Returns SSE stream: data events with claude response chunks, final done event. GET /api/chat/status \u2014 returns {available: bool} indicating if claude CLI is found."
@@ -114,6 +149,20 @@
       },
       "undo-api": {
         "description": "POST /api/undo \u2014 pops last graph snapshot from undo stack, writes it to spec-graph.json atomically. Returns {ok, graph, undone, undo_available}. GET /api/history \u2014 returns {entries, undo_available, undo_stack} with diff-graph.jsonl entries."
+      }
+    },
+    "source-file": {
+      "change-template": {
+        "description": "know:change slash command template with decisions.md logging hook",
+        "file_path": "know/templates/commands/change.md"
+      },
+      "plan-template": {
+        "description": "know:plan slash command template with MCQ-format Q&A",
+        "file_path": "know/templates/commands/plan.md"
+      },
+      "command-templates": {
+        "description": "All 14 know slash command templates with $ARGUMENTS placeholder",
+        "file_path": "know/templates/commands/"
       }
     }
   },
@@ -128,6 +177,10 @@
       "enhance-graph-model": {
         "name": "Enhance Graph Model",
         "description": "Extend spec-graph capabilities to support complex product requirements"
+      },
+      "improve-command-workflows": {
+        "name": "Improve Command Workflows",
+        "description": "Make know CLI slash commands and interactive flows faster and more decision-oriented \u2014 MCQ-format questions, decision logging, argument passthrough, friction removal."
       }
     },
     "feature": {
@@ -153,14 +206,34 @@
       },
       "spec-dashboard": {
         "name": "Spec Dashboard",
-        "description": "Interactive HTML dashboard served via know serve that visualizes spec-graph data. Kanban-first design with features as cards in phase-derived columns. Master nav bar scopes by user/objective. Clicking a feature card opens a sidecard showing parent context (user, objective) and child entities (actions, components, operations) as an accordion tree. Validation banner on load plus inline badges on affected entities. Built with lightweight framework (Preact/Alpine) + D3. Local-only, read-only, single-user."
+        "description": "Interactive HTML dashboard served via know serve that visualizes spec-graph data. Kanban-first design with features as cards in horizon-derived columns. Master nav bar scopes by user/objective. Clicking a feature card opens a sidecard showing parent context (user, objective) and child entities (actions, components, operations) as an accordion tree. Validation banner on load plus inline badges on affected entities. Built with lightweight framework (Preact/Alpine) + D3. Local-only, read-only, single-user."
+      },
+      "horizons-migration": {
+        "name": "Phase \u2192 Horizon Migration",
+        "description": "Complete terminology rename from phases to horizons across CLI, API, dashboard UI, templates, generators, validators, and graph schema. Auto-migrate legacy meta.phases \u2192 meta.horizons on graph load. Rename /api/phase \u2192 /api/horizon, changePhase \u2192 changeHorizon, phases CLI group \u2192 horizons."
+      },
+      "decisions-logging": {
+        "name": "Decisions Log in know:change",
+        "description": "When know:change workflow considers alternatives, append an ADR-style entry to .ai/know/decisions.md capturing rationale and tradeoffs. Decision log lives alongside the graph as running history; not persisted as spec-graph business-logic references."
+      },
+      "mcq-planning": {
+        "name": "MCQ Format for know:plan Q&A",
+        "description": "Replace open-ended planning questions with multiple-choice format. Each question surfaces options, tradeoffs per option, and a recommendation \u2014 faster decisions, fewer follow-ups."
+      },
+      "args-injection": {
+        "name": "$ARGUMENTS in Slash Commands",
+        "description": "Add $ARGUMENTS placeholder to all 14 know slash-command templates so invocations like /know:prepare <scope> thread user-supplied args into the prompt body."
+      },
+      "confirmation-removal": {
+        "name": "Remove Confirmation Prompts",
+        "description": "Strip all interactive y/N confirmation prompts from know CLI mutating commands (unlink, meta delete, nodes merge/rename/delete/cut). Faster scripted workflows; destructive protection shifts to graph-write hook and diff log."
       }
     },
     "workflow": {},
     "action": {
       "load-dashboard": {
         "name": "Load Dashboard",
-        "description": "User navigates to the dashboard URL served by know serve. System reads spec-graph.json, parses it, runs validation, renders the kanban board with features in phase-derived columns. Validation banner appears if structural issues found. Master nav populates with users and objectives for scoping."
+        "description": "User navigates to the dashboard URL served by know serve. System reads spec-graph.json, parses it, runs validation, renders the kanban board with features in horizon-derived columns. Validation banner appears if structural issues found. Master nav populates with users and objectives for scoping."
       },
       "select-scope": {
         "name": "Select Scope",
@@ -173,10 +246,6 @@
       "drill-entity": {
         "name": "Drill Entity",
         "description": "User clicks an action, component, or operation within the sidecard accordion tree. System expands that entity inline showing its description, linked references, and sub-dependencies. Terminal nodes (operations, references) display as leaf detail with no further drill. Accordion keeps parent entities visible above."
-      },
-      "change-phase": {
-        "name": "Change Phase",
-        "description": "User drags a feature card between kanban columns or uses a dropdown to change its phase. System calls know phases/meta commands via the REST API proxy on know serve. Kanban re-renders with the card in its new column. URL state and pill badges update to reflect the change."
       },
       "add-entity": {
         "name": "Add Entity",
@@ -201,12 +270,16 @@
       "undo-change": {
         "name": "Undo Change",
         "description": "User clicks the Undo button in the nav bar. System pops the most recent graph snapshot from the undo stack and writes it back to spec-graph.json. Dashboard re-renders with the restored state. Badge on undo button shows count of available undos."
+      },
+      "change-horizon": {
+        "name": "Change Horizon",
+        "description": "User drags a feature card between kanban columns or uses a dropdown to change its horizon. System calls know horizons/meta commands via the REST API proxy on know serve. Kanban re-renders with the card in its new column. URL state and pill badges update to reflect the change."
       }
     },
     "operation": {
       "parse-graph": {
         "name": "Parse Graph",
-        "description": "Reads raw spec-graph.json and transforms it into a typed entity map keyed by entity ID, a dependency index (both forward depends_on and reverse used_by), and extracted phases from meta. Validates JSON structure before parsing. Produces error list for any structural issues found during parse."
+        "description": "Reads raw spec-graph.json and transforms it into a typed entity map keyed by entity ID, a dependency index (both forward depends_on and reverse used_by), and extracted horizons from meta. Validates JSON structure before parsing. Produces error list for any structural issues found during parse."
       },
       "resolve-parents": {
         "name": "Resolve Parents",
@@ -218,11 +291,11 @@
       },
       "render-columns": {
         "name": "Render Columns",
-        "description": "Reads meta.phases from the parsed graph and generates kanban column definitions at runtime. Each phase becomes a column. Features are slotted into columns based on their phase assignment. Handles missing or empty phases gracefully."
+        "description": "Reads meta.horizons from the parsed graph and generates kanban column definitions at runtime. Each horizon becomes a column. Features are slotted into columns based on their horizon assignment. Handles missing or empty horizons gracefully."
       },
       "proxy-command": {
         "name": "Proxy Command",
-        "description": "Receives a structured command request (action: add|link|unlink|meta-set|phases, args: entity type/key/data), constructs the know CLI command string, executes it via child_process/subprocess, parses stdout/stderr, and returns a structured result with success/failure status and any validation errors."
+        "description": "Receives a structured command request (action: add|link|unlink|meta-set|horizons, args: entity type/key/data), constructs the know CLI command string, executes it via child_process/subprocess, parses stdout/stderr, and returns a structured result with success/failure status and any validation errors."
       },
       "stream-chat": {
         "name": "Stream Chat",
@@ -240,11 +313,11 @@
     "component": {
       "graph-parser": {
         "name": "Graph Parser",
-        "description": "Receives raw JSON string from know serve endpoint. Parses into typed entity map (keyed by full ID like feature:foo), builds forward and reverse dependency indices, extracts meta.phases. Outputs structured graph object consumed by all other components. No side effects \u2014 pure transformation."
+        "description": "Receives raw JSON string from know serve endpoint. Parses into typed entity map (keyed by full ID like feature:foo), builds forward and reverse dependency indices, extracts meta.horizons. Outputs structured graph object consumed by all other components. No side effects \u2014 pure transformation."
       },
       "kanban-renderer": {
         "name": "Kanban Renderer",
-        "description": "Receives parsed graph object with phases and feature entities. Renders phase-derived columns with feature cards. Each card shows: feature name, description snippet, pills for linked entity counts (actions, components, references). Dashboard-specific component. Inputs: graph object. Output: DOM kanban layout."
+        "description": "Receives parsed graph object with horizons and feature entities. Renders horizon-derived columns with feature cards. Each card shows: feature name, description snippet, pills for linked entity counts (actions, components, references). Dashboard-specific component. Inputs: graph object. Output: DOM kanban layout."
       },
       "sidecard-renderer": {
         "name": "Sidecard Renderer",
@@ -268,7 +341,7 @@
       },
       "cli-proxy": {
         "name": "CLI Proxy",
-        "description": "Server-side component in know serve that exposes REST endpoints proxying know CLI commands. Receives HTTP requests from the dashboard, shells out to know CLI (add, link, unlink, meta set, phases, nodes), captures output, and returns structured JSON responses. Handles errors from CLI (validation failures, missing entities) and returns appropriate HTTP status codes. Side effects: executes know CLI commands that write to spec-graph.json."
+        "description": "Server-side component in know serve that exposes REST endpoints proxying know CLI commands. Receives HTTP requests from the dashboard, shells out to know CLI (add, link, unlink, meta set, horizons, nodes), captures output, and returns structured JSON responses. Handles errors from CLI (validation failures, missing entities) and returns appropriate HTTP status codes. Side effects: executes know CLI commands that write to spec-graph.json."
       },
       "mutation-handler": {
         "name": "Mutation Handler",
@@ -276,7 +349,7 @@
       },
       "chat-panel": {
         "name": "Chat Panel",
-        "description": "Bottom-right floating panel with AI chat. Uses claude CLI via execPath auth passthrough. Spawns claude process with --output-format stream-json and --no-session-persistence. System prompt includes current graph context (features, actions, components, phases). Streams response chunks to the UI via SSE. Side effects: spawns subprocess, reads graph for context."
+        "description": "Bottom-right floating panel with AI chat. Uses claude CLI via execPath auth passthrough. Spawns claude process with --output-format stream-json and --no-session-persistence. System prompt includes current graph context (features, actions, components, horizons). Streams response chunks to the UI via SSE. Side effects: spawns subprocess, reads graph for context."
       },
       "file-watcher": {
         "name": "File Watcher",
@@ -295,7 +368,8 @@
   "graph": {
     "user:developer": {
       "depends_on": [
-        "objective:enhance-graph-model"
+        "objective:enhance-graph-model",
+        "objective:improve-command-workflows"
       ]
     },
     "objective:enhance-graph-model": {
@@ -305,7 +379,8 @@
         "feature:list-count",
         "feature:graph-filter-prefix",
         "feature:code-graph-scoring",
-        "feature:spec-dashboard"
+        "feature:spec-dashboard",
+        "feature:horizons-migration"
       ]
     },
     "feature:workflow-branch-entity": {
@@ -345,13 +420,10 @@
         "interface:kanban-view",
         "interface:sidecard-panel",
         "business-logic:hierarchy-boundary",
-        "business-logic:phase-columns",
         "constraint:local-only",
         "acceptance-criterion:dashboard-drill-down",
-        "acceptance-criterion:dashboard-kanban-phases",
         "acceptance-criterion:dashboard-validation",
         "code-link:spec-dashboard-code",
-        "action:change-phase",
         "action:add-entity",
         "action:edit-entity",
         "action:manage-links",
@@ -372,7 +444,10 @@
         "operation:snapshot-restore",
         "api-contract:chat-api",
         "api-contract:events-api",
-        "api-contract:undo-api"
+        "api-contract:undo-api",
+        "action:change-horizon",
+        "business-logic:horizon-columns",
+        "acceptance-criterion:dashboard-kanban-horizons"
       ]
     },
     "component:graph-parser": {
@@ -396,7 +471,7 @@
       "depends_on": [
         "operation:render-columns",
         "interface:kanban-view",
-        "business-logic:phase-columns"
+        "business-logic:horizon-columns"
       ]
     },
     "action:load-dashboard": {
@@ -426,12 +501,6 @@
       "depends_on": [
         "component:sidecard-renderer",
         "business-logic:hierarchy-boundary"
-      ]
-    },
-    "action:change-phase": {
-      "depends_on": [
-        "component:mutation-handler",
-        "component:kanban-renderer"
       ]
     },
     "action:add-entity": {
@@ -494,6 +563,45 @@
       "depends_on": [
         "operation:snapshot-restore",
         "api-contract:undo-api"
+      ]
+    },
+    "action:change-horizon": {
+      "depends_on": [
+        "component:mutation-handler",
+        "component:kanban-renderer"
+      ]
+    },
+    "objective:improve-command-workflows": {
+      "depends_on": [
+        "feature:decisions-logging",
+        "feature:mcq-planning",
+        "feature:args-injection",
+        "feature:confirmation-removal"
+      ]
+    },
+    "feature:horizons-migration": {
+      "depends_on": [
+        "code-link:horizons-migration-code"
+      ]
+    },
+    "feature:confirmation-removal": {
+      "depends_on": [
+        "code-link:confirmation-removal-code"
+      ]
+    },
+    "feature:decisions-logging": {
+      "depends_on": [
+        "source-file:change-template"
+      ]
+    },
+    "feature:mcq-planning": {
+      "depends_on": [
+        "source-file:plan-template"
+      ]
+    },
+    "feature:args-injection": {
+      "depends_on": [
+        "source-file:command-templates"
       ]
     }
   }
