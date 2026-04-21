@@ -34,6 +34,10 @@
         "feature:args-injection": {
           "status": "complete",
           "version": "0.2.1"
+        },
+        "feature:feature-version-targets": {
+          "status": "complete",
+          "version": "0.2.1"
         }
       },
       "II": {}
@@ -168,6 +172,14 @@
       "command-templates": {
         "description": "All 14 know slash command templates with $ARGUMENTS placeholder",
         "file_path": "know/templates/commands/"
+      },
+      "feature-version-cli": {
+        "description": "CLI implementation for feature version targets and featurelog",
+        "file_path": "know/know.py"
+      },
+      "feature-version-validator": {
+        "description": "Validator warning for status=complete without version",
+        "file_path": "know/src/validation.py"
       }
     }
   },
@@ -232,6 +244,10 @@
       "confirmation-removal": {
         "name": "Remove Confirmation Prompts",
         "description": "Strip all interactive y/N confirmation prompts from know CLI mutating commands (unlink, meta delete, nodes merge/rename/delete/cut). Faster scripted workflows; destructive protection shifts to graph-write hook and diff log."
+      },
+      "feature-version-targets": {
+        "name": "Feature Version Targets",
+        "description": "Optional version field on meta.horizons entries, CLI affordances (horizons add --version, feature version, feature log), validator warning on status=complete without version, and markdown/JSON featurelog generator grouped by objective."
       }
     },
     "workflow": {},
@@ -581,7 +597,8 @@
         "feature:decisions-logging",
         "feature:mcq-planning",
         "feature:args-injection",
-        "feature:confirmation-removal"
+        "feature:confirmation-removal",
+        "feature:feature-version-targets"
       ]
     },
     "feature:horizons-migration": {
@@ -607,6 +624,12 @@
     "feature:args-injection": {
       "depends_on": [
         "source-file:command-templates"
+      ]
+    },
+    "feature:feature-version-targets": {
+      "depends_on": [
+        "source-file:feature-version-cli",
+        "source-file:feature-version-validator"
       ]
     }
   }
