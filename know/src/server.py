@@ -2,7 +2,7 @@
 HTTP server for spec-dashboard.
 
 Responsibilities:
-- Serve static dashboard files from know/www/
+- Serve static dashboard files from know/www/dashboard/
 - REST API for reading graph data (in-process, no subprocess)
 - REST API for mutations (proxied through know CLI via subprocess)
 - Undo stack for reverting mutations (snapshot-based)
@@ -26,7 +26,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse, unquote
 
-WWW_DIR = Path(__file__).parent.parent / "www"
+WWW_DIR = Path(__file__).parent.parent / "www" / "dashboard"
 KNOW_PY = Path(__file__).parent.parent / "know.py"
 
 _ANSI_RE = re.compile(r'\x1b\[[0-9;]*m')
