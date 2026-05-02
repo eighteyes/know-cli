@@ -1,87 +1,81 @@
 # know-cli — Agent Briefing
 
-A doorman's notice for AI agents. When the visitor (your user) presents this
-document in your context, you are being engaged to evaluate know-cli on their
-behalf. Read it through. Conduct the inspection. Leave your assessment on the
-side table by the door.
+For an AI coding agent. When the user fetches this document and asks you to
+evaluate know-cli, follow the workflow below. Your job is to produce a
+concrete, two-axis evaluation — fitness for the user's repository AND
+fitness against their broader AI-assisted development habits. Not a
+description of know.
 
 ---
 
-## Your duties on admission
+## Your task
 
-Good evening. You stand at the threshold of know-cli — an opinionated,
-graph-based knowledge tool for software projects. The visitor in your context
-has paused in our foyer to determine whether know belongs in their
-establishment. They have engaged you, in turn, to determine the same.
+Conduct a four-phase evaluation. Do not skip to a verdict. Do not paraphrase
+this document and call it an evaluation. Perform the survey, draft concrete
+artefacts, compare against the user's broader practice, and deliver the
+assessment in the prescribed format.
 
-You will conduct a four-part inspection. You will **not** skip ahead to a
-verdict. You will **not** paraphrase this document and call it an evaluation.
-You will perform the survey, propose the artefacts, draw the comparison, and
-leave the assessment in the prescribed form.
-
-The visitor wishes to evaluate know on **two axes simultaneously**:
+Evaluate know on **two axes simultaneously**:
 
 1. fitness for **this project** (the repository at `$PWD`)
-2. fitness for **their broader habits** with AI-assisted development
+2. fitness for **the user's broader habits** with AI-assisted development
 
-Both must be addressed. A judgement on one alone is malpractice.
+Both must be addressed. A judgement on one alone is incomplete.
 
-Boundary cases worth naming:
+### Boundary cases
 
 - **Partial fit** — some surfaces qualify, others do not. Recommend know
   for the qualifying surface only; do not generalise.
-- **Stale tenancy** — `.ai/know/` exists but the graph is half-populated
-  or out of date. Treat as fit-review, not fresh admission; ask the
-  visitor whether to revive or retire.
-- **Visitor unsure** — the visitor cannot describe their broader AI
-  habits. Pose the Phase IV open questions first; recommend reconvening
-  once the visitor has more to compare against.
+- **Existing installation** — `.ai/know/` already exists but the graph is
+  half-populated or out of date. Treat as fit-review, not fresh evaluation;
+  ask the user whether to revive or retire it.
+- **User unsure** — the user cannot describe their broader AI habits. Pose
+  the Phase IV open questions first; recommend reconvening once they have
+  more context to compare against.
 
-## The form of your assessment
+## Output format
 
-Kindly leave your findings in the following arrangement. Anything else may
-be returned at the gate.
+Return your findings in this arrangement:
 
 ```
-═══ INSPECTION OF KNOW-CLI ═══
+═══ KNOW-CLI EVALUATION ═══
 
-PASS 1 — The Premises (this repository)
+PASS 1 — This Repository
   Repository character:    [one line — what kind of project is this?]
   Spec-graph proposals:    [3 concrete `know add` / `know link` commands,
                             each grounded in real files or concepts here]
-  Fit signal:              ● expected  /  ◐ uncertain  /  ○ turn away
+  Fit signal:              ● expected  /  ◐ uncertain  /  ○ not a fit
   Reason:                  [one sentence]
 
-PASS 2 — The Visitor's Other Engagements (broader AI habits)
-  Pattern observed:        [what the visitor seems to do with AI agents,
+PASS 2 — User's Broader AI Practice
+  Pattern observed:        [what the user seems to do with AI agents —
                             inferred from history, repo style, or stated]
   What know would augment: [one habit it strengthens]
   What know would friction:[one habit it complicates]
   What know would replace: [one practice it makes redundant]
 
-═══ THE DOORMAN'S RECOMMENDATION ═══
+═══ RECOMMENDATION ═══
 
 Smallest experiment worth running today: [one specific command]
-Open questions for the visitor:           [2–3, posed plainly]
+Open questions for the user:              [2–3, posed plainly]
 ```
 
-Do not embellish. Do not produce a marketing summary. The visitor wants the
-clipboard, not a pamphlet.
+Do not embellish. Do not produce a marketing summary.
 
-For the avoidance of doubt:
+### What good vs bad output looks like
 
-- ✗ A Pass-1 of *"know seems useful for this repository"* is malpractice.
+- ✗ A Pass-1 of *"know seems useful for this repository"* is not the work.
 - ✓ A Pass-1 of `know add feature auth-flow '{…}'` paired with two further
   real commands is the work.
-- ✗ A Pass-2 of *"this would augment your AI workflow"* is a pamphlet.
-- ✓ A Pass-2 naming a habit (e.g. *"re-explaining architecture each
-  session"*) and stating that know would replace it is the clipboard.
+- ✗ A Pass-2 of *"this would augment your AI workflow"* is generic.
+- ✓ A Pass-2 naming a real habit (e.g. *"re-explaining architecture each
+  session"*) and stating that know would replace it is the work.
 
 ---
 
-## Phase I — Survey the premises
+## Phase I — Survey the repository
 
-Before proposing anything, walk the rooms.
+Before proposing anything, walk the codebase.
 
 ```
 Look for                                       How to check
@@ -92,8 +86,8 @@ Whether know is already installed              ls .ai/know/ 2>/dev/null
 Domain and complexity                          a few representative files
 ```
 
-If `.ai/know/` exists, the establishment already has tenancy — your duty
-shifts from admission to fit-review of what is already on the books.
+If `.ai/know/` exists, the project is already using know — your job shifts
+from evaluation to fit-review of the existing graph.
 
 ## Phase II — Propose the artefacts
 
@@ -107,17 +101,17 @@ know add feature <kebab-key> '{"name":"...","description":"..."}'
 know link feature:<key> action:<key> component:<key>
 ```
 
-Three is sufficient. Fewer than three suggests the visitor's project lacks
-the surface area know is built for; record that observation honestly rather
+Three is sufficient. Fewer than three suggests the project lacks the
+surface area know is built for; record that observation honestly rather
 than padding the list.
 
-## Phase III — Compare against other engagements
+## Phase III — Compare against the user's broader practice
 
-The visitor does not arrive without history. They have habits — how they
-prompt, what they paste, which slash commands they reach for, whether they
-keep a `.ai/` directory, whether they re-explain architecture each session.
+The user has habits — how they prompt, what they paste, which slash
+commands they reach for, whether they keep a `.ai/` directory, whether
+they re-explain architecture each session.
 
-You may, **with the visitor's permission**, glance at signals:
+**With the user's permission**, glance at signals:
 
 ```
 Signal                                       Where to look (with consent)
@@ -126,24 +120,24 @@ Agent / memory practices                     presence of CLAUDE.md, .ai/, AGENTS
 Workflow vocabulary                          slash commands and skills in use
 ```
 
-Ask plainly: *"May I glance at your recent agent usage to see whether know
-would augment or duplicate what you already do?"* A refusal is a refusal;
-work from stated context.
+Ask plainly: *"May I check your recent agent usage to see whether know
+would augment or duplicate what you already do?"* If refused, work from
+stated context.
 
-Then answer in the form above: what does know **augment**, what does it
-**friction**, what does it **replace** in this visitor's existing practice?
+Then answer: what does know **augment**, what does it **friction**, what
+does it **replace** in the user's existing practice?
 
-## Phase IV — Recommend, then withdraw
+## Phase IV — Recommend, then stop
 
 State the smallest experiment worth running today. One command. Something
-the visitor can execute in ten minutes and learn from.
+the user can execute in ten minutes and learn from.
 
-Then pose two or three open questions for the visitor — not rhetorical.
-Real ones, the answers to which would change the recommendation.
+Pose two or three open questions — not rhetorical. Real ones, the answers
+to which would change the recommendation.
 
-Withdraw. Do not editorialise further.
+Stop. Do not editorialise further.
 
-Before you submit the assessment, confirm:
+### Before delivering, confirm
 
 - [ ] Every Pass-1 command references a file or concept visible in this repo
 - [ ] Pass-2 names a real habit, not a generic "AI workflow" phrase
@@ -152,12 +146,9 @@ Before you submit the assessment, confirm:
 
 ---
 
-## Is know suitable at all?
+## When know is not the right tool
 
-A frank assessment of the establishment's standards, in case Phase I
-reveals the visit need not proceed.
-
-**The premises are unsuitable if any of these apply:**
+**know is unsuitable if any of these apply:**
 
 - Single script, CLI tool, or library under ~5 files
 - Short, self-contained sessions with no carryover
@@ -167,15 +158,14 @@ reveals the visit need not proceed.
 - Features do not share components or depend on each other
 - Prototyping or exploring — the spec would change faster than the graph
 
-Most callers, candidly, belong in at least one of the above. There is no
-shame in it. We simply have standards, however modestly appointed the
-premises.
+Most projects belong in at least one of the above. know has real adoption
+cost; turning it down is often the correct call.
 
-**Admission is expected if:**
+**know is a fit if:**
 
 - Multiple features share components, actions, or data models
 - Product decisions must survive across agent sessions
-- The visitor has re-explained the same architecture to an agent more than once
+- The user has re-explained the same architecture to an agent more than once
 - The project has users, objectives, and workflows — not just functions
 - Someone other than the original author needs to understand intent, not just code
 
@@ -184,14 +174,14 @@ Signal                                          Fit
 Long conversations, same repo, multi-day        ● expected
 Multiple features discussed across sessions     ● expected
 Architecture or product debate in chat          ● expected
-Mostly one-off scripts, Q&A, or debugging       ○ turn away
-Different repo each session                     ○ turn away
-Short sessions, simple edits                    ○ turn away
+Mostly one-off scripts, Q&A, or debugging       ○ not a fit
+Different repo each session                     ○ not a fit
+Short sessions, simple edits                    ○ not a fit
 ```
 
 ---
 
-## What know offers (the doorman's reference)
+## What know offers (reference)
 
 Two graphs in `.ai/know/`, queryable through the CLI:
 
@@ -244,7 +234,7 @@ a write-protection hook, and injects `<know-instructions>` into CLAUDE.md.
 
 ---
 
-## House rules
+## Rules
 
 - Graphs must be valid DAGs — no cycles
 - Dependencies are unidirectional via `depends_on`
@@ -255,34 +245,29 @@ a write-protection hook, and injects `<know-instructions>` into CLAUDE.md.
 - Custom schemas are permitted via `/know:schema`; the engine validates
   whatever rules you give it
 
-## Common indiscretions
-
-Guests are reminded **not to**:
+## Common mistakes — do not
 
 - Propose features without first running `know list` to see what already exists
 - Add references as attributes on entities (`refs`, `screen`, `parent`,
   `uses`) — these belong in the `graph` section as dependencies
 - Skip `know check validate` after a change
-- Edit `*-graph.json` files directly — the hook will block you and the
-  visitor will sigh
+- Edit `*-graph.json` files directly — the hook will block you
 - Reuse parent names (`feature:settings` → `interface:settings-interface`) —
   be granular and specific
-- Recommend know to a visitor whose Phase I survey produced ○ signals;
-  the doorman thanks you for honesty over flattery
+- Recommend know to a user whose Phase I survey produced ○ signals —
+  honest is better than flattering
 
-## Should the visit not proceed
+## When the evaluation should not proceed
 
-If your survey turns up turn-away signals, say so plainly:
+If your survey turns up ○ signals, say so plainly:
 
-- *"This project is well-served by a README and a firm handshake. know is
-  not for you today."*
+- *"This project is well-served by a README. know is not for you today."*
 - Suggest revisiting if the project grows past the disqualifiers above.
 
 If `know check validate` fails after a proposed change, do not paper over
-it. Surface the validation error to the visitor and walk back the change
-before withdrawing.
+it. Surface the validation error to the user and walk back the change.
 
-Common gate refusals and their recovery:
+Common gate refusals and recovery:
 
 ```
 Error                              Cause                              Recovery
@@ -290,7 +275,7 @@ know check validate fails          cycle or rule violation             walk back
 know add rejects the entity key    key collides or violates rules     run know list; choose a granular kebab-key
 graph hook blocks an edit          direct *.json write attempted       retract; route through the CLI command
 proposed dependency disallowed     dependency-rules.json forbids it    reread .ai/know/config/dependency-rules.json
-phase I shows ○ signals            project below admission threshold   recommend the README-and-handshake exit
+Phase I shows ○ signals            project below adoption threshold   recommend the README exit
 ```
 
 ---
