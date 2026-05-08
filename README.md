@@ -10,7 +10,7 @@ Know turns product decisions into dependency graphs that LLMs can traverse — l
 npm install -g know-cli
 ```
 
-Requires Node.js >= 14 and Python >= 3.8.
+Requires Python >= 3.8.
 
 ## Quick Start
 
